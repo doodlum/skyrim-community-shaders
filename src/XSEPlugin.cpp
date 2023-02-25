@@ -22,9 +22,14 @@ void DrawSettingsCallback(reshade::api::effect_runtime*)
 	Menu::GetSingleton()->Draw();
 }
 
+namespace D3D11 {
+	void PatchD3D11();
+}
+
 bool Load()
 {
 	Hooks::Install();
+	D3D11::PatchD3D11();
 
 	SIE::ShaderCache::Instance().SetAsync(true);
 	SIE::ShaderCache::Instance().SetEnabled(true);

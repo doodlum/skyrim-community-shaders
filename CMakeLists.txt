@@ -18,6 +18,7 @@ target_include_directories(
 )
 
 find_package(magic_enum CONFIG REQUIRED)
+find_package(xbyak CONFIG REQUIRED)
 
 target_link_libraries(
 	${PROJECT_NAME} 
@@ -26,4 +27,5 @@ target_link_libraries(
 		debug ${CMAKE_CURRENT_SOURCE_DIR}/include/detours/Debug/detours.lib
 		optimized ${CMAKE_CURRENT_SOURCE_DIR}/include/detours/Release/detours.lib
 		magic_enum::magic_enum
+		xbyak::xbyak
 )
