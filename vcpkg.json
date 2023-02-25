@@ -1,0 +1,16 @@
+{
+"name": "commonlibsse-plugin",
+  "version-string": "1.0.0",
+  "description": "",
+  "license": "MIT",
+  "dependencies": [
+    "fmt",
+    "rapidcsv",
+    "spdlog",
+    "simpleini",
+    "magic-enum",
+    "xbyak",
+    "catch2",
+    "magic-enum"
+  ]
+}

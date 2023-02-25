@@ -1,0 +1,29 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(
+	CommunityShaders
+	VERSION 0.0.1
+	LANGUAGES CXX
+)
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+include(XSEPlugin)
+
+find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
+
+target_include_directories(
+	"${PROJECT_NAME}"
+	PRIVATE
+		${SIMPLEINI_INCLUDE_DIRS}
+)
+
+find_package(magic_enum CONFIG REQUIRED)
+
+target_link_libraries(
+	${PROJECT_NAME} 
+	PRIVATE
+		d3dcompiler.lib
+		debug ${CMAKE_CURRENT_SOURCE_DIR}/include/detours/Debug/detours.lib
+		optimized ${CMAKE_CURRENT_SOURCE_DIR}/include/detours/Release/detours.lib
+		magic_enum::magic_enum
+)
