@@ -4,6 +4,7 @@
 
 #include <condition_variable>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace SIE
 {
@@ -51,12 +52,13 @@ namespace SIE
 		void Add(const ShaderCompilationTask& task);
 		void Complete(const ShaderCompilationTask& task);
 		void Clear();
-
+		std::atomic<uint64_t> completedTasks = 0;
+		std::atomic<uint64_t> totalTasks = 0;
+		std::mutex mutex;
 	private:
 		std::unordered_set<ShaderCompilationTask> availableTasks;
 		std::unordered_set<ShaderCompilationTask> tasksInProgress;
 		std::condition_variable conditionVariable;
-		std::mutex mutex;
 	};
 
 	class ShaderCache
@@ -75,6 +77,10 @@ namespace SIE
 		bool IsAsync() const;
 		void SetAsync(bool value);
 
+		bool IsDiskCache() const;
+		void SetDiskCache(bool value);
+		void DeleteDiskCache();
+
 		void Clear();
 
 		RE::BSGraphics::VertexShader* GetVertexShader(const RE::BSShader& shader, uint32_t descriptor);
@@ -86,26 +92,36 @@ namespace SIE
 		RE::BSGraphics::PixelShader* MakeAndAddPixelShader(const RE::BSShader& shader,
 			uint32_t descriptor);
 
+		uint64_t GetCompletedTasks();
+		uint64_t GetTotalTasks();
+
 	private:
 		ShaderCache();
 		void ProcessCompilationSet();
 
 		~ShaderCache();
 
-		std::array<std::unordered_map<uint32_t, std::unique_ptr<RE::BSGraphics::VertexShader>>,
+		std::array<std::map<uint32_t, std::unique_ptr<RE::BSGraphics::VertexShader>>,
 			static_cast<size_t>(RE::BSShader::Type::Total)>
 			vertexShaders;
-		std::array<std::unordered_map<uint32_t, std::unique_ptr<RE::BSGraphics::PixelShader>>,
+		std::array<std::map<uint32_t, std::unique_ptr<RE::BSGraphics::PixelShader>>,
 			static_cast<size_t>(RE::BSShader::Type::Total)>
 			pixelShaders;
 
 		bool isEnabled = false;
+		bool isDiskCache = false;
+
 		uint32_t disabledClasses = 0;
 
 		bool isAsync = true;
-		CompilationSet compilationSet;
 		std::vector<std::jthread> compilationThreads;
 		std::mutex vertexShadersMutex;
 		std::mutex pixelShadersMutex;
+		CompilationSet compilationSet;
+
+		RE::BSShader* currentShader = nullptr;
+		uint32_t currentDescriptor = 0;
+
+
 	};
 }

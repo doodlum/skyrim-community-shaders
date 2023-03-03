@@ -1091,8 +1091,23 @@ namespace SIE
 			mapBufferConsts("PerGeometry", bufferSizes[2]);
 		}
 
+
+		std::wstring GetDiskPath(const std::string_view& name, uint32_t descriptor, ShaderClass shaderClass)
+		{
+			switch (shaderClass)
+			{
+			case ShaderClass::Pixel:
+				return std::format(L"Data/ShaderCache/{}/{}.pso", std::wstring(name.begin(), name.end()), descriptor);
+			case ShaderClass::Vertex:
+				return std::format(L"Data/ShaderCache/{}/{}.vso", std::wstring(name.begin(), name.end()), descriptor);
+
+			}
+			return std::format(L"Data/ShaderCache/{}/{}.cso", std::wstring(name.begin(), name.end()), descriptor);
+		}
+
+
 		static ID3DBlob* CompileShader(ShaderClass shaderClass, const RE::BSShader& shader,
-			uint32_t descriptor)
+			uint32_t descriptor, bool useDiskCache)
 		{
 			const auto type = shader.shaderType.get();
 			const std::wstring path = GetShaderPath(shader.fxpFilename);
@@ -1110,6 +1125,29 @@ namespace SIE
 			GetShaderDefines(type, descriptor, &defines[1]);
 
 			//logger::info("{}, {}", descriptor, MergeDefinesString(defines));
+
+			auto diskPath = GetDiskPath(shader.fxpFilename, descriptor, shaderClass);
+
+			if (useDiskCache && std::filesystem::exists(diskPath)) {
+				ID3DBlob* shaderBlob = nullptr;
+				if (FAILED(D3DReadFileToBlob(diskPath.c_str(), &shaderBlob)))
+				{
+					logger::error("Failed to load {} shader {}::{}", magic_enum::enum_name(shaderClass), magic_enum::enum_name(type), descriptor);
+
+					if (shaderBlob != nullptr)
+					{
+						shaderBlob->Release();
+					}
+				}
+				else {
+					std::string str;;
+					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
+						return (char)c;
+						});
+					logger::debug("Loaded shader from {}", str);
+					return shaderBlob;
+				}
+			}
 
 			ID3DBlob* shaderBlob = nullptr;
 			ID3DBlob* errorBlob = nullptr;
@@ -1133,8 +1171,28 @@ namespace SIE
 
 				return nullptr;
 			}
-			logger::info("Compiled {} shader {}::{}", magic_enum::enum_name(shaderClass),
+			logger::debug("Compiled {} shader {}::{}", magic_enum::enum_name(shaderClass),
 				magic_enum::enum_name(type), descriptor);
+
+			if (useDiskCache) {
+				std::filesystem::create_directories(std::format("Data/ShaderCache/{}", shader.fxpFilename));
+
+				const HRESULT saveResult = D3DWriteBlobToFile(shaderBlob, diskPath.c_str(), true);
+				if (FAILED(saveResult)) {
+					std::string str;;
+					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
+						return (char)c;
+						});
+					logger::error("Failed to save shader to {}", str);
+				}
+				else {
+					std::string str;;
+					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
+						return (char)c;
+						});
+					logger::debug("Saved shader to {}", str);
+				}
+			}
 
 			return shaderBlob;
 		}
@@ -1417,6 +1475,27 @@ namespace SIE
 		isAsync = value;
 	}
 
+	bool ShaderCache::IsDiskCache() const
+	{
+		return isDiskCache;
+	}
+
+	void ShaderCache::SetDiskCache(bool value)
+	{
+		isDiskCache = value;
+	}
+
+	void ShaderCache::DeleteDiskCache()
+	{
+		std::lock_guard lock(compilationSet.mutex);
+		try {
+			std::filesystem::remove_all(L"Data/ShaderCache");
+		}
+		catch (std::filesystem::filesystem_error const& ex) {
+			logger::error("Failed to delete disk cache: {}", ex.what());
+		}
+	}
+
 	ShaderCache::ShaderCache()
 	{
 		static const auto compilationThreadCount = max(1, (static_cast<int32_t>(std::thread::hardware_concurrency()) - 4));
@@ -1430,7 +1509,7 @@ namespace SIE
 		uint32_t descriptor)
 	{
 		if (const auto shaderBlob =
-			SShaderCache::CompileShader(ShaderClass::Vertex, shader, descriptor))
+			SShaderCache::CompileShader(ShaderClass::Vertex, shader, descriptor, isDiskCache))
 		{
 			static const auto device = REL::Relocation<ID3D11Device**>(RE::Offset::D3D11Device);
 
@@ -1464,7 +1543,7 @@ namespace SIE
 		uint32_t descriptor)
 	{
 		if (const auto shaderBlob =
-			SShaderCache::CompileShader(ShaderClass::Pixel, shader, descriptor))
+			SShaderCache::CompileShader(ShaderClass::Pixel, shader, descriptor, isDiskCache))
 		{
 			static const auto device = REL::Relocation<ID3D11Device**>(RE::Offset::D3D11Device);
 
@@ -1492,6 +1571,16 @@ namespace SIE
 			}
 		}
 		return nullptr;
+	}
+
+	uint64_t ShaderCache::GetCompletedTasks()
+	{
+		return compilationSet.completedTasks;
+	}
+
+	uint64_t ShaderCache::GetTotalTasks()
+	{
+		return compilationSet.totalTasks;
 	}
 
 	void ShaderCache::ProcessCompilationSet()
@@ -1557,6 +1646,7 @@ namespace SIE
 			if (wasAdded)
 			{
 				conditionVariable.notify_one();
+				totalTasks++;
 			}
 		}
 	}
@@ -1565,6 +1655,7 @@ namespace SIE
 	{
 		std::unique_lock lock(mutex);
 		tasksInProgress.erase(task);
+		completedTasks++;
 	}
 
 	void CompilationSet::Clear()
@@ -1572,5 +1663,7 @@ namespace SIE
 		std::lock_guard lock(mutex);
 		availableTasks.clear();
 		tasksInProgress.clear();
+		totalTasks = 0;
+		completedTasks = 0;
 	}
 }

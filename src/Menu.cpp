@@ -4,7 +4,8 @@
 
 #include "ShaderCache.h"
 
-void Menu::Draw()
+
+void Menu::DrawSettings()
 {
 	static bool visible = false;
 	ImGui::Checkbox("Show Settings", &visible);
@@ -13,16 +14,35 @@ void Menu::Draw()
 		ImGui::Begin("Skyrim Community Shaders", &visible);
 
 		auto& shaderCache = SIE::ShaderCache::Instance();
-		bool isAsync = shaderCache.IsAsync();
-		if (ImGui::Checkbox("Async Shaders Loading", &isAsync))
-		{
-			shaderCache.SetAsync(isAsync);
-		}
 
 		bool useCustomShaders = shaderCache.IsEnabled();
 		if (ImGui::Checkbox("Use Custom Shaders", &useCustomShaders))
 		{
 			shaderCache.SetEnabled(useCustomShaders);
+		}
+
+		bool useDiskCache = shaderCache.IsDiskCache();
+		if (ImGui::Checkbox("Use Disk Cache", &useDiskCache))
+		{
+			shaderCache.SetDiskCache(useDiskCache);
+		}
+
+		bool useAsync = shaderCache.IsAsync();
+		if (ImGui::Checkbox("Use Async", &useAsync))
+		{
+			shaderCache.SetAsync(useAsync);
+		}
+
+		if (ImGui::Button("Clear Shader Cache"))
+		{
+			shaderCache.Clear();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Delete Disk Cache"))
+		{
+			shaderCache.DeleteDiskCache();
 		}
 
 		if (useCustomShaders)
@@ -40,11 +60,33 @@ void Menu::Draw()
 			}
 		}
 
-		if (ImGui::Button("Clear Shader Cache"))
+		ImGui::End();
+	}
+}
+
+void Menu::DrawOverlay()
+{
+	uint64_t totalShaders = 0;
+	uint64_t compiledShaders = 0;
+
+	auto& shaderCache = SIE::ShaderCache::Instance();
+
+	compiledShaders = shaderCache.GetCompletedTasks();
+	totalShaders = shaderCache.GetTotalTasks();
+
+	if (compiledShaders != totalShaders) {
+		ImGui::SetNextWindowBgAlpha(1);
+		ImGui::SetNextWindowPos(ImVec2(10, 10));
+		if (!ImGui::Begin("ShaderCompilationInfo", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
 		{
-			shaderCache.Clear();
+			ImGui::End();
+			return;
 		}
+
+		ImGui::Text("Compiling Shaders: %d / %d", compiledShaders, totalShaders);
 
 		ImGui::End();
 	}
 }
+

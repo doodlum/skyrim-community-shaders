@@ -13,6 +13,7 @@ public:
 		return &menu;
 	}
 
-	void Draw();
+	void DrawSettings();
+	void DrawOverlay();
 };
 
