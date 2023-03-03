@@ -18,7 +18,7 @@ namespace SIE
 
 		static std::wstring GetShaderPath(const std::string_view& name)
 		{
-			return std::format(L"Data/Shaders/{:X}.hlsl", std::wstring(name.begin(), name.end()));
+			return std::format(L"Data/Shaders/{}.hlsl", std::wstring(name.begin(), name.end()));
 		}
 
 		static const char* GetShaderProfile(ShaderClass shaderClass)
@@ -1097,12 +1097,12 @@ namespace SIE
 			switch (shaderClass)
 			{
 			case ShaderClass::Pixel:
-				return std::format(L"Data/ShaderCache/{}/{}.pso", std::wstring(name.begin(), name.end()), descriptor);
+				return std::format(L"Data/ShaderCache/{}/{:X}.pso", std::wstring(name.begin(), name.end()), descriptor);
 			case ShaderClass::Vertex:
-				return std::format(L"Data/ShaderCache/{}/{}.vso", std::wstring(name.begin(), name.end()), descriptor);
+				return std::format(L"Data/ShaderCache/{}/{:X}.vso", std::wstring(name.begin(), name.end()), descriptor);
 
 			}
-			return std::format(L"Data/ShaderCache/{}/{}.cso", std::wstring(name.begin(), name.end()), descriptor);
+			return std::format(L"Data/ShaderCache/{}/{:X}.cso", std::wstring(name.begin(), name.end()), descriptor);
 		}
 
 
