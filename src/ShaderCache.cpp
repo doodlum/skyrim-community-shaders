@@ -18,7 +18,7 @@ namespace SIE
 
 		static std::wstring GetShaderPath(const std::string_view& name)
 		{
-			return std::format(L"Data/Shaders/{}.hlsl", std::wstring(name.begin(), name.end()));
+			return std::format(L"Data/Shaders/{:X}.hlsl", std::wstring(name.begin(), name.end()));
 		}
 
 		static const char* GetShaderProfile(ShaderClass shaderClass)
