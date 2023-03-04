@@ -88,7 +88,7 @@ void InitializeLog()
 	}
 
 	*path /= std::format("{}.log"sv, Plugin::NAME);
-	auto       sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
+	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 #endif
 
 #ifndef NDEBUG
@@ -105,7 +105,7 @@ void InitializeLog()
 	spdlog::set_pattern("%v"s);
 }
 
-extern "C" DLLEXPORT  bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
+extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
 #ifndef NDEBUG
 	while (!WinAPI::IsDebuggerPresent()) {};
@@ -116,7 +116,7 @@ extern "C" DLLEXPORT  bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a
 	return Load();
 }
 
-extern "C" DLLEXPORT  constinit auto SKSEPlugin_Version = []() noexcept {
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
 	SKSE::PluginVersionData v;
 	v.PluginName(Plugin::NAME.data());
 	v.PluginVersion(Plugin::VERSION);
@@ -125,10 +125,45 @@ extern "C" DLLEXPORT  constinit auto SKSEPlugin_Version = []() noexcept {
 	return v;
 }();
 
-extern "C" DLLEXPORT  bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo * pluginInfo)
+extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* pluginInfo)
 {
 	pluginInfo->name = SKSEPlugin_Version.pluginName;
 	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
 	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
 	return true;
+}
+
+#include <wrl/client.h>
+#include <wrl/event.h>
+
+#include <DirectXColors.h>
+#include <DirectXMath.h>
+
+namespace DX
+{
+	// Helper class for COM exceptions
+	class com_exception : public std::exception
+	{
+	public:
+		com_exception(HRESULT hr) noexcept :
+			result(hr) {}
+
+		const char* what() const override
+		{
+			static char s_str[64] = {};
+			sprintf_s(s_str, "Failure with HRESULT of %08X", static_cast<unsigned int>(result));
+			return s_str;
+		}
+
+	private:
+		HRESULT result;
+	};
+
+	// Helper utility converts D3D API failures into exceptions.
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+		if (FAILED(hr)) {
+			throw com_exception(hr);
+		}
+	}
 }

@@ -169,8 +169,7 @@ namespace reshade::api
 	/// <param name="value">The format to convert.</param>
 	inline format format_to_typeless(format value)
 	{
-		switch (value)
-		{
+		switch (value) {
 		case format::l8_unorm:
 		case format::r8_typeless:
 		case format::r8_uint:
@@ -259,7 +258,7 @@ namespace reshade::api
 		case format::r32_float_x8_uint:
 		case format::x32_float_g8_uint:
 			return format::r32_g8_typeless;
-		case format::d24_unorm_s8_uint: // Do not also convert 'd24_unorm_x8_uint' here, to keep it distinguishable from 'd24_unorm_s8_uint'
+		case format::d24_unorm_s8_uint:  // Do not also convert 'd24_unorm_x8_uint' here, to keep it distinguishable from 'd24_unorm_s8_uint'
 		case format::r24_g8_typeless:
 		case format::r24_unorm_x8_uint:
 		case format::x24_unorm_g8_uint:
@@ -304,8 +303,7 @@ namespace reshade::api
 	/// <param name="srgb_variant">Set to 1 to get sRGB variant, 0 to get linear variant and -1 to preserve existing one.</param>
 	inline format format_to_default_typed(format value, int srgb_variant = -1)
 	{
-		switch (value)
-		{
+		switch (value) {
 		case format::r8_typeless:
 			return format::r8_unorm;
 		case format::r8g8_typeless:
@@ -353,7 +351,7 @@ namespace reshade::api
 		case format::d32_float_s8_uint:
 		case format::r32_g8_typeless:
 			return format::r32_float_x8_uint;
-		case format::d24_unorm_s8_uint: // Do not also convert 'd24_unorm_x8_uint' here, to keep it distinguishable from 'd24_unorm_s8_uint'
+		case format::d24_unorm_s8_uint:  // Do not also convert 'd24_unorm_x8_uint' here, to keep it distinguishable from 'd24_unorm_s8_uint'
 		case format::r24_g8_typeless:
 			return format::r24_unorm_x8_uint;
 		case format::bc1_typeless:
@@ -393,8 +391,7 @@ namespace reshade::api
 	/// <param name="value">The format to convert.</param>
 	inline format format_to_depth_stencil_typed(format value)
 	{
-		switch (value)
-		{
+		switch (value) {
 		case format::r16_typeless:
 		case format::r16_unorm:
 			return format::d16_unorm;
@@ -427,19 +424,19 @@ namespace reshade::api
 		if (value <= format::r32g32b32_sint)
 			return 12 * width;
 		if (value <= format::x32_float_g8_uint)
-			return  8 * width;
+			return 8 * width;
 		if (value <= format::x24_unorm_g8_uint || value == format::l16a16_unorm)
-			return  4 * width;
+			return 4 * width;
 		if (value <= format::r16_sint || value == format::b5g6r5_unorm || value == format::b5g5r5a1_unorm || value == format::b5g5r5x1_unorm || value == format::l8a8_unorm || value == format::l16_unorm)
-			return  2 * width;
+			return 2 * width;
 		if (value <= format::a8_unorm || value == format::l8_unorm)
-			return  1 * width;
+			return 1 * width;
 		if (value <= format::g8r8_g8b8_unorm || (value >= format::b8g8r8a8_unorm && value <= format::b8g8r8x8_unorm_srgb) || (value >= format::r8g8b8x8_typeless && value <= format::r8g8b8x8_unorm_srgb))
-			return  4 * width;
+			return 4 * width;
 
 		// Block compressed formats are bytes per block, rather than per pixel
 		if ((value >= format::bc1_typeless && value <= format::bc1_unorm_srgb) || (value >= format::bc4_typeless && value <= format::bc4_snorm))
-			return  8 * ((width + 3) / 4);
+			return 8 * ((width + 3) / 4);
 		if ((value >= format::bc2_typeless && value <= format::bc2_unorm_srgb) || (value >= format::bc3_typeless && value <= format::bc3_unorm_srgb) || (value >= format::bc5_typeless && value <= format::bc7_unorm_srgb))
 			return 16 * ((width + 3) / 4);
 

@@ -28,32 +28,32 @@ namespace BSGraphics
 	{
 	public:
 		class ShadowSceneNode* pShadowSceneNode[4];
-		float                  fTimerValues[TIMER_MODE_COUNT];
-		RE::NiColorA               LoadedRange;
-		bool                   bInterior;
-		bool                   bLiteBrite;
-		bool                   CharacterLightEnabled;
-		char                   _pad0[0x51];
-		float                  fLandLOFadeSeconds;
-		float                  fInvFrameBufferRange;
-		float                  fLeafAnimDampenDistStartSPU;
-		float                  fLeafAnimDampenDistEndSPU;
-		RE::NiPoint2           kOldGridArrayCenter;
-		RE::NiPoint2               kGridArrayCenter;
-		float                  kfGriddArrayLerpStart;
-		uint32_t               uiCurrentShaderTechnique;
-		uint8_t                cSceneGraph;
-		uint32_t               usDebugMode;
-		RE::NiTransform            DirectionalAmbientTransform;
-		RE::NiColorA               AmbientSpecular;
-		RE::NiColorA               CharacterLightParams;  // { Primary, Secondary, Luminance, Max Luminance }
-		bool                   bAmbientSpecularEnabled;
-		uint32_t               uiTextureTransformCurrentBuffer;
-		uint32_t               uiTextureTransformFlipMode;
-		uint32_t               uiCameraInWaterState;
-		RE::NiBound                kCachedPlayerBound;
-		char                   _pad1[0x8];
-		float                  fWaterIntersect;
+		float fTimerValues[TIMER_MODE_COUNT];
+		RE::NiColorA LoadedRange;
+		bool bInterior;
+		bool bLiteBrite;
+		bool CharacterLightEnabled;
+		char _pad0[0x51];
+		float fLandLOFadeSeconds;
+		float fInvFrameBufferRange;
+		float fLeafAnimDampenDistStartSPU;
+		float fLeafAnimDampenDistEndSPU;
+		RE::NiPoint2 kOldGridArrayCenter;
+		RE::NiPoint2 kGridArrayCenter;
+		float kfGriddArrayLerpStart;
+		uint32_t uiCurrentShaderTechnique;
+		uint8_t cSceneGraph;
+		uint32_t usDebugMode;
+		RE::NiTransform DirectionalAmbientTransform;
+		RE::NiColorA AmbientSpecular;
+		RE::NiColorA CharacterLightParams;  // { Primary, Secondary, Luminance, Max Luminance }
+		bool bAmbientSpecularEnabled;
+		uint32_t uiTextureTransformCurrentBuffer;
+		uint32_t uiTextureTransformFlipMode;
+		uint32_t uiCameraInWaterState;
+		RE::NiBound kCachedPlayerBound;
+		char _pad1[0x8];
+		float fWaterIntersect;
 
 		static ShaderState* QInstance();
 	};
@@ -129,15 +129,15 @@ namespace BSGraphics
 
 	struct RenderTargetProperties
 	{
-		uint32_t    uiWidth;
-		uint32_t    uiHeight;
+		uint32_t uiWidth;
+		uint32_t uiHeight;
 		DXGI_FORMAT eFormat;
-		bool        bCopyable;
-		bool        bSupportUnorderedAccess;
-		bool        bAllowMipGeneration;
-		int         iMipLevel;
-		uint32_t    uiTextureTarget;
-		uint32_t    uiUnknown;
+		bool bCopyable;
+		bool bSupportUnorderedAccess;
+		bool bAllowMipGeneration;
+		int iMipLevel;
+		uint32_t uiTextureTarget;
+		uint32_t uiUnknown;
 	};
 	static_assert(sizeof(RenderTargetProperties) == 0x1C);
 
@@ -146,36 +146,36 @@ namespace BSGraphics
 		uint32_t uiWidth;
 		uint32_t uiHeight;
 		uint32_t uiArraySize;
-		bool     Unknown1;
-		bool     Stencil;
-		bool     Use16BitsDepth;
+		bool Unknown1;
+		bool Stencil;
+		bool Use16BitsDepth;
 	};
 	static_assert(sizeof(DepthStencilTargetProperties) == 0x10);
 
 	struct CubeMapRenderTargetProperties
 	{
-		uint32_t    uiWidth;
-		uint32_t    uiHeight;
+		uint32_t uiWidth;
+		uint32_t uiHeight;
 		DXGI_FORMAT eFormat;
 	};
 	static_assert(sizeof(CubeMapRenderTargetProperties) == 0xC);
 
 	struct RenderTargetData
 	{
-		ID3D11Texture2D*           Texture;
-		ID3D11Texture2D*           TextureCopy;
-		ID3D11RenderTargetView*    RTV;      // For "Texture"
-		ID3D11ShaderResourceView*  SRV;      // For "Texture"
-		ID3D11ShaderResourceView*  SRVCopy;  // For "TextureCopy"
-		ID3D11UnorderedAccessView* UAV;      // For "Texture"
+		ID3D11Texture2D* Texture;
+		ID3D11Texture2D* TextureCopy;
+		ID3D11RenderTargetView* RTV;        // For "Texture"
+		ID3D11ShaderResourceView* SRV;      // For "Texture"
+		ID3D11ShaderResourceView* SRVCopy;  // For "TextureCopy"
+		ID3D11UnorderedAccessView* UAV;     // For "Texture"
 	};
 	static_assert(sizeof(RenderTargetData) == 0x30);
 
 	struct DepthStencilData
 	{
-		ID3D11Texture2D*          Texture;
-		ID3D11DepthStencilView*   Views[8];
-		ID3D11DepthStencilView*   ReadOnlyViews[8];
+		ID3D11Texture2D* Texture;
+		ID3D11DepthStencilView* Views[8];
+		ID3D11DepthStencilView* ReadOnlyViews[8];
 		ID3D11ShaderResourceView* DepthSRV;
 		ID3D11ShaderResourceView* StencilSRV;
 	};
@@ -183,8 +183,8 @@ namespace BSGraphics
 
 	struct CubemapRenderTargetData
 	{
-		ID3D11Texture2D*          Texture;
-		ID3D11RenderTargetView*   CubeSideRTV[6];
+		ID3D11Texture2D* Texture;
+		ID3D11RenderTargetView* CubeSideRTV[6];
 		ID3D11ShaderResourceView* SRV;
 	};
 	static_assert(sizeof(CubemapRenderTargetData) == 0x40);
@@ -200,15 +200,15 @@ namespace BSGraphics
 	//
 	struct Texture
 	{
-		ID3D11Texture2D*          m_Texture;
-		char                      _pad0[0x8];
+		ID3D11Texture2D* m_Texture;
+		char _pad0[0x8];
 		ID3D11ShaderResourceView* m_ResourceView;
 	};
 
 	struct Buffer
 	{
 		ID3D11Buffer* m_Buffer;  // Selected from pool in Load*ShaderFromFile()
-		void*         m_Data;    // m_Data = DeviceContext->Map(m_Buffer)
+		void* m_Data;            // m_Data = DeviceContext->Map(m_Buffer)
 
 		// Based on shader load flags, these **can be null**. At least one of the
 		// pointers is guaranteed to be non-null.
@@ -250,9 +250,9 @@ namespace BSGraphics
 		inline static char EmptyWriteBuffer[1024];
 
 		D3D11_MAPPED_SUBRESOURCE m_Map{};
-		ID3D11Buffer*            m_Buffer = nullptr;
-		bool                     m_Unified = false;        // True if buffer is from global ring buffer
-		uint32_t                 m_UnifiedByteOffset = 0;  // Offset into ring buffer
+		ID3D11Buffer* m_Buffer = nullptr;
+		bool m_Unified = false;            // True if buffer is from global ring buffer
+		uint32_t m_UnifiedByteOffset = 0;  // Offset into ring buffer
 
 	public:
 		inline void* RawData() const
@@ -319,9 +319,9 @@ namespace BSGraphics
 #pragma warning(disable: 94)    // Intel C++ Compiler
 	struct VertexShader
 	{
-		uint32_t            m_TechniqueID;   // Bit flags
-		ID3D11VertexShader* m_Shader;        // DirectX handle
-		uint32_t            m_ShaderLength;  // Raw bytecode length
+		uint32_t m_TechniqueID;        // Bit flags
+		ID3D11VertexShader* m_Shader;  // DirectX handle
+		uint32_t m_ShaderLength;       // Raw bytecode length
 
 		union
 		{
@@ -335,17 +335,17 @@ namespace BSGraphics
 			Buffer m_ConstantGroups[CONSTANT_GROUP_LEVEL_COUNT];
 		};
 
-		uint64_t m_VertexDescription;                  // ID3D11Device::CreateInputLayout lookup (for VSMain)
-		uint8_t  m_ConstantOffsets[MAX_VS_CONSTANTS];  // Actual offset is multiplied by 4
-		uint8_t  __padding[4];
-		uint8_t  m_RawBytecode[0];  // Raw bytecode
+		uint64_t m_VertexDescription;                 // ID3D11Device::CreateInputLayout lookup (for VSMain)
+		uint8_t m_ConstantOffsets[MAX_VS_CONSTANTS];  // Actual offset is multiplied by 4
+		uint8_t __padding[4];
+		uint8_t m_RawBytecode[0];  // Raw bytecode
 	};
 	static_assert(sizeof(VertexShader) == 0x68);
 
 	struct PixelShader
 	{
-		uint32_t           m_TechniqueID;  // Bit flags
-		ID3D11PixelShader* m_Shader;       // DirectX handle
+		uint32_t m_TechniqueID;       // Bit flags
+		ID3D11PixelShader* m_Shader;  // DirectX handle
 
 		union
 		{
@@ -365,33 +365,33 @@ namespace BSGraphics
 
 	struct ComputeShader
 	{
-		char                 _pad0[0x8];
-		Buffer               m_PerTechnique;  // CONSTANT_GROUP_LEVEL_TECHNIQUE
-		char                 _pad1[0xC];
-		Buffer               m_PerMaterial;  // CONSTANT_GROUP_LEVEL_MATERIAL
-		char                 _pad2[0xC];
-		Buffer               m_PerGeometry;  // CONSTANT_GROUP_LEVEL_GEOMETRY
-		char                 _pad3[0x4];
-		ID3D11ComputeShader* m_Shader;                             // DirectX handle
-		uint32_t             m_TechniqueID;                        // Bit flags
-		uint32_t             m_ShaderLength;                       // Raw bytecode length
-		uint8_t              m_ConstantOffsets[MAX_CS_CONSTANTS];  // Actual offset is multiplied by 4
-		uint8_t              m_RawBytecode[0];                     // Raw bytecode
+		char _pad0[0x8];
+		Buffer m_PerTechnique;  // CONSTANT_GROUP_LEVEL_TECHNIQUE
+		char _pad1[0xC];
+		Buffer m_PerMaterial;  // CONSTANT_GROUP_LEVEL_MATERIAL
+		char _pad2[0xC];
+		Buffer m_PerGeometry;  // CONSTANT_GROUP_LEVEL_GEOMETRY
+		char _pad3[0x4];
+		ID3D11ComputeShader* m_Shader;                // DirectX handle
+		uint32_t m_TechniqueID;                       // Bit flags
+		uint32_t m_ShaderLength;                      // Raw bytecode length
+		uint8_t m_ConstantOffsets[MAX_CS_CONSTANTS];  // Actual offset is multiplied by 4
+		uint8_t m_RawBytecode[0];                     // Raw bytecode
 	};
 	static_assert(sizeof(ComputeShader) == 0x90, "");
 
 	// Not part of the vanilla game
 	struct HullShader
 	{
-		uint32_t          m_TechniqueID;  // Bit flags
-		ID3D11HullShader* m_Shader;       // DirectX handle
+		uint32_t m_TechniqueID;      // Bit flags
+		ID3D11HullShader* m_Shader;  // DirectX handle
 	};
 
 	// Not part of the vanilla game
 	struct DomainShader
 	{
-		uint32_t            m_TechniqueID;  // Bit flags
-		ID3D11DomainShader* m_Shader;       // DirectX handle
+		uint32_t m_TechniqueID;        // Bit flags
+		ID3D11DomainShader* m_Shader;  // DirectX handle
 	};
 
 	using VertexCGroup = ConstantGroup<VertexShader>;
@@ -405,8 +405,8 @@ namespace BSGraphics
 	{
 		ID3D11Buffer* m_VertexBuffer;
 		ID3D11Buffer* m_IndexBuffer;
-		uint64_t      m_VertexDesc;
-		uint32_t      m_RefCount;
+		uint64_t m_VertexDesc;
+		uint32_t m_RefCount;
 	};
 	static_assert(sizeof(LineShape) == 0x20);
 
@@ -421,12 +421,12 @@ namespace BSGraphics
 	{
 		ID3D11Buffer* m_VertexBuffer;
 		ID3D11Buffer* m_IndexBuffer;
-		uint64_t      m_VertexDesc;
-		uint32_t      m_VertexAllocationOffset;
-		uint32_t      m_VertexAllocationSize;
-		uint32_t      m_RefCount;
-		void*         m_RawVertexData;
-		void*         m_RawIndexData;
+		uint64_t m_VertexDesc;
+		uint32_t m_VertexAllocationOffset;
+		uint32_t m_VertexAllocationSize;
+		uint32_t m_RefCount;
+		void* m_RawVertexData;
+		void* m_RawIndexData;
 	};
 	static_assert(sizeof(DynamicTriShape) == 0x38);
 
@@ -434,7 +434,7 @@ namespace BSGraphics
 	{
 		ID3D11Buffer* m_VertexBuffer;
 		ID3D11Buffer* m_IndexBuffer;
-		uint64_t      m_VertexDesc;
+		uint64_t m_VertexDesc;
 	};
 
 	struct DynamicTriShapeDrawData
@@ -487,10 +487,10 @@ namespace BSGraphics
 		virtual void GetTechniqueName(TechniqueID Technique, char* Buffer, uint32_t BufferSize);  // 08
 		virtual void ReloadShaders(bool Unknown);                                                 // 09
 
-		std::uint32_t                 m_Type;
+		std::uint32_t m_Type;
 		TechniqueIDMap<VertexShader*> m_VertexShaderTable;
-		TechniqueIDMap<PixelShader*>  m_PixelShaderTable;
-		const char*                   m_LoaderType;
+		TechniqueIDMap<PixelShader*> m_PixelShaderTable;
+		const char* m_LoaderType;
 	};
 
 	static_assert(sizeof(BSShader) == 0x90);
@@ -502,33 +502,33 @@ namespace BSGraphics
 	class RendererWindow
 	{
 	public:
-		HWND            hWnd;
-		int             iWindowX;
-		int             iWindowY;
-		int             uiWindowWidth;
-		int             uiWindowHeight;
+		HWND hWnd;
+		int iWindowX;
+		int iWindowY;
+		int uiWindowWidth;
+		int uiWindowHeight;
 		IDXGISwapChain* pSwapChain;
-		uint32_t        SwapChainRenderTarget;
-		char            _pad0[0x2C];
+		uint32_t SwapChainRenderTarget;
+		char _pad0[0x2C];
 	};
 	static_assert(sizeof(RendererWindow) == 0x50);
 
 	class RendererData
 	{
 	public:
-		char                    _pad0[0x22];
-		bool                    bReadOnlyDepth;  // bReadOnlyStencil?
-		char                    _pad1[0x15];
-		ID3D11Device*           pDevice;
-		ID3D11DeviceContext*    pContext;
-		RendererWindow          RenderWindowA[32];
-		RenderTargetData        pRenderTargets[RENDER_TARGET_COUNT];
-		DepthStencilData        pDepthStencils[DEPTH_STENCIL_COUNT];
+		char _pad0[0x22];
+		bool bReadOnlyDepth;  // bReadOnlyStencil?
+		char _pad1[0x15];
+		ID3D11Device* pDevice;
+		ID3D11DeviceContext* pContext;
+		RendererWindow RenderWindowA[32];
+		RenderTargetData pRenderTargets[RENDER_TARGET_COUNT];
+		DepthStencilData pDepthStencils[DEPTH_STENCIL_COUNT];
 		CubemapRenderTargetData pCubemapRenderTargets[RENDER_TARGET_CUBEMAP_COUNT];
-		Texture3DTargetData     pTexture3DRenderTargets[TEXTURE3D_COUNT];
-		float                   ClearColor[4];
-		uint8_t                 ClearStencil;
-		CRITICAL_SECTION        RendererLock;
+		Texture3DTargetData pTexture3DRenderTargets[TEXTURE3D_COUNT];
+		float ClearColor[4];
+		uint8_t ClearStencil;
+		CRITICAL_SECTION RendererLock;
 	};
 
 	class RendererShadowState
@@ -554,9 +554,9 @@ namespace BSGraphics
 		D3D11_VIEWPORT m_ViewPort;
 
 		DepthStencilDepthMode m_DepthStencilDepthMode;
-		uint32_t              m_DepthStencilUnknown;
-		uint32_t              m_DepthStencilStencilMode;
-		uint32_t              m_StencilRef;
+		uint32_t m_DepthStencilUnknown;
+		uint32_t m_DepthStencilStencilMode;
+		uint32_t m_StencilRef;
 
 		uint32_t m_RasterStateFillMode;
 		uint32_t m_RasterStateCullMode;
@@ -567,31 +567,31 @@ namespace BSGraphics
 		uint32_t m_AlphaBlendAlphaToCoverage;
 		uint32_t m_AlphaBlendWriteMode;
 
-		bool  m_AlphaTestEnabled;
+		bool m_AlphaTestEnabled;
 		float m_AlphaTestRef;
 
-		uint32_t                  m_PSTextureAddressMode[16];
-		uint32_t                  m_PSTextureFilterMode[16];
+		uint32_t m_PSTextureAddressMode[16];
+		uint32_t m_PSTextureFilterMode[16];
 		ID3D11ShaderResourceView* m_PSTexture[16];
 
 		uint32_t m_CSTextureAddressMode[16];
 		uint32_t m_CSTextureFilterMode[16];
 
-		ID3D11ShaderResourceView*  m_CSTexture[16];
-		uint32_t                   m_CSTextureMinLodMode[16];
+		ID3D11ShaderResourceView* m_CSTexture[16];
+		uint32_t m_CSTextureMinLodMode[16];
 		ID3D11UnorderedAccessView* m_CSUAV[8];
 
-		uint64_t                 m_VertexDesc;
-		VertexShader*            m_CurrentVertexShader;
-		PixelShader*             m_CurrentPixelShader;
+		uint64_t m_VertexDesc;
+		VertexShader* m_CurrentVertexShader;
+		PixelShader* m_CurrentPixelShader;
 		D3D11_PRIMITIVE_TOPOLOGY m_Topology;
 
 		RE::NiPoint3 m_PosAdjust;
 		RE::NiPoint3 m_PreviousPosAdjust;
-		ViewData     m_CameraData;
+		ViewData m_CameraData;
 
 		uint32_t m_AlphaBlendModeExtra;
-		char     _pad0[0xC];
+		char _pad0[0xC];
 
 		static RendererShadowState* QInstance();
 	};
@@ -599,56 +599,54 @@ namespace BSGraphics
 	class Renderer
 	{
 	public:
-		char                    _pad0[0x10];
-		char                    _pad1[0x22];
-		bool                    bReadOnlyDepth;  // bReadOnlyStencil?
-		char                    _pad2[0x15];
-		ID3D11Device*           pDevice;
-		ID3D11DeviceContext*    pContext;
-		RendererWindow          RenderWindowA[32];
-		RenderTargetData        pRenderTargets[RENDER_TARGET_COUNT];
-		DepthStencilData        pDepthStencils[DEPTH_STENCIL_COUNT];
+		char _pad0[0x10];
+		char _pad1[0x22];
+		bool bReadOnlyDepth;  // bReadOnlyStencil?
+		char _pad2[0x15];
+		ID3D11Device* pDevice;
+		ID3D11DeviceContext* pContext;
+		RendererWindow RenderWindowA[32];
+		RenderTargetData pRenderTargets[RENDER_TARGET_COUNT];
+		DepthStencilData pDepthStencils[DEPTH_STENCIL_COUNT];
 		CubemapRenderTargetData pCubemapRenderTargets[RENDER_TARGET_CUBEMAP_COUNT];
-		Texture3DTargetData     pTexture3DRenderTargets[TEXTURE3D_COUNT];
-		float                   ClearColor[4];
-		uint8_t                 ClearStencil;
-		CRITICAL_SECTION        RendererLock;
+		Texture3DTargetData pTexture3DRenderTargets[TEXTURE3D_COUNT];
+		float ClearColor[4];
+		uint8_t ClearStencil;
+		CRITICAL_SECTION RendererLock;
 
 		static Renderer* QInstance();
 	};
-
-
 
 	class SceneState
 	{
 	public:
 		RE::ShadowSceneNode* pShadowSceneNode[4];
-		float                fTimerValues[TIMER_MODE_COUNT];
-		RE::NiColorA         LoadedRange;
-		bool                 bInterior;
-		bool                 bLiteBrite;
-		bool                 CharacterLightEnabled;
-		char                 _pad0[0x51];
-		float                fLandLOFadeSeconds;
-		float                fInvFrameBufferRange;
-		float                fLeafAnimDampenDistStartSPU;
-		float                fLeafAnimDampenDistEndSPU;
-		RE::NiPoint2         kOldGridArrayCenter;
-		RE::NiPoint2         kGridArrayCenter;
-		float                kfGriddArrayLerpStart;
-		uint32_t             uiCurrentShaderTechnique;
-		uint8_t              cSceneGraph;
-		uint32_t             usDebugMode;
-		RE::NiTransform      DirectionalAmbientTransform;
-		RE::NiColorA         AmbientSpecular;
-		RE::NiColorA         CharacterLightParams;  // { Primary, Secondary, Luminance, Max Luminance }
-		bool                 bAmbientSpecularEnabled;
-		uint32_t             uiTextureTransformCurrentBuffer;
-		uint32_t             uiTextureTransformFlipMode;
-		uint32_t             uiCameraInWaterState;
-		RE::NiBound          kCachedPlayerBound;
-		char                 _pad1[0x8];
-		float                fWaterIntersect;
+		float fTimerValues[TIMER_MODE_COUNT];
+		RE::NiColorA LoadedRange;
+		bool bInterior;
+		bool bLiteBrite;
+		bool CharacterLightEnabled;
+		char _pad0[0x51];
+		float fLandLOFadeSeconds;
+		float fInvFrameBufferRange;
+		float fLeafAnimDampenDistStartSPU;
+		float fLeafAnimDampenDistEndSPU;
+		RE::NiPoint2 kOldGridArrayCenter;
+		RE::NiPoint2 kGridArrayCenter;
+		float kfGriddArrayLerpStart;
+		uint32_t uiCurrentShaderTechnique;
+		uint8_t cSceneGraph;
+		uint32_t usDebugMode;
+		RE::NiTransform DirectionalAmbientTransform;
+		RE::NiColorA AmbientSpecular;
+		RE::NiColorA CharacterLightParams;  // { Primary, Secondary, Luminance, Max Luminance }
+		bool bAmbientSpecularEnabled;
+		uint32_t uiTextureTransformCurrentBuffer;
+		uint32_t uiTextureTransformFlipMode;
+		uint32_t uiCameraInWaterState;
+		RE::NiBound kCachedPlayerBound;
+		char _pad1[0x8];
+		float fWaterIntersect;
 
 		static SceneState* QInstance();
 	};
@@ -671,12 +669,12 @@ namespace BSGraphics
 	public:
 		virtual ~NiBackToFrontAccumulator();
 
-		char             _pad[0x18];  // NiTPointerList<BSGeometry *> m_kItems;
-		int              m_iNumItems;
-		int              m_iMaxItems;
+		char _pad[0x18];  // NiTPointerList<BSGeometry *> m_kItems;
+		int m_iNumItems;
+		int m_iMaxItems;
 		RE::BSGeometry** m_ppkItems;
-		float*           m_pfDepths;
-		int              m_iCurrItem;
+		float* m_pfDepths;
+		int m_iCurrItem;
 	};
 	static_assert(sizeof(NiBackToFrontAccumulator) == 0x50, "");
 
@@ -701,21 +699,20 @@ namespace BSGraphics
 		virtual void StartAccumulating(RE::NiCamera const*) override;
 		virtual void FinishAccumulatingDispatch(uint32_t RenderFlags);
 
-		char                   _pad1[0xD0];
-		bool                   m_1stPerson;
-		char                   _pad0[0x3];
-		bool                   m_DrawDecals;
-		RE::BSBatchRenderer*   m_BatchRenderer;
-		uint32_t               m_CurrentPass;
-		uint32_t               m_CurrentBucket;
-		bool                   m_CurrentActive;
-		char                   _pad[0x7];
+		char _pad1[0xD0];
+		bool m_1stPerson;
+		char _pad0[0x3];
+		bool m_DrawDecals;
+		RE::BSBatchRenderer* m_BatchRenderer;
+		uint32_t m_CurrentPass;
+		uint32_t m_CurrentBucket;
+		bool m_CurrentActive;
+		char _pad[0x7];
 		RE::ShadowSceneNode* m_ActiveShadowSceneNode;
-		uint32_t               m_RenderMode;
-		char                   _pad2[0x18];
-		RE::NiPoint3           m_EyePosition;
-		char                   _pad3[0x8];
+		uint32_t m_RenderMode;
+		char _pad2[0x18];
+		RE::NiPoint3 m_EyePosition;
+		char _pad3[0x8];
 	};
 	static_assert(sizeof(BSShaderAccumulator) == 0x180);
-
 }

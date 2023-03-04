@@ -145,10 +145,14 @@ namespace reshade::api
 	/// </summary>
 	struct pipeline_layout_param
 	{
-		constexpr pipeline_layout_param() : push_descriptors() {}
-		constexpr pipeline_layout_param(const constant_range &push_constants) : type(pipeline_layout_param_type::push_constants), push_constants(push_constants) {}
-		constexpr pipeline_layout_param(const descriptor_range &push_descriptors) : type(pipeline_layout_param_type::push_descriptors), push_descriptors(push_descriptors) {}
-		constexpr pipeline_layout_param(uint32_t count, const descriptor_range *ranges) : type(pipeline_layout_param_type::descriptor_set), descriptor_set({ count, ranges }) {}
+		constexpr pipeline_layout_param() :
+			push_descriptors() {}
+		constexpr pipeline_layout_param(const constant_range& push_constants) :
+			type(pipeline_layout_param_type::push_constants), push_constants(push_constants) {}
+		constexpr pipeline_layout_param(const descriptor_range& push_descriptors) :
+			type(pipeline_layout_param_type::push_descriptors), push_descriptors(push_descriptors) {}
+		constexpr pipeline_layout_param(uint32_t count, const descriptor_range* ranges) :
+			type(pipeline_layout_param_type::descriptor_set), descriptor_set({ count, ranges }) {}
 
 		/// <summary>
 		/// Type of the parameter.
@@ -173,7 +177,7 @@ namespace reshade::api
 			struct
 			{
 				uint32_t count;
-				const descriptor_range *ranges;
+				const descriptor_range* ranges;
 			} descriptor_set;
 		};
 	};
@@ -344,7 +348,7 @@ namespace reshade::api
 		/// <summary>
 		/// Shader source code or binary.
 		/// </summary>
-		const void *code = nullptr;
+		const void* code = nullptr;
 		/// <summary>
 		/// Size (in bytes) of the shader source <see cref="code"/> or binary.
 		/// </summary>
@@ -353,7 +357,7 @@ namespace reshade::api
 		/// Optional entry point name if the shader source <see cref="code"/> or binary contains multiple entry points.
 		/// Can be <see langword="nullptr"/> if it does not, or to use the default "main" entry point.
 		/// </summary>
-		const char *entry_point = nullptr;
+		const char* entry_point = nullptr;
 
 		/// <summary>
 		/// Number of entries in the <see cref="spec_constant_ids"/> and <see cref="spec_constant_values"/> arrays.
@@ -363,11 +367,11 @@ namespace reshade::api
 		/// <summary>
 		/// Pointer to an array of specialization constant indices.
 		/// </summary>
-		const uint32_t *spec_constant_ids = nullptr;
+		const uint32_t* spec_constant_ids = nullptr;
 		/// <summary>
 		/// Pointer to an array of constant values, one for each specialization constant index in <see cref="spec_constant_ids"/>.
 		/// </summary>
-		const uint32_t *spec_constant_values = nullptr;
+		const uint32_t* spec_constant_values = nullptr;
 	};
 
 	/// <summary>
@@ -382,7 +386,7 @@ namespace reshade::api
 		/// <summary>
 		/// HLSL semantic associated with this element.
 		/// </summary>
-		const char *semantic = nullptr;
+		const char* semantic = nullptr;
 		/// <summary>
 		/// Optional index for the HLSL semantic (e.g. for "TEXCOORD1" set <see cref="semantic"/> to "TEXCOORD" and <see cref="semantic_index"/> to 1).
 		/// </summary>
@@ -745,7 +749,7 @@ namespace reshade::api
 		/// Pointer to an array of sub-object descriptions (which should be as large as the specified <see cref="count"/>).
 		/// Depending on the sub-object <see cref="type"/> this should be a pointer to a <see cref="shader_desc"/>, <see cref="blend_desc"/>, <see cref="rasterizer_desc"/>, <see cref="depth_stencil_desc"/> or ...
 		/// </summary>
-		void *data = nullptr;
+		void* data = nullptr;
 	};
 
 	/// <summary>
@@ -862,7 +866,7 @@ namespace reshade::api
 		/// Pointer to an array of descriptors to update in the set (which should be as large as the specified <see cref="count"/>).
 		/// Depending on the descriptor <see cref="type"/> this should be pointer to an array of <see cref="buffer_range"/>, <see cref="resource_view"/>, <see cref="sampler"/> or <see cref="sampler_with_resource_view"/>.
 		/// </summary>
-		const void *descriptors = nullptr;
+		const void* descriptors = nullptr;
 	};
 
 	/// <summary>

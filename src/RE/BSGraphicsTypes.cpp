@@ -1,4 +1,3 @@
-
 #include "BSGraphicsTypes.h"
 
 BSGraphics::RendererShadowState* BSGraphics::RendererShadowState::QInstance()
@@ -9,7 +8,7 @@ BSGraphics::RendererShadowState* BSGraphics::RendererShadowState::QInstance()
 
 BSGraphics::Renderer* BSGraphics::Renderer::QInstance()
 {
-	static BSGraphics::Renderer* g_Renderer = (Renderer*)RELOCATION_ID(524907, 524907).address();  // no added ae address
+	static BSGraphics::Renderer* g_Renderer = (Renderer*)RELOCATION_ID(524907, 411393).address();  // no added ae address
 	return g_Renderer;
 }
 
@@ -25,14 +24,13 @@ BSGraphics::CameraStateData* BSGraphics::State::FindCameraDataCache(const RE::Ni
 
 BSGraphics::SceneState* BSGraphics::SceneState::QInstance()
 {
-	static SceneState* g_SceneState = (SceneState*)RELOCATION_ID(524907, 524907).address();  // no added ae address
+	static SceneState* g_SceneState = (SceneState*)RELOCATION_ID(524907, 411393).address();  // no added ae address
 
 	return nullptr;
 }
 
 BSGraphics::ShaderState* BSGraphics::ShaderState::QInstance()
 {
-	static ShaderState* g_ShaderState = (ShaderState*)RELOCATION_ID(513211, 513211).address();
+	static ShaderState* g_ShaderState = (ShaderState*)RELOCATION_ID(513211, 390951).address();
 	return g_ShaderState;
 }
-

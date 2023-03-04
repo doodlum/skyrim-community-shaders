@@ -16,4 +16,3 @@ public:
 	void DrawSettings();
 	void DrawOverlay();
 };
-

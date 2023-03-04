@@ -19,6 +19,7 @@ target_include_directories(
 
 find_package(magic_enum CONFIG REQUIRED)
 find_package(xbyak CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 target_link_libraries(
 	${PROJECT_NAME} 
@@ -28,4 +29,5 @@ target_link_libraries(
 		optimized ${CMAKE_CURRENT_SOURCE_DIR}/include/detours/Release/detours.lib
 		magic_enum::magic_enum
 		xbyak::xbyak
+		nlohmann_json::nlohmann_json
 )

@@ -1,0 +1,30 @@
+{
+ "General": {
+  "Enable Async": true,
+  "Enable Disk Cache": true,
+  "Enable Shaders": true
+ },
+ "Grass Lighting": {
+  "DirectionalLightDimmer": 1.0,
+  "EnableDirLightFix": true,
+  "EnablePointLights": true,
+  "Glossiness": 20.0,
+  "PointLightDimmer": 2.0,
+  "SpecularStrength": 0.5,
+  "SubsurfaceScatteringAmount": 0.5,
+  "SubsurfaceScatteringSaturation": 1.5
+ },
+ "Replace Original Shaders": {
+  "BloodSplatter": false,
+  "DistantTree": false,
+  "Effect": false,
+  "Grass": true,
+  "ImageSpace": false,
+  "Lighting": false,
+  "Particle": false,
+  "Sky": false,
+  "Utility": false,
+  "Water": false
+ },
+ "Version": "0-0-1-0"
+}

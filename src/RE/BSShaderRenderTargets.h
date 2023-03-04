@@ -309,7 +309,6 @@ static const char* DepthNames[] = {
 	"TARGET_FOCUS_NEO_DEPTH"
 };
 
-
 static const char* StencilNames[] = {
 	"TARGET_MAIN_STENCIL",
 	"TARGET_MAIN_COPY_STENCIL",

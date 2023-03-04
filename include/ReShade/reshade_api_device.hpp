@@ -186,42 +186,45 @@ namespace reshade::api
 		/// <summary>
 		/// Gets a user-defined 64-bit value from the object that was previously set via <see cref="set_private_data"/>, or zero if none associated with the specified <paramref name="guid"/> exists.
 		/// </summary>
-		virtual     void get_private_data(const uint8_t guid[16], uint64_t *data) const = 0;
+		virtual void get_private_data(const uint8_t guid[16], uint64_t* data) const = 0;
 		/// <summary>
 		/// Stores a user-defined 64-bit value in the object and associates it with the specified <paramref name="guid"/>.
 		/// </summary>
 		/// <remarks>
 		/// This function may NOT be called concurrently from multiple threads!
 		/// </remarks>
-		virtual     void set_private_data(const uint8_t guid[16], const uint64_t data)  = 0;
+		virtual void set_private_data(const uint8_t guid[16], const uint64_t data) = 0;
 
 		/// <summary>
 		/// Gets a reference to user-defined data from the object that was previously allocated via <see cref="create_private_data"/>.
 		/// </summary>
-		template <typename T> inline T &get_private_data() const
+		template <typename T>
+		inline T& get_private_data() const
 		{
 			uint64_t res;
-			get_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)), &res);
-			return *reinterpret_cast<T *>(static_cast<uintptr_t>(res));
+			get_private_data(reinterpret_cast<const uint8_t*>(&__uuidof(T)), &res);
+			return *reinterpret_cast<T*>(static_cast<uintptr_t>(res));
 		}
 		/// <summary>
 		/// Allocates user-defined data and stores it in the object.
 		/// </summary>
-		template <typename T> inline T &create_private_data()
+		template <typename T>
+		inline T& create_private_data()
 		{
 			uint64_t res = reinterpret_cast<uintptr_t>(new T());
-			set_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)),  res);
-			return *reinterpret_cast<T *>(static_cast<uintptr_t>(res));
+			set_private_data(reinterpret_cast<const uint8_t*>(&__uuidof(T)), res);
+			return *reinterpret_cast<T*>(static_cast<uintptr_t>(res));
 		}
 		/// <summary>
 		/// Frees user-defined data that was previously allocated via <see cref="create_private_data"/>.
 		/// </summary>
-		template <typename T> inline void destroy_private_data()
+		template <typename T>
+		inline void destroy_private_data()
 		{
 			uint64_t res;
-			get_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)), &res);
-			delete  reinterpret_cast<T *>(static_cast<uintptr_t>(res));
-			set_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)), 0);
+			get_private_data(reinterpret_cast<const uint8_t*>(&__uuidof(T)), &res);
+			delete reinterpret_cast<T*>(static_cast<uintptr_t>(res));
+			set_private_data(reinterpret_cast<const uint8_t*>(&__uuidof(T)), 0);
 		}
 	};
 
@@ -254,7 +257,7 @@ namespace reshade::api
 		/// <param name="desc">Description of the sampler to create.</param>
 		/// <param name="out_handle">Pointer to a variable that is set to the handle of the created sampler.</param>
 		/// <returns><see langword="true"/> if the sampler was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zero).</returns>
-		virtual bool create_sampler(const sampler_desc &desc, sampler *out_handle) = 0;
+		virtual bool create_sampler(const sampler_desc& desc, sampler* out_handle) = 0;
 		/// <summary>
 		/// Instantly destroys a sampler that was previously created via <see cref="create_sampler"/>.
 		/// </summary>
@@ -269,7 +272,7 @@ namespace reshade::api
 		/// <param name="out_handle">Pointer to a variable that is set to the handle of the created resource.</param>
 		/// <param name="shared_handle">Optional pointer to a variable of type <c>HANDLE</c> used when <see cref="resource_desc::flags"/> contains <see cref="resource_flags::shared"/>. When that variable is a <see langword="nullptr"/>, it is set to the exported shared handle of the created resource. When that variable is a valid handle, the resource is imported from that shared handle.</param>
 		/// <returns><see langword="true"/> if the resource was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zero).</returns>
-		virtual bool create_resource(const resource_desc &desc, const subresource_data *initial_data, resource_usage initial_state, resource *out_handle, void **shared_handle = nullptr) = 0;
+		virtual bool create_resource(const resource_desc& desc, const subresource_data* initial_data, resource_usage initial_state, resource* out_handle, void** shared_handle = nullptr) = 0;
 		/// <summary>
 		/// Instantly destroys a resource that was previously created via <see cref="create_resource"/> and frees its memory.
 		/// Make sure the resource is no longer in use on the GPU (via any command list that may reference it and is still being executed) before doing this and never try to destroy resources created by the application!
@@ -289,7 +292,7 @@ namespace reshade::api
 		/// <param name="desc">Description of the resource view to create.</param>
 		/// <param name="out_handle">Pointer to a variable that is set to the handle of the created resource view.</param>
 		/// <returns><see langword="true"/> if the resource view was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zero).</returns>
-		virtual bool create_resource_view(resource resource, resource_usage usage_type, const resource_view_desc &desc, resource_view *out_handle) = 0;
+		virtual bool create_resource_view(resource resource, resource_usage usage_type, const resource_view_desc& desc, resource_view* out_handle) = 0;
 		/// <summary>
 		/// Instantly destroys a resource view that was previously created via <see cref="create_resource_view"/>.
 		/// </summary>
@@ -316,7 +319,7 @@ namespace reshade::api
 		/// <param name="access">Hint on how the returned data pointer will be accessed.</param>f
 		/// <param name="out_data">Pointer to a variable that is set to a pointer to the memory of the buffer resource.</param>
 		/// <returns><see langword="true"/> if the memory of the buffer resource was successfully mapped, <see langword="false"/> otherwise (in this case <paramref name="out_data"/> is set to <see langword="nullptr"/>).</returns>
-		virtual bool map_buffer_region(resource resource, uint64_t offset, uint64_t size, map_access access, void **out_data) = 0;
+		virtual bool map_buffer_region(resource resource, uint64_t offset, uint64_t size, map_access access, void** out_data) = 0;
 		/// <summary>
 		/// Unmaps a previously mapped buffer resource.
 		/// </summary>
@@ -331,7 +334,7 @@ namespace reshade::api
 		/// <param name="access">Hint on how the returned data pointer will be accessed.</param>
 		/// <param name="out_data">Pointer to a variable that is set to a pointer to the memory of the texture resource and optionally the row and slice pitch of that data (depending on the resource type).</param>
 		/// <returns><see langword="true"/> if the memory of the texture resource was successfully mapped, <see langword="false"/> otherwise (in this case <paramref name="out_data"/> is set to <see langword="nullptr"/>).</returns>
-		virtual bool map_texture_region(resource resource, uint32_t subresource, const subresource_box *box, map_access access, subresource_data *out_data) = 0;
+		virtual bool map_texture_region(resource resource, uint32_t subresource, const subresource_box* box, map_access access, subresource_data* out_data) = 0;
 		/// <summary>
 		/// Unmaps a previously mapped texture resource.
 		/// </summary>
@@ -346,7 +349,7 @@ namespace reshade::api
 		/// <param name="resource">Buffer resource to upload to.</param>
 		/// <param name="offset">Offset (in bytes) into the buffer resource to start uploading to.</param>
 		/// <param name="size">Number of bytes to upload.</param>
-		virtual void update_buffer_region(const void *data, resource resource, uint64_t offset, uint64_t size) = 0;
+		virtual void update_buffer_region(const void* data, resource resource, uint64_t offset, uint64_t size) = 0;
 		/// <summary>
 		/// Uploads data to a texture resource.
 		/// </summary>
@@ -354,7 +357,7 @@ namespace reshade::api
 		/// <param name="resource">Texture resource to upload to.</param>
 		/// <param name="subresource">Index of the subresource to upload to (<c>level + (layer * levels)</c>).</param>
 		/// <param name="box">Optional 3D box (or <see langword="nullptr"/> to reference the entire subresource) that defines the region in the <paramref name="resource"/> to upload to.</param>
-		virtual void update_texture_region(const subresource_data &data, resource resource, uint32_t subresource, const subresource_box *box = nullptr) = 0;
+		virtual void update_texture_region(const subresource_data& data, resource resource, uint32_t subresource, const subresource_box* box = nullptr) = 0;
 
 		/// <summary>
 		/// Creates a new pipeline state object.
@@ -364,7 +367,7 @@ namespace reshade::api
 		/// <param name="subobjects">Pointer to an array of sub-objects that describe this pipeline.</param>
 		/// <param name="out_handle">Pointer to a variable that is set to the handle of the created pipeline state object.</param>
 		/// <returns><see langword="true"/> if the pipeline state object was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zero).</returns>
-		virtual bool create_pipeline(pipeline_layout layout, uint32_t subobject_count, const pipeline_subobject *subobjects, pipeline *out_handle) = 0;
+		virtual bool create_pipeline(pipeline_layout layout, uint32_t subobject_count, const pipeline_subobject* subobjects, pipeline* out_handle) = 0;
 		/// <summary>
 		/// Instantly destroys a pipeline state object that was previously created via <see cref="create_pipeline"/>.
 		/// </summary>
@@ -377,7 +380,7 @@ namespace reshade::api
 		/// <param name="params">Pointer to an array of layout parameters that describe this pipeline layout.</param>
 		/// <param name="out_handle">Pointer to a variable that is set to the handle of the created pipeline layout.</param>
 		/// <returns><see langword="true"/> if the pipeline layout was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zero).</returns>
-		virtual bool create_pipeline_layout(uint32_t param_count, const pipeline_layout_param *params, pipeline_layout *out_handle) = 0;
+		virtual bool create_pipeline_layout(uint32_t param_count, const pipeline_layout_param* params, pipeline_layout* out_handle) = 0;
 		/// <summary>
 		/// Instantly destroys a pipeline layout that was previously created via <see cref="create_pipeline_layout"/>.
 		/// </summary>
@@ -390,7 +393,7 @@ namespace reshade::api
 		/// <param name="param">Index of the pipeline layout parameter that describes the descriptor set.</param>
 		/// <param name="out_handle">Pointer to a a variable that is set to the handles of the created descriptor set.</param>
 		/// <returns><see langword="true"/> if the descriptor set was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zeroe).</returns>
-		inline  bool allocate_descriptor_set(pipeline_layout layout, uint32_t param, descriptor_set *out_handle) { return allocate_descriptor_sets(1, layout, param, out_handle); }
+		inline bool allocate_descriptor_set(pipeline_layout layout, uint32_t param, descriptor_set * out_handle) { return allocate_descriptor_sets(1, layout, param, out_handle); }
 		/// <summary>
 		/// Allocates one or more descriptor sets from an internal pool.
 		/// </summary>
@@ -399,15 +402,15 @@ namespace reshade::api
 		/// <param name="param">Index of the pipeline layout parameter that describes the descriptor set.</param>
 		/// <param name="out_handles">Pointer to an array of handles with at least <paramref name="count"/> elements that is filled with the handles of the created descriptor sets.</param>
 		/// <returns><see langword="true"/> if the descriptor sets were successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handles"/> is filled with zeroes).</returns>
-		virtual bool allocate_descriptor_sets(uint32_t count, pipeline_layout layout, uint32_t param, descriptor_set *out_handles) = 0;
+		virtual bool allocate_descriptor_sets(uint32_t count, pipeline_layout layout, uint32_t param, descriptor_set * out_handles) = 0;
 		/// <summary>
 		/// Frees adescriptor set that was previously allocated via <see cref="create_descriptor_set"/>.
 		/// </summary>
-		inline  void free_descriptor_set(descriptor_set handle) { free_descriptor_sets(1, &handle); }
+		inline void free_descriptor_set(descriptor_set handle) { free_descriptor_sets(1, &handle); }
 		/// <summary>
 		/// Frees one or more descriptor sets that were previously allocated via <see cref="create_descriptor_sets"/>.
 		/// </summary>
-		virtual void free_descriptor_sets(uint32_t count, const descriptor_set *handles) = 0;
+		virtual void free_descriptor_sets(uint32_t count, const descriptor_set* handles) = 0;
 
 		/// <summary>
 		/// Gets the offset (in descriptors) of the specified binding in the underlying descriptor pool.
@@ -417,30 +420,30 @@ namespace reshade::api
 		/// <param name="array_offset">Array index in the specified <paramref name="binding"/>.</param>
 		/// <param name="out_pool">Pointer to a variable that is set to the handle of the underlying descriptor pool the <paramref name="set"/> was allocated from.</param>
 		/// <param name="out_offset">Pointer to a variable that is set to the offset of the descriptor set in the underlying pool.</param>
-		virtual void get_descriptor_pool_offset(descriptor_set set, uint32_t binding, uint32_t array_offset, descriptor_pool *out_pool, uint32_t *out_offset) const = 0;
+		virtual void get_descriptor_pool_offset(descriptor_set set, uint32_t binding, uint32_t array_offset, descriptor_pool * out_pool, uint32_t * out_offset) const = 0;
 
 		/// <summary>
 		/// Copies the contents of a descriptor set to another descriptor set.
 		/// </summary>
 		/// <param name="copy">Descriptor set copy to process.</param>
-		inline  void copy_descriptors(const descriptor_set_copy &copy) { copy_descriptor_sets(1, &copy); }
+		inline void copy_descriptors(const descriptor_set_copy& copy) { copy_descriptor_sets(1, &copy); }
 		/// <summary>
 		/// Copies the contents between multiple descriptor sets.
 		/// </summary>
 		/// <param name="count">Number of <paramref name="copies"/> to process.</param>
 		/// <param name="copies">Pointer to an array of descriptor set copies to process.</param>
-		virtual void copy_descriptor_sets(uint32_t count, const descriptor_set_copy *copies) = 0;
+		virtual void copy_descriptor_sets(uint32_t count, const descriptor_set_copy* copies) = 0;
 		/// <summary>
 		/// Updates the contents of a descriptor set with the specified descriptors.
 		/// </summary>
 		/// <param name="update">Descriptor set update to process.</param>
-		inline  void update_descriptors(const descriptor_set_update &update) { update_descriptor_sets(1, &update); }
+		inline void update_descriptors(const descriptor_set_update& update) { update_descriptor_sets(1, &update); }
 		/// <summary>
 		/// Updates the contents of multiple descriptor sets with the specified descriptors.
 		/// </summary>
 		/// <param name="count">Number of <paramref name="updates"/> to process.</param>
 		/// <param name="updates">Pointer to an array of descriptor set updates to process.</param>
-		virtual void update_descriptor_sets(uint32_t count, const descriptor_set_update *updates) = 0;
+		virtual void update_descriptor_sets(uint32_t count, const descriptor_set_update* updates) = 0;
 
 		/// <summary>
 		/// Creates a new query pool.
@@ -449,7 +452,7 @@ namespace reshade::api
 		/// <param name="size">Number of queries to allocate in the pool.</param>
 		/// <param name="out_handle">Pointer to a variable that is set to the handle of the created query pool.</param>
 		/// <returns><see langword="true"/> if the query pool was successfully created, <see langword="false"/> otherwise (in this case <paramref name="out_handle"/> is set to zero).</returns>
-		virtual bool create_query_pool(query_type type, uint32_t size, query_pool *out_handle) = 0;
+		virtual bool create_query_pool(query_type type, uint32_t size, query_pool * out_handle) = 0;
 		/// <summary>
 		/// Instantly destroys a query pool that was previously created via <see cref="create_query_pool"/>.
 		/// </summary>
@@ -464,20 +467,20 @@ namespace reshade::api
 		/// <param name="results">Pointer to an array that is filled with the results.</param>
 		/// <param name="stride">Size (in bytes) of each element in the <paramref name="results"/> array.</param>
 		/// <returns><see langword="true"/> if the query results were successfully downloaded from the GPU, <see langword="false"/> otherwise.</returns>
-		virtual bool get_query_pool_results(query_pool pool, uint32_t first, uint32_t count, void *results, uint32_t stride) = 0;
+		virtual bool get_query_pool_results(query_pool pool, uint32_t first, uint32_t count, void* results, uint32_t stride) = 0;
 
 		/// <summary>
 		/// Associates a name with a resource, for easier debugging in external tools.
 		/// </summary>
 		/// <param name="handle">Resource to associate a name with.</param>
 		/// <param name="name">Null-terminated name string.</param>
-		virtual void set_resource_name(resource handle, const char *name) = 0;
+		virtual void set_resource_name(resource handle, const char* name) = 0;
 		/// <summary>
 		/// Associates a name with a resource view, for easier debugging in external tools.
 		/// </summary>
 		/// <param name="handle">Resource view to associate a name with.</param>
 		/// <param name="name">Null-terminated name string.</param>
-		virtual void set_resource_view_name(resource_view handle, const char *name) = 0;
+		virtual void set_resource_view_name(resource_view handle, const char* name) = 0;
 	};
 
 	/// <summary>
@@ -488,7 +491,7 @@ namespace reshade::api
 		/// <summary>
 		/// Gets the parent device for this object.
 		/// </summary>
-		virtual device *get_device() = 0;
+		virtual device* get_device() = 0;
 	};
 
 	/// <summary>
@@ -518,7 +521,7 @@ namespace reshade::api
 		/// <param name="resource">Resource to transition.</param>
 		/// <param name="old_state">Usage flags describing how the <paramref name="resource"/> was used before this barrier.</param>
 		/// <param name="new_state">Usage flags describing how the <paramref name="resource"/> will be used after this barrier.</param>
-		inline  void barrier(resource resource, resource_usage old_state, resource_usage new_state) { barrier(1, &resource, &old_state, &new_state); }
+		inline void barrier(resource resource, resource_usage old_state, resource_usage new_state) { barrier(1, &resource, &old_state, &new_state); }
 		/// <summary>
 		/// Adds a barrier for the specified <paramref name="resources"/> to the command stream.
 		/// </summary>
@@ -526,7 +529,7 @@ namespace reshade::api
 		/// <param name="resources">Pointer to an array of resources to transition.</param>
 		/// <param name="old_states">Pointer to an array of usage flags describing how the <paramref name="resources"/> were used before this barrier.</param>
 		/// <param name="new_states">Pointer to an array of usage flags describing how the <paramref name="resources"/> will be used after this barrier.</param>
-		virtual void barrier(uint32_t count, const resource *resources, const resource_usage *old_states, const resource_usage *new_states) = 0;
+		virtual void barrier(uint32_t count, const resource* resources, const resource_usage* old_states, const resource_usage* new_states) = 0;
 
 		/// <summary>
 		/// Begins a render pass and binds render target and depth-stencil resource views.
@@ -534,7 +537,7 @@ namespace reshade::api
 		/// <param name="count">Number of render target views to bind.</param>
 		/// <param name="rts">Pointer to an array of render target descriptions.</param>
 		/// <param name="ds">Optional pointer to a depth-stencil description, or <see langword="nullptr"/> to bind none.</param>
-		virtual void begin_render_pass(uint32_t count, const render_pass_render_target_desc *rts, const render_pass_depth_stencil_desc *ds = nullptr) = 0;
+		virtual void begin_render_pass(uint32_t count, const render_pass_render_target_desc* rts, const render_pass_depth_stencil_desc* ds = nullptr) = 0;
 		/// <summary>
 		/// Ends a render pass.
 		/// This must be preceeded by a call to <see cref="begin_render_pass"/>.
@@ -549,7 +552,7 @@ namespace reshade::api
 		/// <param name="count">Number of render target views to bind.</param>
 		/// <param name="rtvs">Pointer to an array of render target views to bind.</param>
 		/// <param name="dsv">Depth-stencil view to bind, or zero to bind none.</param>
-		virtual void bind_render_targets_and_depth_stencil(uint32_t count, const resource_view *rtvs, resource_view dsv = { 0 }) = 0;
+		virtual void bind_render_targets_and_depth_stencil(uint32_t count, const resource_view* rtvs, resource_view dsv = { 0 }) = 0;
 
 		/// <summary>
 		/// Binds a pipeline state object.
@@ -563,7 +566,7 @@ namespace reshade::api
 		/// </summary>
 		/// <param name="state">Pipeline state to update.</param>
 		/// <param name="value">Value to update the pipeline state to.</param>
-		inline  void bind_pipeline_state(dynamic_state state, uint32_t value) { bind_pipeline_states(1, &state, &value); }
+		inline void bind_pipeline_state(dynamic_state state, uint32_t value) { bind_pipeline_states(1, &state, &value); }
 		/// <summary>
 		/// Updates the specfified pipeline <paramref name="states"/> to the specified <paramref name="values"/>.
 		/// This is only valid for states that have been listed in the dynamic states provided at creation of the currently bound pipeline state object (<see cref="pipeline_subobject_type::dynamic_pipeline_states"/>).
@@ -571,7 +574,7 @@ namespace reshade::api
 		/// <param name="count">Number of pipeline states to update.</param>
 		/// <param name="states">Pointer to an array of pipeline states to update.</param>
 		/// <param name="values">Pointer to an array of values to update the pipeline states to, with one for each state in <paramref name="states"/>.</param>
-		virtual void bind_pipeline_states(uint32_t count, const dynamic_state *states, const uint32_t *values) = 0;
+		virtual void bind_pipeline_states(uint32_t count, const dynamic_state* states, const uint32_t* values) = 0;
 		/// <summary>
 		/// Binds an array of viewports to the rasterizer stage.
 		/// </summary>
@@ -579,7 +582,7 @@ namespace reshade::api
 		/// <param name="first">Index of the first viewport to bind. In D3D9, D3D10, D3D11 and D3D12 this has to be 0.</param>
 		/// <param name="count">Number of viewports to bind.</param>
 		/// <param name="viewports">Pointer to an array of viewports.</param>
-		virtual void bind_viewports(uint32_t first, uint32_t count, const viewport *viewports) = 0;
+		virtual void bind_viewports(uint32_t first, uint32_t count, const viewport* viewports) = 0;
 		/// <summary>
 		/// Binds an array of scissor rectangles to the rasterizer stage.
 		/// </summary>
@@ -587,7 +590,7 @@ namespace reshade::api
 		/// <param name="first">Index of the first scissor rectangle to bind. In D3D9, D3D10, D3D11 and D3D12 this has to be 0.</param>
 		/// <param name="count">Number of scissor rectangles to bind.</param>
 		/// <param name="rects">Pointer to an array of scissor rectangles.</param>
-		virtual void bind_scissor_rects(uint32_t first, uint32_t count, const rect *rects) = 0;
+		virtual void bind_scissor_rects(uint32_t first, uint32_t count, const rect* rects) = 0;
 
 		/// <summary>
 		/// Directly updates constant values in the specified shader pipeline stages.
@@ -600,7 +603,7 @@ namespace reshade::api
 		/// <param name="first">Start offset (in 32-bit values) to the first constant in the constant range to begin updating.</param>
 		/// <param name="count">Number of 32-bit values to update.</param>
 		/// <param name="values">Pointer to an array of 32-bit values to set the constants to. These can be floating-point, integer or boolean depending on what the shader is expecting.</param>
-		virtual void push_constants(shader_stage stages, pipeline_layout layout, uint32_t param, uint32_t first, uint32_t count, const void *values) = 0;
+		virtual void push_constants(shader_stage stages, pipeline_layout layout, uint32_t param, uint32_t first, uint32_t count, const void* values) = 0;
 		/// <summary>
 		/// Directly binds a temporary descriptor set for the specfified shader pipeline stage and updates with an array of descriptors.
 		/// </summary>
@@ -609,7 +612,7 @@ namespace reshade::api
 		/// <param name="layout">Pipeline layout that describes the descriptors.</param>
 		/// <param name="param">Layout parameter index of the descriptor set in the pipeline <paramref name="layout"/> (root parameter index in D3D12, descriptor set index in Vulkan).</param>
 		/// <param name="update">Range of descriptors to update in the temporary set (<see cref="descriptor_set_update::set"/> is ignored).</param>
-		virtual void push_descriptors(shader_stage stages, pipeline_layout layout, uint32_t param, const descriptor_set_update &update) = 0;
+		virtual void push_descriptors(shader_stage stages, pipeline_layout layout, uint32_t param, const descriptor_set_update& update) = 0;
 		/// <summary>
 		/// Binds a single descriptor set.
 		/// </summary>
@@ -617,7 +620,7 @@ namespace reshade::api
 		/// <param name="layout">Pipeline layout that describes the descriptors.</param>
 		/// <param name="param">Index of the pipeline <paramref name="layout"/> parameter that describes the descriptor set (root parameter index in D3D12, descriptor set index in Vulkan).</param>
 		/// <param name="set">Descriptor set to bind.</param>
-		inline  void bind_descriptor_set(shader_stage stages, pipeline_layout layout, uint32_t param, descriptor_set set) { bind_descriptor_sets(stages, layout, param, 1, &set); }
+		inline void bind_descriptor_set(shader_stage stages, pipeline_layout layout, uint32_t param, descriptor_set set) { bind_descriptor_sets(stages, layout, param, 1, &set); }
 		/// <summary>
 		/// Binds an array of descriptor sets.
 		/// </summary>
@@ -626,7 +629,7 @@ namespace reshade::api
 		/// <param name="first">Index of the first pipeline <paramref name="layout"/> parameter that describes the first descriptor set to bind.</param>
 		/// <param name="count">Number of descriptor sets to bind.</param>
 		/// <param name="sets">Pointer to an array of descriptor sets to bind.</param>
-		virtual void bind_descriptor_sets(shader_stage stages, pipeline_layout layout, uint32_t first, uint32_t count, const descriptor_set *sets) = 0;
+		virtual void bind_descriptor_sets(shader_stage stages, pipeline_layout layout, uint32_t first, uint32_t count, const descriptor_set* sets) = 0;
 
 		/// <summary>
 		/// Binds an index buffer to the input-assembler stage.
@@ -642,7 +645,7 @@ namespace reshade::api
 		/// <param name="buffer">Vertex buffer resource. This resources must have been created with the <see cref="resource_usage::vertex_buffer"/> usage.</param>
 		/// <param name="offset">Offset (in bytes) from the start of the vertex buffer to the first vertex element to use.</param>
 		/// <param name="stride">Size (in bytes) of the vertex element that will be used from the vertex buffer (is added to an element offset to advance to the next).</param>
-		inline  void bind_vertex_buffer(uint32_t index, resource buffer, uint64_t offset, uint32_t stride) { bind_vertex_buffers(index, 1, &buffer, &offset, &stride); }
+		inline void bind_vertex_buffer(uint32_t index, resource buffer, uint64_t offset, uint32_t stride) { bind_vertex_buffers(index, 1, &buffer, &offset, &stride); }
 		/// <summary>
 		/// Binds an array of vertex buffers to the input-assembler stage.
 		/// </summary>
@@ -651,7 +654,7 @@ namespace reshade::api
 		/// <param name="buffers">Pointer to an array of vertex buffer resources. These resources must have been created with the <see cref="resource_usage::vertex_buffer"/> usage.</param>
 		/// <param name="offsets">Pointer to an array of offset values, one for each buffer. Each offset is the number of bytes from the start of the vertex buffer to the first vertex element to use.</param>
 		/// <param name="strides">Pointer to an array of stride values, one for each buffer. Each stride is the size (in bytes) of the vertex element that will be used from that vertex buffer (is added to an element offset to advance to the next).</param>
-		virtual void bind_vertex_buffers(uint32_t first, uint32_t count, const resource *buffers, const uint64_t *offsets, const uint32_t *strides) = 0;
+		virtual void bind_vertex_buffers(uint32_t first, uint32_t count, const resource* buffers, const uint64_t* offsets, const uint32_t* strides) = 0;
 
 		/// <summary>
 		/// Binds an array of buffers to the stream-output stage.
@@ -661,7 +664,7 @@ namespace reshade::api
 		/// <param name="buffers">Pointer to an array of buffer resources. These resources must have been created with the <see cref="resource_usage::stream_output"/> usage.</param>
 		/// <param name="offsets">Pointer to an array of offset values, one for each buffer. Each offset is the number of bytes from the start of the buffer to the first element to write to.</param>
 		/// <param name="max_sizes">Optional pointer to an array of size values, one for each buffer. Can be <see langword="nullptr"/> or have elements set to UINT64_MAX to use the entire buffer.</param>
-		virtual void bind_stream_output_buffers(uint32_t first, uint32_t count, const api::resource *buffers, const uint64_t *offsets, const uint64_t *max_sizes) = 0;
+		virtual void bind_stream_output_buffers(uint32_t first, uint32_t count, const api::resource* buffers, const uint64_t* offsets, const uint64_t* max_sizes) = 0;
 
 		/// <summary>
 		/// Draws non-indexed primitives.
@@ -740,7 +743,7 @@ namespace reshade::api
 		/// <param name="dest">Texture resource to copy to.</param>
 		/// <param name="dest_subresource">Index of the subresource of the <paramref name="dest"/>ination texture to copy to.</param>
 		/// <param name="dest_box">Optional 3D box (or <see langword="nullptr"/> to reference the entire subresource) that defines the region in the <paramref name="dest"/>ination texture to copy to.</param>
-		virtual void copy_buffer_to_texture(resource source, uint64_t source_offset, uint32_t row_length, uint32_t slice_height, resource dest, uint32_t dest_subresource, const subresource_box *dest_box = nullptr) = 0;
+		virtual void copy_buffer_to_texture(resource source, uint64_t source_offset, uint32_t row_length, uint32_t slice_height, resource dest, uint32_t dest_subresource, const subresource_box* dest_box = nullptr) = 0;
 		/// <summary>
 		/// Copies or blits a texture region from the <paramref name="source"/> texture to the <paramref name="dest"/>ination texture.
 		/// </summary>
@@ -756,7 +759,7 @@ namespace reshade::api
 		/// <param name="dest_subresource">Index of the subresource of the <paramref name="dest"/>ination texture to copy to.</param>
 		/// <param name="dest_box">Optional 3D box (or <see langword="nullptr"/> to reference the entire subresource) that defines the region in the <paramref name="dest"/>ination texture to blit to.</param>
 		/// <param name="filter">Filter to apply when copy requires scaling.</param>
-		virtual void copy_texture_region(resource source, uint32_t source_subresource, const subresource_box *source_box, resource dest, uint32_t dest_subresource, const subresource_box *dest_box, filter_mode filter = filter_mode::min_mag_mip_point) = 0;
+		virtual void copy_texture_region(resource source, uint32_t source_subresource, const subresource_box* source_box, resource dest, uint32_t dest_subresource, const subresource_box* dest_box, filter_mode filter = filter_mode::min_mag_mip_point) = 0;
 		/// <summary>
 		/// Copies a texture region from the <paramref name="source"/> texture to the <paramref name="dest"/>ination buffer.
 		/// </summary>
@@ -772,7 +775,7 @@ namespace reshade::api
 		/// <param name="dest_offset">Offset (in bytes) into the <paramref name="dest"/>ination buffer to start copying to.</param>
 		/// <param name="row_length">Number of pixels from one row to the next (in the buffer), or zero if data is tightly packed.</param>
 		/// <param name="slice_height">Number of rows from one slice to the next (in the buffer), or zero if data is tightly packed.</param>
-		virtual void copy_texture_to_buffer(resource source, uint32_t source_subresource, const subresource_box *source_box, resource dest, uint64_t dest_offset, uint32_t row_length = 0, uint32_t slice_height = 0) = 0;
+		virtual void copy_texture_to_buffer(resource source, uint32_t source_subresource, const subresource_box* source_box, resource dest, uint64_t dest_offset, uint32_t row_length = 0, uint32_t slice_height = 0) = 0;
 		/// <summary>
 		/// Copies a region from the multisampled <paramref name="source"/> texture to the non-multisampled <paramref name="dest"/>ination texture.
 		/// </summary>
@@ -790,7 +793,7 @@ namespace reshade::api
 		/// <param name="dest_y">Optional Y offset (in texels) that defines the region in the <paramref name="dest"/>ination texture to resolve to.</param>
 		/// <param name="dest_z">Optional Z offset (in texels) that defines the region in the <paramref name="dest"/>ination texture to resolve to.</param>
 		/// <param name="format">Format of the resource data.</param>
-		virtual void resolve_texture_region(resource source, uint32_t source_subresource, const subresource_box *source_box, resource dest, uint32_t dest_subresource, int32_t dest_x, int32_t dest_y, int32_t dest_z, format format) = 0;
+		virtual void resolve_texture_region(resource source, uint32_t source_subresource, const subresource_box* source_box, resource dest, uint32_t dest_subresource, int32_t dest_x, int32_t dest_y, int32_t dest_z, format format) = 0;
 
 		/// <summary>
 		/// Clears the resource referenced by the depth-stencil view.
@@ -803,7 +806,7 @@ namespace reshade::api
 		/// <param name="stencil">Optional value to clear the stencil buffer with.</param>
 		/// <param name="rect_count">Number of rectangles to clear in the depth-stencil resource, or zero to clear the whole resource.</param>
 		/// <param name="rects">Pointer to an array of rectangles.</param>
-		virtual void clear_depth_stencil_view(resource_view dsv, const float *depth, const uint8_t *stencil, uint32_t rect_count = 0, const rect *rects = nullptr) = 0;
+		virtual void clear_depth_stencil_view(resource_view dsv, const float* depth, const uint8_t* stencil, uint32_t rect_count = 0, const rect* rects = nullptr) = 0;
 		/// <summary>
 		/// Clears the resource referenced by the render target view.
 		/// </summary>
@@ -814,7 +817,7 @@ namespace reshade::api
 		/// <param name="color">Value to clear the resource with.</param>
 		/// <param name="rect_count">Number of rectangles to clear in the render target resource, or zero to clear the whole resource.</param>
 		/// <param name="rects">Pointer to an array of rectangles.</param>
-		virtual void clear_render_target_view(resource_view rtv, const float color[4], uint32_t rect_count = 0, const rect *rects = nullptr) = 0;
+		virtual void clear_render_target_view(resource_view rtv, const float color[4], uint32_t rect_count = 0, const rect* rects = nullptr) = 0;
 		/// <summary>
 		/// Clears the resource referenced by the unordered access view.
 		/// </summary>
@@ -825,7 +828,7 @@ namespace reshade::api
 		/// <param name="values">Value to clear the resource with.</param>
 		/// <param name="rect_count">Number of rectangles to clear in the unordered access resource, or zero to clear the whole resource.</param>
 		/// <param name="rects">Pointer to an array of rectangles.</param>
-		virtual void clear_unordered_access_view_uint(resource_view uav, const uint32_t values[4], uint32_t rect_count = 0, const rect *rects = nullptr) = 0;
+		virtual void clear_unordered_access_view_uint(resource_view uav, const uint32_t values[4], uint32_t rect_count = 0, const rect* rects = nullptr) = 0;
 		/// <summary>
 		/// Clears the resource referenced by the unordered access view.
 		/// </summary>
@@ -836,7 +839,7 @@ namespace reshade::api
 		/// <param name="values">Value to clear the resource with.</param>
 		/// <param name="rect_count">Number of rectangles to clear in the unordered access resource, or zero to clear the whole resource.</param>
 		/// <param name="rects">Pointer to an array of rectangles.</param>
-		virtual void clear_unordered_access_view_float(resource_view uav, const   float values[4], uint32_t rect_count = 0, const rect *rects = nullptr) = 0;
+		virtual void clear_unordered_access_view_float(resource_view uav, const float values[4], uint32_t rect_count = 0, const rect* rects = nullptr) = 0;
 
 		/// <summary>
 		/// Generates the lower mipmap levels for the specified shader resource view.
@@ -884,7 +887,7 @@ namespace reshade::api
 		/// </summary>
 		/// <param name="label">Null-terminated string containing the label of the event.</param>
 		/// <param name="color">Optional RGBA color value associated with the event.</param>
-		virtual void begin_debug_event(const char *label, const float color[4] = nullptr) = 0;
+		virtual void begin_debug_event(const char* label, const float color[4] = nullptr) = 0;
 		/// <summary>
 		/// Closes the current debug event region (the last one opened with <see cref="begin_debug_event"/>).
 		/// </summary>
@@ -894,7 +897,7 @@ namespace reshade::api
 		/// </summary>
 		/// <param name="label">Null-terminated string containing the label of the debug marker.</param>
 		/// <param name="color">Optional RGBA color value associated with the debug marker.</param>
-		virtual void insert_debug_marker(const char *label, const float color[4] = nullptr) = 0;
+		virtual void insert_debug_marker(const char* label, const float color[4] = nullptr) = 0;
 	};
 
 	/// <summary>
@@ -938,14 +941,14 @@ namespace reshade::api
 		/// Gets a special command list, on which all issued commands are executed as soon as possible (or right before the application executes its next command list on this queue).
 		/// This only exists on command queues that contain the <see cref="command_queue_type::graphics"/> flag, on other queues <see langword="nullptr"/> is returned.
 		/// </summary>
-		virtual command_list *get_immediate_command_list() = 0;
+		virtual command_list* get_immediate_command_list() = 0;
 
 		/// <summary>
 		/// Opens a debug event region in the command queue.
 		/// </summary>
 		/// <param name="label">Null-terminated string containing the label of the event.</param>
 		/// <param name="color">Optional RGBA color value associated with the event.</param>
-		virtual void begin_debug_event(const char *label, const float color[4] = nullptr) = 0;
+		virtual void begin_debug_event(const char* label, const float color[4] = nullptr) = 0;
 		/// <summary>
 		/// Closes the current debug event region (the last one opened with <see cref="begin_debug_event"/>).
 		/// </summary>
@@ -955,7 +958,7 @@ namespace reshade::api
 		/// </summary>
 		/// <param name="label">Null-terminated string containing the label of the debug marker.</param>
 		/// <param name="color">Optional RGBA color value associated with the debug marker.</param>
-		virtual void insert_debug_marker(const char *label, const float color[4] = nullptr) = 0;
+		virtual void insert_debug_marker(const char* label, const float color[4] = nullptr) = 0;
 	};
 
 	/// <summary>
@@ -988,7 +991,7 @@ namespace reshade::api
 		/// <summary>
 		/// Gets the window handle of the window this swap chain was created with, or <see langword="nullptr"/> if this is an offscreen swap chain.
 		/// </summary>
-		virtual   void * get_hwnd() const = 0;
+		virtual void* get_hwnd() const = 0;
 
 		/// <summary>
 		/// Gets the back buffer resource at the specified <paramref name="index"/> in this swap chain.
@@ -1004,7 +1007,7 @@ namespace reshade::api
 		/// <summary>
 		/// Gets the current back buffer resource.
 		/// </summary>
-		inline  resource get_current_back_buffer() { return get_back_buffer(get_current_back_buffer_index()); }
+		inline resource get_current_back_buffer() { return get_back_buffer(get_current_back_buffer_index()); }
 		/// <summary>
 		/// Gets the index of the back buffer resource that can currently be rendered into.
 		/// </summary>

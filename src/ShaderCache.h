@@ -3,8 +3,8 @@
 #include <RE/B/BSShader.h>
 
 #include <condition_variable>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace SIE
 {
@@ -55,6 +55,7 @@ namespace SIE
 		std::atomic<uint64_t> completedTasks = 0;
 		std::atomic<uint64_t> totalTasks = 0;
 		std::mutex mutex;
+
 	private:
 		std::unordered_set<ShaderCompilationTask> availableTasks;
 		std::unordered_set<ShaderCompilationTask> tasksInProgress;
@@ -72,14 +73,14 @@ namespace SIE
 
 		bool IsEnabled() const;
 		void SetEnabled(bool value);
-		bool IsEnabledForClass(ShaderClass shaderClass) const;
-		void SetEnabledForClass(ShaderClass shaderClass, bool value);
 		bool IsAsync() const;
 		void SetAsync(bool value);
 
 		bool IsDiskCache() const;
 		void SetDiskCache(bool value);
 		void DeleteDiskCache();
+		void ValidateDiskCache();
+		void WriteDiskCacheInfo();
 
 		void Clear();
 
@@ -110,18 +111,11 @@ namespace SIE
 
 		bool isEnabled = false;
 		bool isDiskCache = false;
-
-		uint32_t disabledClasses = 0;
-
 		bool isAsync = true;
+
 		std::vector<std::jthread> compilationThreads;
 		std::mutex vertexShadersMutex;
 		std::mutex pixelShadersMutex;
 		CompilationSet compilationSet;
-
-		RE::BSShader* currentShader = nullptr;
-		uint32_t currentDescriptor = 0;
-
-
 	};
 }

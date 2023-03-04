@@ -2,9 +2,10 @@
 #include "ShaderCache.h"
 
 #define IMGUI_DISABLE_INCLUDE_IMCONFIG_H
+#include "Menu.h"
 #include "imgui.h"
 #include "reshade/reshade.hpp"
-#include "Menu.h"
+#include "State.h"
 
 extern "C" DLLEXPORT const char* NAME = "Skyrim Community Shaders";
 extern "C" DLLEXPORT const char* DESCRIPTION = "";
@@ -13,35 +14,64 @@ HMODULE m_hModule;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID)
 {
-	if (dwReason == DLL_PROCESS_ATTACH) m_hModule = hModule;
+	if (dwReason == DLL_PROCESS_ATTACH)
+		m_hModule = hModule;
 	return TRUE;
 }
 
 void DrawSettingsCallback(reshade::api::effect_runtime*)
 {
-	Menu::GetSingleton()->Draw();
+	Menu::GetSingleton()->DrawSettings();
 }
 
-namespace D3D11 {
-	void PatchD3D11();
+void DrawOverlayCallback(reshade::api::effect_runtime*)
+{
+	Menu::GetSingleton()->DrawOverlay();
+}
+
+void MessageHandler(SKSE::MessagingInterface::Message* message)
+{
+	switch (message->type) {
+	case SKSE::MessagingInterface::kNewGame:
+	case SKSE::MessagingInterface::kPostLoadGame:
+		{
+			auto& shaderCache = SIE::ShaderCache::Instance();
+
+			while (shaderCache.GetCompletedTasks() != shaderCache.GetTotalTasks()) {
+				std::this_thread::sleep_for(100ms);
+			}
+
+			if (shaderCache.IsDiskCache()) {
+				shaderCache.WriteDiskCacheInfo();
+			}
+
+			break;
+		}
+	}
 }
 
 bool Load()
 {
-	Hooks::Install();
-	D3D11::PatchD3D11();
+	auto messaging = SKSE::GetMessagingInterface();
+	messaging->RegisterListener("SKSE", MessageHandler);
 
-	SIE::ShaderCache::Instance().SetAsync(true);
-	SIE::ShaderCache::Instance().SetEnabled(true);
-	SIE::ShaderCache::Instance().SetEnabledForClass(SIE::ShaderClass::Compute, true);
-	SIE::ShaderCache::Instance().SetEnabledForClass(SIE::ShaderClass::Pixel, true);
-	SIE::ShaderCache::Instance().SetEnabledForClass(SIE::ShaderClass::Vertex, true);
-	
+	Hooks::Install();
+
+	auto& shaderCache = SIE::ShaderCache::Instance();
+
+	shaderCache.ValidateDiskCache();
+
+	shaderCache.SetEnabled(true);
+	shaderCache.SetAsync(true);
+	shaderCache.SetDiskCache(true);
+
+	State::GetSingleton()->Load();
+
 	if (reshade::register_addon(m_hModule)) {
 		logger::info("Registered addon");
 		reshade::register_overlay(nullptr, DrawSettingsCallback);
-	}
-	else {
+		reshade::register_event<reshade::addon_event::reshade_overlay>(DrawOverlayCallback);
+	} else {
 		logger::info("ReShade not present");
 	}
 

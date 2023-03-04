@@ -5,23 +5,26 @@
 
 #pragma once
 
-#define RESHADE_DEFINE_HANDLE(name) \
-	typedef struct { uint64_t handle; } name; \
-	constexpr bool operator< (name lhs, name rhs) { return lhs.handle < rhs.handle; } \
+#define RESHADE_DEFINE_HANDLE(name)                                                    \
+	typedef struct                                                                     \
+	{                                                                                  \
+		uint64_t handle;                                                               \
+	} name;                                                                            \
+	constexpr bool operator<(name lhs, name rhs) { return lhs.handle < rhs.handle; }   \
 	constexpr bool operator!=(name lhs, name rhs) { return lhs.handle != rhs.handle; } \
-	constexpr bool operator!=(name lhs, uint64_t rhs) { return lhs.handle != rhs; } \
+	constexpr bool operator!=(name lhs, uint64_t rhs) { return lhs.handle != rhs; }    \
 	constexpr bool operator==(name lhs, name rhs) { return lhs.handle == rhs.handle; } \
 	constexpr bool operator==(name lhs, uint64_t rhs) { return lhs.handle == rhs; }
 
-#define RESHADE_DEFINE_ENUM_FLAG_OPERATORS(type) \
-	constexpr type operator~(type a) { return static_cast<type>(~static_cast<uint32_t>(a)); } \
-	inline type &operator&=(type &a, type b) { return reinterpret_cast<type &>(reinterpret_cast<uint32_t &>(a) &= static_cast<uint32_t>(b)); } \
-	constexpr type operator&(type a, type b) { return static_cast<type>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); } \
-	inline type &operator|=(type &a, type b) { return reinterpret_cast<type &>(reinterpret_cast<uint32_t &>(a) |= static_cast<uint32_t>(b)); } \
-	constexpr type operator|(type a, type b) { return static_cast<type>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); } \
-	inline type &operator^=(type &a, type b) { return reinterpret_cast<type &>(reinterpret_cast<uint32_t &>(a) ^= static_cast<uint32_t>(b)); } \
-	constexpr type operator^(type a, type b) { return static_cast<type>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); } \
-	constexpr bool operator==(type lhs, uint32_t rhs) { return static_cast<uint32_t>(lhs) == rhs; } \
+#define RESHADE_DEFINE_ENUM_FLAG_OPERATORS(type)                                                                                             \
+	constexpr type operator~(type a) { return static_cast<type>(~static_cast<uint32_t>(a)); }                                                \
+	inline type& operator&=(type& a, type b) { return reinterpret_cast<type&>(reinterpret_cast<uint32_t&>(a) &= static_cast<uint32_t>(b)); } \
+	constexpr type operator&(type a, type b) { return static_cast<type>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b)); }              \
+	inline type& operator|=(type& a, type b) { return reinterpret_cast<type&>(reinterpret_cast<uint32_t&>(a) |= static_cast<uint32_t>(b)); } \
+	constexpr type operator|(type a, type b) { return static_cast<type>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b)); }              \
+	inline type& operator^=(type& a, type b) { return reinterpret_cast<type&>(reinterpret_cast<uint32_t&>(a) ^= static_cast<uint32_t>(b)); } \
+	constexpr type operator^(type a, type b) { return static_cast<type>(static_cast<uint32_t>(a) ^ static_cast<uint32_t>(b)); }              \
+	constexpr bool operator==(type lhs, uint32_t rhs) { return static_cast<uint32_t>(lhs) == rhs; }                                          \
 	constexpr bool operator!=(type lhs, uint32_t rhs) { return static_cast<uint32_t>(lhs) != rhs; }
 
 #include "reshade_api_format.hpp"
@@ -149,7 +152,7 @@ namespace reshade::api
 	/// </summary>
 	enum class memory_heap : uint32_t
 	{
-		unknown, // Usually indicates a resource that is reserved, but not yet bound to any memory.
+		unknown,  // Usually indicates a resource that is reserved, but not yet bound to any memory.
 		gpu_only,
 		// Upload heap
 		cpu_to_gpu,
@@ -170,7 +173,7 @@ namespace reshade::api
 		texture_1d,
 		texture_2d,
 		texture_3d,
-		surface // Special type for resources that are implicitly both resource and render target view.
+		surface  // Special type for resources that are implicitly both resource and render target view.
 	};
 
 	/// <summary>
@@ -230,7 +233,8 @@ namespace reshade::api
 	/// </summary>
 	struct resource_desc
 	{
-		constexpr resource_desc() : texture() {}
+		constexpr resource_desc() :
+			texture() {}
 		constexpr resource_desc(uint64_t size, memory_heap heap, resource_usage usage) :
 			type(resource_type::buffer), buffer({ size }), heap(heap), usage(usage) {}
 		constexpr resource_desc(uint32_t width, uint32_t height, uint16_t layers, uint16_t levels, format format, uint16_t samples, memory_heap heap, resource_usage usage, resource_flags flags = resource_flags::none) :
@@ -285,7 +289,7 @@ namespace reshade::api
 				/// <summary>
 				/// Data format of each texel in the texture.
 				/// </summary>
-				format   format = format::unknown;
+				format format = format::unknown;
 				/// <summary>
 				/// The number of samples per texel. Set to a value higher than 1 for multisampling.
 				/// </summary>
@@ -337,14 +341,16 @@ namespace reshade::api
 	/// </summary>
 	struct resource_view_desc
 	{
-		constexpr resource_view_desc() : texture() {}
+		constexpr resource_view_desc() :
+			texture() {}
 		constexpr resource_view_desc(format format, uint64_t offset, uint64_t size) :
 			type(resource_view_type::buffer), format(format), buffer({ offset, size }) {}
 		constexpr resource_view_desc(format format, uint32_t first_level, uint32_t levels, uint32_t first_layer, uint32_t layers) :
 			type(resource_view_type::texture_2d), format(format), texture({ first_level, levels, first_layer, layers }) {}
 		constexpr resource_view_desc(resource_view_type type, format format, uint32_t first_level, uint32_t levels, uint32_t first_layer, uint32_t layers) :
 			type(type), format(format), texture({ first_level, levels, first_layer, layers }) {}
-		constexpr explicit resource_view_desc(format format) : type(resource_view_type::texture_2d), format(format), texture({ 0, 1, 0, 1 }) {}
+		constexpr explicit resource_view_desc(format format) :
+			type(resource_view_type::texture_2d), format(format), texture({ 0, 1, 0, 1 }) {}
 
 		/// <summary>
 		/// Resource type the view should interpret the resource data to.
@@ -432,7 +438,7 @@ namespace reshade::api
 		/// <summary>
 		/// Pointer to the data.
 		/// </summary>
-		void *data = nullptr;
+		void* data = nullptr;
 		/// <summary>
 		/// Row pitch of the data (added to the data pointer to move between texture rows, unused for buffers and 1D textures).
 		/// </summary>
