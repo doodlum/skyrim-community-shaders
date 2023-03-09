@@ -1,11 +1,10 @@
 #include "Hooks.h"
-#include "ShaderCache.h"
 
-#define IMGUI_DISABLE_INCLUDE_IMCONFIG_H
-#include "Menu.h"
-#include "imgui.h"
-#include "reshade/reshade.hpp"
+#include "ShaderCache.h"
 #include "State.h"
+#include "Menu.h"
+
+#include "ENB/ENBSeriesAPI.h"
 
 extern "C" DLLEXPORT const char* NAME = "Skyrim Community Shaders";
 extern "C" DLLEXPORT const char* DESCRIPTION = "";
@@ -19,11 +18,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID)
 	return TRUE;
 }
 
-void DrawSettingsCallback(reshade::api::effect_runtime*)
-{
-	Menu::GetSingleton()->DrawSettings();
-}
-
 void DrawOverlayCallback(reshade::api::effect_runtime*)
 {
 	Menu::GetSingleton()->DrawOverlay();
@@ -32,9 +26,10 @@ void DrawOverlayCallback(reshade::api::effect_runtime*)
 void MessageHandler(SKSE::MessagingInterface::Message* message)
 {
 	switch (message->type) {
-	case SKSE::MessagingInterface::kNewGame:
-	case SKSE::MessagingInterface::kPostLoadGame:
+	case SKSE::MessagingInterface::kDataLoaded:
 		{
+			RE::BSInputDeviceManager::GetSingleton()->AddEventSink(Menu::GetSingleton());
+
 			auto& shaderCache = SIE::ShaderCache::Instance();
 
 			while (shaderCache.GetCompletedTasks() != shaderCache.GetTotalTasks()) {
@@ -52,6 +47,11 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 
 bool Load()
 {
+	if (ENB_API::RequestENBAPI()) {
+		logger::info("ENB detected, disabling all hooks and features");
+		return true;
+	}
+
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener("SKSE", MessageHandler);
 
@@ -59,20 +59,19 @@ bool Load()
 
 	auto& shaderCache = SIE::ShaderCache::Instance();
 
-	shaderCache.ValidateDiskCache();
-
 	shaderCache.SetEnabled(true);
 	shaderCache.SetAsync(true);
 	shaderCache.SetDiskCache(true);
 
 	State::GetSingleton()->Load();
 
+	shaderCache.ValidateDiskCache();
+
 	if (reshade::register_addon(m_hModule)) {
-		logger::info("Registered addon");
-		reshade::register_overlay(nullptr, DrawSettingsCallback);
+		logger::info("ReShade: Registered add-on");
 		reshade::register_event<reshade::addon_event::reshade_overlay>(DrawOverlayCallback);
 	} else {
-		logger::info("ReShade not present");
+		logger::info("ReShade: Could not register add-on");
 	}
 
 	return true;
