@@ -6,6 +6,7 @@
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/ExtendedMaterials.h"
 #include "Features/WaterBlending.h"
+#include "Features/PBR.h"
 
 void Feature::Load(json&)
 {
@@ -75,7 +76,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		GrassCollision::GetSingleton(),
 		ScreenSpaceShadows::GetSingleton(),
 		ExtendedMaterials::GetSingleton(),
-		WaterBlending::GetSingleton()
+		WaterBlending::GetSingleton(),
+		PBR::GetSingleton()
 	};
 	return features;
 }
