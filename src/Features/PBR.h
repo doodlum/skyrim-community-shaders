@@ -17,10 +17,10 @@ struct PBR : Feature
 	struct Settings
 	{
 		float GlossinessScale = 0.005f;
-		float MinRoughness = 0.3f;
-		float MaxRoughness = 0.8f;
-		float NonmetalThreshold = 0.2f;
-		float MetalThreshold = 0.3f;
+		float MinRoughness = 0.1f;
+		float MaxRoughness = 0.7f;
+		float NonmetalThreshold = 0.1f;
+		float MetalThreshold = 0.2f;
 		float SunShadowAO = 0.7f;
 		float ParallaxAO = 0.5f;
 		float ParallaxScale = 0.2f;
