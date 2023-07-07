@@ -790,11 +790,10 @@ float Fd_Burley(float NoV, float NoL, float LoH, float roughness)
     return lightScatter * viewScatter;
 }
 
-float3 GetLightRadiance2(float3 N, float3 L, float3 V, float3 F0, float3 originalRadiance, float3 albedo, float roughness)
+float2x3 GetLighting(float3 N, float3 L, float3 V, float NoV, float3 F0, float3 originalRadiance, float roughness)
 {	
     float3 H = normalize(V + L);
     float NoL = saturate(dot(N, L));
-    float NoV = saturate(dot(N, V));
     float LoH = saturate(dot(H, V));
     float NoH = saturate(dot(N, H));
         
@@ -808,9 +807,33 @@ float3 GetLightRadiance2(float3 N, float3 L, float3 V, float3 F0, float3 origina
     float denominator = 4 * NoV * NoL + 0.0001;
     float3 specular = numerator / denominator * PI;
 	float diffuse_Scatter = Fd_Burley(NoV, NoL, LoH, roughness);
+
+	float3 irradiance = NoL * originalRadiance;
+
+	float2x3 lighting;
+	lighting[0] = kD * diffuse_Scatter * irradiance;
+	lighting[1] = specular * irradiance;
             
-    //return (kD * albedo + specular) * NoL * originalRadiance;
-	return (kD * albedo * diffuse_Scatter + specular) * NoL * originalRadiance;
+	return lighting;
+}
+
+float3 GetDiffuseLighting(float NoV, float NoL, float3 LoH, float F, float roughness, float3 irradiance)
+{	
+    float3 kD = 1 - F;
+	float diffuse_Scatter = Fd_Burley(NoV, NoL, LoH, roughness);
+	return irradiance * kD * diffuse_Scatter;
+}
+
+float3 GetSpecularLighting(float NoV, float NoL, float NoH, float3 F, float roughness, float3 irradiance)
+{	      
+    float NDF = DistributionGGX2(NoH, roughness);
+    float G = GeometrySmith(NoV, NoL, roughness);
+        
+    float3 numerator = NDF * G * F;
+    float denominator = 4 * NoV * NoL + 0.0001;
+    float3 specular = numerator / denominator * PI;
+            
+	return irradiance * specular;
 }
 
 float GetLodLandBlendParameter(float3 color)
@@ -1030,7 +1053,7 @@ PS_OUTPUT main(PS_INPUT input)
 	//height = min(height, height4.z);
 	//height = min(height, height4.w);
 	float height = TexParallaxSampler.Sample(SampParallaxSampler, uv).x;
-	ao = saturate(height + ParallaxAO);
+	ao = saturate(height + ParallaxAO + 0.5);
 	height = (height - 0.5) * ParallaxScale;
 	//uv += (tangentViewDirection.xy / max(tangentViewDirection.z,0.04)) * height;
 	uv += tangentViewDirection.xy * height;
@@ -1174,10 +1197,10 @@ PS_OUTPUT main(PS_INPUT input)
 #endif
 	
 #if defined (BACK_LIGHTING)
-	float4 backLightColor = TexBackLightSampler.Sample(SampBackLightSampler, uv);
+	//float4 backLightColor = TexBackLightSampler.Sample(SampBackLightSampler, uv);
 #endif
 #if defined (SOFT_LIGHTING) || defined(RIM_LIGHTING)
-	float4 rimSoftLightColor = TexRimSoftLightSampler.Sample(SampRimSoftLightSampler, uv);
+	//float4 rimSoftLightColor = TexRimSoftLightSampler.Sample(SampRimSoftLightSampler, uv);
 #endif
 	
     float numLights = min(7, NumLightNumShadowLight.x);
@@ -1305,12 +1328,12 @@ PS_OUTPUT main(PS_INPUT input)
 
 #if defined (PBR)
 	//调整粗糙度
-    float roughness = 1 - glossiness;
 	#if defined (SPECULAR) || defined (SPARKLE)
-		roughness -= shininess * GlossinessScale;
+		float roughness = 1 - shininess * GlossinessScale;
 	#else
-		roughness += MinRoughness;
+		float roughness = MaxRoughness;
 	#endif
+	roughness -= glossiness;
 	roughness = clamp(roughness,MinRoughness,MaxRoughness);
     float metallic = 0;
 #if defined (ENVMAP)
@@ -1321,14 +1344,13 @@ PS_OUTPUT main(PS_INPUT input)
 #endif
     float3 F0 = 0.04.xxx;
     F0 = lerp(F0, baseColor.xyz, metallic);
-
+	float NoV = saturate(dot(modelNormal.xyz, viewDirection));
 	float3 diffuse = baseColor.xyz * (1 - metallic);
 	
-    float3 totalRadiance = 0.0.xxx;
 #endif
 
 	float3 dirLightColor = DirLightColor.xyz;
-	float3 nsDirLightColor = dirLightColor;
+	//float3 nsDirLightColor = dirLightColor;
 
 float dirLightSShadow = 1;
 
@@ -1338,16 +1360,13 @@ float dirLightSShadow = 1;
 
 #if defined(SCREEN_SPACE_SHADOWS)
 	dirLightSShadow = min(dirLightSShadow,PrepassScreenSpaceShadows(input.WorldPosition));
-	dirLightColor *= dirLightSShadow;
-
 #endif
+
+	dirLightColor *= dirLightSShadow;
 	//阳光阴影ao
 	ao *= saturate(dirLightSShadow + SunShadowAO);
 	
-#if defined(PBR)
-    //totalRadiance += GetLightRadiance(modelNormal.xyz, DirLightDirection.xyz, viewDirection, F0, dirLightColor.xyz, baseColor.xyz, roughness, metallic);
-	totalRadiance += GetLightRadiance2(modelNormal.xyz, DirLightDirection.xyz, viewDirection, F0, dirLightColor.xyz, diffuse, roughness);
-#endif
+	float2x3 totalLighting = GetLighting(modelNormal.xyz, DirLightDirection, viewDirection, NoV, F0, dirLightColor, roughness);
 		
     if (numLights > 0)
     {
@@ -1370,7 +1389,7 @@ float dirLightSShadow = 1;
             float intensityFactor = saturate(lightDist / PointLightPosition[intLightIndex].w);
             float intensityMultiplier = 1 - intensityFactor * intensityFactor;
 			
-            float3 lightColor = PointLightColor[intLightIndex].xyz;
+            float3 lightColor = PointLightColor[intLightIndex].xyz * intensityMultiplier;
 			float3 nsLightColor = lightColor;
 #if defined (DEFSHADOW)
 			lightColor *= shadowComponent.xxx;
@@ -1378,33 +1397,28 @@ float dirLightSShadow = 1;
 			
             float3 normalizedLightDirection = normalize(lightDirection);
 			
-#if defined(PBR)
-            //totalRadiance += GetLightRadiance(modelNormal.xyz, normalizedLightDirection, viewDirection, F0, lightColor * intensityMultiplier.xxx, baseColor.xyz, roughness, metallic);
-			totalRadiance += GetLightRadiance2(modelNormal.xyz, normalizedLightDirection, viewDirection, F0, lightColor * intensityMultiplier.xxx, diffuse, roughness);
+			totalLighting += GetLighting(modelNormal.xyz, normalizedLightDirection, viewDirection, NoV, F0, lightColor, roughness);
 
-#endif
         }
     }
-//环境光
-#if defined (PBR)
-	//float3 ambientColor = 0.03 * baseColor.xyz * ao;
-    float3 ambientColor = (mul(DirectionalAmbient, modelNormal) + IBLParams.yzw * IBLParams.xxx) * baseColor.xyz * ao;
-	#if !defined(HAIR) && !defined (LANDSCAPE)
-		ambientColor *= input.Color.xyz;
-	#endif	
-    float3 color = ambientColor + totalRadiance;
+	//合并光照
+	float3 color = totalLighting[0] * diffuse + totalLighting[1];
+	//环境光
+	float3 ambientColor = (mul(DirectionalAmbient, modelNormal) + IBLParams.yzw * IBLParams.xxx) * baseColor.xyz * ao;
+#if !defined(HAIR) && !defined (LANDSCAPE)
+	ambientColor *= input.Color.xyz;
+#endif	
+	color += ambientColor;
+	//自发光
 	float3 emitColor = EmitColor;
 #if defined (GLOWMAP)
 	float3 glowColor = TexGlowSampler.Sample(SampGlowSampler, uv).xyz;
 	emitColor *= glowColor;
 #endif
 	color += emitColor * baseColor.xyz;
-#endif
+	float3 vertexColor = color.xyz;
 
-
-float3 vertexColor = color.xyz;
-
-//多层视差
+	//多层视差
 #if defined (MULTI_LAYER_PARALLAX)
 	float layerValue = MultiLayerParallaxData.x * TexLayerSampler.Sample(SampLayerSampler, uv).w;
 	//float3 tangentViewDirection = mul(viewDirection, tbn);
@@ -1416,7 +1430,7 @@ float3 vertexColor = color.xyz;
 	float3 layerColor = TexLayerSampler.Sample(SampLayerSampler, layerUv).xyz;
 	//有问题
 	//vertexColor = (saturate(viewNormalAngle) * (1 - baseColor.w)).xxx * ((directionalAmbientColor + lightsDiffuseColor) * (input.Color.xyz * layerColor) - vertexColor) + vertexColor;
-	//vertexColor += (saturate(viewNormalAngle) * (1 - baseColor.w)).xxx * ((directionalAmbientColor + lightsDiffuseColor) * layerColor - vertexColor);
+	color += (ambientColor + totalLighting[0]) * layerColor * NoV * (1 - baseColor.w);
 #endif
 	
 	//计算屏幕空间位置和运动矢量
@@ -1495,7 +1509,10 @@ float3 vertexColor = color.xyz;
 #endif
 	
     psout.Albedo.xyz = color.xyz - tmpColor.xyz * GammaInvX_FirstPersonY_AlphaPassZ_CreationKitW.zzz;
-	//psout.Albedo.xyz = color;
+	
+#if defined (SNOW)
+	psout.SnowParameters.x = dot(totalLighting[1], float3(0.3, 0.59, 0.11));
+#endif
 
     psout.MotionVectors.xy = SSRParams.z > 1e-5 ? float2(1, 0) : screenMotionVector.xy;
     psout.MotionVectors.zw = float2(0, 1);
