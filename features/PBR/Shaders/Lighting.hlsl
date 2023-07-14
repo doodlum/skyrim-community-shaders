@@ -2,11 +2,8 @@
 #define VC
 #endif
 
-#define PBR
-
-#if defined(SPECULAR) || defined(AMBIENT_SPECULAR) || defined(ENVMAP) || defined(RIM_LIGHTING) || defined(PARALLAX) || defined(MULTI_LAYER_PARALLAX) || defined(FACEGEN) || defined(FACEGEN_RGB_TINT) || defined(SNOW_FLAG) || defined(EYE)
 #define HAS_VIEW_VECTOR
-#endif
+
 
 struct VS_INPUT
 {
@@ -122,6 +119,27 @@ cbuffer BonesBuffer									: register(b10)
 }
 #endif
 
+cbuffer PerFramePBR : register(b5)
+{	
+	float4 WorldEyePosition;
+	float NonMetalGlossiness;
+	float MetalGlossiness;
+	float MinRoughness;
+	float MaxRoughness;
+	float NonMetalThreshold;
+	float MetalThreshold;
+	float SunShadowAO;
+	float ParallaxAO;
+	float ParallaxScale;
+	float Exposure;
+	float GrassRoughness;
+	float GrassBentNormal;
+	float FogIntensity;
+	float AmbientDiffuse;
+	float AmbientSpecular;
+	float CubemapIntensity;
+}
+
 #if defined (TREE_ANIM)
 float2 GetTreeShiftVector(float4 position, float4 color)
 {
@@ -210,7 +228,7 @@ VS_OUTPUT main(VS_INPUT input)
 	inputPosition.xyz += normal.xyz * treeShiftVector.x;
 	previousInputPosition.xyz += normal.xyz * treeShiftVector.y;
 #endif
-
+//计算顶点位置
 #if defined (SKINNED)
 	precise int4 actualIndices = 765.01.xxxx * input.BoneIndices.xyzw;
 
@@ -227,16 +245,17 @@ VS_OUTPUT main(VS_INPUT input)
 	precise float4 previousWorldPosition = float4(mul(PreviousWorld, inputPosition), 1);
 	precise float4 worldPosition = float4(mul(World, inputPosition), 1);
 	precise float4x4 world4x4 = float4x4(World[0], World[1], World[2], float4(0, 0, 0, 1));
+	//precise float4 worldPosition = mul(world4x4, inputPosition);
 	precise float4x4 modelView = mul(ViewProj, world4x4);
 	float4 viewPos = mul(modelView, inputPosition);
-#endif
 
+#endif
+//计算描边顶点位置
 #if defined(OUTLINE) && !defined(MODELSPACENORMALS)
 	float3 normal = normalize(-1.0.xxx + 2.0.xxx * input.Normal.xyz);
 	float outlineShift = min(max(viewPos.z / 150, 1), 50);
 	inputPosition.xyz += outlineShift * normal.xyz;
 	previousInputPosition.xyz += outlineShift * normal.xyz;
-
 #if defined (SKINNED)
 	previousWorldPosition =
 		float4(mul(inputPosition, transpose(previousWorldMatrix)), 1);
@@ -263,19 +282,21 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.TexCoord0.w = mul(TextureProj[1], inputPosition); 
 #endif
 	vsout.TexCoord0.xy = uv;
-	
+
+//光照位置
 #if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(SKINNED)
 	vsout.InputPosition.xyz = worldPosition.xyz;
 #elif defined (WORLD_MAP)
 	vsout.InputPosition.xyz = WorldMapOverlayParameters.xyz + worldPosition.xyz;
 #else
 	vsout.InputPosition.xyz = inputPosition.xyz;
+	//vsout.InputPosition.xyz = worldPosition.xyz;
 #endif
 
 #if defined (SKINNED)
 	float3x3 boneRSMatrix = GetBoneRSMatrix(Bones, actualIndices, input.BoneWeights);
 #endif
-		
+//计算TBN矩阵
 #if !defined(MODELSPACENORMALS)
 	float3x3 tbn = float3x3(
 		float3(input.Position.w, input.Normal.w * 2 - 1, input.Bitangent.w * 2 - 1),
@@ -302,6 +323,9 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.TBN0.xyz = tbnTr[0];
 	vsout.TBN1.xyz = tbnTr[1];
 	vsout.TBN2.xyz = tbnTr[2];
+	//vsout.TBN0.xyz = mul(tbn, World[0].xyz);
+	//vsout.TBN1.xyz = mul(tbn, World[1].xyz);
+	//vsout.TBN2.xyz = mul(tbn, World[2].xyz);
 #endif
 #elif defined (SKINNED)
 	float3x3 boneRSMatrixTr = transpose(boneRSMatrix);
@@ -322,14 +346,18 @@ VS_OUTPUT main(VS_INPUT input)
 #elif defined(PROJECTED_UV) && !defined(SKINNED)
 	vsout.TexProj = TextureProj[2].xyz;
 #endif
-	
-#if defined (HAS_VIEW_VECTOR)
+
+//计算视角矢量
 #if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(SKINNED)
-	vsout.ViewVector = EyePosition.xyz - worldPosition.xyz;
+	vsout.ViewVector = WorldEyePosition.xyz - worldPosition.xyz;
 #else
-	vsout.ViewVector = EyePosition.xyz - input.Position.xyz;
+	row_major float4x3 Tworld = transpose(World);
+	row_major float3x3 world3x3 = float3x3(Tworld[0],Tworld[1],Tworld[2]);
+	float3 model_EyePosition = WorldEyePosition.xyz - Tworld[3];
+	model_EyePosition = mul(world3x3,model_EyePosition);
+	vsout.ViewVector = model_EyePosition - input.Position.xyz;
 #endif
-#endif
+
 
 #if defined (EYE)
 	precise float4 modelEyeCenter = float4(LeftEyeCenter.xyz + input.EyeParameter.xxx * (RightEyeCenter.xyz - LeftEyeCenter.xyz), 1);
@@ -563,16 +591,25 @@ cbuffer PerFrame : register(b12)
     float4              DynamicRes_InvWidthX_InvHeightY_WidthClampZ_HeightClampW    : packoffset(c44);
 }
 
-cbuffer PerFramePBR : register(b3)
-{
-	float GlossinessScale;
+cbuffer PerFramePBR : register(b5)
+{	
+	float4 WorldEyePosition;
+	float NonMetalGlossiness;
+	float MetalGlossiness;
 	float MinRoughness;
 	float MaxRoughness;
-	float NonmetalThreshold;
+	float NonMetalThreshold;
 	float MetalThreshold;
 	float SunShadowAO;
 	float ParallaxAO;
 	float ParallaxScale;
+	float Exposure;
+	float GrassRoughness;
+	float GrassBentNormal;
+	float FogIntensity;
+	float AmbientDiffuse;
+	float AmbientSpecular;
+	float CubemapIntensity;
 }
 
 
@@ -690,150 +727,6 @@ float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float
 float3 TransformNormal(float3 normal)
 {
     return normal * 2 + -1.0.xxx;
-}
-
-float3 fresnelSchlick(float cosTheta, float3 F0)
-{
-    return F0 + (1 - F0) * pow(saturate(1 - cosTheta), 5);
-}
-
-static const float PI = 3.14159265;
-
-float DistributionGGX(float NdotH, float roughness)
-{
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH2 = NdotH * NdotH;
-	
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1) + 1);
-    denom = PI * denom * denom;
-	
-    return num / denom;
-}
-
-float GeometrySchlickGGX(float cosTheta, float roughness)
-{
-    float r = (roughness + 1);
-    float k = (r * r) / 8;
-
-    float num = cosTheta;
-    float denom = cosTheta * (1 - k) + k;
-	
-    return num / denom;
-}
-
-float GeometrySmith(float NdotV, float NdotL, float roughness)
-{
-    float ggxV = GeometrySchlickGGX(NdotV, roughness);
-    float ggxL = GeometrySchlickGGX(NdotL, roughness);
-	
-    return ggxV * ggxL;
-}
-
-float OrenNayarDiffuseCoefficient(float roughness, float3 N, float3 L, float3 V, float NdotL, float NdotV)
-{
-    float gamma = dot(V - N * NdotV, L - N * NdotL);
-    float a = roughness * roughness;
-    float A = 1 - 0.5 * (a / (a + 0.57));
-    float B = 0.45 * (a / (a + 0.09));
-    float C = sqrt((1 - NdotV * NdotV) * (1 - NdotL * NdotL)) / max(NdotV, NdotL);
-    return (A + B * max(0.0f, gamma) * C) / PI;
-
-}
-
-float3 GetLightRadiance(float3 N, float3 L, float3 V, float3 F0, float3 originalRadiance, float3 albedo, float roughness, float metallic)
-{
-    float3 radiance = PI * originalRadiance;
-	
-    float3 H = normalize(V + L);
-    float NdotL = dot(N, L);
-    float NdotV = dot(N, V);
-    float HdotV = dot(H, V);
-    float NdotH = dot(N, H);
-        
-    float NDF = DistributionGGX(saturate(NdotH), roughness);
-    float G = GeometrySmith(saturate(NdotV), saturate(NdotL), roughness);
-    float3 F = fresnelSchlick(saturate(HdotV), F0);
-        
-    float3 kD = (1 - F) * (1 - metallic);
-        
-    float3 numerator = NDF * G * F;
-    float denominator = 4 * saturate(NdotV) * saturate(NdotL) + 0.0001;
-    float3 specular = numerator / denominator;
-            
-    float diffuseValue = OrenNayarDiffuseCoefficient(roughness, N, L, V, NdotL, NdotV);
-    return (kD * diffuseValue * albedo + specular) * saturate(NdotL) * radiance;
-}
-
-float3 FastfresnelSchlick(float LoH, float3 F0)
-{
-    return F0 + (1 - F0) * exp2((-5.55473 * LoH - 6.98316) * LoH);
-}
-float DistributionGGX2(float NoH, float roughness)
-{
-    float a = NoH * roughness;
-    float k = roughness / (1.0 - NoH * NoH + a * a);
-    return k * k * (1.0 / PI);
-}
-
-float F_Schlick(float u, float f0, float f90) 
-{
-    return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
-}
-
-float Fd_Burley(float NoV, float NoL, float LoH, float roughness) 
-{
-    float f90 = 0.5 + 2.0 * roughness * LoH * LoH;
-    float lightScatter = F_Schlick(NoL, 1.0, f90);
-    float viewScatter = F_Schlick(NoV, 1.0, f90);
-    return lightScatter * viewScatter;
-}
-
-float2x3 GetLighting(float3 N, float3 L, float3 V, float NoV, float3 F0, float3 originalRadiance, float roughness)
-{	
-    float3 H = normalize(V + L);
-    float NoL = saturate(dot(N, L));
-    float LoH = saturate(dot(H, V));
-    float NoH = saturate(dot(N, H));
-        
-    float NDF = DistributionGGX2(NoH, roughness);
-    float G = GeometrySmith(NoV, NoL, roughness);
-    float3 F = FastfresnelSchlick(LoH, F0);
-        
-    float3 kD = 1 - F;
-        
-    float3 numerator = NDF * G * F;
-    float denominator = 4 * NoV * NoL + 0.0001;
-    float3 specular = numerator / denominator * PI;
-	float diffuse_Scatter = Fd_Burley(NoV, NoL, LoH, roughness);
-
-	float3 irradiance = NoL * originalRadiance;
-
-	float2x3 lighting;
-	lighting[0] = kD * diffuse_Scatter * irradiance;
-	lighting[1] = specular * irradiance;
-            
-	return lighting;
-}
-
-float3 GetDiffuseLighting(float NoV, float NoL, float3 LoH, float F, float roughness, float3 irradiance)
-{	
-    float3 kD = 1 - F;
-	float diffuse_Scatter = Fd_Burley(NoV, NoL, LoH, roughness);
-	return irradiance * kD * diffuse_Scatter;
-}
-
-float3 GetSpecularLighting(float NoV, float NoL, float NoH, float3 F, float roughness, float3 irradiance)
-{	      
-    float NDF = DistributionGGX2(NoH, roughness);
-    float G = GeometrySmith(NoV, NoL, roughness);
-        
-    float3 numerator = NDF * G * F;
-    float denominator = 4 * NoV * NoL + 0.0001;
-    float3 specular = numerator / denominator * PI;
-            
-	return irradiance * specular;
 }
 
 float GetLodLandBlendParameter(float3 color)
@@ -1014,6 +907,8 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 	#include "ScreenSpaceShadows/ShadowsPS.hlsli"
 #endif
 
+#include "PBR.hlsli"
+
 PS_OUTPUT main(PS_INPUT input)
 {
     PS_OUTPUT psout;
@@ -1031,11 +926,7 @@ PS_OUTPUT main(PS_INPUT input)
 #endif
 //计算视线矢量
 #if defined (HAS_VIEW_VECTOR)
-//#if defined (SKINNED)
-//	float3 viewDirection = normalize(mul(tbn, input.ViewVector.xyz));
-//#else
     float3 viewDirection = normalize(input.ViewVector.xyz);
-//#endif
 #else
 	float3 viewDirection = 0.57735026.xxx;
 #endif
@@ -1197,17 +1088,17 @@ PS_OUTPUT main(PS_INPUT input)
 #endif
 	
 #if defined (BACK_LIGHTING)
-	//float4 backLightColor = TexBackLightSampler.Sample(SampBackLightSampler, uv);
+	float4 backLightColor = TexBackLightSampler.Sample(SampBackLightSampler, uv);
 #endif
 #if defined (SOFT_LIGHTING) || defined(RIM_LIGHTING)
-	//float4 rimSoftLightColor = TexRimSoftLightSampler.Sample(SampRimSoftLightSampler, uv);
+	float4 rimSoftLightColor = TexRimSoftLightSampler.Sample(SampRimSoftLightSampler, uv);
 #endif
 	
     float numLights = min(7, NumLightNumShadowLight.x);
 #if defined (DEFSHADOW)
 	float numShadowLights = min(4, NumLightNumShadowLight.y);
 #endif
-	
+//把法线从切线空间转为模型空间或世界空间
 #if defined (MODELSPACENORMALS) && !defined (SKINNED)
 	float4 modelNormal = normal;
 #else
@@ -1326,28 +1217,31 @@ PS_OUTPUT main(PS_INPUT input)
 	baseColor.xyz *= input.Color.xyz;
 #endif	
 
-#if defined (PBR)
-	//调整粗糙度
-	#if defined (SPECULAR) || defined (SPARKLE)
-		float roughness = 1 - shininess * GlossinessScale;
-	#else
-		float roughness = MaxRoughness;
-	#endif
-	roughness -= glossiness;
-	roughness = clamp(roughness,MinRoughness,MaxRoughness);
     float metallic = 0;
-#if defined (ENVMAP)
+#if defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
 	float envMaskColor = TexEnvMaskSampler.Sample(SampEnvMaskSampler, uv).x;
 	metallic = envMaskColor * EnvmapData.x;
 	//调整金属度
-	metallic = smoothstep(NonmetalThreshold,MetalThreshold,metallic);
+	metallic = smoothstep(NonMetalThreshold,MetalThreshold,metallic);
 #endif
+#if defined (MULTI_LAYER_PARALLAX) || defined(EYE)
+	metallic = 0;
+#endif
+
+	//调整粗糙度
+#if defined (SPECULAR) || defined (SPARKLE)
+	float GlossinessScale = lerp(NonMetalGlossiness, MetalGlossiness, metallic);
+	float roughness = 1 - shininess * GlossinessScale;
+#else
+	float roughness = MaxRoughness;
+#endif
+	roughness -= glossiness;
+	roughness = clamp(roughness,MinRoughness,1);
+
     float3 F0 = 0.04.xxx;
     F0 = lerp(F0, baseColor.xyz, metallic);
 	float NoV = saturate(dot(modelNormal.xyz, viewDirection));
 	float3 diffuse = baseColor.xyz * (1 - metallic);
-	
-#endif
 
 	float3 dirLightColor = DirLightColor.xyz;
 	//float3 nsDirLightColor = dirLightColor;
@@ -1363,10 +1257,26 @@ float dirLightSShadow = 1;
 #endif
 
 	dirLightColor *= dirLightSShadow;
+	//方向光
+	float2x3 totalLighting = GetLighting(modelNormal.xyz, DirLightDirection.xyz, viewDirection, NoV, F0, dirLightColor, roughness);
+
+	float dirLightAngle = dot(modelNormal.xyz, DirLightDirection.xyz);
+
 	//阳光阴影ao
 	ao *= saturate(dirLightSShadow + SunShadowAO);
+	//ao *= saturate(dirLightSShadow + SunShadowAO - 0.5 * dirLightAngle + 0.5);
+
+#if defined (SOFT_LIGHTING)
+	totalLighting[0] += dirLightColor * GetSoftLightMultiplier(dirLightAngle) * rimSoftLightColor.xyz;
+#endif
 	
-	float2x3 totalLighting = GetLighting(modelNormal.xyz, DirLightDirection, viewDirection, NoV, F0, dirLightColor, roughness);
+#if defined (RIM_LIGHTING)
+	totalLighting[0] += dirLightColor * GetRimLightMultiplier(DirLightDirection, viewDirection, modelNormal.xyz) * rimSoftLightColor.xyz;
+#endif
+	
+#if defined (BACK_LIGHTING)
+	totalLighting[0] += dirLightColor * (saturate(-dirLightAngle) * backLightColor.xyz);
+#endif
 		
     if (numLights > 0)
     {
@@ -1396,27 +1306,45 @@ float dirLightSShadow = 1;
 #endif
 			
             float3 normalizedLightDirection = normalize(lightDirection);
-			
+			//点光
 			totalLighting += GetLighting(modelNormal.xyz, normalizedLightDirection, viewDirection, NoV, F0, lightColor, roughness);
 
         }
     }
-	//合并光照
-	float3 color = totalLighting[0] * diffuse + totalLighting[1];
-	//环境光
-	float3 ambientColor = (mul(DirectionalAmbient, modelNormal) + IBLParams.yzw * IBLParams.xxx) * baseColor.xyz * ao;
+	//角色光
+#if defined (CHARACTER_LIGHT)
+	float charLightMul =
+		NoV * CharacterLightParams.x + CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
+	float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightSampler.Sample(SampCharacterLightSampler, baseShadowUV).x));
+	totalLighting[0] += (charLightMul * charLightColor).xxx;
+#endif
+	//环境光漫射
+	float3 ambientColor = (mul(DirectionalAmbient, modelNormal) + IBLParams.yzw * IBLParams.xxx) * ao;
 #if !defined(HAIR) && !defined (LANDSCAPE)
 	ambientColor *= input.Color.xyz;
 #endif	
-	color += ambientColor;
-	//自发光
-	float3 emitColor = EmitColor;
-#if defined (GLOWMAP)
-	float3 glowColor = TexGlowSampler.Sample(SampGlowSampler, uv).xyz;
-	emitColor *= glowColor;
+	totalLighting[0] += ambientColor * AmbientDiffuse;
+
+//调整眼睛法线
+#if defined(EYE)
+	modelNormal.xyz = input.EyeNormal;
 #endif
-	color += emitColor * baseColor.xyz;
-	float3 vertexColor = color.xyz;
+
+	//环境光反射
+	float3 F = FastfresnelSchlick(NoV,F0);
+	float G = GeometrySchlickGGX(NoV, roughness);
+	G = G * G;
+
+	//反射贴图
+#if defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
+	float viewNormalAngle = dot(modelNormal.xyz, viewDirection);
+	float3 reflect_vector = (viewNormalAngle * 2) * modelNormal.xyz - viewDirection;
+	float envMask = (EnvmapData.y * (envMaskColor - glossiness) + glossiness) * (EnvmapData.x * MaterialData.x);
+	float3 envColor = TexEnvSampler.Sample(SampEnvSampler, reflect_vector).xyz * envMask.xxx;
+	totalLighting[1] += envColor * ambientColor * F * G * CubemapIntensity;
+#else
+	totalLighting[1] += ambientColor * F * G * AmbientSpecular;
+#endif
 
 	//多层视差
 #if defined (MULTI_LAYER_PARALLAX)
@@ -1426,13 +1354,21 @@ float dirLightSShadow = 1;
 	float layerViewAngle = dot(-tangentViewDirection.xyz, layerNormal.xyz) * 2;
 	float3 layerViewProjection = -layerNormal.xyz * layerViewAngle.xxx - tangentViewDirection.xyz;
 	float2 layerUv = uv * MultiLayerParallaxData.zw + (0.0009765625 * (layerValue / abs(layerViewProjection.z))).xx * layerViewProjection.xy;
-	
 	float3 layerColor = TexLayerSampler.Sample(SampLayerSampler, layerUv).xyz;
-	//有问题
-	//vertexColor = (saturate(viewNormalAngle) * (1 - baseColor.w)).xxx * ((directionalAmbientColor + lightsDiffuseColor) * (input.Color.xyz * layerColor) - vertexColor) + vertexColor;
-	color += (ambientColor + totalLighting[0]) * layerColor * NoV * (1 - baseColor.w);
+	diffuse += layerColor * NoV * (1 - baseColor.w);
 #endif
-	
+
+	//合并光照
+	float3 color = totalLighting[0] * diffuse + totalLighting[1];
+	//自发光
+	float3 emitColor = EmitColor;
+#if defined (GLOWMAP)
+	float3 glowColor = TexGlowSampler.Sample(SampGlowSampler, uv).xyz;
+	emitColor *= glowColor;
+#endif
+	color += emitColor * baseColor.xyz;
+	float3 vertexColor = color.xyz;
+
 	//计算屏幕空间位置和运动矢量
     float4 screenPosition = mul(ViewProjMatrixUnjittered, input.WorldPosition);
     screenPosition.xy = screenPosition.xy / screenPosition.ww;
@@ -1441,16 +1377,12 @@ float dirLightSShadow = 1;
     float2 screenMotionVector = float2(-0.5, 0.5) * (screenPosition.xy - previousScreenPosition.xy);
 	
 	//计算雾气
-    //color.xyz = lerp(color.xyz, input.FogParam.xyz, input.FogParam.w);
+    color.xyz = lerp(color.xyz, input.FogParam.xyz, input.FogParam.w * FogIntensity);
     //color.xyz = vertexColor.xyz - color.xyz * FogColor.w;
 	
     //float3 tmpColor = color.xyz * GammaInvX_FirstPersonY_AlphaPassZ_CreationKitW.yyy;
     //color.xyz = tmpColor.xyz + ColourOutputClamp.xxx;
     //color.xyz = min(vertexColor.xyz, color.xyz);
-
-	float3 tmpColor = color.xyz * GammaInvX_FirstPersonY_AlphaPassZ_CreationKitW.yyy;
-    color.xyz = tmpColor.xyz + ColourOutputClamp.xxx;
-    color.xyz = min(vertexColor.xyz, color.xyz);
 	
 #if defined (LANDSCAPE) && !defined(LOD_LAND_BLEND)
 	psout.Albedo.w = 0;
@@ -1508,7 +1440,8 @@ float dirLightSShadow = 1;
 	
 #endif
 	
-    psout.Albedo.xyz = color.xyz - tmpColor.xyz * GammaInvX_FirstPersonY_AlphaPassZ_CreationKitW.zzz;
+    //psout.Albedo.xyz = color.xyz - tmpColor.xyz * GammaInvX_FirstPersonY_AlphaPassZ_CreationKitW.zzz;
+	psout.Albedo.xyz = color.xyz * Exposure;
 	
 #if defined (SNOW)
 	psout.SnowParameters.x = dot(totalLighting[1], float3(0.3, 0.59, 0.11));
@@ -1525,7 +1458,7 @@ float dirLightSShadow = 1;
 	
     float tmp = -1e-5 + SSRParams.x;
 	float tmp3 = (SSRParams.y - tmp);
-	float tmp2 = (glossiness - tmp);
+	float tmp2 = (1 -  - tmp);
 	float tmp1 = 1 / tmp3;
 	tmp = saturate(tmp1 * tmp2);
     tmp *= tmp * (3 + -2 * tmp);
