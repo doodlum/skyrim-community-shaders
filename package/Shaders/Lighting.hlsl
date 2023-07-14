@@ -1821,7 +1821,12 @@ if (input.LandBlendWeights2.y > 0.0)
 		psout.ScreenSpaceNormals.w *= blendFactor;
 	}
 #endif
-	
+
+#if !defined(LANDSCAPE) && defined(SPECULAR)
+	// Green reflections fix
+	psout.ScreenSpaceNormals.w = psout.ScreenSpaceNormals.w * (psout.Albedo.w == 1);
+#endif
+
     float3 screenSpaceNormal;
     screenSpaceNormal.x = dot(input.ScreenNormalTransform0.xyz, normal.xyz);
     screenSpaceNormal.y = dot(input.ScreenNormalTransform1.xyz, normal.xyz);
