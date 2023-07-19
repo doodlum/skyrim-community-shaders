@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-static constexpr REL::Version SHADER_CACHE_VERSION = { 0, 0, 0, 7 };
+static constexpr REL::Version SHADER_CACHE_VERSION = { 0, 0, 0, 8 };
 
 namespace SIE
 {
@@ -85,7 +85,7 @@ namespace SIE
 				       type == RE::BSShader::Type::Water;
 			return type == RE::BSShader::Type::Grass;
 		}
-		
+
 		inline static bool IsSupportedShader(const RE::BSShader& shader)
 		{
 			return IsSupportedShader(shader.shaderType.get());

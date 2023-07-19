@@ -1,10 +1,10 @@
 #include "Feature.h"
 
 #include "Features/DistantTreeLighting.h"
+#include "Features/ExtendedMaterials.h"
 #include "Features/GrassCollision.h"
 #include "Features/GrassLighting.h"
 #include "Features/ScreenSpaceShadows.h"
-#include "Features/ExtendedMaterials.h"
 #include "Features/WaterBlending.h"
 #include "Features/PBR.h"
 
@@ -79,5 +79,10 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		WaterBlending::GetSingleton(),
 		PBR::GetSingleton()
 	};
-	return features;
+
+	static std::vector<Feature*> featuresVR = {
+		GrassLighting::GetSingleton()
+	};
+
+	return REL::Module::IsVR() ? featuresVR : features;
 }
