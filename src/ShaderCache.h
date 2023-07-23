@@ -5,7 +5,9 @@
 #include <condition_variable>
 #include <unordered_map>
 #include <unordered_set>
-
+#ifdef max
+#	undef max
+#endif
 static constexpr REL::Version SHADER_CACHE_VERSION = { 0, 0, 0, 8 };
 
 namespace SIE
@@ -75,11 +77,13 @@ namespace SIE
 
 		inline static bool IsSupportedShader(const RE::BSShader::Type type)
 		{
+			
 			if (!REL::Module::IsVR())
 				return type == RE::BSShader::Type::Lighting ||
 				       type == RE::BSShader::Type::BloodSplatter ||
 				       type == RE::BSShader::Type::DistantTree ||
 				       type == RE::BSShader::Type::Sky ||
+				       type == RE::BSShader::Type::ImageSpace ||
 				       type == RE::BSShader::Type::Grass ||
 				       type == RE::BSShader::Type::Particle ||
 				       type == RE::BSShader::Type::Water;
@@ -87,11 +91,15 @@ namespace SIE
 			       type == RE::BSShader::Type::Grass;
 		}
 
-		inline static bool IsSupportedShader(const RE::BSShader& shader)
-		{
+		inline static bool IsSupportedShader(const RE::BSShader& shader, uint32_t descriptor)
+		{	
+			if (shader.shaderType.get() == RE::BSShader::Type::ImageSpace) {
+				return descriptor != std::numeric_limits<uint32_t>::max();
+			}
 			return IsSupportedShader(shader.shaderType.get());
 		}
 
+		
 		bool IsEnabled() const;
 		void SetEnabled(bool value);
 		bool IsAsync() const;
