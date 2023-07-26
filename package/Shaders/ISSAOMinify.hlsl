@@ -5,19 +5,19 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-    float4 Color : SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState sourceSampler					: register(s0);
+SamplerState sourceSampler : register(s0);
 
-Texture2D<float4> sourceTex					: register(t0);
+Texture2D<float4> sourceTex : register(t0);
 
-cbuffer PerGeometry							: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float4 g_RenderTargetResolution			: packoffset(c0);
-	float4 g_ContrastParams					: packoffset(c1);
-	float g_UseDynamicSampling				: packoffset(c2);
+	float4 g_RenderTargetResolution : packoffset(c0);
+	float4 g_ContrastParams : packoffset(c1);
+	float g_UseDynamicSampling : packoffset(c2);
 };
 
 float2 GetMinifiedTexCoord(float2 texCoord)
@@ -40,25 +40,22 @@ PS_OUTPUT main(PS_INPUT input)
 	PS_OUTPUT psout;
 
 	float2 finalTexCoord;
-	if (asuint(g_UseDynamicSampling) > 0)
-	{
+	if (asuint(g_UseDynamicSampling) > 0) {
 		float2 drAdjustedTexCoord = DynamicResolutionParams1.xy * input.TexCoord;
 		float2 minifiedTexCoord = GetMinifiedTexCoord(drAdjustedTexCoord);
 		finalTexCoord = clamp(minifiedTexCoord, 0,
 			DynamicResolutionParams1.xy - float2(CameraPreviousPosAdjust.w, 0));
-	}
-	else
-	{
+	} else {
 		finalTexCoord = GetMinifiedTexCoord(input.TexCoord);
 	}
 
 	float4 color = sourceTex.Sample(sourceSampler, finalTexCoord);
 
-#if defined(CONTRAST)
+#	if defined(CONTRAST)
 	int contrastIndex = (int)(5 * input.TexCoord.x) + (int)(5 * input.TexCoord.y) * 5;
 	float contrastFactor = ContrastValues[contrastIndex].x * g_ContrastParams.x;
 	color *= contrastFactor;
-#endif
+#	endif
 
 	psout.Color = color;
 

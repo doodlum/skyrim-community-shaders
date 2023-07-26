@@ -77,7 +77,6 @@ namespace SIE
 
 		inline static bool IsSupportedShader(const RE::BSShader::Type type)
 		{
-			
 			if (!REL::Module::IsVR())
 				return type == RE::BSShader::Type::Lighting ||
 				       type == RE::BSShader::Type::BloodSplatter ||
@@ -92,14 +91,13 @@ namespace SIE
 		}
 
 		inline static bool IsSupportedShader(const RE::BSShader& shader, uint32_t descriptor)
-		{	
+		{
 			if (shader.shaderType.get() == RE::BSShader::Type::ImageSpace) {
 				return descriptor != std::numeric_limits<uint32_t>::max();
 			}
 			return IsSupportedShader(shader.shaderType.get());
 		}
 
-		
 		bool IsEnabled() const;
 		void SetEnabled(bool value);
 		bool IsAsync() const;

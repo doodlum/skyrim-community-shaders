@@ -1048,7 +1048,7 @@ namespace SIE
 		}
 
 		static int32_t GetVariableIndex(ShaderClass shaderClass, RE::BSShader::Type shaderType, const char* name)
-		{	
+		{
 			if (shaderType == RE::BSShader::Type::ImageSpace) {
 				const auto& imagespaceShader = static_cast<const RE::BSImagespaceShader&>(shader);
 
@@ -1067,21 +1067,18 @@ namespace SIE
 						}
 					}
 				}
-			}
-			else
-			{
+			} else {
 				static auto variableNames = GetVariableIndices();
 
-			const auto& names =
-				variableNames[static_cast<size_t>(shaderType)][static_cast<size_t>(shaderClass)];
-			auto it = names.find(name);
-			if (it == names.cend()) {
-				return -1;
-			}
+				const auto& names =
+					variableNames[static_cast<size_t>(shaderType)][static_cast<size_t>(shaderClass)];
+				auto it = names.find(name);
+				if (it == names.cend()) {
+					return -1;
+				}
 
-			return it->second;
+				return it->second;
 			}
-		
 		}
 
 		static std::string MergeDefinesString(const std::array<D3D_SHADER_MACRO, 64>& defines)
@@ -1621,14 +1618,13 @@ namespace SIE
 			return it->second;
 		}
 	}
-	
 
 	RE::BSGraphics::VertexShader* ShaderCache::GetVertexShader(const RE::BSShader& shader,
 		uint32_t descriptor)
-	{	
+	{
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
-		descriptor = SShaderCache::GetImagespaceShaderDescriptor(
-			static_cast<const RE::BSImagespaceShader&>(shader));
+			descriptor = SShaderCache::GetImagespaceShaderDescriptor(
+				static_cast<const RE::BSImagespaceShader&>(shader));
 		}
 
 		if (!ShaderCache::IsSupportedShader(shader, descriptor)) {
@@ -1655,13 +1651,13 @@ namespace SIE
 
 	RE::BSGraphics::PixelShader* ShaderCache::GetPixelShader(const RE::BSShader& shader,
 		uint32_t descriptor)
-	{	
+	{
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			descriptor = SShaderCache::GetImagespaceShaderDescriptor(
 				static_cast<const RE::BSImagespaceShader&>(shader));
 		}
 
-		if (!ShaderCache::IsSupportedShader(shader,descriptor)) {
+		if (!ShaderCache::IsSupportedShader(shader, descriptor)) {
 			return nullptr;
 		}
 
