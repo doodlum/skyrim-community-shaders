@@ -129,9 +129,7 @@ void GrassCollision::UpdateCollisions()
 					CollisionSData data{};
 					RE::NiPoint3 eyePosition{};
 					if (REL::Module::IsVR()) {
-						// find center of eye position
-						eyePosition = state->GetVRRuntimeData().posAdjust.getEye() + state->GetVRRuntimeData().posAdjust.getEye(1);
-						eyePosition /= 2;
+						eyePosition = state->GetVRRuntimeData().posAdjust.getEye();
 					} else
 						eyePosition = state->GetRuntimeData().posAdjust.getEye();
 					data.centre.x = centerPos.x - eyePosition.x;
@@ -203,11 +201,9 @@ void GrassCollision::ModifyGrass(const RE::BSShader*, const uint32_t)
 		auto bound = shaderState.cachedPlayerBound;
 		RE::NiPoint3 eyePosition{};
 		if (REL::Module::IsVR()) {
-			// find center of eye position
-			eyePosition = state->GetVRRuntimeData().posAdjust.getEye() + state->GetVRRuntimeData().posAdjust.getEye(1);
-			eyePosition /= 2;
+			eyePosition = state->GetVRRuntimeData().posAdjust.getEye(0);
 		} else
-			eyePosition = state->GetRuntimeData().posAdjust.getEye();
+			eyePosition = state->GetRuntimeData().posAdjust.getEye(0);
 		perFrameData.boundCentre.x = bound.center.x - eyePosition.x;
 		perFrameData.boundCentre.y = bound.center.y - eyePosition.y;
 		perFrameData.boundCentre.z = bound.center.z - eyePosition.z;

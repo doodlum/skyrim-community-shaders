@@ -38,7 +38,7 @@ void WaterBlending::Draw(const RE::BSShader* shader, const uint32_t)
 			if (auto cell = player->GetParentCell()) {
 				if (!cell->IsInteriorCell()) {
 					auto height = cell->GetExteriorWaterHeight();
-					data.waterHeight = height - shadowState->GetRuntimeData().posAdjust.getEye().z;
+					data.waterHeight = height - (!REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye(0).z : shadowState->GetVRRuntimeData().posAdjust.getEye(0).z);
 				}
 			}
 		}

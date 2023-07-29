@@ -1,22 +1,22 @@
-/*
-* Multiply for matrixes that will use an a_eyeIndex.
-* This uses a standard mul if in flat
-*
-* @param a_matrix The matrix to multiple against
-* @param a_vector The vector to multiply
-* @param a_eyeIndex The a_eyeIndex, normally 0 for flat
-* @return The result of a mul that works in VR with eyeindex
+/**
+ Converts uv to the eye specific uv.
+
+In VR, texture buffers include the lef tand right eye in the same buffer. 
+This means the x value [0, .5] represents the left eye, and the y value (.5, 1] are the right eye.
+
+This returns the adjusted value
+
+@param uv - uv coords [0,1]
+@param a_eyeIndex The eyeIndex; 0 is left, 1 is right
+@returns adjused uv coords for the VR texture buffer
 */
-float4 NG_mul(float4x4 a_matrix, float4 a_vector, uint a_eyeIndex = 0)
+float2 ConvertToVRUV(float2 uv)
 {
-#if !defined(VR)
-	float4 result = mul(a_matrix, a_vector);
-#else
-	float4 result;
-	result.x = dot(a_matrix[a_eyeIndex + 0].xyzw, a_vector.xyzw);
-	result.y = dot(a_matrix[a_eyeIndex + 1].xyzw, a_vector.xyzw);
-	result.z = dot(a_matrix[a_eyeIndex + 2].xyzw, a_vector.xyzw);
-	result.w = dot(a_matrix[a_eyeIndex + 3].xyzw, a_vector.xyzw);
-#endif  // VR
-	return result;
+#ifdef VR
+	if (uv.x >= .5)
+		uv.x = (uv.x / 2 + .5);  // Right Eye: [0, 1] -> [.5,1];
+	else
+		uv.x = uv.x / 2;         //	Left Eye: [0, 1] -> [0,.5],
+#endif
+	return uv;
 }

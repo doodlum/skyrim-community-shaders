@@ -2,7 +2,7 @@
 
 #include <shared_mutex>
 
-#include <DirectXMath.h>
+#include <SimpleMath.h>
 #include <d3d11.h>
 
 #include "Buffer.h"
@@ -20,8 +20,8 @@ public:
 
 	struct alignas(16) LightSData
 	{
-		DirectX::XMVECTOR color;
-		DirectX::XMVECTOR positionWS[2];
+		Vector4 color;
+		Vector4 positionWS[2];
 		float radius;
 		uint32_t shadow;
 		float mask;

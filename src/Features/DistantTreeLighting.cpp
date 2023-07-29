@@ -89,9 +89,7 @@ void DistantTreeLighting::ModifyDistantTree(const RE::BSShader*, const uint32_t 
 
 		RE::NiPoint3 eyePosition{};
 		if (REL::Module::IsVR()) {
-			// find center of eye position
-			eyePosition = state->GetVRRuntimeData().posAdjust.getEye() + state->GetVRRuntimeData().posAdjust.getEye(1);
-			eyePosition /= 2;
+			eyePosition = state->GetVRRuntimeData().posAdjust.getEye();
 		} else
 			eyePosition = state->GetRuntimeData().posAdjust.getEye();
 		perPassData.EyePosition.x = position.x - eyePosition.x;

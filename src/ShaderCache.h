@@ -84,7 +84,8 @@ namespace SIE
 				       type == RE::BSShader::Type::Particle ||
 				       type == RE::BSShader::Type::Water;
 			return type == RE::BSShader::Type::Lighting ||
-			       type == RE::BSShader::Type::Grass;
+			       type == RE::BSShader::Type::Grass ||
+			       type == RE::BSShader::Type::Water;
 		}
 
 		inline static bool IsSupportedShader(const RE::BSShader& shader)

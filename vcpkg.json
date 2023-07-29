@@ -4,6 +4,8 @@
   "description": "",
   "license": "MIT",
   "dependencies": [
+    "directxmath",
+    "directxtk",
     "fmt",
     "rapidcsv",
     "spdlog",

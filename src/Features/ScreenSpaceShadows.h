@@ -34,17 +34,20 @@ struct ScreenSpaceShadows : Feature
 		uint32_t pad[2];
 	};
 
+#pragma warning(push)
+#pragma warning(disable: 4324)  // ignore warning about padded due to alignment from DirectX datatypes (e.g., XMVECTOR, XMMATRIX).
 	struct alignas(16) RaymarchCB
 	{
-		DirectX::XMFLOAT2 BufferDim;
-		DirectX::XMFLOAT2 RcpBufferDim;
-		DirectX::XMMATRIX ProjMatrix;
-		DirectX::XMMATRIX InvProjMatrix;
-		DirectX::XMFLOAT4 DynamicRes;
-		DirectX::XMVECTOR InvDirLightDirectionVS;
+		Vector2 BufferDim;
+		Vector2 RcpBufferDim;
+		Matrix ProjMatrix[2];
+		Matrix InvProjMatrix[2];
+		Vector4 DynamicRes;
+		Vector4 InvDirLightDirectionVS[2];
 		float ShadowDistance = 10000;
 		Settings Settings;
 	};
+#pragma warning(pop)
 
 	Settings settings;
 

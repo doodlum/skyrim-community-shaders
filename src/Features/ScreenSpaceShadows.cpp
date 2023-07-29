@@ -213,12 +213,12 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				screenSpaceShadowsTextureTemp->CreateUAV(uavDesc);
 			}
 		}
-
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 
 		bool enableSSS = true;
 
-		if (shadowState->GetRuntimeData().cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
+		if ((!REL::Module::IsVR() && shadowState->GetRuntimeData().cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) ||
+			(REL::Module::IsVR() && shadowState->GetVRRuntimeData().cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS)) {
 			enableSSS = false;
 
 		} else if (!renderedScreenCamera && enabled) {
@@ -257,31 +257,33 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 
 					data.RcpBufferDim.x = 1.0f / data.BufferDim.x;
 					data.RcpBufferDim.y = 1.0f / data.BufferDim.y;
-					if (REL::Module::IsVR())
-						data.ProjMatrix = shadowState->GetVRRuntimeData().cameraData.getEye().projMat;
-					else
-						data.ProjMatrix = shadowState->GetRuntimeData().cameraData.getEye().projMat;
-
-					data.InvProjMatrix = XMMatrixInverse(nullptr, data.ProjMatrix);
-
 					data.DynamicRes.x = viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
 					data.DynamicRes.y = viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
 
 					data.DynamicRes.z = 1.0f / data.DynamicRes.x;
 					data.DynamicRes.w = 1.0f / data.DynamicRes.y;
+					for (int eyeIndex = 0; eyeIndex < (!REL::Module::IsVR() ? 1 : 2); eyeIndex++) {
+						if (!REL::Module::IsVR())
+							data.ProjMatrix[eyeIndex] = shadowState->GetRuntimeData().cameraData.getEye(eyeIndex).projMat;
+						else
+							data.ProjMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).projMat;			
+						data.InvProjMatrix[eyeIndex] = XMMatrixInverse(nullptr, data.ProjMatrix[eyeIndex]);
 
-					auto& direction = dirLight->GetWorldDirection();
-					DirectX::XMFLOAT3 position{};
-					position.x = -direction.x;
-					position.y = -direction.y;
-					position.z = -direction.z;
-					auto viewMatrix = shadowState->GetRuntimeData().cameraData.getEye().viewMat;
-					if (REL::Module::IsVR())
-						viewMatrix = shadowState->GetVRRuntimeData().cameraData.getEye().viewMat;
+						auto& direction = dirLight->GetWorldDirection();
+						DirectX::XMFLOAT3 position{ 0, 0, 0 };
+						position.x = -direction.x;
+						position.y = -direction.y;
+						position.z = -direction.z;
+						Matrix viewMatrix[2]{};
+						if (!REL::Module::IsVR())
+							viewMatrix[eyeIndex] = shadowState->GetRuntimeData().cameraData.getEye(eyeIndex).viewMat;
+						else
+							viewMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).viewMat;
+						
 
-					auto invDirLightDirectionWS = XMLoadFloat3(&position);
-					data.InvDirLightDirectionVS = XMVector3TransformCoord(invDirLightDirectionWS, viewMatrix);
-
+						auto invDirLightDirectionWS = XMLoadFloat3(&position);
+						data.InvDirLightDirectionVS[eyeIndex] = XMVector3TransformCoord(invDirLightDirectionWS, viewMatrix[eyeIndex]);
+					}
 					data.ShadowDistance = 10000.0f;
 
 					data.Settings = settings;
@@ -371,7 +373,10 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 		}
 
 		PerPass data{};
-		data.EnableSSS = enableSSS && shadowState->GetRuntimeData().rasterStateCullMode <= 1 && enabled;
+		if (!REL::Module::IsVR())
+			data.EnableSSS = enableSSS && shadowState->GetRuntimeData().rasterStateCullMode <= 1 && enabled;
+		else
+			data.EnableSSS = enableSSS && shadowState->GetVRRuntimeData().rasterStateCullMode <= 1 && enabled;
 		perPass->Update(data);
 
 		if (renderedScreenCamera) {

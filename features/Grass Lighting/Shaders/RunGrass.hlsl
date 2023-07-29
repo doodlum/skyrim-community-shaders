@@ -487,7 +487,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	dirLightColor *= shadowColor.x;
 
 #		if defined(SCREEN_SPACE_SHADOWS)
-	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition, eyeOffset);
+	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition, eyeIndex);
 	dirLightColor *= dirLightSShadow;
 #		endif  // !SCREEN_SPACE_SHADOWS
 
