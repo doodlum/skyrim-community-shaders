@@ -266,7 +266,7 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 						if (!REL::Module::IsVR())
 							data.ProjMatrix[eyeIndex] = shadowState->GetRuntimeData().cameraData.getEye(eyeIndex).projMat;
 						else
-							data.ProjMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).projMat;			
+							data.ProjMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).projMat;
 						data.InvProjMatrix[eyeIndex] = XMMatrixInverse(nullptr, data.ProjMatrix[eyeIndex]);
 
 						auto& direction = dirLight->GetWorldDirection();
@@ -279,7 +279,6 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 							viewMatrix[eyeIndex] = shadowState->GetRuntimeData().cameraData.getEye(eyeIndex).viewMat;
 						else
 							viewMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).viewMat;
-						
 
 						auto invDirLightDirectionWS = XMLoadFloat3(&position);
 						data.InvDirLightDirectionVS[eyeIndex] = XMVector3TransformCoord(invDirLightDirectionWS, viewMatrix[eyeIndex]);

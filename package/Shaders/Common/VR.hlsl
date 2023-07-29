@@ -16,7 +16,7 @@ float2 ConvertToVRUV(float2 uv)
 	if (uv.x >= .5)
 		uv.x = (uv.x / 2 + .5);  // Right Eye: [0, 1] -> [.5,1];
 	else
-		uv.x = uv.x / 2;         //	Left Eye: [0, 1] -> [0,.5],
+		uv.x = uv.x / 2;  //	Left Eye: [0, 1] -> [0,.5],
 #endif
 	return uv;
 }

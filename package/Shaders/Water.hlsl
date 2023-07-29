@@ -259,12 +259,12 @@ cbuffer PerMaterial : register(b1)
 	float4 ShallowColor : packoffset(c0);
 	float4 DeepColor : packoffset(c1);
 	float4 ReflectionColor : packoffset(c2);
-	float4 FresnelRI : packoffset(c3);      // Fresnel amount in x, specular power in z
-	float4 BlendRadius : packoffset(c4);    // flowmap scale in y, specular radius in z
-	float4 VarAmounts : packoffset(c5);     // Sun specular power in x, reflection amount in y, alpha in z, refraction magnitude in w
+	float4 FresnelRI : packoffset(c3);    // Fresnel amount in x, specular power in z
+	float4 BlendRadius : packoffset(c4);  // flowmap scale in y, specular radius in z
+	float4 VarAmounts : packoffset(c5);   // Sun specular power in x, reflection amount in y, alpha in z, refraction magnitude in w
 	float4 NormalsAmplitude : packoffset(c6);
-	float4 WaterParams : packoffset(c7);    // noise falloff in x, reflection magnitude in y, sun sparkle power in z, framebuffer range in w
-	float4 FogNearColor : packoffset(c8);   // above water fog amount in w
+	float4 WaterParams : packoffset(c7);   // noise falloff in x, reflection magnitude in y, sun sparkle power in z, framebuffer range in w
+	float4 FogNearColor : packoffset(c8);  // above water fog amount in w
 	float4 FogFarColor : packoffset(c9);
 	float4 FogParam : packoffset(c10);      // above water fog distance far in z, above water fog range in w
 	float4 DepthControl : packoffset(c11);  // depth reflections factor in x, depth refractions factor in y, depth normals factor in z, depth specular lighting factor in w
@@ -350,7 +350,7 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 #		else
 	float3 finalNormal =
 		normalize(float3(0, 0, 1) + NormalsAmplitude.xxx * normals1);
-#		endif      // defined (FLOWMAP) && !defined(BLEND_NORMALS)
+#		endif  // defined (FLOWMAP) && !defined(BLEND_NORMALS)
 
 #		if defined(WADING)
 #			if defined(FLOWMAP)
@@ -502,7 +502,7 @@ float3 GetSunColor(float3 normal, float3 viewDirection)
 	return (reflectionMul * sunDirection) * DeepColor.w + WaterParams.z * (sunMul * sunDirection);
 #		endif  // defined(INTERIOR) || defined(UNDERWATER)
 }
-#	endif      // defined (FLOWMAP) && !defined(BLEND_NORMALS)
+#	endif  // defined (FLOWMAP) && !defined(BLEND_NORMALS)
 
 #	if defined(WATER_BLENDING)
 #		include "WaterBlending/WaterBlending.hlsli"
@@ -613,10 +613,10 @@ PS_OUTPUT main(PS_INPUT input)
 		}
 #				endif  // VERTEX_ALPHA_DEPTH
 	}
-#			endif      // DEPTH
-#		endif          // WATER_BLENDING
+#			endif  // DEPTH
+#		endif      // WATER_BLENDING
 
-#	endif              // defined(SPECULAR) && (NUM_SPECULAR_LIGHTS != 0)
+#	endif  // defined(SPECULAR) && (NUM_SPECULAR_LIGHTS != 0)
 
 #	if defined(STENCIL)
 	float3 viewDirection = normalize(input.WorldPosition.xyz);

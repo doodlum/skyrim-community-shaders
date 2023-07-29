@@ -98,7 +98,7 @@ float FilterCS(uint3 DTid, float2 TexCoord, float startDepth, uint a_eyeIndex = 
 	return color1;
 }
 
-[numthreads(32, 32, 1)] void main(uint3 DTid           // [pixels]
+[numthreads(32, 32, 1)] void main(uint3 DTid  // [pixels]
 								  : SV_DispatchThreadID) {
 	float2 TexCoord = (DTid.xy + 0.5) * RcpBufferDim;  // convert to [0,1]
 
