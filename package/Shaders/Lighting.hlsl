@@ -1590,7 +1590,7 @@ PS_OUTPUT main(PS_INPUT input)
 #	endif  // defined (DEFSHADOW) && defined (SHADOW_DIR)
 
 #	if defined(SCREEN_SPACE_SHADOWS)
-	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition.xyz);
+	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition.xyz, eyeIndex);
 	dirLightColor *= dirLightSShadow;
 #	endif  // SCREEN_SPACE_SHADOWS
 
