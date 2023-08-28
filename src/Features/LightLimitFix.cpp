@@ -33,8 +33,7 @@ void LightLimitFix::DrawSettings()
 	if (ImGui::TreeNodeEx("Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::BeginDisabled(REL::Module::IsVR());
 		ImGui::Checkbox("Enable Contact Shadows", &settings.EnableContactShadows);
-		if(REL::Module::IsVR() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		{
+		if (REL::Module::IsVR() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
 			ImGui::SetTooltip("Disabled for VR");
 		}
 		ImGui::EndDisabled();
@@ -185,11 +184,9 @@ void LightLimitFix::Reset()
 
 void LightLimitFix::Load(json& o_json)
 {
-	if (o_json[GetName()].is_object())
-	{
+	if (o_json[GetName()].is_object()) {
 		settings = o_json[GetName()];
-		if (REL::Module::IsVR())
-		{
+		if (REL::Module::IsVR()) {
 			settings.EnableContactShadows = false;
 		}
 	}
