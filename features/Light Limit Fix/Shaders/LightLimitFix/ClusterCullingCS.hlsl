@@ -62,9 +62,9 @@ bool LightIntersectsCluster(StructuredLight light, ClusterAABB cluster, int eyeI
 
 			if (visibleLightCount < MAX_CLUSTER_LIGHTS && (LightIntersectsCluster(light, cluster)
 #ifdef VR
-				|| LightIntersectsCluster(light, cluster, 1)
+															  || LightIntersectsCluster(light, cluster, 1)
 #endif  // VR
-			)) {
+																  )) {
 				visibleLightIndices[visibleLightCount] = lightOffset + i;
 				visibleLightCount++;
 			}
