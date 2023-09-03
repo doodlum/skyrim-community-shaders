@@ -791,11 +791,10 @@ float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float
 #if defined(RAINING)
 	float RainShinessMultiplier = 2.0f;
 	float RainSpecularMultiplier = 10.0f;
-
 	float lightColorMultiplier = exp2((shininess * RainShinessMultiplier) * log2(HdotN)) * RainSpecularMultiplier;
 #else
 	float lightColorMultiplier = exp2(shininess * log2(HdotN));
-#endif
+#endif // RAINING
 
 #elif defined(SPARKLE)
 	float lightColorMultiplier = 0;
