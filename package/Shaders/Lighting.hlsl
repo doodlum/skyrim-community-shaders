@@ -13,6 +13,8 @@
 #	define LOD
 #endif
 
+#define RAINING
+
 struct VS_INPUT
 {
 	float4 Position : POSITION0;
@@ -486,9 +488,9 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Albedo : SV_Target0;
-	float4 MotionVectors : SV_Target1;
-	float4 ScreenSpaceNormals : SV_Target2;
+    float4 Albedo : SV_Target0;
+    float4 MotionVectors : SV_Target1;
+    float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
 #endif
@@ -777,7 +779,7 @@ float ProcessSparkleColor(float color)
 float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float3 lightColor, float shininess, float2 uv)
 {
 	float3 H = normalize(V + L);
-#	if defined(ANISO_LIGHTING)
+#if defined(ANISO_LIGHTING)
 	float3 AN = normalize(N * 0.5 + float3(input.TBN0.z, input.TBN1.z, input.TBN2.z));
 	float LdotAN = dot(AN, L);
 	float HdotAN = dot(AN, H);
@@ -786,8 +788,16 @@ float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float
 	float HdotN = saturate(dot(H, N));
 #	endif
 #	if defined(SPECULAR)
+#if defined(RAINING)
+	float RainShinessMultiplier = 2.0f;
+	float RainSpecularMultiplier = 10.0f;
+
+	float lightColorMultiplier = exp2((shininess * RainShinessMultiplier) * log2(HdotN)) * RainSpecularMultiplier;
+#else
 	float lightColorMultiplier = exp2(shininess * log2(HdotN));
-#	elif defined(SPARKLE)
+#endif
+
+#elif defined(SPARKLE)
 	float lightColorMultiplier = 0;
 #	else
 	float lightColorMultiplier = HdotN;
@@ -1085,7 +1095,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 {
 	PS_OUTPUT psout;
 
-#	if !defined(VR)
+#if !defined(VR)
 	uint eyeIndex = 0;
 #	else
 	// this code appears in parallax code in the PShader,
@@ -1959,7 +1969,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float4 color;
 	color.xyz = diffuseColor * baseColor.xyz;
 
-#	endif  // PBR
+#if defined(RAINING)
+	float RainDiffuseMultiplier = 0.9f;
+	color.xyz *= RainDiffuseMultiplier;
+#endif // RAINING
+
+
+#endif  // PBR
 
 #	if defined(HAIR)
 	float3 vertexColor = (input.Color.yyy * (TintColor.xyz - 1.0.xxx) + 1.0.xxx) * color.xyz;
