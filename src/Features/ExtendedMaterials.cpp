@@ -109,7 +109,6 @@ void ExtendedMaterials::DrawSettings()
 	}
 
 	if (ImGui::TreeNodeEx("Approximate Soft Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
-			
 		ImGui::Checkbox("Enable Shadows", (bool*)&settings.EnableShadows);
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
