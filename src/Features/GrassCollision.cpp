@@ -36,10 +36,6 @@ void GrassCollision::DrawSettings()
 			ImGui::EndTooltip();
 		}
 
-		ImGui::TextWrapped("Distance from player to apply collision (NPCs). 0 to disable NPC collisions");
-		ImGui::SliderFloat("Max Distance from Player", &settings.maxDistance, 0.0f, 1500.0f);
-
-		ImGui::TextWrapped("Strength of each collision on grass position.");
 		ImGui::SliderFloat("Displacement Multiplier", &settings.DisplacementMultiplier, 0.0f, 32.0f);
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
@@ -47,12 +43,6 @@ void GrassCollision::DrawSettings()
 			ImGui::Text("Strength of each collision on grass position.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
-		}
-
-		ImGui::TextWrapped("How many frames to skip before calculating positions again. 0 means calculate every frame (most smooth/costly).");
-		if (ImGui::SliderInt("Calculation Frame Interval", (int*)&settings.frameInterval, 0, 30)) {
-			if (settings.frameInterval)  // increment so mod math works (e.g., skip 1 frame means frame % 2).
-				settings.frameInterval++;
 		}
 
 		ImGui::TreePop();

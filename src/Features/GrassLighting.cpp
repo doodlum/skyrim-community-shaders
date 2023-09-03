@@ -44,6 +44,7 @@ void GrassLighting::DrawSettings()
 		ImGui::TreePop();
 	}
 
+
 	if (ImGui::TreeNodeEx("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::SliderFloat("SSS Amount", &settings.SubsurfaceScatteringAmount, 0.0f, 2.0f);
 		if (ImGui::IsItemHovered()) {
@@ -61,6 +62,7 @@ void GrassLighting::DrawSettings()
 		ImGui::Spacing();
 		ImGui::TreePop();
 	}
+
 
 	if (ImGui::TreeNodeEx("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Checkbox("Enable Directional Light Fix", (bool*)&settings.EnableDirLightFix);
