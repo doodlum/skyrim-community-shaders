@@ -78,6 +78,7 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		ScreenSpaceShadows::GetSingleton(),
 		ExtendedMaterials::GetSingleton(),
 		WaterBlending::GetSingleton(),
+		RainWetnessEffects::GetSingleton(),
 		LightLimitFix::GetSingleton()
 	};
 
@@ -85,8 +86,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		GrassLighting::GetSingleton(),
 		GrassCollision::GetSingleton(),
 		ExtendedMaterials::GetSingleton(),
-		//LightLimitFix::GetSingleton(),
-		RainWetnessEffects::GetSingleton()
+		RainWetnessEffects::GetSingleton(),
+		LightLimitFix::GetSingleton()
 	};
 
 	return REL::Module::IsVR() ? featuresVR : features;
