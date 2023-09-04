@@ -13,7 +13,6 @@
 #	define LOD
 #endif
 
-#define RAINING
 
 struct VS_INPUT
 {
@@ -788,13 +787,18 @@ float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float
 	float HdotN = saturate(dot(H, N));
 #	endif
 #	if defined(SPECULAR)
-#if defined(RAINING)
-	float RainShinessMultiplier = 2.0f;
-	float RainSpecularMultiplier = 10.0f;
-	float lightColorMultiplier = exp2((shininess * RainShinessMultiplier) * log2(HdotN)) * RainSpecularMultiplier;
+#if defined(RAIN_WETNESS_EFFECTS)
+	float RainShininess = 1.0f;
+	float RainSpecular = 1.0f;
+	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsRaining)
+	{
+		RainShininess = perPassRainWetnessEffects[0].RainShininessMultiplier;
+		RainSpecular = perPassRainWetnessEffects[0].RainSpecularMultiplier;
+	}
+	float lightColorMultiplier = exp2((shininess * RainShininess) * log2(HdotN)) * RainSpecular;
 #else
 	float lightColorMultiplier = exp2(shininess * log2(HdotN));
-#endif // RAINING
+#endif // RAIN_WETNESS_EFFECTS
 
 #elif defined(SPARKLE)
 	float lightColorMultiplier = 0;
@@ -1088,6 +1092,10 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #	if defined(LIGHT_LIMIT_FIX)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
+
+	#if defined(RAIN_WETNESS_EFFECTS)
+#include "RainWetnessEffects/RainWetnessEffects.hlsli"
+	#endif
 
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
@@ -1968,10 +1976,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float4 color;
 	color.xyz = diffuseColor * baseColor.xyz;
 
-#if defined(RAINING)
-	float RainDiffuseMultiplier = 0.9f;
-	color.xyz *= RainDiffuseMultiplier;
-#endif // RAINING
+#if defined(RAIN_WETNESS_EFFECTS)
+	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsRaining)
+	{
+		color.xyz *=  perPassRainWetnessEffects[0].RainDiffuseMultiplier;
+	}
+#endif // RAIN_WETNESS_EFFECTS
 
 
 #endif  // PBR

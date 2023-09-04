@@ -11,6 +11,7 @@
 #include "Features/LightLimitFix.h"
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/WaterBlending.h"
+#include "Features/RainWetnessEffects.h"
 #include "State.h"
 
 namespace SIE
@@ -120,6 +121,12 @@ namespace SIE
 				defines[0] = { "LIGHT_LIMIT_FIX", nullptr };
 				++defines;
 			}
+
+			if (RainWetnessEffects::GetSingleton()->loaded) {
+				defines[0] = { "RAIN_WETNESS_EFFECTS", nullptr };
+				++defines;
+			}
+
 
 			VanillaGetLightingShaderDefines(descriptor, defines);
 		}

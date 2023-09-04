@@ -7,6 +7,7 @@
 #include "Features/LightLimitFix.h"
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/WaterBlending.h"
+#include "Features/RainWetnessEffects.h"
 
 void Feature::Load(json&)
 {
@@ -84,7 +85,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		GrassLighting::GetSingleton(),
 		GrassCollision::GetSingleton(),
 		ExtendedMaterials::GetSingleton(),
-		LightLimitFix::GetSingleton()
+		//LightLimitFix::GetSingleton(),
+		RainWetnessEffects::GetSingleton()
 	};
 
 	return REL::Module::IsVR() ? featuresVR : features;
