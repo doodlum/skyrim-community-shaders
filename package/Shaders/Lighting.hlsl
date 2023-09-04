@@ -787,18 +787,7 @@ float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float
 	float HdotN = saturate(dot(H, N));
 #	endif
 #	if defined(SPECULAR)
-#if defined(RAIN_WETNESS_EFFECTS)
-	float RainShininess = 1.0f;
-	float RainSpecular = 1.0f;
-	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsRaining)
-	{
-		RainShininess = perPassRainWetnessEffects[0].RainShininessMultiplier;
-		RainSpecular = perPassRainWetnessEffects[0].RainSpecularMultiplier;
-	}
-	float lightColorMultiplier = exp2((shininess * RainShininess) * log2(HdotN)) * RainSpecular;
-#else
 	float lightColorMultiplier = exp2(shininess * log2(HdotN));
-#endif // RAIN_WETNESS_EFFECTS
 
 #elif defined(SPARKLE)
 	float lightColorMultiplier = 0;
@@ -1190,8 +1179,15 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float shininess = SpecularColor.w;
 #	endif  // defined (LANDSCAPE)
 
+#if defined(RAIN_WETNESS_EFFECTS)
+	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsRaining)
+	{
+		shininess *= perPassRainWetnessEffects[0].RainShininessMultiplier;
+	}
+#endif // RAIN_WETNESS_EFFECTS
+
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
-#	if defined(CPM_AVAILABLE)
+#if defined(CPM_AVAILABLE)
 	float parallaxShadowQuality = 1 - smoothstep(perPassParallax[0].ShadowsStartFade, perPassParallax[0].ShadowsEndFade, viewPosition.z);
 #	endif
 
@@ -1940,10 +1936,18 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	// color = pow(color, 1.0 / 2.2);
 #	else
 
+#if defined(RAIN_WETNESS_EFFECTS)
+	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsRaining)
+	{
+		 lightsDiffuseColor *=  perPassRainWetnessEffects[0].RainDiffuseMultiplier;
+		 lightsSpecularColor *=  perPassRainWetnessEffects[0].RainSpecularMultiplier;
+	}
+#endif // RAIN_WETNESS_EFFECTS
+
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
 
-#		if defined(CHARACTER_LIGHT)
+#if defined(CHARACTER_LIGHT)
 	float charLightMul =
 		saturate(dot(viewDirection, modelNormal.xyz)) * CharacterLightParams.x +
 		CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
@@ -1975,14 +1979,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float4 color;
 	color.xyz = diffuseColor * baseColor.xyz;
-
-#if defined(RAIN_WETNESS_EFFECTS)
-	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsRaining)
-	{
-		color.xyz *=  perPassRainWetnessEffects[0].RainDiffuseMultiplier;
-	}
-#endif // RAIN_WETNESS_EFFECTS
-
 
 #endif  // PBR
 
