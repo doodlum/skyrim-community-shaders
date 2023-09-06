@@ -88,7 +88,7 @@
   "Rain Wetness Effects": {
     "EnableRainWetnessEffects": 1,
     "RainShininessMultiplier": 2.0,
-    "RainSpecularMultiplier": 10.0,
+    "RainSpecularMultiplier": 7.5,
     "RainDiffuseMultiplier": 0.9
   }
 }

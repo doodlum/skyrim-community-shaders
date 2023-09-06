@@ -1,6 +1,12 @@
 #include "RainWetnessEffects.h"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+const float MIN_START_PERCENTAGE = 0.05f;
+const float DEFAULT_TRANSITION_PERCENTAGE = 1.0f;
+const float DRY_SHININESS_MULTIPLIER = 1.0f;
+const float DRY_SPECULAR_MULTIPLIER = 1.0f;
+const float DRY_DIFFUSE_MULTIPLIER = 1.0f;
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	RainWetnessEffects::Settings,
 	EnableRainWetnessEffects,
 	RainShininessMultiplier,
@@ -29,17 +35,74 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 
 		PerPass data{};
 		data.settings = settings;
+		
+		data.IsOutdoors = false;
+		data.TransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
+		data.ShininessMultiplierCurrent = DRY_SHININESS_MULTIPLIER;
+		data.ShininessMultiplierPrevious = DRY_SHININESS_MULTIPLIER;
+		data.SpecularMultiplierCurrent = DRY_SPECULAR_MULTIPLIER;
+		data.SpecularMultiplierPrevious = DRY_SPECULAR_MULTIPLIER;
+		data.DiffuseMultiplierCurrent = DRY_DIFFUSE_MULTIPLIER;
+		data.DiffuseMultiplierPrevious = DRY_DIFFUSE_MULTIPLIER;
 
 		if (auto player = RE::PlayerCharacter::GetSingleton()) {
 			if (auto cell = player->GetParentCell()) {
 				if (!cell->IsInteriorCell()) {
+					data.IsOutdoors = true;
 					if (auto sky = RE::Sky::GetSingleton()) {
-						data.IsRaining = sky->IsRaining();
+						if (auto currentWeather = sky->currentWeather) {
+							if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
+								// Currently raining
+								data.ShininessMultiplierCurrent = settings.RainShininessMultiplier;
+								data.SpecularMultiplierCurrent = settings.RainSpecularMultiplier;
+								data.DiffuseMultiplierCurrent = settings.RainDiffuseMultiplier;
+
+								// Fade in gradually after precipitation has started
+								float startPercentage = (currentWeather->data.precipitationBeginFadeIn + 256) * (1.0f / 255.0f);
+								startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
+								float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
+								data.TransitionPercentage = currentPercentage > 0.0f ? currentPercentage : 0.0f;
+							} 
+							else {
+								// Not currently raining
+								data.ShininessMultiplierCurrent = 1.0f;
+								data.SpecularMultiplierCurrent = 1.0f;
+								data.DiffuseMultiplierCurrent = 1.0f;							
+							}
+
+							if (auto lastWeather = sky->lastWeather) {
+								if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
+									// Was raining before
+									data.ShininessMultiplierPrevious = settings.RainShininessMultiplier;
+									data.SpecularMultiplierPrevious = settings.RainSpecularMultiplier;
+									data.DiffuseMultiplierPrevious = settings.RainDiffuseMultiplier;
+
+									// Fade out gradually
+									data.TransitionPercentage = sky->currentWeatherPct;
+
+								} else {
+									// Wasn't raining before
+									data.ShininessMultiplierPrevious = 1.0f;
+									data.SpecularMultiplierPrevious = 1.0f;
+									data.DiffuseMultiplierPrevious = 1.0f;
+								}
+							}
+							else {
+								// No last weather, 100% transition
+								data.TransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
+								data.ShininessMultiplierPrevious = data.ShininessMultiplierCurrent;
+								data.SpecularMultiplierPrevious = data.SpecularMultiplierCurrent;
+								data.DiffuseMultiplierPrevious = data.DiffuseMultiplierCurrent;
+							}
+						}
+						else {
+							// No current weather, don't do anything
+							data.IsOutdoors = false;
+						}
+					} else {
+						// Can't get weather, don't do anything
+						data.IsOutdoors = false;					
 					}
-				}
-				else
-				{
-						data.IsRaining = false;
 				}
 			}
 		}
@@ -53,18 +116,6 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 		ID3D11ShaderResourceView* views[1]{};
 		views[0] = perPass->srv.get();
 		context->PSSetShaderResources(22, ARRAYSIZE(views), views);
-
-		/*if (shader->shaderType.any(RE::BSShader::Type::Water)) {
-			auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-			ID3D11ShaderResourceView* views[2]{};
-			views[0] = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
-			views[1] = perPass->srv.get();
-			context->PSSetShaderResources(31, ARRAYSIZE(views), views);
-		} else {
-			ID3D11ShaderResourceView* views[1]{};
-			views[0] = perPass->srv.get();
-			context->PSSetShaderResources(32, ARRAYSIZE(views), views);
-		}*/
 	}
 }
 

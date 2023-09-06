@@ -2,12 +2,18 @@
 
 struct PerPassRainWetnessEffects
 {
-	bool IsRaining;
+    bool IsOutdoors;
     bool EnableRainWetnessEffects;
     float RainShininessMultiplier;
     float RainSpecularMultiplier;
     float RainDiffuseMultiplier;
-	float pad[3];
+    float TransitionPercentage;
+    float ShininessMultiplierCurrent;
+    float ShininessMultiplierPrevious;
+    float SpecularMultiplierCurrent;
+    float SpecularMultiplierPrevious;
+    float DiffuseMultiplierCurrent;
+    float DiffuseMultiplierPrevious;
 };
 
 //#if defined(WATER)

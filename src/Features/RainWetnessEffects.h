@@ -19,15 +19,21 @@ public:
 	{
 		uint32_t EnableRainWetnessEffects = 1;
 		float RainShininessMultiplier = 2.0f;
-		float RainSpecularMultiplier = 10.0f;
+		float RainSpecularMultiplier = 7.5f;
 		float RainDiffuseMultiplier = 0.9f;
 	};
 
 	struct alignas(16) PerPass
 	{
-		uint32_t IsRaining;
+		uint32_t IsOutdoors;
 		Settings settings;
-		float pad[3];
+		float TransitionPercentage;
+		float ShininessMultiplierCurrent;
+		float ShininessMultiplierPrevious;
+		float SpecularMultiplierCurrent;
+		float SpecularMultiplierPrevious;
+		float DiffuseMultiplierCurrent;
+		float DiffuseMultiplierPrevious;
 	};
 
 	Settings settings;
