@@ -15,14 +15,42 @@ const float DRY_DIFFUSE_MULTIPLIER = 1.0f;
 
 void RainWetnessEffects::DrawSettings()
 {
-	if (ImGui::TreeNodeEx("Rain Wetness Effect", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::Checkbox("Enable Rain Wetness Effects", (bool*)&settings.EnableRainWetnessEffects);
-
-		ImGui::SliderFloat("Rain Shininess Multiplier", &settings.RainShininessMultiplier, 0, 4);
+	if (ImGui::TreeNodeEx("Rain Wetness Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Checkbox("Enable Rain Wetness", (bool*)&settings.EnableRainWetnessEffects);
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::Text("Enables a wetness effect when it is raining.");
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
 
 		ImGui::SliderFloat("Rain Specular Multiplier", &settings.RainSpecularMultiplier, 0, 50);
-		
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::Text("Controls the strength of the wetness effect.");
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+
+		ImGui::SliderFloat("Rain Shininess Multiplier", &settings.RainShininessMultiplier, 0, 4);
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::Text("Controls the appearance of shininess by focusing the reflection.");
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+
 		ImGui::SliderFloat("Rain Diffuse Multiplier", &settings.RainDiffuseMultiplier, 0, 2);
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::Text("Darkens the diffuse color to simulate the layer of water causing light to be reflected in a less diffuse and more specular manner.");
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
 
 		ImGui::TreePop();
 	}
