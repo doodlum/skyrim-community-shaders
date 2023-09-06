@@ -6,7 +6,7 @@ const float DRY_SHININESS_MULTIPLIER = 1.0f;
 const float DRY_SPECULAR_MULTIPLIER = 1.0f;
 const float DRY_DIFFUSE_MULTIPLIER = 1.0f;
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	RainWetnessEffects::Settings,
 	EnableRainWetnessEffects,
 	RainShininessMultiplier,
@@ -63,7 +63,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 
 		PerPass data{};
 		data.settings = settings;
-		
+
 		data.IsOutdoors = false;
 		data.TransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
 		data.ShininessMultiplierCurrent = DRY_SHININESS_MULTIPLIER;
@@ -90,12 +90,11 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 								startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
 								float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
 								data.TransitionPercentage = currentPercentage > 0.0f ? currentPercentage : 0.0f;
-							} 
-							else {
+							} else {
 								// Not currently raining
 								data.ShininessMultiplierCurrent = 1.0f;
 								data.SpecularMultiplierCurrent = 1.0f;
-								data.DiffuseMultiplierCurrent = 1.0f;							
+								data.DiffuseMultiplierCurrent = 1.0f;
 							}
 
 							if (auto lastWeather = sky->lastWeather) {
@@ -114,22 +113,20 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 									data.SpecularMultiplierPrevious = 1.0f;
 									data.DiffuseMultiplierPrevious = 1.0f;
 								}
-							}
-							else {
+							} else {
 								// No last weather, 100% transition
 								data.TransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
 								data.ShininessMultiplierPrevious = data.ShininessMultiplierCurrent;
 								data.SpecularMultiplierPrevious = data.SpecularMultiplierCurrent;
 								data.DiffuseMultiplierPrevious = data.DiffuseMultiplierCurrent;
 							}
-						}
-						else {
+						} else {
 							// No current weather, don't do anything
 							data.IsOutdoors = false;
 						}
 					} else {
 						// Can't get weather, don't do anything
-						data.IsOutdoors = false;					
+						data.IsOutdoors = false;
 					}
 				}
 			}

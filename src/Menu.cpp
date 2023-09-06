@@ -10,9 +10,9 @@
 #include "Feature.h"
 #include "Features/ExtendedMaterials.h"
 #include "Features/LightLimitFix/ParticleLights.h"
+#include "Features/RainWetnessEffects.h"
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/WaterBlending.h"
-#include "Features/RainWetnessEffects.h"
 
 #define SETTING_MENU_TOGGLEKEY "Toggle Key"
 #define SETTING_MENU_FONTSCALE "Font Scale"
