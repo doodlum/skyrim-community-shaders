@@ -13,7 +13,6 @@
 #	define LOD
 #endif
 
-
 struct VS_INPUT
 {
 	float4 Position : POSITION0;
@@ -487,9 +486,9 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-    float4 Albedo : SV_Target0;
-    float4 MotionVectors : SV_Target1;
-    float4 ScreenSpaceNormals : SV_Target2;
+	float4 Albedo : SV_Target0;
+	float4 MotionVectors : SV_Target1;
+	float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
 #endif
@@ -778,7 +777,7 @@ float ProcessSparkleColor(float color)
 float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float3 lightColor, float shininess, float2 uv)
 {
 	float3 H = normalize(V + L);
-#if defined(ANISO_LIGHTING)
+#	if defined(ANISO_LIGHTING)
 	float3 AN = normalize(N * 0.5 + float3(input.TBN0.z, input.TBN1.z, input.TBN2.z));
 	float LdotAN = dot(AN, L);
 	float HdotAN = dot(AN, H);
@@ -789,7 +788,7 @@ float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float
 #	if defined(SPECULAR)
 	float lightColorMultiplier = exp2(shininess * log2(HdotN));
 
-#elif defined(SPARKLE)
+#	elif defined(SPARKLE)
 	float lightColorMultiplier = 0;
 #	else
 	float lightColorMultiplier = HdotN;
@@ -1082,16 +1081,16 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
 
-	#if defined(RAIN_WETNESS_EFFECTS)
-#include "RainWetnessEffects/RainWetnessEffects.hlsli"
-	#endif
+#	if defined(RAIN_WETNESS_EFFECTS)
+#		include "RainWetnessEffects/RainWetnessEffects.hlsli"
+#	endif
 
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
 	PS_OUTPUT psout;
 
-#if !defined(VR)
+#	if !defined(VR)
 	uint eyeIndex = 0;
 #	else
 	// this code appears in parallax code in the PShader,
@@ -1187,7 +1186,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #endif // RAIN_WETNESS_EFFECTS
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
-#if defined(CPM_AVAILABLE)
+#	if defined(CPM_AVAILABLE)
 	float parallaxShadowQuality = 1 - smoothstep(perPassParallax[0].ShadowsStartFade, perPassParallax[0].ShadowsEndFade, viewPosition.z);
 #	endif
 
@@ -1942,12 +1941,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		 lightsDiffuseColor *=  lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPrevious, perPassRainWetnessEffects[0].DiffuseMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
 		 lightsSpecularColor *= lerp(perPassRainWetnessEffects[0].SpecularMultiplierPrevious, perPassRainWetnessEffects[0].SpecularMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
 	}
-#endif // RAIN_WETNESS_EFFECTS
+#		endif  // RAIN_WETNESS_EFFECTS
 
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
 
-#if defined(CHARACTER_LIGHT)
+#		if defined(CHARACTER_LIGHT)
 	float charLightMul =
 		saturate(dot(viewDirection, modelNormal.xyz)) * CharacterLightParams.x +
 		CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
@@ -1980,7 +1979,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float4 color;
 	color.xyz = diffuseColor * baseColor.xyz;
 
-#endif  // PBR
+#	endif  // PBR
 
 #	if defined(HAIR)
 	float3 vertexColor = (input.Color.yyy * (TintColor.xyz - 1.0.xxx) + 1.0.xxx) * color.xyz;

@@ -7,7 +7,7 @@ const float DRY_SPECULAR_MULTIPLIER = 1.0f;
 const float DRY_DIFFUSE_MULTIPLIER = 1.0f;
 const float TRANSITION_CURVE_MULTIPLIER = 3.0f;
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	RainWetnessEffects::Settings,
 	EnableRainWetnessEffects,
 	RainShininessMultiplier,
