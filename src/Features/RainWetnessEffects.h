@@ -25,7 +25,7 @@ public:
 
 	struct alignas(16) PerPass
 	{
-		uint32_t IsOutdoors;
+		uint32_t EnableEffect;
 		Settings settings;
 		float TransitionPercentage;
 		float ShininessMultiplierCurrent;

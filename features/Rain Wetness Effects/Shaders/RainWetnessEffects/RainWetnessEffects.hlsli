@@ -2,7 +2,7 @@
 
 struct PerPassRainWetnessEffects
 {
-    bool IsOutdoors;
+    bool EnableEffect;
     bool EnableRainWetnessEffects;
     float RainShininessMultiplier;
     float RainSpecularMultiplier;
@@ -15,9 +15,5 @@ struct PerPassRainWetnessEffects
     float DiffuseMultiplierCurrent;
     float DiffuseMultiplierPrevious;
 };
-
-//#if defined(WATER)
-//Texture2D<float4> SharedDepthTex : register(t31);
-//#endif
 
 StructuredBuffer<PerPassRainWetnessEffects> perPassRainWetnessEffects : register(t22);

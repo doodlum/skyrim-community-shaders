@@ -1180,11 +1180,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif  // defined (LANDSCAPE)
 
 #if defined(RAIN_WETNESS_EFFECTS)
-	float transitionCurveMultiplier = 3.0f;
-
-	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsOutdoors)
+	if(perPassRainWetnessEffects[0].EnableEffect)
 	{
-		shininess *= lerp(perPassRainWetnessEffects[0].ShininessMultiplierPrevious, perPassRainWetnessEffects[0].ShininessMultiplierCurrent, exp2(transitionCurveMultiplier * log2(perPassRainWetnessEffects[0].TransitionPercentage)));
+		shininess *= lerp(perPassRainWetnessEffects[0].ShininessMultiplierPrevious, perPassRainWetnessEffects[0].ShininessMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
  	}
 #endif // RAIN_WETNESS_EFFECTS
 
@@ -1939,10 +1937,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	else
 
 #if defined(RAIN_WETNESS_EFFECTS)
-	if(perPassRainWetnessEffects[0].EnableRainWetnessEffects && perPassRainWetnessEffects[0].IsOutdoors)
+	if(perPassRainWetnessEffects[0].EnableEffect)
 	{
-		 lightsDiffuseColor *=  lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPrevious, perPassRainWetnessEffects[0].DiffuseMultiplierCurrent, exp2(transitionCurveMultiplier * log2(perPassRainWetnessEffects[0].TransitionPercentage)));
-		 lightsSpecularColor *= lerp(perPassRainWetnessEffects[0].SpecularMultiplierPrevious, perPassRainWetnessEffects[0].SpecularMultiplierCurrent, exp2(transitionCurveMultiplier * log2(perPassRainWetnessEffects[0].TransitionPercentage)));
+		 lightsDiffuseColor *=  lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPrevious, perPassRainWetnessEffects[0].DiffuseMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
+		 lightsSpecularColor *= lerp(perPassRainWetnessEffects[0].SpecularMultiplierPrevious, perPassRainWetnessEffects[0].SpecularMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
 	}
 #endif // RAIN_WETNESS_EFFECTS
 
