@@ -19,8 +19,8 @@ public:
 	{
 		uint32_t EnableRainWetnessEffects = 1;
 		float RainShininessMultiplier = 2.0f;
-		float RainSpecularMultiplier = 7.5f;
-		float RainDiffuseMultiplier = 0.9f;
+		float RainSpecularMultiplier = 15.0f;
+		float RainDiffuseMultiplier = 0.5f;
 	};
 
 	struct alignas(16) PerPass
