@@ -64,7 +64,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 
 		PerPass data{};
 		data.settings = settings;
-		
+
 		data.EnableEffect = false;
 		data.TransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
 		data.ShininessMultiplierCurrent = DRY_SHININESS_MULTIPLIER;

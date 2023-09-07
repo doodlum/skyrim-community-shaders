@@ -1182,8 +1182,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	if(perPassRainWetnessEffects[0].EnableEffect)
 	{
 		shininess *= lerp(perPassRainWetnessEffects[0].ShininessMultiplierPrevious, perPassRainWetnessEffects[0].ShininessMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
- 	}
-#endif // RAIN_WETNESS_EFFECTS
+	}
+#	endif  // RAIN_WETNESS_EFFECTS
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 #	if defined(CPM_AVAILABLE)
@@ -1935,7 +1935,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	// color = pow(color, 1.0 / 2.2);
 #	else
 
-#if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
+#if defined(RAIN_WETNESS_EFFECTS)
 	if(perPassRainWetnessEffects[0].EnableEffect)
 	{
 		 lightsDiffuseColor *=  lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPrevious, perPassRainWetnessEffects[0].DiffuseMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
