@@ -1934,7 +1934,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	// color = pow(color, 1.0 / 2.2);
 #	else
 
-#		if defined(RAIN_WETNESS_EFFECTS)
+#		if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
 	if (perPassRainWetnessEffects[0].EnableEffect) {
 		lightsDiffuseColor *= lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPrevious, perPassRainWetnessEffects[0].DiffuseMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
 		lightsSpecularColor *= lerp(perPassRainWetnessEffects[0].SpecularMultiplierPrevious, perPassRainWetnessEffects[0].SpecularMultiplierCurrent, perPassRainWetnessEffects[0].TransitionPercentage);
