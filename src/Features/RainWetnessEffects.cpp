@@ -48,7 +48,7 @@ void RainWetnessEffects::DrawSettings()
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::Text("Darkens the diffuse color to simulate the layer of water causing light to be reflected in a less diffuse and more specular manner.");
+			ImGui::Text("Darkens the diffuse color to simulate the darkening of wet surfaces.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
