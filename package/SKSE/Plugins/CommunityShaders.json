@@ -87,8 +87,11 @@
   },
   "Rain Wetness Effects": {
     "EnableRainWetnessEffects": 1,
-    "RainShininessMultiplier": 2.0,
-    "RainSpecularMultiplier": 15.0,
-    "RainDiffuseMultiplier": 0.5
+    "RainShininessMultiplierDay": 2.0,
+    "RainSpecularMultiplierDay": 15.0,
+    "RainDiffuseMultiplierDay": 0.5,
+    "RainShininessMultiplierNight": 2.0,
+    "RainSpecularMultiplierNight": 15.0,
+    "RainDiffuseMultiplierNight": 0.5
   }
 }

@@ -18,22 +18,33 @@ public:
 	struct Settings
 	{
 		uint32_t EnableRainWetnessEffects = 1;
-		float RainShininessMultiplier = 2.0f;
-		float RainSpecularMultiplier = 15.0f;
-		float RainDiffuseMultiplier = 0.5f;
+		float RainShininessMultiplierDay = 2.0f;
+		float RainSpecularMultiplierDay = 15.0f;
+		float RainDiffuseMultiplierDay = 0.5f;
+		float RainShininessMultiplierNight = 2.0f;
+		float RainSpecularMultiplierNight = 15.0f;
+		float RainDiffuseMultiplierNight = 0.5f;
 	};
 
 	struct alignas(16) PerPass
 	{
 		uint32_t EnableEffect;
 		Settings settings;
-		float TransitionPercentage;
-		float ShininessMultiplierCurrent;
-		float ShininessMultiplierPrevious;
-		float SpecularMultiplierCurrent;
-		float SpecularMultiplierPrevious;
-		float DiffuseMultiplierCurrent;
-		float DiffuseMultiplierPrevious;
+		float WeatherTransitionPercentage;
+		float DayNightTransition;
+		float ShininessMultiplierCurrentDay;
+		float ShininessMultiplierPreviousDay;
+		float SpecularMultiplierCurrentDay;
+		float SpecularMultiplierPreviousDay;
+		float DiffuseMultiplierCurrentDay;
+		float DiffuseMultiplierPreviousDay;
+		float ShininessMultiplierCurrentNight;
+		float ShininessMultiplierPreviousNight;
+		float SpecularMultiplierCurrentNight;
+		float SpecularMultiplierPreviousNight;
+		float DiffuseMultiplierCurrentNight;
+		float DiffuseMultiplierPreviousNight;
+		float pad[2];
 	};
 
 	Settings settings;
