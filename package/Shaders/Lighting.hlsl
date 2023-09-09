@@ -1180,9 +1180,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
 	if (perPassRainWetnessEffects[0].EnableEffect) {
-		shininess *= lerp(lerp(perPassRainWetnessEffects[0].ShininessMultiplierPreviousDay,perPassRainWetnessEffects[0].ShininessMultiplierPreviousNight,perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].ShininessMultiplierCurrentDay,perPassRainWetnessEffects[0].ShininessMultiplierCurrentNight,perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
+		shininess *= lerp(lerp(perPassRainWetnessEffects[0].ShininessMultiplierPreviousDay, perPassRainWetnessEffects[0].ShininessMultiplierPreviousNight, perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].ShininessMultiplierCurrentDay, perPassRainWetnessEffects[0].ShininessMultiplierCurrentNight, perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
 	}
-#endif  // RAIN_WETNESS_EFFECTS
+#	endif  // RAIN_WETNESS_EFFECTS
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 #	if defined(CPM_AVAILABLE)
@@ -1936,10 +1936,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
 	if (perPassRainWetnessEffects[0].EnableEffect) {
-		lightsDiffuseColor *= lerp(lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPreviousDay,perPassRainWetnessEffects[0].DiffuseMultiplierPreviousNight,perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].DiffuseMultiplierCurrentDay,perPassRainWetnessEffects[0].DiffuseMultiplierCurrentNight,perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
-		lightsSpecularColor *= lerp(lerp(perPassRainWetnessEffects[0].SpecularMultiplierPreviousDay,perPassRainWetnessEffects[0].SpecularMultiplierPreviousNight,perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].SpecularMultiplierCurrentDay,perPassRainWetnessEffects[0].SpecularMultiplierCurrentNight,perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
+		lightsDiffuseColor *= lerp(lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPreviousDay, perPassRainWetnessEffects[0].DiffuseMultiplierPreviousNight, perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].DiffuseMultiplierCurrentDay, perPassRainWetnessEffects[0].DiffuseMultiplierCurrentNight, perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
+		lightsSpecularColor *= lerp(lerp(perPassRainWetnessEffects[0].SpecularMultiplierPreviousDay, perPassRainWetnessEffects[0].SpecularMultiplierPreviousNight, perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].SpecularMultiplierCurrentDay, perPassRainWetnessEffects[0].SpecularMultiplierCurrentNight, perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
 	}
-#endif  // RAIN_WETNESS_EFFECTS
+#		endif  // RAIN_WETNESS_EFFECTS
 
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;

@@ -37,7 +37,6 @@ void RainWetnessEffects::DrawSettings()
 	}
 
 	if (ImGui::TreeNodeEx("Daytime", ImGuiTreeNodeFlags_DefaultOpen)) {
-
 		ImGui::SliderFloat("Rain Specular Multiplier", &settings.RainSpecularMultiplierDay, 0, 50);
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
@@ -133,12 +132,10 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 						if (auto sky = RE::Sky::GetSingleton()) {
 							if (auto currentWeather = sky->currentWeather) {
 								data.EnableEffect = true;
-								
+
 								// Set the Day Night Transition with Day = 0, and Night = 1
-								if (auto calendar = RE::Calendar::GetSingleton())
-								{
-									if (auto currentClimate = sky->currentClimate)
-									{
+								if (auto calendar = RE::Calendar::GetSingleton()) {
+									if (auto currentClimate = sky->currentClimate) {
 										struct tm sunriseBeginTM = currentClimate->timing.sunrise.GetBeginTime();
 										struct tm sunriseEndTM = currentClimate->timing.sunrise.GetEndTime();
 										struct tm sunsetBeginTM = currentClimate->timing.sunset.GetBeginTime();
@@ -154,27 +151,21 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 										if (sunsetEndTime > sunsetBeginTime && sunsetBeginTime >= sunriseEndTime && sunriseEndTime > sunriseBeginTime && sunriseBeginTime >= 0) {
 											if ((time - sunriseBeginTime) < 0 || (time - sunsetEndTime) > 0) {
 												// Night
-												data.DayNightTransition = NIGHT;												
-											} 
-											else if ((time - sunriseEndTime) <= 0) {
+												data.DayNightTransition = NIGHT;
+											} else if ((time - sunriseEndTime) <= 0) {
 												// During sunrise, night 1 -> day 0
 												data.DayNightTransition = 1.0f - (static_cast<float>(time - sunriseBeginTime) / static_cast<float>(sunriseEndTime - sunriseBeginTime));
-											} 
-											else if ((time - sunsetBeginTime) < 0) {
+											} else if ((time - sunsetBeginTime) < 0) {
 												// During day
 												data.DayNightTransition = DAY;
-											} 
-											else if ((time - sunsetEndTime) <= 0) {
+											} else if ((time - sunsetEndTime) <= 0) {
 												// During sunset, day 0 -> night 1
 												data.DayNightTransition = static_cast<float>(time - sunsetBeginTime) / static_cast<float>(sunsetEndTime - sunsetBeginTime);
-											}
-											else
-											{
+											} else {
 												// This should never happen
 												logger::info("This shouldn't happen");
 											}
-										} 
-										else {
+										} else {
 											logger::info("null pointers");
 										}
 									}
