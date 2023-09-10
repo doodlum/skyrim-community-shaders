@@ -28,22 +28,10 @@ public:
 
 	struct alignas(16) PerPass
 	{
-		uint32_t EnableEffect;
 		Settings settings;
-		float WeatherTransitionPercentage;
-		float DayNightTransition;
-		float ShininessMultiplierCurrentDay;
-		float ShininessMultiplierPreviousDay;
-		float SpecularMultiplierCurrentDay;
-		float SpecularMultiplierPreviousDay;
-		float DiffuseMultiplierCurrentDay;
-		float DiffuseMultiplierPreviousDay;
-		float ShininessMultiplierCurrentNight;
-		float ShininessMultiplierPreviousNight;
-		float SpecularMultiplierCurrentNight;
-		float SpecularMultiplierPreviousNight;
-		float DiffuseMultiplierCurrentNight;
-		float DiffuseMultiplierPreviousNight;
+		float RainShininessMultiplier;
+		float RainSpecularMultiplier;
+		float RainDiffuseMultiplier;
 		float pad[2];
 	};
 

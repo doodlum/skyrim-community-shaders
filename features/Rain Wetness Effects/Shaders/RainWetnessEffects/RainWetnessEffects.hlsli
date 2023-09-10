@@ -2,7 +2,6 @@
 
 struct PerPassRainWetnessEffects
 {
-	bool EnableEffect;
 	bool EnableRainWetnessEffects;
     float RainShininessMultiplierDay;
     float RainSpecularMultiplierDay;
@@ -10,20 +9,10 @@ struct PerPassRainWetnessEffects
     float RainShininessMultiplierNight;
     float RainSpecularMultiplierNight;
     float RainDiffuseMultiplierNight;
-    float WeatherTransitionPercentage;
-    float DayNightTransition;
-    float ShininessMultiplierCurrentDay;
-    float ShininessMultiplierPreviousDay;
-    float SpecularMultiplierCurrentDay;
-    float SpecularMultiplierPreviousDay;
-    float DiffuseMultiplierCurrentDay;
-    float DiffuseMultiplierPreviousDay;
-    float ShininessMultiplierCurrentNight;
-    float ShininessMultiplierPreviousNight;
-    float SpecularMultiplierCurrentNight;
-    float SpecularMultiplierPreviousNight;
-    float DiffuseMultiplierCurrentNight;
-    float DiffuseMultiplierPreviousNight;
+    float RainShininessMultiplier;
+    float RainSpecularMultiplier;
+    float RainDiffuseMultiplier;
+    float pad[2];
 };
 
 StructuredBuffer<PerPassRainWetnessEffects> perPassRainWetnessEffects : register(t22);

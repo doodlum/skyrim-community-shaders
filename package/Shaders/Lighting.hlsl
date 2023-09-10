@@ -486,9 +486,9 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Albedo : SV_Target0;
-	float4 MotionVectors : SV_Target1;
-	float4 ScreenSpaceNormals : SV_Target2;
+    float4 Albedo : SV_Target0;
+    float4 MotionVectors : SV_Target1;
+    float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
 #endif
@@ -1179,9 +1179,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif  // defined (LANDSCAPE)
 
 #	if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
-	if (perPassRainWetnessEffects[0].EnableEffect) {
-		shininess *= lerp(lerp(perPassRainWetnessEffects[0].ShininessMultiplierPreviousDay,perPassRainWetnessEffects[0].ShininessMultiplierPreviousNight,perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].ShininessMultiplierCurrentDay,perPassRainWetnessEffects[0].ShininessMultiplierCurrentNight,perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
-	}
+	shininess *= perPassRainWetnessEffects[0].RainShininessMultiplier; 
 #endif  // RAIN_WETNESS_EFFECTS
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
@@ -1935,10 +1933,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	else
 
 #		if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
-	if (perPassRainWetnessEffects[0].EnableEffect) {
-		lightsDiffuseColor *= lerp(lerp(perPassRainWetnessEffects[0].DiffuseMultiplierPreviousDay,perPassRainWetnessEffects[0].DiffuseMultiplierPreviousNight,perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].DiffuseMultiplierCurrentDay,perPassRainWetnessEffects[0].DiffuseMultiplierCurrentNight,perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
-		lightsSpecularColor *= lerp(lerp(perPassRainWetnessEffects[0].SpecularMultiplierPreviousDay,perPassRainWetnessEffects[0].SpecularMultiplierPreviousNight,perPassRainWetnessEffects[0].DayNightTransition), lerp(perPassRainWetnessEffects[0].SpecularMultiplierCurrentDay,perPassRainWetnessEffects[0].SpecularMultiplierCurrentNight,perPassRainWetnessEffects[0].DayNightTransition), perPassRainWetnessEffects[0].WeatherTransitionPercentage);
-	}
+	lightsDiffuseColor *= perPassRainWetnessEffects[0].RainDiffuseMultiplier; 
+	lightsSpecularColor *= perPassRainWetnessEffects[0].RainSpecularMultiplier; 
 #endif  // RAIN_WETNESS_EFFECTS
 
 	diffuseColor += lightsDiffuseColor;
