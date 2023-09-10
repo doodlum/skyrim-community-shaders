@@ -11,10 +11,10 @@ SKSE core plugin for community-driven advanced graphics modifications.
 - [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
   - Desktop development with C++
 - [CMake](https://cmake.org/)
-  - Edit the `PATH` enviornment variable and add the cmake.exe install path as a new value
-  - Instructions for finding and editing the `PATH` enviornment variable can be found [here](https://www.java.com/en/download/help/path.html)
+  - Edit the `PATH` environment variable and add the cmake.exe install path as a new value
+  - Instructions for finding and editing the `PATH` environment variable can be found [here](https://www.java.com/en/download/help/path.html)
 - [Git](https://git-scm.com/downloads)
-  - Edit the `PATH` enviornment variable and add the Git.exe install path as a new value
+  - Edit the `PATH` environment variable and add the Git.exe install path as a new value
 - [Vcpkg](https://github.com/microsoft/vcpkg)
   - Install vcpkg by running `git clone https://github.com/microsoft/vcpkg` and `.\vcpkg\bootstrap-vcpkg.bat` in PowerShell
   - After install, add a new environment variable named `VCPKG_ROOT` with the value as the path to the folder containing vcpkg
