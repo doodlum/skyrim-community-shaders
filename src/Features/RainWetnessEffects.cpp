@@ -152,22 +152,17 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 										if (sunsetEndTime > sunsetBeginTime && sunsetBeginTime >= sunriseEndTime && sunriseEndTime > sunriseBeginTime && sunriseBeginTime >= 0) {
 											if ((time - sunriseBeginTime) < 0 || (time - sunsetEndTime) > 0) {
 												// Night
-												DayNightTransition = NIGHT;												
-											} 
-											else if ((time - sunriseEndTime) <= 0) {
+												DayNightTransition = NIGHT;
+											} else if ((time - sunriseEndTime) <= 0) {
 												// During sunrise, night 1 -> day 0
 												DayNightTransition = 1.0f - (static_cast<float>(time - sunriseBeginTime) / static_cast<float>(sunriseEndTime - sunriseBeginTime));
-											} 
-											else if ((time - sunsetBeginTime) < 0) {
+											} else if ((time - sunsetBeginTime) < 0) {
 												// During day
 												DayNightTransition = DAY;
-											} 
-											else if ((time - sunsetEndTime) <= 0) {
+											} else if ((time - sunsetEndTime) <= 0) {
 												// During sunset, day 0 -> night 1
 												DayNightTransition = static_cast<float>(time - sunsetBeginTime) / static_cast<float>(sunsetEndTime - sunsetBeginTime);
-											}
-											else
-											{
+											} else {
 												// This should never happen
 												logger::info("This shouldn't happen");
 											}
@@ -245,7 +240,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 						}
 					}
 				}
-			}			
+			}
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mapped;

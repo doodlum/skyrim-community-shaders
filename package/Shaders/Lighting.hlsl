@@ -486,9 +486,9 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-    float4 Albedo : SV_Target0;
-    float4 MotionVectors : SV_Target1;
-    float4 ScreenSpaceNormals : SV_Target2;
+	float4 Albedo : SV_Target0;
+	float4 MotionVectors : SV_Target1;
+	float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
 #endif
@@ -1179,8 +1179,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif  // defined (LANDSCAPE)
 
 #	if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
-	shininess *= perPassRainWetnessEffects[0].RainShininessMultiplier; 
-#endif  // RAIN_WETNESS_EFFECTS
+	shininess *= perPassRainWetnessEffects[0].RainShininessMultiplier;
+#	endif  // RAIN_WETNESS_EFFECTS
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 #	if defined(CPM_AVAILABLE)
@@ -1933,9 +1933,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	else
 
 #		if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
-	lightsDiffuseColor *= perPassRainWetnessEffects[0].RainDiffuseMultiplier; 
-	lightsSpecularColor *= perPassRainWetnessEffects[0].RainSpecularMultiplier; 
-#endif  // RAIN_WETNESS_EFFECTS
+	lightsDiffuseColor *= perPassRainWetnessEffects[0].RainDiffuseMultiplier;
+	lightsSpecularColor *= perPassRainWetnessEffects[0].RainSpecularMultiplier;
+#		endif  // RAIN_WETNESS_EFFECTS
 
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
