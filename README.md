@@ -6,8 +6,7 @@ SKSE core plugin for community-driven advanced graphics modifications.
 
 ## Requirements
 
-- [PowerShell](https://github.com/PowerShell/PowerShell/releases/latest)
-  - Any version of PowerShell will work, including the version installed on Windows by default
+- Any terminal of your choice (ex: PowerShell)
 - [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
   - Desktop development with C++
 - [CMake](https://cmake.org/)
@@ -16,7 +15,7 @@ SKSE core plugin for community-driven advanced graphics modifications.
 - [Git](https://git-scm.com/downloads)
   - Edit the `PATH` environment variable and add the Git.exe install path as a new value
 - [Vcpkg](https://github.com/microsoft/vcpkg)
-  - Install vcpkg by running `git clone https://github.com/microsoft/vcpkg` and `.\vcpkg\bootstrap-vcpkg.bat` in PowerShell
+  - Install vcpkg by running `git clone https://github.com/microsoft/vcpkg` and `.\vcpkg\bootstrap-vcpkg.bat` in a command terminal
   - After install, add a new environment variable named `VCPKG_ROOT` with the value as the path to the folder containing vcpkg
 
 ## User Requirements
