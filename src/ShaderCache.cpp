@@ -18,7 +18,7 @@ namespace SIE
 	namespace SShaderCache
 	{
 		static void GetShaderDefines(RE::BSShader::Type, uint32_t, D3D_SHADER_MACRO*);
-		static std::string GetShaderString(ShaderClass, const RE::BSShader&, uint32_t);
+		static std::string GetShaderString(ShaderClass, const RE::BSShader&, uint32_t, bool = false);
 		constexpr const char* VertexShaderProfile = "vs_5_0";
 		constexpr const char* PixelShaderProfile = "ps_5_0";
 		constexpr const char* ComputeShaderProfile = "cs_5_0";
@@ -1060,12 +1060,16 @@ namespace SIE
 			return std::format(L"Data/ShaderCache/{}/{:X}.cso", std::wstring(name.begin(), name.end()), descriptor);
 		}
 
-		static std::string GetShaderString(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor)
+		static std::string GetShaderString(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, bool hashkey)
 		{
 			auto sourceShaderFile = shader.fxpFilename;
 			std::array<D3D_SHADER_MACRO, 64> defines{};
 			SIE::SShaderCache::GetShaderDefines(shader.shaderType.get(), descriptor, &defines[0]);
-			std::string result = fmt::format("{}:{}:{:X}:{}", sourceShaderFile, magic_enum::enum_name(shaderClass), descriptor, SIE::SShaderCache::MergeDefinesString(defines, true));
+			std::string result;
+			if (hashkey)  // generate hashkey so don't include descriptor
+				result = fmt::format("{}:{}:{}", sourceShaderFile, magic_enum::enum_name(shaderClass), SIE::SShaderCache::MergeDefinesString(defines, true));
+			else
+				result = fmt::format("{}:{}:{:X}:{}", sourceShaderFile, magic_enum::enum_name(shaderClass), descriptor, SIE::SShaderCache::MergeDefinesString(defines, true));
 			return result;
 		}
 
@@ -1404,7 +1408,7 @@ namespace SIE
 
 	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob)
 	{
-		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor);
+		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
 		auto status = a_blob ? ShaderCompilationTask::Status::Completed : ShaderCompilationTask::Status::Failed;
 		std::unique_lock lock{ mapMutex };
 		logger::debug("Adding {} shader to map: {}", magic_enum ::enum_name(status), key);
@@ -1426,7 +1430,7 @@ namespace SIE
 	ID3DBlob* ShaderCache::GetCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader,
 		uint32_t descriptor)
 	{
-		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor);
+		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
 		return GetCompletedShader(key);
 	}
 
@@ -1672,7 +1676,7 @@ namespace SIE
 
 	std::string ShaderCompilationTask::GetString() const
 	{
-		return SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor);
+		return SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
 	}
 
 	bool ShaderCompilationTask::operator==(const ShaderCompilationTask& other) const
