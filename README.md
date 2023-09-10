@@ -7,6 +7,7 @@ SKSE core plugin for community-driven advanced graphics modifications.
 ## Requirements
 
 - [PowerShell](https://github.com/PowerShell/PowerShell/releases/latest)
+  - Any version of PowerShell will work, including the version installed on Windows by default
 - [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
   - Desktop development with C++
 - [CMake](https://cmake.org/)
