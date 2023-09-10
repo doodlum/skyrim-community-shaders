@@ -15,7 +15,7 @@ SKSE core plugin for community-driven advanced graphics modifications.
 - [Git](https://git-scm.com/downloads)
   - Edit the `PATH` environment variable and add the Git.exe install path as a new value
 - [Vcpkg](https://github.com/microsoft/vcpkg)
-  - Install vcpkg by running `git clone https://github.com/microsoft/vcpkg` and `.\vcpkg\bootstrap-vcpkg.bat` in a command terminal
+  - Install vcpkg using the directions in vcpkg's [Quick Start Guide](https://github.com/microsoft/vcpkg#quick-start-windows)
   - After install, add a new environment variable named `VCPKG_ROOT` with the value as the path to the folder containing vcpkg
 
 ## User Requirements
