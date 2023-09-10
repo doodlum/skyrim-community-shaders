@@ -6,7 +6,7 @@ SKSE core plugin for community-driven advanced graphics modifications.
 
 ## Requirements
 
-- Any terminal of your choice (ex: PowerShell)
+- Any terminal of your choice (e.g., PowerShell)
 - [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
   - Desktop development with C++
 - [CMake](https://cmake.org/)
@@ -32,7 +32,7 @@ SKSE core plugin for community-driven advanced graphics modifications.
 - Close the cmd window
 
 ## Building
-Open PowerShell and run the following commands:
+Open terminal (e.g., PowerShell) and run the following commands:
 
 ```
 git clone https://github.com/doodlum/skyrim-community-shaders.git
