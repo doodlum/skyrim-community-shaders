@@ -37,7 +37,6 @@ void RainWetnessEffects::DrawSettings()
 	}
 
 	if (ImGui::TreeNodeEx("Daytime", ImGuiTreeNodeFlags_DefaultOpen)) {
-
 		ImGui::SliderFloat("Rain Specular Multiplier", &settings.RainSpecularMultiplierDay, 0, 50);
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
@@ -136,10 +135,8 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 						if (auto sky = RE::Sky::GetSingleton()) {
 							if (auto currentWeather = sky->currentWeather) {
 								// Set the Day Night Transition with Day = 0, and Night = 1
-								if (auto calendar = RE::Calendar::GetSingleton())
-								{
-									if (auto currentClimate = sky->currentClimate)
-									{
+								if (auto calendar = RE::Calendar::GetSingleton()) {
+									if (auto currentClimate = sky->currentClimate) {
 										struct tm sunriseBeginTM = currentClimate->timing.sunrise.GetBeginTime();
 										struct tm sunriseEndTM = currentClimate->timing.sunrise.GetEndTime();
 										struct tm sunsetBeginTM = currentClimate->timing.sunset.GetBeginTime();
@@ -174,8 +171,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 												// This should never happen
 												logger::info("This shouldn't happen");
 											}
-										} 
-										else {
+										} else {
 											logger::info("null pointers");
 										}
 									}
