@@ -130,6 +130,8 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 
 				if (LightLimitFix::GetSingleton()->loaded)
 					LightLimitFix::GetSingleton()->DataLoaded();
+				if (ExtendedMaterials::GetSingleton()->loaded)
+					ExtendedMaterials::GetSingleton()->DataLoaded();
 			}
 
 			break;
