@@ -98,9 +98,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 				shaderCache.SetAsync(true);
 				shaderCache.SetDiskCache(true);
 				shaderCache.SetDump(false);
-
-				State::GetSingleton()->Load();
-
 				shaderCache.ValidateDiskCache();
 
 				if (LightLimitFix::GetSingleton()->loaded) {
