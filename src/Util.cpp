@@ -44,6 +44,21 @@ namespace Util
 		return nullptr;
 	}
 
+	ID3D11UnorderedAccessView* GetUAVFromRTV(ID3D11RenderTargetView* a_rtv)
+	{
+		if (a_rtv) {
+			if (auto r = RE::BSGraphics::Renderer::GetSingleton()) {
+				for (int i = 0; i < RE::RENDER_TARGETS::kTOTAL; i++) {
+					auto rt = r->GetRuntimeData().renderTargets[i];
+					if (a_rtv == rt.RTV) {
+						return rt.UAV;
+					}
+				}
+			}
+		}
+		return nullptr;
+	}
+
 	ID3D11RenderTargetView* GetRTVFromSRV(ID3D11ShaderResourceView* a_srv)
 	{
 		if (a_srv) {
@@ -52,6 +67,22 @@ namespace Util
 					auto rt = r->GetRuntimeData().renderTargets[i];
 					if (a_srv == rt.SRV || a_srv == rt.SRVCopy) {
 						return rt.RTV;
+					}
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	
+	ID3D11UnorderedAccessView* GetUAVFromSRV(ID3D11ShaderResourceView* a_srv)
+	{
+		if (a_srv) {
+			if (auto r = RE::BSGraphics::Renderer::GetSingleton()) {
+				for (int i = 0; i < RE::RENDER_TARGETS::kTOTAL; i++) {
+					auto rt = r->GetRuntimeData().renderTargets[i];
+					if (a_srv == rt.SRV) {
+						return rt.UAV;
 					}
 				}
 			}

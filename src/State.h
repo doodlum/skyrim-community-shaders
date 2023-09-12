@@ -26,6 +26,7 @@ public:
 	bool upscalerLoaded = false;
 
 	void Draw();
+	void DrawDeferred();
 	void Reset();
 	void Setup();
 

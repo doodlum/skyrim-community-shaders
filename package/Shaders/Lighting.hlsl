@@ -1,11 +1,14 @@
+#include "Common/Color.hlsl"
 #include "Common/FrameBuffer.hlsl"
 #include "Common/MotionBlur.hlsl"
+
+static const float PI = 3.14159265;
 
 #if (defined(TREE_ANIM) || defined(LANDSCAPE)) && !defined(VC)
 #	define VC
 #endif  // TREE_ANIM || LANDSCAPE || !VC
 
-#if defined(SPECULAR) || defined(AMBIENT_SPECULAR) || defined(ENVMAP) || defined(RIM_LIGHTING) || defined(PARALLAX) || defined(MULTI_LAYER_PARALLAX) || defined(FACEGEN) || defined(FACEGEN_RGB_TINT) || defined(SNOW_FLAG) || defined(EYE) || defined(PBR)
+#if defined(SPECULAR) || defined(AMBIENT_SPECULAR) || defined(ENVMAP) || defined(RIM_LIGHTING) || defined(PARALLAX) || defined(MULTI_LAYER_PARALLAX) || defined(FACEGEN) || defined(FACEGEN_RGB_TINT) || defined(SNOW_FLAG) || defined(EYE)
 #	define HAS_VIEW_VECTOR
 #endif  // defined(SPECULAR) || defined(AMBIENT_SPECULAR) || defined(ENVMAP) || defined(RIM_LIGHTING) || defined(PARALLAX) || defined(MULTI_LAYER_PARALLAX) || defined(FACEGEN) || defined(FACEGEN_RGB_TINT) || defined(SNOW_FLAG) || defined(EYE) || defined(PBR)
 
@@ -491,6 +494,11 @@ struct PS_OUTPUT
 	float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
+	float4 Deferred : SV_Target4;
+	float4 Specular : SV_Target5;
+#else
+	float4 Deferred : SV_Target4;
+	float4 Specular : SV_Target5;
 #endif
 };
 
@@ -542,9 +550,6 @@ SamplerState SampDetailSampler : register(s4);
 SamplerState SampParallaxSampler : register(s3);
 #		elif defined(PROJECTED_UV) && !defined(SPARKLE)
 SamplerState SampProjDiffuseSampler : register(s3);
-#		endif
-#		if defined(PBR)
-SamplerState SampRMAOSampler : register(s6);
 #		endif
 #		if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(SNOW_FLAG) || defined(EYE)) && !defined(FACEGEN)
 SamplerState SampEnvSampler : register(s4);
@@ -620,9 +625,6 @@ Texture2D<float4> TexDetailSampler : register(t4);
 Texture2D<float4> TexParallaxSampler : register(t3);
 #		elif defined(PROJECTED_UV) && !defined(SPARKLE)
 Texture2D<float4> TexProjDiffuseSampler : register(t3);
-#		endif
-#		if defined(PBR)
-Texture2D<float4> TexRMAOSampler : register(t6);
 #		endif
 #		if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(SNOW_FLAG) || defined(EYE)) && !defined(FACEGEN)
 TextureCube<float4> TexEnvSampler : register(t4);
@@ -816,79 +818,6 @@ float3 TransformNormal(float3 normal)
 	return normal * 2 + -1.0.xxx;
 }
 
-float3 fresnelSchlick(float cosTheta, float3 F0)
-{
-	return F0 + (1 - F0) * pow(saturate(1 - cosTheta), 5);
-}
-
-static const float PI = 3.14159265;
-
-float DistributionGGX(float NdotH, float roughness)
-{
-	float a = roughness * roughness;
-	float a2 = a * a;
-	float NdotH2 = NdotH * NdotH;
-
-	float num = a2;
-	float denom = (NdotH2 * (a2 - 1) + 1);
-	denom = PI * denom * denom;
-
-	return num / denom;
-}
-
-float GeometrySchlickGGX(float cosTheta, float roughness)
-{
-	float r = (roughness + 1);
-	float k = (r * r) / 8;
-
-	float num = cosTheta;
-	float denom = cosTheta * (1 - k) + k;
-
-	return num / denom;
-}
-
-float GeometrySmith(float NdotV, float NdotL, float roughness)
-{
-	float ggxV = GeometrySchlickGGX(NdotV, roughness);
-	float ggxL = GeometrySchlickGGX(NdotL, roughness);
-
-	return ggxV * ggxL;
-}
-
-float OrenNayarDiffuseCoefficient(float roughness, float3 N, float3 L, float3 V, float NdotL, float NdotV)
-{
-	float gamma = dot(V - N * NdotV, L - N * NdotL);
-	float a = roughness * roughness;
-	float A = 1 - 0.5 * (a / (a + 0.57));
-	float B = 0.45 * (a / (a + 0.09));
-	float C = sqrt((1 - NdotV * NdotV) * (1 - NdotL * NdotL)) / max(NdotV, NdotL);
-	return (A + B * max(0.0f, gamma) * C) / PI;
-}
-
-float3 GetLightRadiance(float3 N, float3 L, float3 V, float3 F0, float3 originalRadiance, float3 albedo, float roughness, float metallic)
-{
-	float3 radiance = PI * originalRadiance;
-
-	float3 H = normalize(V + L);
-	float NdotL = dot(N, L);
-	float NdotV = dot(N, V);
-	float HdotV = dot(H, V);
-	float NdotH = dot(N, H);
-
-	float NDF = DistributionGGX(saturate(NdotH), roughness);
-	float G = GeometrySmith(saturate(NdotV), saturate(NdotL), roughness);
-	float3 F = fresnelSchlick(saturate(HdotV), F0);
-
-	float3 kD = (1 - F) * (1 - metallic);
-
-	float3 numerator = NDF * G * F;
-	float denominator = 4 * saturate(NdotV) * saturate(NdotL) + 0.0001;
-	float3 specular = numerator / denominator;
-
-	float diffuseValue = OrenNayarDiffuseCoefficient(roughness, N, L, V, NdotL, NdotV);
-	return (kD * diffuseValue * albedo + specular) * saturate(NdotL) * radiance;
-}
-
 float GetLodLandBlendParameter(float3 color)
 {
 	float result = saturate(1.6666666 * (dot(color, 0.55.xxx) - 0.4));
@@ -1079,6 +1008,8 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #	if defined(LIGHT_LIMIT_FIX)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
+
+#include "SubsurfaceScattering.hlsli"
 
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
@@ -1338,25 +1269,25 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 #	endif  // defined (CPM_AVAILABLE) && defined(ENVMAP)
 
-#	if defined(PBR)
-	// float3 rmaoColor = TexRMAOSampler.Sample(SampRMAOSampler, uv).xyz;
-	// float roughness = rmaoColor.x;
-	// float metallic = rmaoColor.y;
-	// float ao = rmaoColor.z;
+// #	if defined(SKIN)
+// 	// float3 rmaoColor = TexRMAOSampler.Sample(SampRMAOSampler, uv).xyz;
+// 	// float roughness = rmaoColor.x;
+// 	// float metallic = rmaoColor.y;
+// 	// float ao = rmaoColor.z;
 
-	float roughness = 1 - glossiness;
-	float metallic = 0;
-#		if defined(ENVMAP)
-	float envMaskColor = TexEnvMaskSampler.Sample(SampEnvMaskSampler, uv).x;
-	metallic = envMaskColor * EnvmapData.x;
-#		endif  // ENVMAP
-	float ao = 1;
+// 	float roughness = 1 - glossiness;
+// 	float metallic = 0;
+// #		if defined(ENVMAP)
+// 	float envMaskColor = TexEnvMaskSampler.Sample(SampEnvMaskSampler, uv).x;
+// 	metallic = envMaskColor * EnvmapData.x;
+// #		endif  // ENVMAP
+// 	float ao = 1;
 
-	float3 F0 = 0.04.xxx;
-	F0 = lerp(F0, baseColor.xyz, metallic);
+// 	float3 F0 = 0.04.xxx;
+// 	F0 = lerp(F0, baseColor.xyz, metallic);
 
-	float3 totalRadiance = 0.0.xxx;
-#	endif  // PBR
+// 	float3 totalRadiance = 0.0.xxx;
+// #	endif  // PBR
 
 #	if defined(FACEGEN)
 	baseColor.xyz = GetFacegenBaseColor(baseColor.xyz, uv);
@@ -1613,6 +1544,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif  // WORLD_MAP
 
 	float3 dirLightColor = DirLightColor.xyz;
+
+#if defined(SKIN_SHADING_LINEAR)
+	dirLightColor *= 1;
+#endif
+
 	float selfShadowFactor = 1.0f;
 
 	float3 nsDirLightColor = dirLightColor;
@@ -1653,9 +1589,44 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif      // defined(CPM_AVAILABLE) && (defined (SKINNED) || !defined \
 				// (MODELSPACENORMALS))
 
-#	if defined(PBR)
-	totalRadiance += GetLightRadiance(modelNormal.xyz, DirLightDirection.xyz, viewDirection, F0, dirLightColor.xyz, baseColor.xyz, roughness, metallic);
+#	if defined(SKIN)
+
+	float3 totalRadiance = 0;
+
+	float3 albedo = baseColor.xyz * input.Color.xyz;
+
+	float ao;
+
+	Material2PBR(albedo, albedo, ao);
+
+	float roughness = 1 - glossiness;
+
+	float3 scatterColor = float3(1.0, 0.3, 0.2);
+	scatterColor *= saturate(LightingEffectParams.x * 10) / 3.14;
+
+	float4 blurredNormalColor = TexNormalSampler.SampleBias(SampNormalSampler, uv, 1);
+
+	blurredNormalColor = lerp(blurredNormalColor, rimSoftLightColor, 0.25);
+	blurredNormalColor.xyz = blurredNormalColor.xzy * 2.0.xxx + -1.0.xxx;
+
+#	if defined(MODELSPACENORMALS) && !defined(SKINNED)
+	float4 blurredNormal = blurredNormalColor;
 #	else
+	float4 blurredNormal = float4(normalize(mul(tbn, blurredNormalColor.xyz)), 1);
+#endif
+
+	SubsurfaceNormal subsurfaceNormal = CalculateSubsurfaceNormal(saturate(scatterColor * PI), modelNormal.xyz, blurredNormal);
+	SubsurfaceNormal subsurfaceNormalModel = subsurfaceNormal;
+
+	float specularMultiplier = glossiness * MaterialData.yyy * SpecularColor.xyz;
+	totalRadiance += GetLightRadianceSubsurface(input, uv, modelNormal.xyz, DirLightDirection.xyz, viewDirection, dirLightColor.xyz, albedo.xyz, ao, roughness, shininess, specularMultiplier, scatterColor, subsurfaceNormal, blurredNormal);
+
+#	else
+
+#if defined(SKIN_SHADING_LINEAR)
+	baseColor.xyz = sRGB2Lin(baseColor.xyz);
+#endif
+
 	float3 diffuseColor = 0.0.xxx;
 	float3 specularColor = 0.0.xxx;
 
@@ -1665,7 +1636,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float dirLightAngle = dot(modelNormal.xyz, DirLightDirection.xyz);
 	float3 dirDiffuseColor = dirLightColor * saturate(dirLightAngle.xxx);
 
-#		if defined(SOFT_LIGHTING)
+#		if defined(SOFT_LIGHTING) && !(defined(FACEGEN) || defined(FACEGEN_RGB_TINT))
 	lightsDiffuseColor += nsDirLightColor.xyz * GetSoftLightMultiplier(dirLightAngle) * rimSoftLightColor.xyz;
 #		endif
 
@@ -1683,7 +1654,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 	} else {
 #		if defined(SPECULAR) || defined(SPARKLE)
+#if defined(FACEGEN) || defined(FACEGEN_RGB_TINT)
+		lightsSpecularColor += GetPBRSpecular(input, uv, modelNormal.xyz, DirLightDirection, viewDirection, dirLightColor.xyz, glossiness, shininess);
+#else
 		lightsSpecularColor = GetLightSpecularInput(input, DirLightDirection, viewDirection, modelNormal.xyz, dirLightColor.xyz, shininess, uv);
+#endif
 #		endif
 	}
 
@@ -1725,6 +1700,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			float intensityMultiplier = 1 - intensityFactor * intensityFactor;
 
 			float3 lightColor = PointLightColor[intLightIndex].xyz;
+#if defined(SKIN_SHADING_LINEAR)
+	lightColor *= 1;
+#endif
 			float3 nsLightColor = lightColor;
 #		if defined(DEFSHADOW)
 			lightColor *= shadowComponent.xxx;
@@ -1777,13 +1755,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			}
 #		endif
 
-#		if defined(PBR)
-			totalRadiance += GetLightRadiance(modelNormal.xyz, normalizedLightDirection, viewDirection, F0, lightColor * intensityMultiplier.xxx, baseColor.xyz, roughness, metallic);
+#		if defined(SKIN)
+		totalRadiance += GetLightRadianceSubsurface(input, uv, modelNormal.xyz, normalizedLightDirection.xyz, viewDirection, lightColor.xyz * intensityMultiplier, albedo.xyz, ao, roughness, shininess, specularMultiplier, scatterColor, subsurfaceNormal, blurredNormal);
 #		else
 			float lightAngle = dot(modelNormal.xyz, normalizedLightDirection.xyz);
 			float3 lightDiffuseColor = lightColor * saturate(lightAngle.xxx);
 
-#			if defined(SOFT_LIGHTING)
+#			if defined(SOFT_LIGHTING) && !(defined(FACEGEN) || defined(FACEGEN_RGB_TINT))
 			lightDiffuseColor += nsLightColor * GetSoftLightMultiplier(dot(modelNormal.xyz, lightDirection.xyz)) * rimSoftLightColor.xyz;
 #			endif  // SOFT_LIGHTING
 
@@ -1796,7 +1774,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			endif  // BACK_LIGHTING
 
 #			if defined(SPECULAR) || (defined(SPARKLE) && !defined(SNOW))
+#if defined(FACEGEN) || defined(FACEGEN_RGB_TINT)
+		lightsSpecularColor += GetPBRSpecular(input, uv, modelNormal.xyz, normalizedLightDirection, viewDirection, lightColor.xyz, glossiness, shininess) * intensityMultiplier;
+#else
 			lightsSpecularColor += GetLightSpecularInput(input, normalizedLightDirection, viewDirection, modelNormal.xyz, lightColor, shininess, uv) * intensityMultiplier.xxx;
+#endif
 #			endif  // defined (SPECULAR) || (defined (SPARKLE) && !defined(SNOW))
 
 			lightsDiffuseColor += lightDiffuseColor * intensityMultiplier.xxx;
@@ -1836,6 +1818,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				tbn = float3x3(input.TBN0.xyz, input.TBN1.xyz, input.TBN2.xyz);
 
 				worldSpaceVertexNormal = normalize(mul(input.World[eyeIndex], float4(vertexNormal, 0)));
+				#if defined(SKIN)
+				subsurfaceNormal = CalculateSubsurfaceNormal(saturate(scatterColor * PI), modelNormal.xyz, blurredNormal);
+				#endif
 			}
 #				endif
 #			endif
@@ -1852,6 +1837,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 				float intensityMultiplier = 1 - intensityFactor * intensityFactor;
 				float3 lightColor = light.color.xyz;
+#if defined(SKIN_SHADING_LINEAR)
+	lightColor *= 1;
+#endif		
 				float3 nsLightColor = lightColor;
 				float3 normalizedLightDirection = normalize(lightDirection);
 
@@ -1886,13 +1874,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				}
 #			endif
 
-#			if defined(PBR)
-				totalRadiance += GetLightRadiance(worldSpaceNormal.xyz, normalizedLightDirection, worldSpaceViewDirection, F0, lightColor * intensityMultiplier.xxx, baseColor.xyz, roughness, metallic);
+#			if defined(SKIN)
+			totalRadiance += GetLightRadianceSubsurface(input, uv, worldSpaceNormal.xyz, normalizedLightDirection.xyz, worldSpaceViewDirection, lightColor.xyz * intensityMultiplier, albedo.xyz, ao, roughness, shininess, specularMultiplier, scatterColor, subsurfaceNormal, blurredNormal);
 #			else
 				float lightAngle = dot(worldSpaceNormal.xyz, normalizedLightDirection.xyz);
 				float3 lightDiffuseColor = lightColor * saturate(lightAngle.xxx);
 
-#				if defined(SOFT_LIGHTING)
+#				if defined(SOFT_LIGHTING) && !(defined(FACEGEN) || defined(FACEGEN_RGB_TINT))
 				lightDiffuseColor += nsLightColor * GetSoftLightMultiplier(dot(worldSpaceNormal.xyz, lightDirection.xyz)) * rimSoftLightColor.xyz;
 #				endif
 
@@ -1905,7 +1893,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #				endif
 
 #				if defined(SPECULAR) || (defined(SPARKLE) && !defined(SNOW))
+#if defined(FACEGEN) || defined(FACEGEN_RGB_TINT)
+				lightsSpecularColor += GetPBRSpecular(input, uv, worldSpaceNormal.xyz, normalizedLightDirection.xyz, worldSpaceViewDirection, lightColor.xyz, glossiness, shininess) * intensityMultiplier;
+#else
 				lightsSpecularColor += GetLightSpecularInput(input, normalizedLightDirection, worldSpaceViewDirection, worldSpaceNormal.xyz, lightColor, shininess, uv) * intensityMultiplier.xxx;
+#endif
 #				endif
 				lightsDiffuseColor += lightDiffuseColor * intensityMultiplier.xxx;
 #			endif
@@ -1914,10 +1906,16 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 #		endif
 #	endif
-#	if defined(PBR)
+#	if defined(SKIN)
 	// float3 ambientColor = 0.03 * baseColor.xyz * ao;
-	float3 ambientColor = (mul(DirectionalAmbient, modelNormal) + IBLParams.yzw * IBLParams.xxx) * baseColor.xyz * ao;
-	float3 color = ambientColor + totalRadiance;
+
+	float3 ambientColor = float3(
+		mul(DirectionalAmbient, float4(blurredNormal.xyz, 1)).r,
+		mul(DirectionalAmbient, float4(blurredNormal.xyz, 1)).g,
+		mul(DirectionalAmbient, float4(blurredNormal.xyz, 1)).b
+	) * albedo * ao;
+
+	float3 color = totalRadiance + ambientColor;
 
 	// color = color / (color + 1.0);
 	// color = pow(color, 1.0 / 2.2);
@@ -1926,13 +1924,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
 
-#		if defined(CHARACTER_LIGHT)
-	float charLightMul =
-		saturate(dot(viewDirection, modelNormal.xyz)) * CharacterLightParams.x +
-		CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
-	float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightSampler.Sample(SampCharacterLightSampler, baseShadowUV).x));
-	diffuseColor += (charLightMul * charLightColor).xxx;
-#		endif  // CHARACTER_LIGHT
+// #		if defined(CHARACTER_LIGHT)
+// 	float charLightMul =
+// 		saturate(dot(viewDirection, modelNormal.xyz)) * CharacterLightParams.x +
+// 		CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
+// 	float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightSampler.Sample(SampCharacterLightSampler, baseShadowUV).x));
+// 	diffuseColor += (charLightMul * charLightColor).xxx;
+// #		endif  // CHARACTER_LIGHT
 
 #		if defined(EYE)
 	modelNormal.xyz = input.EyeNormal;
@@ -1953,6 +1951,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif  // GLOWMAP
 
 	float3 directionalAmbientColor = mul(DirectionalAmbient, modelNormal);
+#if defined(SKIN_SHADING_LINEAR)
+	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
+#endif
 	diffuseColor = directionalAmbientColor + emitColor.xyz + diffuseColor;
 	diffuseColor += IBLParams.yzw * IBLParams.xxx;
 
@@ -1986,13 +1987,16 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	// #	else   // VR
 	// float2 screenMotionVector = GetSSMotionVector(worldPositionVR, PreviousWorldPositionVR, eyeIndex);
 // #	endif  // !VR
-#	if !defined(PBR)
+#	if !defined(SKIN) 
+#if (defined(FACEGEN) || defined(FACEGEN_RGB_TINT))
+	//specularColor = (specularColor * MaterialData.yyy) * SpecularColor.xyz;
+#else
 #		if defined(SPECULAR)
 	specularColor = (specularColor * glossiness * MaterialData.yyy) * SpecularColor.xyz;
 #		elif defined(SPARKLE)
 	specularColor *= glossiness;
 #		endif  // SPECULAR
-
+#		endif
 	if (useSnowSpecular) {
 		specularColor = 0;
 	}
@@ -2005,7 +2009,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif  // AMBIENT_SPECULAR
 #	endif      // !defined(PBR)
 
-#	if !defined(PBR) && (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
+#	if !defined(SKIN) && (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
 #		if defined(CPM_AVAILABLE) && defined(ENVMAP)
 	vertexColor += diffuseColor * envColor * complexSpecular;
 #		else
@@ -2022,7 +2026,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = tmpColor.xyz + ColourOutputClamp.xxx;
 	color.xyz = min(vertexColor.xyz, color.xyz);
 
-#	if !defined(PBR)
+#	if !defined(SKIN) && !defined(SKIN_SHADING)
 #		if defined(CPM_AVAILABLE) && defined(ENVMAP)
 	color.xyz += specularColor * complexSpecular;
 #		else
@@ -2150,6 +2154,23 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(OUTLINE)
 	psout.Albedo = float4(1, 0, 0, 1);
 #	endif  // OUTLINE
+
+	psout.Deferred = 0.0;
+
+#if defined(SKIN_SHADING_LINEAR)
+	psout.Albedo.xyz = Lin2sRGB(psout.Albedo.xyz);
+#endif
+
+#if defined(SKIN_SHADING)
+	psout.Deferred.x = RGBToLuminance(rimSoftLightColor.xyz);
+#endif
+	psout.Deferred.w = psout.Albedo.w;
+
+	psout.Specular.xyz = 0;
+#if defined(SKIN_SHADING)
+	psout.Specular.xyz = specularColor;
+#endif
+	psout.Specular.w = psout.Albedo.w;
 
 	return psout;
 }

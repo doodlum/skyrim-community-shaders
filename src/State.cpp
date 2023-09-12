@@ -8,6 +8,8 @@
 
 #include "Feature.h"
 
+#include "Features/SubsurfaceScattering.h"
+
 void State::Draw()
 {
 	auto& shaderCache = SIE::ShaderCache::Instance();
@@ -35,6 +37,11 @@ void State::Draw()
 	}
 
 	currentShader = nullptr;
+}
+
+void State::DrawDeferred()
+{
+	SubsurfaceScattering::GetSingleton()->DrawDeferred();
 }
 
 void State::Reset()
