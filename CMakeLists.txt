@@ -77,11 +77,10 @@ endif()
 # #######################################################################################################################
 # # Automatic deployment
 # #######################################################################################################################
-
 file(GLOB FEATURE_PATHS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/features/*)
 
 # Automatic deployment to CommunityShaders output directory.
-if (AUTO_PLUGIN_DEPLOYMENT)
+if(AUTO_PLUGIN_DEPLOYMENT)
 	foreach(DEPLOY_TARGET $ENV{CommunityShadersOutputDir})
 		message("Copying package folder with dll/pdb with all features to ${DEPLOY_TARGET}")
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -89,13 +88,16 @@ if (AUTO_PLUGIN_DEPLOYMENT)
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/"
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/"
 		)
+
 		foreach(FEATURE_PATH ${FEATURE_PATHS})
+			message("Copying ${FEATURE_PATH} to ${DEPLOY_TARGET}")
 			add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E copy_directory ${FEATURE_PATH} "${DEPLOY_TARGET}"
 			)
 		endforeach()
 	endforeach()
-	if (NOT DEFINED ENV{CommunityShadersOutputDir})
+
+	if(NOT DEFINED ENV{CommunityShadersOutputDir})
 		message("When using AUTO_PLUGIN_DEPLOYMENT option, you need to set environment variable 'CommunityShadersOutputDir'")
 	endif()
 endif()

@@ -98,9 +98,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 				shaderCache.SetAsync(true);
 				shaderCache.SetDiskCache(true);
 				shaderCache.SetDump(false);
-
-				State::GetSingleton()->Load();
-
 				shaderCache.ValidateDiskCache();
 
 				if (LightLimitFix::GetSingleton()->loaded) {
@@ -123,7 +120,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 
 				auto& shaderCache = SIE::ShaderCache::Instance();
 
-				while (shaderCache.GetCompletedTasks() != shaderCache.GetTotalTasks()) {
+				while (shaderCache.IsCompiling()) {
 					std::this_thread::sleep_for(100ms);
 				}
 
@@ -133,6 +130,8 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 
 				if (LightLimitFix::GetSingleton()->loaded)
 					LightLimitFix::GetSingleton()->DataLoaded();
+				if (ExtendedMaterials::GetSingleton()->loaded)
+					ExtendedMaterials::GetSingleton()->DataLoaded();
 			}
 
 			break;
