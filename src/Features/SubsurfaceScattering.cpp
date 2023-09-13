@@ -176,7 +176,8 @@ void SubsurfaceScattering::DrawDeferred()
 			data.DynamicRes.w = 1.0f / data.DynamicRes.y;
 
 			auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-			auto cameraData = shadowState->GetRuntimeData().cameraData.getEye();
+			auto cameraData = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cameraData.getEye() :
+			                                         shadowState->GetVRRuntimeData().cameraData.getEye();
 			data.SSSS_FOVY = atan(1.0f / cameraData.projMat.m[0][0]) * 2.0f * (180.0f / 3.14159265359f);
 
 			data.CameraData.x = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar;
