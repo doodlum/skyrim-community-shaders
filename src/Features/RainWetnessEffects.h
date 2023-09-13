@@ -22,8 +22,8 @@ public:
 		float RainSpecularMultiplierDay = 15.0f;
 		float RainDiffuseMultiplierDay = 0.5f;
 		float RainShininessMultiplierNight = 2.0f;
-		float RainSpecularMultiplierNight = 15.0f;
-		float RainDiffuseMultiplierNight = 0.5f;
+		float RainSpecularMultiplierNight = 10.0f;
+		float RainDiffuseMultiplierNight = 0.9f;
 	};
 
 	struct alignas(16) PerPass

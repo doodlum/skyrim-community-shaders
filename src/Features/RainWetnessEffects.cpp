@@ -6,6 +6,7 @@ const float DRY_SHININESS_MULTIPLIER = 1.0f;
 const float DRY_SPECULAR_MULTIPLIER = 1.0f;
 const float DRY_DIFFUSE_MULTIPLIER = 1.0f;
 const float TRANSITION_CURVE_MULTIPLIER = 3.0f;
+const float TRANSITION_DENOMINATOR = 256.0f;
 const float DAY = 0.0f;
 const float NIGHT = 1.0f;
 
@@ -166,9 +167,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 												// This should never happen
 												logger::info("This shouldn't happen");
 											}
-										} else {
-											logger::info("null pointers");
-										}
+										} 
 									}
 								}
 
@@ -182,11 +181,12 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 									DiffuseMultiplierCurrentNight = settings.RainDiffuseMultiplierNight;
 
 									// Fade in gradually after precipitation has started
-									float startPercentage = (currentWeather->data.precipitationBeginFadeIn + 256) * (1.0f / 255.0f);
+									float beginFade = currentWeather->data.precipitationBeginFadeIn;
+									beginFade = beginFade > 0 ? beginFade : beginFade + TRANSITION_DENOMINATOR;
+									float startPercentage = (TRANSITION_DENOMINATOR - currentWeather->data.precipitationBeginFadeIn) * (1.0f / TRANSITION_DENOMINATOR);
 									startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
 									float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
-									WeatherTransitionPercentage = currentPercentage > 0.0f ? currentPercentage : 0.0f;
-
+									WeatherTransitionPercentage = currentPercentage > 0.0f ? (currentPercentage < 1.0f ? currentPercentage : 1.0f) : 0.0f;
 								} else {
 									// Not currently raining
 									ShininessMultiplierCurrentDay = DRY_SHININESS_MULTIPLIER;
@@ -231,7 +231,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 								}
 
 								// Adjust the transition curve to ease in to the transition
-								WeatherTransitionPercentage = exp2(TRANSITION_CURVE_MULTIPLIER * log2(WeatherTransitionPercentage));
+								WeatherTransitionPercentage = (exp2(TRANSITION_CURVE_MULTIPLIER * log2(WeatherTransitionPercentage)));
 
 								data.RainShininessMultiplier = std::lerp(std::lerp(ShininessMultiplierPreviousDay, ShininessMultiplierPreviousNight, DayNightTransition), std::lerp(ShininessMultiplierCurrentDay, ShininessMultiplierCurrentNight, DayNightTransition), WeatherTransitionPercentage);
 								data.RainSpecularMultiplier = std::lerp(std::lerp(SpecularMultiplierPreviousDay, SpecularMultiplierPreviousNight, DayNightTransition), std::lerp(SpecularMultiplierCurrentDay, SpecularMultiplierCurrentNight, DayNightTransition), WeatherTransitionPercentage);
