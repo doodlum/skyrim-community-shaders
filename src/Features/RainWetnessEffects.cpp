@@ -167,7 +167,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 												// This should never happen
 												logger::info("This shouldn't happen");
 											}
-										} 
+										}
 									}
 								}
 
