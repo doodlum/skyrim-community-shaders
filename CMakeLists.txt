@@ -34,6 +34,49 @@ find_package(directxtk CONFIG REQUIRED)
 find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
 find_package(pystring CONFIG REQUIRED)
 
+# Kickstart RT code from https://github.com/NVIDIAGameWorks/KickstartRT_demo/blob/95ea0142ca95df77ce7d9002788afdf1dde9ecf4/CMakeLists.txt and
+# https://github.com/NVIDIAGameWorks/KickstartRT_demo/blob/95ea0142ca95df77ce7d9002788afdf1dde9ecf4/KickstartRT_demo/CMakeLists.txt under MIT
+# TODO: Right now despite only KickstartRT_Interop_D3D11 and KickstartRT_core_DX12 being dependencies, other components are
+# being built.
+if(BUILD_KICKSTARTRT) # KickstartRT enabled
+	message("Enabling KickStartRT")
+	add_subdirectory(extern/KickstartRT KickstartRT EXCLUDE_FROM_ALL)
+	set(KickstartRT_SDK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/KickstartRT)
+	set(KickstartRT_SDK_NAME KickstartRT)
+	list(APPEND KickstartRT_Libs ${KickstartRT_SDK_NAME}_D3D12)
+
+	# This is a dependency of KickstartRT_Interop_D3D11
+	# list(APPEND KickstartRT_Deps KickstartRT_core_DX12)
+	set_property(TARGET KickstartRT_core_DX12 PROPERTY COMPILE_WARNING_AS_ERROR OFF)
+	target_compile_definitions(KickstartRT_core_DX12 PRIVATE WIN32) # fixes compilation error where win32 isn't defined
+
+	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_D3D12=1)
+	list(APPEND KickstartRT_Libs ${KickstartRT_SDK_NAME}_Interop_D3D11)
+	target_compile_definitions(KickstartRT_Interop_D3D11 PRIVATE WIN32=100) # fixes compilation error where win32 isn't defined as int
+	target_compile_definitions(KickstartRT_ShaderCompiler PRIVATE WIN32) # fixes compilation error where win32 isn't defined
+
+	list(APPEND KickstartRT_Deps KickstartRT_Interop_D3D11)
+	list(APPEND KickstartRT_Libs ${KickstartRT_SDK_NAME}_VK)
+
+	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_D3D11=1)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_VK=1)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_NRD=1)
+
+	target_link_libraries(${PROJECT_NAME} PRIVATE ${KickstartRT_Libs})
+
+	target_include_directories(${PROJECT_NAME} PRIVATE
+		${KickstartRT_SDK_ROOT}/include
+		${KickstartRT_SDK_ROOT}/common/src
+	)
+
+	set(KickstartRT_LinkDir ${CMAKE_CURRENT_BINARY_DIR}/../KickstartRT)
+
+	list(APPEND KickstartRT_LinkDir ${CMAKE_CURRENT_BINARY_DIR}/../KickstartRT/interop_d3d11)
+	target_link_directories(${PROJECT_NAME} PRIVATE ${KickstartRT_LinkDir})
+
+	add_dependencies(${PROJECT_NAME} ${KickstartRT_Deps})
+endif()
+
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
@@ -77,11 +120,10 @@ endif()
 # #######################################################################################################################
 # # Automatic deployment
 # #######################################################################################################################
-
 file(GLOB FEATURE_PATHS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/features/*)
 
 # Automatic deployment to CommunityShaders output directory.
-if (AUTO_PLUGIN_DEPLOYMENT)
+if(AUTO_PLUGIN_DEPLOYMENT)
 	foreach(DEPLOY_TARGET $ENV{CommunityShadersOutputDir})
 		message("Copying package folder with dll/pdb with all features to ${DEPLOY_TARGET}")
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -89,13 +131,15 @@ if (AUTO_PLUGIN_DEPLOYMENT)
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/"
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/"
 		)
+
 		foreach(FEATURE_PATH ${FEATURE_PATHS})
 			add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E copy_directory ${FEATURE_PATH} "${DEPLOY_TARGET}"
 			)
 		endforeach()
 	endforeach()
-	if (NOT DEFINED ENV{CommunityShadersOutputDir})
+
+	if(NOT DEFINED ENV{CommunityShadersOutputDir})
 		message("When using AUTO_PLUGIN_DEPLOYMENT option, you need to set environment variable 'CommunityShadersOutputDir'")
 	endif()
 endif()
