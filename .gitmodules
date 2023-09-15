@@ -1,3 +1,6 @@
 [submodule "extern/CommonLibSSE-NG"]
 	path = extern/CommonLibSSE-NG
 	url = https://github.com/alandtse/CommonLibVR.git
+[submodule "extern/KickstartRT"]
+	path = extern/KickstartRT
+	url = https://github.com/NVIDIAGameWorks/KickstartRT.git

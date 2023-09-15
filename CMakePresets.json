@@ -53,6 +53,17 @@
 			}
 		},
 		{
+			"name": "raytracing",
+			"hidden": true,
+			"cacheVariables": {
+				"BUILD_KICKSTARTRT": true,
+				"KickstartRT_SDK_WITH_DX12":"ON",
+				"KickstartRT_SDK_WITH_Interop_DX11 ": "ON",
+				"KickstartRT_SDK_WITH_NRD ": "ON",
+				"KickstartRT_SDK_WITH_VULKAN" : "ON"
+			}
+		},
+		{
 			"name": "AE",
 			"cacheVariables": {
 				"BUILD_SKYRIM": true,
@@ -110,6 +121,22 @@
 				"vcpkg",
 				"win64",
 				"msvc"
+			]
+		},
+		{
+			"name": "ALL-RT",
+			"cacheVariables": {
+				"BUILD_SKYRIM": true,
+				"ENABLE_SKYRIM_AE": "ON",
+				"ENABLE_SKYRIM_SE": "ON",
+				"ENABLE_SKYRIM_VR": "ON"
+			},
+			"inherits": [
+				"common",
+				"vcpkg",
+				"win64",
+				"msvc",
+				"raytracing"
 			]
 		},
 		{
