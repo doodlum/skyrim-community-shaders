@@ -216,11 +216,12 @@ float4 SSSSBlurPS(
 #endif
 
     float3 sss = DeferredTexture.SampleLevel(PointSampler, texcoord, 0).xyz;
-    colorM.a = RGBToLuminance(sss);
 
+    colorM.a = sss.x;
     if (colorM.a == 0)
         return colorM;
-    
+    colorM.a = 1;
+
     // Fetch linear depth of current pixel:
     float depthM =  DepthTexture.SampleLevel(PointSampler, texcoord, 0).r;
     depthM = GetScreenDepth(depthM);
@@ -281,14 +282,16 @@ float4 SSSSBlurPS(
         depth = GetScreenDepth(depth);
 
         // If the difference in depth is huge, we lerp color back to "colorM":
-        float s = min(abs(depthM - depth), 1.0);
+        float s = min(0.125 * abs(depthM - depth), 1.0);
         color = lerp(color, colorM.rgb, s);
 
         // Accumulate:
         colorBlurred.rgb += kernel[i].rgb * color.rgb;
     }
+
+   // colorBlurred = lerp(colorM, colorBlurred, 1.0 - (sss.x * sss.x));
    
-    return colorBlurred;
+    return lerp(colorM, colorBlurred, sss.x);
 }
 
 //-----------------------------------------------------------------------------

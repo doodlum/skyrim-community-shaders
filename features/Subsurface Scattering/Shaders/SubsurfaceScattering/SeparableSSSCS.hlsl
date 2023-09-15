@@ -38,6 +38,7 @@ float GetScreenDepth(float depth)
 		color.rgb = Lin2sRGB(color.rgb);
 #endif
 		color.rgb += SpecularTexture.SampleLevel(PointSampler, texCoord, 0).rgb;
+		
 		color.a = 1.0;
 		SSSRW[DTid.xy] = color;
 #endif
