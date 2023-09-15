@@ -27,8 +27,7 @@ void SubsurfaceScattering::Draw(const RE::BSShader* shader, const uint32_t)
 
 			D3D11_TEXTURE2D_DESC texDesc{};
 			snowSwapTexture.texture->GetDesc(&texDesc);
-			if ((texDesc.BindFlags | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET) != texDesc.BindFlags)
-			{
+			if ((texDesc.BindFlags | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET) != texDesc.BindFlags) {
 				logger::info("missing access!");
 			}
 			colorTextureTemp = new Texture2D(texDesc);
@@ -39,12 +38,10 @@ void SubsurfaceScattering::Draw(const RE::BSShader* shader, const uint32_t)
 			colorTextureTemp->CreateSRV(srvDesc);
 			colorTextureTemp2->CreateSRV(srvDesc);
 
-
 			D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 			snowSwapTexture.RTV->GetDesc(&rtvDesc);
 			colorTextureTemp->CreateRTV(rtvDesc);
 			colorTextureTemp2->CreateRTV(rtvDesc);
-
 
 			D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 			snowSwapTexture.UAV->GetDesc(&uavDesc);
@@ -83,7 +80,7 @@ void SubsurfaceScattering::Draw(const RE::BSShader* shader, const uint32_t)
 			samplerDesc.MinLOD = 0;
 			samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 			DX::ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &linearSampler));
-			
+
 			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 			DX::ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &pointSampler));
 		}
@@ -115,8 +112,7 @@ void SubsurfaceScattering::Draw(const RE::BSShader* shader, const uint32_t)
 
 		context->OMGetBlendState(&blendState, blendFactor, &sampleMask);
 
-		if (!mappedBlendStates.contains(blendState))
-		{
+		if (!mappedBlendStates.contains(blendState)) {
 			if (!modifiedBlendStates.contains(blendState)) {
 				D3D11_BLEND_DESC blendDesc;
 				blendState->GetDesc(&blendDesc);
@@ -184,7 +180,8 @@ void SubsurfaceScattering::DrawDeferred()
 			data.DynamicRes.w = 1.0f / data.DynamicRes.y;
 
 			auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-			auto cameraData = shadowState->GetRuntimeData().cameraData.getEye();
+			auto cameraData = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cameraData.getEye() :
+			                                         shadowState->GetVRRuntimeData().cameraData.getEye();
 			data.SSSS_FOVY = atan(1.0f / cameraData.projMat.m[0][0]) * 2.0f * (180.0f / 3.14159265359f);
 
 			data.CameraData.x = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar;
