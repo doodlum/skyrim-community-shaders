@@ -103,6 +103,8 @@ float RGBToLuminance(float3 color)
 
 float InterleavedGradientNoise(float2 uv)
 {
+    if (FrameCount == 0)
+        return 0.5;
 	// Temporal factor
 	float frameStep = float(FrameCount % 16) * 0.0625f;
 	uv.x += frameStep * 4.7526;
@@ -265,7 +267,7 @@ float4 SSSSBlurPS(
     // Calculate the final step to fetch the surrounding pixels:
     float2 finalStep = scale * dir;
     finalStep *= colorM.a; // Modulate it using the alpha channel.
-    finalStep += finalStep * InterleavedGradientNoise(texcoord * BufferDim); // Randomise width to fix banding
+    finalStep *= InterleavedGradientNoise(texcoord * BufferDim); // Randomise width to fix banding
 
     // Accumulate the other samples:
     [unroll]
