@@ -177,7 +177,7 @@ float3 GetPBRSpecular(PS_INPUT input, float2 uv, float3 N, float3 L, float3 V, f
     float NdotH = saturate(dot(N, H));
         
     float roughness = 1 - glossiness;
-    roughness /= 2;
+    roughness /= 1.5;
 
     float NDF1 = GetLightSpecularInput(input, L, V, N, lightColor, shininess, uv) * glossiness;
    
@@ -187,9 +187,9 @@ float3 GetPBRSpecular(PS_INPUT input, float2 uv, float3 N, float3 L, float3 V, f
 
     // Cook-Torrance specular microfacet BRDF.
     float3 specularBRDF = (NDF * G * F) / max(0.001, 4.0 * NdotL * NdotH);
-
+    
     // Total contribution for this light.
-    return max(specularBRDF * NdotL * radiance, NDF1);
+    return max(specularBRDF * NdotL * radiance, NDF1 * lightColor);
 }
 
 

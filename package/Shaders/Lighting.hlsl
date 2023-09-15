@@ -1924,13 +1924,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
 
-// #		if defined(CHARACTER_LIGHT)
-// 	float charLightMul =
-// 		saturate(dot(viewDirection, modelNormal.xyz)) * CharacterLightParams.x +
-// 		CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
-// 	float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightSampler.Sample(SampCharacterLightSampler, baseShadowUV).x));
-// 	diffuseColor += (charLightMul * charLightColor).xxx;
-// #		endif  // CHARACTER_LIGHT
+#		if defined(CHARACTER_LIGHT)
+	float charLightMul =
+		saturate(dot(viewDirection, modelNormal.xyz)) * CharacterLightParams.x +
+		CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
+	float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightSampler.Sample(SampCharacterLightSampler, baseShadowUV).x));
+	diffuseColor += (charLightMul * charLightColor).xxx;
+#		endif  // CHARACTER_LIGHT
 
 #		if defined(EYE)
 	modelNormal.xyz = input.EyeNormal;
@@ -1989,7 +1989,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 // #	endif  // !VR
 #	if !defined(SKIN) 
 #if (defined(FACEGEN) || defined(FACEGEN_RGB_TINT))
-	//specularColor = (specularColor * MaterialData.yyy) * SpecularColor.xyz;
+	//specularColor = (specularColor) * SpecularColor.xyz;
 #else
 #		if defined(SPECULAR)
 	specularColor = (specularColor * glossiness * MaterialData.yyy) * SpecularColor.xyz;
@@ -2162,7 +2162,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #endif
 
 #if defined(SKIN_SHADING)
-	psout.Deferred.x = RGBToLuminance(rimSoftLightColor.xyz);
+	psout.Deferred.x = rimSoftLightColor.x * 10;
+	//psout.Deferred.x = 1;
 #endif
 	psout.Deferred.w = psout.Albedo.w;
 
