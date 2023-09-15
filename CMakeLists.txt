@@ -41,12 +41,11 @@ find_package(pystring CONFIG REQUIRED)
 if(BUILD_KICKSTARTRT) # KickstartRT enabled
 	message("Enabling KickStartRT")
 	add_subdirectory(extern/KickstartRT KickstartRT EXCLUDE_FROM_ALL)
-	set(KickstartRT_SDK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/KickstartRT)
+	set(KickstartRT_SDK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/extern/KickstartRT)
 	set(KickstartRT_SDK_NAME KickstartRT)
 	list(APPEND KickstartRT_Libs ${KickstartRT_SDK_NAME}_D3D12)
 
-	# This is a dependency of KickstartRT_Interop_D3D11
-	# list(APPEND KickstartRT_Deps KickstartRT_core_DX12)
+	list(APPEND KickstartRT_Deps KickstartRT_core_DX12)
 	set_property(TARGET KickstartRT_core_DX12 PROPERTY COMPILE_WARNING_AS_ERROR OFF)
 	target_compile_definitions(KickstartRT_core_DX12 PRIVATE WIN32) # fixes compilation error where win32 isn't defined
 
@@ -56,10 +55,9 @@ if(BUILD_KICKSTARTRT) # KickstartRT enabled
 	target_compile_definitions(KickstartRT_ShaderCompiler PRIVATE WIN32) # fixes compilation error where win32 isn't defined
 
 	list(APPEND KickstartRT_Deps KickstartRT_Interop_D3D11)
-	list(APPEND KickstartRT_Libs ${KickstartRT_SDK_NAME}_VK)
 
 	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_D3D11=1)
-	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_VK=1)
+
 	target_compile_definitions(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_WITH_NRD=1)
 
 	target_link_libraries(${PROJECT_NAME} PRIVATE ${KickstartRT_Libs})
@@ -69,9 +67,9 @@ if(BUILD_KICKSTARTRT) # KickstartRT enabled
 		${KickstartRT_SDK_ROOT}/common/src
 	)
 
-	set(KickstartRT_LinkDir ${CMAKE_CURRENT_BINARY_DIR}/../KickstartRT)
+	set(KickstartRT_LinkDir ${CMAKE_CURRENT_BINARY_DIR}/KickstartRT)
 
-	list(APPEND KickstartRT_LinkDir ${CMAKE_CURRENT_BINARY_DIR}/../KickstartRT/interop_d3d11)
+	list(APPEND KickstartRT_LinkDir ${CMAKE_CURRENT_BINARY_DIR}/KickstartRT/interop_d3d11)
 	target_link_directories(${PROJECT_NAME} PRIVATE ${KickstartRT_LinkDir})
 
 	add_dependencies(${PROJECT_NAME} ${KickstartRT_Deps})
