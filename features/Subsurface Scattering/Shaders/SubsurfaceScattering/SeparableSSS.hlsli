@@ -104,14 +104,14 @@ float RGBToLuminance(float3 color)
 float InterleavedGradientNoise(float2 uv)
 {
     if (FrameCount == 0)
-        return 0.5;
+        return 1.0;
 	// Temporal factor
 	float frameStep = float(FrameCount % 16) * 0.0625f;
 	uv.x += frameStep * 4.7526;
 	uv.y += frameStep * 3.1914;
 
 	float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
-	return frac(magic.z * frac(dot(uv, magic.xy)));
+	return frac(magic.z * frac(dot(uv, magic.xy))) * 1.5;
 }
 
 #define SSSS_N_SAMPLES 25
@@ -222,7 +222,6 @@ float4 SSSSBlurPS(
     colorM.a = sss.x;
     if (colorM.a == 0)
         return colorM;
-    colorM.a = 1;
 
     // Fetch linear depth of current pixel:
     float depthM =  DepthTexture.SampleLevel(PointSampler, texcoord, 0).r;
@@ -265,8 +264,8 @@ float4 SSSSBlurPS(
     float scale = distanceToProjectionWindow / depthM;
 
     // Calculate the final step to fetch the surrounding pixels:
-    float2 finalStep = scale * dir;
-    finalStep *= colorM.a; // Modulate it using the alpha channel.
+    float2 finalStep = scale * dir / 3.0;
+    finalStep *= 1; // Modulate it using the alpha channel.
     finalStep *= InterleavedGradientNoise(texcoord * BufferDim); // Randomise width to fix banding
 
     // Accumulate the other samples:
@@ -291,9 +290,9 @@ float4 SSSSBlurPS(
         colorBlurred.rgb += kernel[i].rgb * color.rgb;
     }
 
-   // colorBlurred = lerp(colorM, colorBlurred, 1.0 - (sss.x * sss.x));
+    colorBlurred = lerp(colorM, colorBlurred, colorM.a);
    
-    return lerp(colorM, colorBlurred, sss.x);
+    return colorBlurred;
 }
 
 //-----------------------------------------------------------------------------

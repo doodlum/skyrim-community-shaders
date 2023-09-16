@@ -2165,14 +2165,15 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	psout.Albedo.xyz = Lin2sRGB(psout.Albedo.xyz);
 #endif
 
-#if defined(SKIN_SHADING)
 
-	float3 albedo = baseColor.xyz * input.Color.xyz;
-	float ao;
-	Material2PBR(albedo, albedo, ao);
-	psout.Deferred.x = ao;
+#if defined(SKIN_SHADING)
+	// float3 albedo = baseColor.xyz * input.Color.xyz;
+	// float ao;
+	// Material2PBR(albedo, albedo, ao);
+	psout.Deferred = 1;
 #endif
-	psout.Deferred.w = 0;
+
+	psout.Deferred.w = psout.Albedo.w;
 
 	psout.Specular.xyz = 0;
 #if defined(SKIN_SHADING)
