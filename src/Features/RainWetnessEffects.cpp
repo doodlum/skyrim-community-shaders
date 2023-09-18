@@ -183,10 +183,10 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 									// Fade in gradually after precipitation has started
 									float beginFade = currentWeather->data.precipitationBeginFadeIn;
 									beginFade = beginFade > 0 ? beginFade : beginFade + TRANSITION_DENOMINATOR;
-									float startPercentage = (TRANSITION_DENOMINATOR - currentWeather->data.precipitationBeginFadeIn) * (1.0f / TRANSITION_DENOMINATOR);
+									float startPercentage = (TRANSITION_DENOMINATOR - beginFade) * (1.0f / TRANSITION_DENOMINATOR);
 									startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
 									float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
-									WeatherTransitionPercentage = currentPercentage > 0.0f ? (currentPercentage < 1.0f ? currentPercentage : 1.0f) : 0.0f;
+									WeatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
 								} else {
 									// Not currently raining
 									ShininessMultiplierCurrentDay = DRY_SHININESS_MULTIPLIER;
