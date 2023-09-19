@@ -8,6 +8,8 @@
 #include "Features/ExtendedMaterials.h"
 #include "Features/LightLimitFIx/ParticleLights.h"
 #include "Features/LightLimitFix.h"
+#include "Features/SubsurfaceScattering.h"
+
 #define DLLEXPORT __declspec(dllexport)
 
 std::list<std::string> errors;
@@ -103,6 +105,9 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 				if (LightLimitFix::GetSingleton()->loaded) {
 					ParticleLights::GetSingleton()->GetConfigs();
 					LightLimitFix::InstallHooks();
+				}
+				if (SubsurfaceScattering::GetSingleton()->loaded) {
+					SubsurfaceScattering::InstallHooks();
 				}
 			}
 

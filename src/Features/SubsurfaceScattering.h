@@ -12,6 +12,11 @@ public:
 		return &singleton;
 	}
 
+	static void InstallHooks()
+	{
+		Hooks::Install();
+	}
+
 	struct alignas(16) BlurCB
 	{
 		float4 DynamicRes;
@@ -26,8 +31,17 @@ public:
 
 	ConstantBuffer* blurCB = nullptr;
 
-	Texture2D* deferredTexture = nullptr;
+	struct PerPass
+	{
+		uint SkinMode;
+		uint pad[3];
+	};
+
+	std::unique_ptr<Buffer> perPass = nullptr;
+
 	Texture2D* specularTexture = nullptr;
+	Texture2D* albedoTexture = nullptr;
+	Texture2D* deferredTexture = nullptr;
 
 	Texture2D* colorTextureTemp = nullptr;
 	Texture2D* colorTextureTemp2 = nullptr;
@@ -38,6 +52,8 @@ public:
 
 	ID3D11SamplerState* linearSampler = nullptr;
 	ID3D11SamplerState* pointSampler = nullptr;
+
+	uint skinMode = false;
 
 	std::set<ID3D11BlendState*> mappedBlendStates;
 	std::map<ID3D11BlendState*, ID3D11BlendState*> modifiedBlendStates;
@@ -60,5 +76,27 @@ public:
 	void ClearComputeShader();
 	ID3D11ComputeShader* GetComputeShaderHorizontalBlur();
 	ID3D11ComputeShader* GetComputeShaderVerticalBlur();
+
+	void BSLightingShader_SetupGeometry_Before(RE::BSRenderPass* Pass);
+
+	struct Hooks
+	{
+		struct BSLightingShader_SetupGeometry
+		{
+			static void thunk(RE::BSShader* This, RE::BSRenderPass* Pass, uint32_t RenderFlags)
+			{
+				GetSingleton()->BSLightingShader_SetupGeometry_Before(Pass);
+				func(This, Pass, RenderFlags);
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
+		static void Install()
+		{
+			stl::write_vfunc<0x6, BSLightingShader_SetupGeometry>(RE::VTABLE_BSLightingShader[0]);
+
+			logger::info("[SSS] Installed hooks");
+		}
+	};
 
 };
