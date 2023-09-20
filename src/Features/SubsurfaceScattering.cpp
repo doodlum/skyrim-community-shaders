@@ -198,8 +198,10 @@ void SubsurfaceScattering::DrawDeferred()
 
 			data.RcpBufferDim.x = 1.0f / (float)deferredTexture->desc.Width;
 			data.RcpBufferDim.y = 1.0f / (float)deferredTexture->desc.Height;
-
-			data.FrameCount = viewport->uiFrameCount * (Util::UnkOuterStruct::GetSingleton()->GetTAA() || State::GetSingleton()->upscalerLoaded);
+			const auto imageSpaceManager = RE::ImageSpaceManager::GetSingleton();
+			auto bTAA = !REL::Module::IsVR() ? imageSpaceManager->GetRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled :
+			                                   imageSpaceManager->GetVRRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled;
+			data.FrameCount = viewport->uiFrameCount * (bTAA || State::GetSingleton()->upscalerLoaded);
 
 			data.DynamicRes.x = viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
 			data.DynamicRes.y = viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
