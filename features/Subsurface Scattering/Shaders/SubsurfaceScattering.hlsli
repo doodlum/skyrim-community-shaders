@@ -1,15 +1,27 @@
-#if defined(SOFT_LIGHTING) && (defined(FACEGEN) || defined(FACEGEN_RGB_TINT))
+
+struct PerPassSSS
+{
+	uint SkinMode;
+    uint pad[3];
+};
+
+StructuredBuffer<PerPassSSS> perPassSSS : register(t35);
+
+#if (defined(FACEGEN) || defined(FACEGEN_RGB_TINT)) && defined(SOFT_LIGHTING) && defined(MODELSPACENORMALS)
 #define SKIN_SHADING
+//#define SKIN
 #endif
 
 
-Texture2D<float3> TexDeferredSampler : register(t40);
 
 float3 sRGB2Lin(float3 Color)
-{ return Color > 0.04045 ? pow(Color / 1.055 + 0.055 / 1.055, 2.4) : Color / 12.92; }
+{ 
+    return Color > 0.04045 ? pow(Color / 1.055 + 0.055 / 1.055, 2.4) : Color / 12.92; }
 
 float3 Lin2sRGB(float3 Color)
-{ return Color > 0.0031308 ? 1.055 * pow(Color, 1.0/2.4) - 0.055 : 12.92 * Color; }
+{ 
+
+    return Color > 0.0031308 ? 1.055 * pow(Color, 1.0/2.4) - 0.055 : 12.92 * Color; }
 
 // #if (defined(FACEGEN) || defined(FACEGEN_RGB_TINT)) && defined(SOFT_LIGHTING) && defined(MODELSPACENORMALS) && false
 // #define SKIN
@@ -164,10 +176,16 @@ float DistributionGGX(float NdotH, float roughness)
     return num / denom;
 }
 
+
+float3 fresnelSchlick(float cosTheta, float3 F0)
+{
+    return F0 + (1 - F0) * pow(saturate(1 - cosTheta), 5);
+}
+
 #define PBR_SKIN
 float3 GetPBRSpecular(PS_INPUT input, float2 uv, float3 N, float3 L, float3 V, float3 lightColor, float glossiness, float shininess)
 {
-    float3 f0 = 0.04;
+    float3 F0 = 0.028;
 
     float3 radiance = PI * lightColor;
 	
@@ -178,20 +196,51 @@ float3 GetPBRSpecular(PS_INPUT input, float2 uv, float3 N, float3 L, float3 V, f
     float NdotH = saturate(dot(N, H));
         
     float roughness = 1 - glossiness;
-    roughness /= 1.7;
+    roughness /= 1.8;
 
     float3 NDF1 = GetLightSpecularInput(input, L, V, N, lightColor, shininess, uv) * glossiness * MaterialData.yyy * SpecularColor.xyz;
    
-    float NDF = DistributionGGX(NdotH, roughness);
-    float G = GeometrySmith(NdotV, NdotL, roughness);
-    float3 F = FresnelSchlick(HdotV, f0);
+    float NDF = DistributionGGX(saturate(NdotH), roughness);
+    float G = GeometrySmith(saturate(NdotV), saturate(NdotL), roughness);
+    float3 F = fresnelSchlick(saturate(HdotV), F0);
 
-    // Cook-Torrance specular microfacet BRDF.
-    float3 specularBRDF = (NDF * G * F) / max(0.001, 4.0 * NdotL * NdotH);
+    float3 numerator = NDF * G * F;
+    float denominator = 4 * saturate(NdotV) * saturate(NdotL) + 0.0001;
+    float3 specular = numerator / denominator;;
     
     // Total contribution for this light.
-    return max(specularBRDF * NdotL * radiance, NDF1);
+    return max(specular * NdotL * radiance, NDF1);
 }
 
+void GetLightRadianceSubsurface(PS_INPUT input, float2 uv, float3 N, float3 L, float3 V, float3 lightColor, float3 albedo, float ao, float roughness, float shininess, float3 specularMultiplier, float3 subsurface, SubsurfaceNormal ssN, float3 bN, inout float3 diffuseColor, inout float3 specularColor)
+{
+    float3 f0 = 0.04;
+
+    float3 radiance = PI * lightColor;
+	
+    float3 H = normalize(V + L);
+    float NdotL = dot(N, L);
+    float NdotV = dot(N, V);
+    float HdotV = dot(H, V);
+    float NdotH = dot(N, H);
+        
+    roughness /= 1.8;
+
+   // float NDF = GetLightSpecularInput(input, L, V, N, lightColor, shininess, uv);
+    float NDF = DistributionGGX(saturate(NdotH), roughness);
+    float G = GeometrySmith(saturate(NdotV), saturate(NdotL), roughness);
+    float3 F = FresnelSchlick(saturate(HdotV), f0);
+
+    float metallic = 0;
+
+    float3 kD = (1 - F) * (1 - metallic);
+
+    float3 numerator = NDF * G * F;
+    float denominator = 4 * saturate(NdotV) * saturate(NdotL) + 0.0001;
+    float3 specular = numerator / denominator;
+
+    diffuseColor +=kD * albedo * SGGetSSS(subsurface, ssN, bN, L) * Fd_Lambert() * radiance * ao;
+    specularColor += GetPBRSpecular(input, uv, N, L, V, lightColor, 1 - roughness, shininess) * ao;
+} 
 
 //#endif

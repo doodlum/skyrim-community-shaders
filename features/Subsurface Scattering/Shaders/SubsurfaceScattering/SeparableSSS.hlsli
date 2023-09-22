@@ -89,12 +89,36 @@
  */
 
 //-----------------------------------------------------------------------------
+
+static const float3x3 g_sRGBToACEScg = float3x3(
+    0.613117812906440,  0.341181995855625,  0.045787344282337,
+    0.069934082307513,  0.918103037508582,  0.011932775530201,
+    0.020462992637737,  0.106768663382511,  0.872715910619442
+);
+static const float3x3 g_ACEScgToSRGB = float3x3(
+    1.704887331049502,  -0.624157274479025, -0.080886773895704,
+    -0.129520935348888,  1.138399326040076, -0.008779241755018,
+    -0.024127059936902, -0.124620612286390,  1.148822109913262
+);
+
 // Separable SSS Reflectance Pixel Shader
 float3 sRGB2Lin(float3 Color)
-{ return Color > 0.04045 ? pow(Color / 1.055 + 0.055 / 1.055, 2.4) : Color / 12.92; }
+{ 
+#if defined(ACES)
+    return mul(g_sRGBToACEScg, Color);
+#else
+    return Color > 0.04045 ? pow(Color / 1.055 + 0.055 / 1.055, 2.4) : Color / 12.92; 
+#endif
+}
 
 float3 Lin2sRGB(float3 Color)
-{ return Color > 0.0031308 ? 1.055 * pow(Color, 1.0/2.4) - 0.055 : 12.92 * Color; }
+{ 
+#if defined(ACES)
+    return mul(g_ACEScgToSRGB, Color);
+#else
+    return Color > 0.0031308 ? 1.055 * pow(Color, 1.0/2.4) - 0.055 : 12.92 * Color; 
+#endif
+}
 
 float RGBToLuminance(float3 color)
 {
@@ -103,15 +127,13 @@ float RGBToLuminance(float3 color)
 
 float InterleavedGradientNoise(float2 uv)
 {
-    if (FrameCount == 0)
-        return 1.0;
 	// Temporal factor
 	float frameStep = float(FrameCount % 16) * 0.0625f;
 	uv.x += frameStep * 4.7526;
 	uv.y += frameStep * 3.1914;
 
 	float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
-	return frac(magic.z * frac(dot(uv, magic.xy))) * 1.5;
+	return frac(magic.z * frac(dot(uv, magic.xy)));
 }
 
 #define SSSS_N_SAMPLES 25
@@ -152,8 +174,10 @@ float3 profile(float r, float3 sss) {
 } 
 
 void CalculateKernel(inout float4 kernel[SSSS_N_SAMPLES], in float3 sss) {
-    const float3 strength = float3(0.48f, 0.41f, 0.28f);
-    const float RANGE = SSSS_N_SAMPLES > 20? 3.0f : 2.0f;
+    float3 strength = float3(0.48f, 0.41f, 0.28f);
+   // strength = lerp(RGBToLuminance(sss.rgb), sss.rgb, 0.5);;
+
+    const float RANGE = SSSS_N_SAMPLES > 20 ? 3.0f : 2.0f;
     const float EXPONENT = 2.0f;
 
     // Calculate the offsets:
@@ -205,92 +229,107 @@ void CalculateKernel(inout float4 kernel[SSSS_N_SAMPLES], in float3 sss) {
         kernel[i].xyz *= strength.xyz;
 }
 
-float4 SSSSBlurPS(
+float4 SSSSBlurCS(
+        uint2 DTid,
         float2 texcoord,
         float2 dir
     ) {
 
     // Fetch color of current pixel:
-    float4 colorM = ColorTexture.SampleLevel(PointSampler, texcoord, 0);
+    float4 colorM = ColorTexture[DTid.xy];
 
 #if defined(HORIZONTAL) && defined(LINEAR)
     colorM.rgb = sRGB2Lin(colorM.rgb);
 #endif
 
-    float3 sss = DeferredTexture.SampleLevel(PointSampler, texcoord, 0).xyz;
+    float3 sssM = DeferredTexture[DTid.xy].xyz;
 
-    colorM.a = sss.x;
-    if (colorM.a == 0)
+    if (sssM.x == 0)
         return colorM;
-
+    
     // Fetch linear depth of current pixel:
-    float depthM =  DepthTexture.SampleLevel(PointSampler, texcoord, 0).r;
+    float depthM =  DepthTexture[DTid.xy].r;
     depthM = GetScreenDepth(depthM);
 
-    float4 kernel[SSSS_N_SAMPLES] = {
-        float4(0.530605, 0.613514, 0.739601, 0),
-        float4(0.000973794, 1.11862e-005, 9.43437e-007, -3),
-        float4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083),
-        float4(0.00500364, 0.00020094, 5.28848e-005, -2.08333),
-        float4(0.00700976, 0.00049366, 0.000151938, -1.6875),
-        float4(0.0094389, 0.00139119, 0.000416598, -1.33333),
-        float4(0.0128496, 0.00356329, 0.00132016, -1.02083),
-        float4(0.017924, 0.00711691, 0.00347194, -0.75),
-        float4(0.0263642, 0.0119715, 0.00684598, -0.520833),
-        float4(0.0410172, 0.0199899, 0.0118481, -0.333333),
-        float4(0.0493588, 0.0367726, 0.0219485, -0.1875),
-        float4(0.0402784, 0.0657244, 0.04631, -0.0833333),
-        float4(0.0211412, 0.0459286, 0.0378196, -0.0208333),
-        float4(0.0211412, 0.0459286, 0.0378196, 0.0208333),
-        float4(0.0402784, 0.0657244, 0.04631, 0.0833333),
-        float4(0.0493588, 0.0367726, 0.0219485, 0.1875),
-        float4(0.0410172, 0.0199899, 0.0118481, 0.333333),
-        float4(0.0263642, 0.0119715, 0.00684598, 0.520833),
-        float4(0.017924, 0.00711691, 0.00347194, 0.75),
-        float4(0.0128496, 0.00356329, 0.00132016, 1.02083),
-        float4(0.0094389, 0.00139119, 0.000416598, 1.33333),
-        float4(0.00700976, 0.00049366, 0.000151938, 1.6875),
-        float4(0.00500364, 0.00020094, 5.28848e-005, 2.08333),
-        float4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083),
-        float4(0.000973794, 1.11862e-005, 9.43437e-007, 3),
-    };
+float4 kernel[] = {
+    float4(0.530605, 0.613514, 0.739601, 0),
+    float4(0.000973794, 1.11862e-005, 9.43437e-007, -3),
+    float4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083),
+    float4(0.00500364, 0.00020094, 5.28848e-005, -2.08333),
+    float4(0.00700976, 0.00049366, 0.000151938, -1.6875),
+    float4(0.0094389, 0.00139119, 0.000416598, -1.33333),
+    float4(0.0128496, 0.00356329, 0.00132016, -1.02083),
+    float4(0.017924, 0.00711691, 0.00347194, -0.75),
+    float4(0.0263642, 0.0119715, 0.00684598, -0.520833),
+    float4(0.0410172, 0.0199899, 0.0118481, -0.333333),
+    float4(0.0493588, 0.0367726, 0.0219485, -0.1875),
+    float4(0.0402784, 0.0657244, 0.04631, -0.0833333),
+    float4(0.0211412, 0.0459286, 0.0378196, -0.0208333),
+    float4(0.0211412, 0.0459286, 0.0378196, 0.0208333),
+    float4(0.0402784, 0.0657244, 0.04631, 0.0833333),
+    float4(0.0493588, 0.0367726, 0.0219485, 0.1875),
+    float4(0.0410172, 0.0199899, 0.0118481, 0.333333),
+    float4(0.0263642, 0.0119715, 0.00684598, 0.520833),
+    float4(0.017924, 0.00711691, 0.00347194, 0.75),
+    float4(0.0128496, 0.00356329, 0.00132016, 1.02083),
+    float4(0.0094389, 0.00139119, 0.000416598, 1.33333),
+    float4(0.00700976, 0.00049366, 0.000151938, 1.6875),
+    float4(0.00500364, 0.00020094, 5.28848e-005, 2.08333),
+    float4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083),
+    float4(0.000973794, 1.11862e-005, 9.43437e-007, 3),
+};
+    if (sssM.y == 1){
+        float3 albedoProfile = AlbedoTexture[DTid.xy];
+        albedoProfile = pow(max(0, albedoProfile), length(albedoProfile));  // length(color) suppress saturation of darker colors
+        albedoProfile = saturate(normalize(albedoProfile));
+        CalculateKernel(kernel, albedoProfile);
+    }
 
     // Accumulate center sample, multiplying it with its gaussian weight:
     float4 colorBlurred = colorM;
     colorBlurred.rgb *= kernel[0].rgb;
-    
+
     // World-space width
     float distanceToProjectionWindow = 1.0 / tan(0.5 * radians(SSSS_FOVY));
     float scale = distanceToProjectionWindow / depthM;
 
+    // TODO : Jitter samples
+    float noise = InterleavedGradientNoise(DTid.xy);
+
     // Calculate the final step to fetch the surrounding pixels:
-    float2 finalStep = scale * dir / 3.0;
-    finalStep *= 1; // Modulate it using the alpha channel.
-    finalStep *= InterleavedGradientNoise(texcoord * BufferDim); // Randomise width to fix banding
+    float2 finalStep = scale * BufferDim * sssM.x;
+    finalStep *= noise;
+
+    // Equally distribute light in every direction
+    float2x2 rotationMatrix = float2x2(cos(noise), -sin(noise), sin(noise), cos(noise));
+    float2 rotatedDir= mul(dir, rotationMatrix);
+    float2 rotatedDirInv = mul(rotationMatrix, dir);
 
     // Accumulate the other samples:
     [unroll]
-    for (int i = 1; i < SSSS_N_SAMPLES; i++) {
-        // Fetch color and depth for current sample:
-        float2 offset = texcoord + kernel[i].a * finalStep;
-        float3 color = ColorTexture.SampleLevel(LinearSampler, offset, 0).rgb;
+    for (uint i = 1; i < SSSS_N_SAMPLES; i++) {
+        float2 sampleDir = i & 1 ? rotatedDir : rotatedDirInv;
+
+        uint2 offset = DTid.xy + kernel[i].a * finalStep * sampleDir;
+
+        float3 color = ColorTexture[offset].rgb;
 
 #if defined(HORIZONTAL) && defined(LINEAR)
     color.rgb = sRGB2Lin(color.rgb);
 #endif
 
-        float depth = DepthTexture.SampleLevel(LinearSampler, offset, 0).r;
+        float depth = DepthTexture[offset].r;
         depth = GetScreenDepth(depth);
 
         // If the difference in depth is huge, we lerp color back to "colorM":
-        float s = min(0.125 * abs(depthM - depth), 1.0);
+        float s = saturate(0.5 * distanceToProjectionWindow * abs(depthM - depth));
         color = lerp(color, colorM.rgb, s);
 
         // Accumulate:
         colorBlurred.rgb += kernel[i].rgb * color.rgb;
     }
 
-    colorBlurred = lerp(colorM, colorBlurred, colorM.a);
+    colorBlurred = lerp(colorM, colorBlurred, sssM.x);
    
     return colorBlurred;
 }
