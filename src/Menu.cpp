@@ -479,9 +479,8 @@ void Menu::DrawSettings()
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 				ImGui::Text(
-					"Number of threads to compile shaders with. "
-					"The more threads the faster compilation will finish but may make the system unresponsive. "
-					"This should only be changed between restarts. ");
+					"Number of threads to use to compile shaders. "
+					"The more threads the faster compilation will finish but may make the system unresponsive. ");
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
