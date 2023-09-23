@@ -2,6 +2,7 @@
 
 #include <RE/B/BSShader.h>
 
+#include "BS_thread_pool.hpp"
 #include <chrono>
 #include <condition_variable>
 #include <unordered_map>
@@ -124,11 +125,6 @@ namespace SIE
 		void DeleteDiskCache();
 		void ValidateDiskCache();
 		void WriteDiskCacheInfo();
-		/// <summary>
-		/// Adjust the compiler threads based on the compileThreadCount.
-		/// </summary>
-		/// This will terminate or generate threads as required to match compileThreadCount.
-		void AdjustThreadCount();
 		void Clear();
 
 		bool AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob);
@@ -156,10 +152,12 @@ namespace SIE
 		bool IsHideErrors();
 
 		int32_t compilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) - 1, 1);
+		BS::thread_pool compilationPool{};
 
 	private:
 		ShaderCache();
-		void ProcessCompilationSet(std::stop_token stoken);
+		void ManageCompilationSet(std::stop_token stoken);
+		void ProcessCompilationSet(std::stop_token stoken, SIE::ShaderCompilationTask task);
 
 		~ShaderCache();
 
@@ -176,7 +174,6 @@ namespace SIE
 		bool isDump = false;
 		bool hideError = false;
 
-		eastl::vector<std::jthread> compilationThreads;
 		std::stop_source ssource;
 		std::mutex vertexShadersMutex;
 		std::mutex pixelShadersMutex;
