@@ -1697,9 +1697,11 @@ namespace SIE
 		std::unique_lock lock(compilationMutex);
 		auto& shaderCache = ShaderCache::Instance();
 		if (!conditionVariable.wait(
-				lock, stoken, [this, &shaderCache]() { return !availableTasks.empty() &&
-			                                                  // check against all tasks in queue to trickle the work. It cannot be the active tasks count because the thread pool itself is maximum.
-			                                                  (int)shaderCache.compilationPool.get_tasks_total() <= shaderCache.compilationThreadCount; })) {
+				lock, stoken,
+				[this, &shaderCache]() { return !availableTasks.empty() &&
+			                                    // check against all tasks in queue to trickle the work. It cannot be the active tasks count because the thread pool itself is maximum.
+			                                    (int)shaderCache.compilationPool.get_tasks_total() <=
+			                                        (!shaderCache.backgroundCompilation ? shaderCache.compilationThreadCount : shaderCache.backgroundCompilationThreadCount); })) {
 			/*Woke up because of a stop request. */
 			return std::nullopt;
 		}
