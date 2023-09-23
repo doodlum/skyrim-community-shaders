@@ -156,6 +156,10 @@ namespace SIE
 		bool IsHideErrors();
 
 		int32_t compilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) - 1, 1);
+		int32_t backgroundCompilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) / 2, 1);
+		BS::thread_pool compilationPool{};
+		bool backgroundCompilation = false;
+		bool menuLoaded = false;
 
 	private:
 		ShaderCache();
