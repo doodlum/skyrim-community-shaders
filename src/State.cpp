@@ -328,7 +328,6 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 								   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior);
 		}
 
-
 		ID3D11ShaderResourceView* view = perShader->srv.get();
 		context->PSSetShaderResources(127, 1, &view);
 	}

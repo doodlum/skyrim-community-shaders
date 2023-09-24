@@ -370,27 +370,26 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float distanceFactor, float refractionsDepthFactor)
 {
-	if (shaderDescriptors[0].PixelShaderDescriptor & _Reflections){
+	if (shaderDescriptors[0].PixelShaderDescriptor & _Reflections) {
 		float3 finalSsrReflectionColor = 0.0.xxx;
 		float ssrFraction = 0;
 		float3 reflectionColor = 0;
-		if (shaderDescriptors[0].PixelShaderDescriptor & _Cubemap){
+		if (shaderDescriptors[0].PixelShaderDescriptor & _Cubemap) {
 			float3 cubemapUV = reflect(viewDirection, WaterParams.y * normal + float3(0, 0, 1 - WaterParams.y));
 			reflectionColor = CubeMapTex.Sample(CubeMapSampler, cubemapUV).xyz;
 		} else {
-
-#	if NUM_SPECULAR_LIGHTS == 0
+#		if NUM_SPECULAR_LIGHTS == 0
 			float4 reflectionNormalRaw = float4((VarAmounts.w * refractionsDepthFactor) * normal.xy + input.MPosition.xy, input.MPosition.z, 1);
-#	else
+#		else
 			float4 reflectionNormalRaw = float4(VarAmounts.w * normal.xy, 1, 1);
-#	endif
+#		endif
 
 			float4 reflectionNormal = mul(transpose(TextureProj), reflectionNormalRaw);
 			reflectionColor = ReflectionTex.Sample(ReflectionSampler, reflectionNormal.xy / reflectionNormal.ww).xyz;
 		}
 
-#	if NUM_SPECULAR_LIGHTS == 0
-		if (shaderDescriptors[0].PixelShaderDescriptor & _Reflections){
+#		if NUM_SPECULAR_LIGHTS == 0
+		if (shaderDescriptors[0].PixelShaderDescriptor & _Reflections) {
 			float2 ssrReflectionUv = GetDynamicResolutionAdjustedScreenPosition((DynamicResolutionParams2.xy * input.HPosition.xy) * SSRParams.zw + SSRParams2.x * normal.xy);
 			float4 ssrReflectionColor1 = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUv);
 			float4 ssrReflectionColor2 = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUv);
@@ -399,7 +398,7 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			finalSsrReflectionColor = ssrReflectionColor.xyz;
 			ssrFraction = saturate(ssrReflectionColor.w * (SSRParams.x * distanceFactor));
 		}
-#	endif
+#		endif
 
 		float3 finalReflectionColor = lerp(reflectionColor * WaterParams.w, finalSsrReflectionColor, ssrFraction);
 		return lerp(ReflectionColor.xyz, finalReflectionColor, VarAmounts.y);
