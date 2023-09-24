@@ -153,6 +153,54 @@ namespace SIE
 
 		int32_t compilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) - 1, 1);
 
+		enum class LightingShaderTechniques
+		{
+			None = 0,
+			Envmap = 1,
+			Glowmap = 2,
+			Parallax = 3,
+			Facegen = 4,
+			FacegenRGBTint = 5,
+			Hair = 6,
+			ParallaxOcc = 7,
+			MTLand = 8,
+			LODLand = 9,
+			Snow = 10,  // unused
+			MultilayerParallax = 11,
+			TreeAnim = 12,
+			LODObjects = 13,
+			MultiIndexSparkle = 14,
+			LODObjectHD = 15,
+			Eye = 16,
+			Cloud = 17,  // unused
+			LODLandNoise = 18,
+			MTLandLODBlend = 19,
+			Outline = 20,
+		};
+
+		enum class LightingShaderFlags
+		{
+			VC = 1 << 0,
+			Skinned = 1 << 1,
+			ModelSpaceNormals = 1 << 2,
+			// flags 3 to 8 are unused
+			Specular = 1 << 9,
+			SoftLighting = 1 << 10,
+			RimLighting = 1 << 11,
+			BackLighting = 1 << 12,
+			ShadowDir = 1 << 13,
+			DefShadow = 1 << 14,
+			ProjectedUV = 1 << 15,
+			AnisoLighting = 1 << 16,
+			AmbientSpecular = 1 << 17,
+			WorldMap = 1 << 18,
+			BaseObjectIsSnow = 1 << 19,
+			DoAlphaTest = 1 << 20,
+			Snow = 1 << 21,
+			CharacterLight = 1 << 22,
+			AdditionalAlphaMask = 1 << 23,
+		};
+
 	private:
 		ShaderCache();
 		void ProcessCompilationSet();
