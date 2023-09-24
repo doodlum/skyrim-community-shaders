@@ -205,6 +205,29 @@ namespace SIE
 			AdditionalAlphaMask = 1 << 23,
 		};
 
+		enum class WaterShaderTechniques
+		{
+			Underwater = 8,
+			Lod = 9,
+			Stencil = 10,
+			Simple = 11,
+		};
+
+		enum class WaterShaderFlags
+		{
+			Vc = 1 << 0,
+			NormalTexCoord = 1 << 1,
+			Reflections = 1 << 2,
+			Refractions = 1 << 3,
+			Depth = 1 << 4,
+			Interior = 1 << 5,
+			Wading = 1 << 6,
+			VertexAlphaDepth = 1 << 7,
+			Cubemap = 1 << 8,
+			Flowmap = 1 << 9,
+			BlendNormals = 1 << 10,
+		};
+
 	private:
 		ShaderCache();
 		void ManageCompilationSet(std::stop_token stoken);

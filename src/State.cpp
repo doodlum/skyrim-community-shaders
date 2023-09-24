@@ -274,7 +274,7 @@ void State::SetupResources()
 
 void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescriptor, uint& a_pixelDescriptor)
 {
-	if (a_shader.shaderType.any(RE::BSShader::Type::Lighting)) {
+	if (a_shader.shaderType.get() == RE::BSShader::Type::Lighting || a_shader.shaderType.get() == RE::BSShader::Type::Water) {
 		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
 		if (a_vertexDescriptor != lastVertexDescriptor || a_pixelDescriptor != lastPixelDescriptor) {
@@ -292,34 +292,42 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 			lastPixelDescriptor = a_pixelDescriptor;
 		}
 
-		if (a_shader.shaderType.any(RE::BSShader::Type::Lighting)) {
-			{
-				a_vertexDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::DoAlphaTest |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::RimLighting |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::SoftLighting |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::BackLighting |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::Specular |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::AnisoLighting |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::BaseObjectIsSnow |
-										(uint32_t)SIE::ShaderCache::LightingShaderFlags::Snow);
-			}
-			{
-				a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DoAlphaTest |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::RimLighting |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::SoftLighting |
-									   (uint32_t)SIE::ShaderCache::LightingShaderFlags::BackLighting);
-			}
+		if (a_shader.shaderType.get() == RE::BSShader::Type::Lighting) {
+			a_vertexDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::DoAlphaTest |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::RimLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::SoftLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::BackLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::Specular |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::AnisoLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::BaseObjectIsSnow |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::Snow);
+
+			a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DoAlphaTest |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::RimLighting |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::SoftLighting |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::BackLighting);
+
+		} else {
+			a_vertexDescriptor &= ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
+									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Cubemap |
+									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior |
+									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections);
+
+			a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
+								   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Cubemap |
+								   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior);
 		}
+
 
 		ID3D11ShaderResourceView* view = perShader->srv.get();
 		context->PSSetShaderResources(127, 1, &view);
