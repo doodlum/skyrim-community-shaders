@@ -1354,7 +1354,6 @@ namespace SIE
 			shaders.clear();
 		}
 
-		ssource.request_stop();
 		compilationSet.Clear();
 		std::unique_lock lock{ mapMutex };
 		shaderMap.clear();
