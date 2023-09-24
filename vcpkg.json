@@ -4,7 +4,6 @@
   "description": "",
   "license": "MIT",
   "dependencies": [
-    "bshoshany-thread-pool",
     "fmt",
     "directxtk",
     "rapidcsv",
