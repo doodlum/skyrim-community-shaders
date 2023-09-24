@@ -4,7 +4,6 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#include <fmt/std.h>
 #include <wrl/client.h>
 
 #include "Features/ExtendedMaterials.h"
@@ -1354,7 +1353,6 @@ namespace SIE
 			shaders.clear();
 		}
 
-		ssource.request_stop();
 		compilationSet.Clear();
 		std::unique_lock lock{ mapMutex };
 		shaderMap.clear();
@@ -1455,7 +1453,7 @@ namespace SIE
 
 	void ShaderCache::DeleteDiskCache()
 	{
-		std::scoped_lock lock{ compilationSet.compilationMutex };
+		std::lock_guard lock(compilationSet.compilationMutex);
 		try {
 			std::filesystem::remove_all(L"Data/ShaderCache");
 			logger::info("Deleted disk cache");
@@ -1500,8 +1498,10 @@ namespace SIE
 
 	ShaderCache::ShaderCache()
 	{
-		logger::debug("ShaderCache initialized with {} compiler threads", (int)compilationThreadCount);
-		compilationPool.push_task(&ShaderCache::ManageCompilationSet, this, ssource.get_token());
+		logger::debug("ShaderCache initialized with {} compiler threads", compilationThreadCount);
+		for (size_t threadIndex = 0; threadIndex < compilationThreadCount; ++threadIndex) {
+			compilationThreads.push_back(std::jthread(&ShaderCache::ProcessCompilationSet, this));
+		}
 	}
 
 	RE::BSGraphics::VertexShader* ShaderCache::MakeAndAddVertexShader(const RE::BSShader& shader,
@@ -1594,22 +1594,14 @@ namespace SIE
 		hideError = !hideError;
 	}
 
-	void ShaderCache::ManageCompilationSet(std::stop_token stoken)
+	void ShaderCache::ProcessCompilationSet()
 	{
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
-		while (!stoken.stop_requested()) {
-			const auto& task = compilationSet.WaitTake(stoken);
-			if (!task.has_value())
-				break;  // exit because thread told to end
-			compilationPool.push_task(&ShaderCache::ProcessCompilationSet, this, stoken, task.value());
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+		while (true) {
+			const auto& task = compilationSet.WaitTake();
+			task.Perform();
+			compilationSet.Complete(task);
 		}
-	}
-
-	void ShaderCache::ProcessCompilationSet(std::stop_token stoken, SIE::ShaderCompilationTask task)
-	{
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
-		task.Perform();
-		compilationSet.Complete(task);
 	}
 
 	ShaderCompilationTask::ShaderCompilationTask(ShaderClass aShaderClass,
@@ -1644,24 +1636,15 @@ namespace SIE
 		return GetId() == other.GetId();
 	}
 
-	std::optional<ShaderCompilationTask> CompilationSet::WaitTake(std::stop_token stoken)
+	ShaderCompilationTask CompilationSet::WaitTake()
 	{
 		std::unique_lock lock(compilationMutex);
-		auto& shaderCache = ShaderCache::Instance();
-		if (!conditionVariable.wait(
-				lock, stoken,
-				[this, &shaderCache]() { return !availableTasks.empty() &&
-			                                    // check against all tasks in queue to trickle the work. It cannot be the active tasks count because the thread pool itself is maximum.
-			                                    (int)shaderCache.compilationPool.get_tasks_total() <=
-			                                        (!shaderCache.backgroundCompilation ? shaderCache.compilationThreadCount : shaderCache.backgroundCompilationThreadCount); })) {
-			/*Woke up because of a stop request. */
-			return std::nullopt;
-		}
+		conditionVariable.wait(lock, [this]() { return !availableTasks.empty(); });
 		if (!ShaderCache::Instance().IsCompiling()) {  // we just got woken up because there's a task, start clock
 			lastCalculation = lastReset = high_resolution_clock::now();
 		}
 		auto node = availableTasks.extract(availableTasks.begin());
-		auto& task = node.value();
+		auto task = node.value();
 		tasksInProgress.insert(std::move(node));
 		return task;
 	}
@@ -1696,15 +1679,14 @@ namespace SIE
 		auto now = high_resolution_clock::now();
 		totalMs += duration_cast<milliseconds>(now - lastCalculation).count();
 		lastCalculation = now;
-		std::scoped_lock lock(compilationMutex);
+		std::unique_lock lock(compilationMutex);
 		processedTasks.insert(task);
 		tasksInProgress.erase(task);
-		conditionVariable.notify_one();
 	}
 
 	void CompilationSet::Clear()
 	{
-		std::scoped_lock lock(compilationMutex);
+		std::lock_guard lock(compilationMutex);
 		availableTasks.clear();
 		tasksInProgress.clear();
 		processedTasks.clear();
@@ -1733,7 +1715,7 @@ namespace SIE
 	double CompilationSet::GetEta()
 	{
 		auto rate = completedTasks / totalMs;
-		auto remaining = totalTasks - completedTasks - failedTasks;
+		auto remaining = (int)totalTasks - completedTasks - failedTasks;
 		return remaining / rate;
 	}
 

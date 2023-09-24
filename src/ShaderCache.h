@@ -2,7 +2,6 @@
 
 #include <RE/B/BSShader.h>
 
-#include "BS_thread_pool.hpp"
 #include <chrono>
 #include <condition_variable>
 #include <unordered_map>
@@ -61,7 +60,7 @@ namespace SIE
 	class CompilationSet
 	{
 	public:
-		std::optional<ShaderCompilationTask> WaitTake(std::stop_token stoken);
+		ShaderCompilationTask WaitTake();
 		void Add(const ShaderCompilationTask& task);
 		void Complete(const ShaderCompilationTask& task);
 		void Clear();
@@ -78,7 +77,7 @@ namespace SIE
 		std::unordered_set<ShaderCompilationTask> availableTasks;
 		std::unordered_set<ShaderCompilationTask> tasksInProgress;
 		std::unordered_set<ShaderCompilationTask> processedTasks;  // completed or failed
-		std::condition_variable_any conditionVariable;
+		std::condition_variable conditionVariable;
 		std::chrono::steady_clock::time_point lastReset = high_resolution_clock::now();
 		std::chrono::steady_clock::time_point lastCalculation = high_resolution_clock::now();
 		double totalMs = (double)duration_cast<std::chrono::milliseconds>(lastReset - lastReset).count();
@@ -125,6 +124,7 @@ namespace SIE
 		void DeleteDiskCache();
 		void ValidateDiskCache();
 		void WriteDiskCacheInfo();
+
 		void Clear();
 
 		bool AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob);
@@ -152,10 +152,6 @@ namespace SIE
 		bool IsHideErrors();
 
 		int32_t compilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) - 1, 1);
-		int32_t backgroundCompilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) / 2, 1);
-		BS::thread_pool compilationPool{};
-		bool backgroundCompilation = false;
-		bool menuLoaded = false;
 
 		enum class LightingShaderTechniques
 		{
@@ -207,8 +203,7 @@ namespace SIE
 
 	private:
 		ShaderCache();
-		void ManageCompilationSet(std::stop_token stoken);
-		void ProcessCompilationSet(std::stop_token stoken, SIE::ShaderCompilationTask task);
+		void ProcessCompilationSet();
 
 		~ShaderCache();
 
@@ -225,7 +220,7 @@ namespace SIE
 		bool isDump = false;
 		bool hideError = false;
 
-		std::stop_source ssource;
+		eastl::vector<std::jthread> compilationThreads;
 		std::mutex vertexShadersMutex;
 		std::mutex pixelShadersMutex;
 		CompilationSet compilationSet;
