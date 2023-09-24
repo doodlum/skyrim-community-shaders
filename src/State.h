@@ -1,7 +1,7 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
 #include <Buffer.h>
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 class State
