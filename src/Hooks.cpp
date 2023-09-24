@@ -107,7 +107,6 @@ void hk_BSShader_LoadShaders(RE::BSShader* shader, std::uintptr_t stream)
 			State::GetSingleton()->ModifyShaderLookup(*shader, vertexShaderDesriptor, pixelShaderDescriptor);
 			shaderCache.GetPixelShader(*shader, pixelShaderDescriptor);
 		}
-
 	}
 	BSShaderHooks::hk_LoadShaders((REX::BSShader*)shader, stream);
 };
