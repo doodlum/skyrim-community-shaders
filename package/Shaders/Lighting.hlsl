@@ -2,6 +2,8 @@
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
 
+const float PI = 3.1415927;
+
 #if (defined(TREE_ANIM) || defined(LANDSCAPE)) && !defined(VC)
 #	define VC
 #endif  // TREE_ANIM || LANDSCAPE || !VC
