@@ -3,13 +3,11 @@
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
 
-const float PI = 3.1415927;
+static const float PI = 3.14159265;
 
 #if defined(CHARACTER_LIGHT)
 //#undef CHARACTER_LIGHT
 #endif
-
-static const float PI = 3.14159265;
 
 #if (defined(TREE_ANIM) || defined(LANDSCAPE)) && !defined(VC)
 #	define VC
