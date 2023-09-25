@@ -15,6 +15,8 @@ void State::Draw()
 		auto type = currentShader->shaderType.get();
 		if (type > 0 && type < RE::BSShader::Type::Total) {
 			if (enabledClasses[type - 1]) {
+				ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
+
 				auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
 				if (auto vertexShader = shaderCache.GetVertexShader(*currentShader, currentVertexDescriptor)) {
@@ -49,6 +51,7 @@ void State::Setup()
 	for (auto* feature : Feature::GetFeatureList())
 		if (feature->loaded)
 			feature->SetupResources();
+	SetupResources();
 }
 
 void State::Load()
@@ -87,9 +90,13 @@ void State::Load()
 		if (advanced["Log Level"].is_number_integer()) {
 			logLevel = static_cast<spdlog::level::level_enum>((int)advanced["Log Level"]);
 			//logLevel = static_cast<spdlog::level::level_enum>(max(spdlog::level::trace, min(spdlog::level::off, (int)advanced["Log Level"])));
-			if (advanced["Shader Defines"].is_string())
-				SetDefines(advanced["Shader Defines"]);
 		}
+		if (advanced["Shader Defines"].is_string())
+			SetDefines(advanced["Shader Defines"]);
+		if (advanced["Compiler Threads"].is_number_integer())
+			shaderCache.compilationThreadCount = std::clamp(advanced["Compiler Threads"].get<int32_t>(), 1, static_cast<int32_t>(std::thread::hardware_concurrency()));
+		if (advanced["Background Compiler Threads"].is_number_integer())
+			shaderCache.backgroundCompilationThreadCount = std::clamp(advanced["Background Compiler Threads"].get<int32_t>(), 1, static_cast<int32_t>(std::thread::hardware_concurrency()));
 	}
 
 	if (settings["General"].is_object()) {
@@ -142,6 +149,8 @@ void State::Save()
 	advanced["Dump Shaders"] = shaderCache.IsDump();
 	advanced["Log Level"] = logLevel;
 	advanced["Shader Defines"] = shaderDefinesString;
+	advanced["Compiler Threads"] = shaderCache.compilationThreadCount;
+	advanced["Background Compiler Threads"] = shaderCache.backgroundCompilationThreadCount;
 	settings["Advanced"] = advanced;
 
 	json general;
@@ -242,4 +251,84 @@ bool State::IsShaderEnabled(const RE::BSShader& a_shader)
 bool State::IsDeveloperMode()
 {
 	return GetLogLevel() <= spdlog::level::debug;
+}
+
+void State::SetupResources()
+{
+	D3D11_BUFFER_DESC sbDesc{};
+	sbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	sbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	sbDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	sbDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	sbDesc.StructureByteStride = sizeof(PerShader);
+	sbDesc.ByteWidth = sizeof(PerShader);
+	perShader = std::make_unique<Buffer>(sbDesc);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = 1;
+	perShader->CreateSRV(srvDesc);
+}
+
+void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescriptor, uint& a_pixelDescriptor)
+{
+	if (a_shader.shaderType.get() == RE::BSShader::Type::Lighting || a_shader.shaderType.get() == RE::BSShader::Type::Water) {
+		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+
+		if (a_vertexDescriptor != lastVertexDescriptor || a_pixelDescriptor != lastPixelDescriptor) {
+			PerShader data{};
+			data.VertexShaderDescriptor = a_vertexDescriptor;
+			data.PixelShaderDescriptor = a_pixelDescriptor;
+
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			DX::ThrowIfFailed(context->Map(perShader->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+			size_t bytes = sizeof(PerShader);
+			memcpy_s(mapped.pData, bytes, &data, bytes);
+			context->Unmap(perShader->resource.get(), 0);
+
+			lastVertexDescriptor = a_vertexDescriptor;
+			lastPixelDescriptor = a_pixelDescriptor;
+		}
+
+		if (a_shader.shaderType.get() == RE::BSShader::Type::Lighting) {
+			a_vertexDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::DoAlphaTest |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::RimLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::SoftLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::BackLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::Specular |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::AnisoLighting |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::BaseObjectIsSnow |
+									(uint32_t)SIE::ShaderCache::LightingShaderFlags::Snow);
+
+			a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DoAlphaTest |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::RimLighting |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::SoftLighting |
+								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::BackLighting);
+
+		} else {
+			a_vertexDescriptor &= ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
+									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Cubemap |
+									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior |
+									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections);
+
+			a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
+								   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Cubemap |
+								   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior);
+		}
+
+		ID3D11ShaderResourceView* view = perShader->srv.get();
+		context->PSSetShaderResources(127, 1, &view);
+	}
 }

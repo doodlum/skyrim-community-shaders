@@ -4,6 +4,7 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <fmt/std.h>
 #include <wrl/client.h>
 
 #include "Features/ExtendedMaterials.h"
@@ -18,6 +19,8 @@ namespace SIE
 {
 	namespace SShaderCache
 	{
+		static void GetShaderDefines(RE::BSShader::Type, uint32_t, D3D_SHADER_MACRO*);
+		static std::string GetShaderString(ShaderClass, const RE::BSShader&, uint32_t, bool = false);
 		constexpr const char* VertexShaderProfile = "vs_5_0";
 		constexpr const char* PixelShaderProfile = "ps_5_0";
 		constexpr const char* ComputeShaderProfile = "cs_5_0";
@@ -45,54 +48,6 @@ namespace SIE
 			return 0x3F & (descriptor >> 24);
 		}
 
-		enum class LightingShaderTechniques
-		{
-			None = 0,
-			Envmap = 1,
-			Glowmap = 2,
-			Parallax = 3,
-			Facegen = 4,
-			FacegenRGBTint = 5,
-			Hair = 6,
-			ParallaxOcc = 7,
-			MTLand = 8,
-			LODLand = 9,
-			Snow = 10,  // unused
-			MultilayerParallax = 11,
-			TreeAnim = 12,
-			LODObjects = 13,
-			MultiIndexSparkle = 14,
-			LODObjectHD = 15,
-			Eye = 16,
-			Cloud = 17,  // unused
-			LODLandNoise = 18,
-			MTLandLODBlend = 19,
-			Outline = 20,
-		};
-
-		enum class LightingShaderFlags
-		{
-			VC = 1 << 0,
-			Skinned = 1 << 1,
-			ModelSpaceNormals = 1 << 2,
-			// flags 3 to 8 are unused
-			Specular = 1 << 9,
-			SoftLighting = 1 << 10,
-			RimLighting = 1 << 11,
-			BackLighting = 1 << 12,
-			ShadowDir = 1 << 13,
-			DefShadow = 1 << 14,
-			ProjectedUV = 1 << 15,
-			AnisoLighting = 1 << 16,
-			AmbientSpecular = 1 << 17,
-			WorldMap = 1 << 18,
-			BaseObjectIsSnow = 1 << 19,
-			DoAlphaTest = 1 << 20,
-			Snow = 1 << 21,
-			CharacterLight = 1 << 22,
-			AdditionalAlphaMask = 1 << 23,
-		};
-
 		static void GetLightingShaderDefines(uint32_t descriptor,
 			D3D_SHADER_MACRO* defines)
 		{
@@ -100,9 +55,9 @@ namespace SIE
 				RELOCATION_ID(101631, 108698));
 
 			const auto technique =
-				static_cast<LightingShaderTechniques>(GetTechnique(descriptor));
+				static_cast<ShaderCache::LightingShaderTechniques>(GetTechnique(descriptor));
 
-			if (technique == LightingShaderTechniques::Outline) {
+			if (technique == ShaderCache::LightingShaderTechniques::Outline) {
 				defines[0] = { "OUTLINE", nullptr };
 				++defines;
 			}
@@ -494,91 +449,68 @@ namespace SIE
 			defines[0] = { nullptr, nullptr };
 		}
 
-		enum class WaterShaderTechniques
-		{
-			Underwater = 8,
-			Lod = 9,
-			Stencil = 10,
-			Simple = 11,
-		};
-
-		enum class WaterShaderFlags
-		{
-			Vc = 1 << 0,
-			NormalTexCoord = 1 << 1,
-			Reflections = 1 << 2,
-			Refractions = 1 << 3,
-			Depth = 1 << 4,
-			Interior = 1 << 5,
-			Wading = 1 << 6,
-			VertexAlphaDepth = 1 << 7,
-			Cubemap = 1 << 8,
-			Flowmap = 1 << 9,
-			BlendNormals = 1 << 10,
-		};
-
 		static void GetWaterShaderDefines(uint32_t descriptor, D3D_SHADER_MACRO* defines)
 		{
 			defines[0] = { "WATER", nullptr };
 			defines[1] = { "FOG", nullptr };
 			defines += 2;
 
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Vc)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Vc)) {
 				defines[0] = { "VC", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::NormalTexCoord)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::NormalTexCoord)) {
 				defines[0] = { "NORMAL_TEXCOORD", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Reflections)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Reflections)) {
 				defines[0] = { "REFLECTIONS", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Refractions)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Refractions)) {
 				defines[0] = { "REFRACTIONS", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Depth)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Depth)) {
 				defines[0] = { "DEPTH", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Interior)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Interior)) {
 				defines[0] = { "INTERIOR", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Wading)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Wading)) {
 				defines[0] = { "WADING", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::VertexAlphaDepth)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::VertexAlphaDepth)) {
 				defines[0] = { "VERTEX_ALPHA_DEPTH", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Cubemap)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Cubemap)) {
 				defines[0] = { "CUBEMAP", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::Flowmap)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::Flowmap)) {
 				defines[0] = { "FLOWMAP", nullptr };
 				++defines;
 			}
-			if (descriptor & static_cast<uint32_t>(WaterShaderFlags::BlendNormals)) {
+			if (descriptor & static_cast<uint32_t>(ShaderCache::WaterShaderFlags::BlendNormals)) {
 				defines[0] = { "BLEND_NORMALS", nullptr };
 				++defines;
 			}
 
 			const auto technique = (descriptor >> 11) & 0xF;
-			if (technique == static_cast<uint32_t>(WaterShaderTechniques::Underwater)) {
+			if (technique == static_cast<uint32_t>(ShaderCache::WaterShaderTechniques::Underwater)) {
 				defines[0] = { "UNDERWATER", nullptr };
 				++defines;
-			} else if (technique == static_cast<uint32_t>(WaterShaderTechniques::Lod)) {
+			} else if (technique == static_cast<uint32_t>(ShaderCache::WaterShaderTechniques::Lod)) {
 				defines[0] = { "LOD", nullptr };
 				++defines;
-			} else if (technique == static_cast<uint32_t>(WaterShaderTechniques::Stencil)) {
+			} else if (technique == static_cast<uint32_t>(ShaderCache::WaterShaderTechniques::Stencil)) {
 				defines[0] = { "STENCIL", nullptr };
 				++defines;
-			} else if (technique == static_cast<uint32_t>(WaterShaderTechniques::Simple)) {
+			} else if (technique == static_cast<uint32_t>(ShaderCache::WaterShaderTechniques::Simple)) {
 				defines[0] = { "SIMPLE", nullptr };
 				++defines;
 			} else if (technique < 8) {
@@ -902,9 +834,13 @@ namespace SIE
 			return it->second;
 		}
 
-		static std::string MergeDefinesString(const std::array<D3D_SHADER_MACRO, 64>& defines)
+		static std::string MergeDefinesString(std::array<D3D_SHADER_MACRO, 64>& defines, bool a_sort = false)
 		{
 			std::string result;
+			if (a_sort)
+				std::sort(std::begin(defines), std::end(defines), [](const D3D_SHADER_MACRO& a, const D3D_SHADER_MACRO& b) {
+					return a.Name > b.Name;
+				});
 			for (const auto& def : defines) {
 				if (def.Name != nullptr) {
 					result += def.Name;
@@ -914,6 +850,8 @@ namespace SIE
 					}
 					result += ' ';
 				} else {
+					if (a_sort)  // sometimes the sort messes up so null entries get interspersed
+						continue;
 					break;
 				}
 			}
@@ -1058,12 +996,56 @@ namespace SIE
 			return std::format(L"Data/ShaderCache/{}/{:X}.cso", std::wstring(name.begin(), name.end()), descriptor);
 		}
 
-		static ID3DBlob* CompileShader(ShaderClass shaderClass, const RE::BSShader& shader,
-			uint32_t descriptor, bool useDiskCache)
+		static std::string GetShaderString(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, bool hashkey)
 		{
-			const auto type = shader.shaderType.get();
-			const std::wstring path = GetShaderPath(shader.fxpFilename);
+			auto sourceShaderFile = shader.fxpFilename;
+			std::array<D3D_SHADER_MACRO, 64> defines{};
+			SIE::SShaderCache::GetShaderDefines(shader.shaderType.get(), descriptor, &defines[0]);
+			std::string result;
+			if (hashkey)  // generate hashkey so don't include descriptor
+				result = fmt::format("{}:{}:{}", sourceShaderFile, magic_enum::enum_name(shaderClass), SIE::SShaderCache::MergeDefinesString(defines, true));
+			else
+				result = fmt::format("{}:{}:{:X}:{}", sourceShaderFile, magic_enum::enum_name(shaderClass), descriptor, SIE::SShaderCache::MergeDefinesString(defines, true));
+			return result;
+		}
 
+		static ID3DBlob* CompileShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, bool useDiskCache)
+		{
+			ID3DBlob* shaderBlob = nullptr;
+
+			// check hashmap
+			auto& cache = ShaderCache::Instance();
+			if (shaderBlob = cache.GetCompletedShader(shaderClass, shader, descriptor); shaderBlob) {
+				// already compiled before
+				logger::debug("Shader already compiled; using cache: {}", SShaderCache::GetShaderString(shaderClass, shader, descriptor));
+				cache.IncCacheHitTasks();
+				return shaderBlob;
+			}
+			const auto type = shader.shaderType.get();
+
+			// check diskcache
+			auto diskPath = GetDiskPath(shader.fxpFilename, descriptor, shaderClass);
+
+			if (!shaderBlob && useDiskCache && std::filesystem::exists(diskPath)) {
+				shaderBlob = nullptr;
+				if (FAILED(D3DReadFileToBlob(diskPath.c_str(), &shaderBlob))) {
+					logger::error("Failed to load {} shader {}::{}", magic_enum::enum_name(shaderClass), magic_enum::enum_name(type), descriptor);
+
+					if (shaderBlob != nullptr) {
+						shaderBlob->Release();
+					}
+				} else {
+					std::string str;
+					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
+						return (char)c;
+					});
+					logger::debug("Loaded shader from {}", str);
+					cache.AddCompletedShader(shaderClass, shader, descriptor, shaderBlob);
+					return shaderBlob;
+				}
+			}
+
+			// prepare preprocessor defines
 			std::array<D3D_SHADER_MACRO, 64> defines{};
 			auto lastIndex = 0;
 			if (shaderClass == ShaderClass::Vertex) {
@@ -1085,30 +1067,10 @@ namespace SIE
 			defines[lastIndex] = { nullptr, nullptr };  // do final entry
 			GetShaderDefines(type, descriptor, &defines[lastIndex]);
 
-			logger::debug("{}, {}", descriptor, MergeDefinesString(defines));
+			logger::debug("Defines set for {}:{}:{:X} to {}", magic_enum::enum_name(type), magic_enum::enum_name(shaderClass), descriptor, MergeDefinesString(defines));
 
-			auto diskPath = GetDiskPath(shader.fxpFilename, descriptor, shaderClass);
-
-			if (useDiskCache && std::filesystem::exists(diskPath)) {
-				ID3DBlob* shaderBlob = nullptr;
-				if (FAILED(D3DReadFileToBlob(diskPath.c_str(), &shaderBlob))) {
-					logger::error("Failed to load {} shader {}::{}", magic_enum::enum_name(shaderClass), magic_enum::enum_name(type), descriptor);
-
-					if (shaderBlob != nullptr) {
-						shaderBlob->Release();
-					}
-				} else {
-					std::string str;
-					;
-					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
-						return (char)c;
-					});
-					logger::debug("Loaded shader from {}", str);
-					return shaderBlob;
-				}
-			}
-
-			ID3DBlob* shaderBlob = nullptr;
+			// compile shaders
+			const std::wstring path = GetShaderPath(shader.fxpFilename);
 			ID3DBlob* errorBlob = nullptr;
 			const uint32_t flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
 			const HRESULT compileResult = D3DCompileFromFile(path.c_str(), defines.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, "main",
@@ -1128,11 +1090,12 @@ namespace SIE
 					shaderBlob->Release();
 				}
 
+				cache.AddCompletedShader(shaderClass, shader, descriptor, nullptr);
 				return nullptr;
 			}
-			logger::debug("Compiled {} shader {}::{}", magic_enum::enum_name(shaderClass),
-				magic_enum::enum_name(type), descriptor);
+			logger::debug("Compiled shader {}:{}:{:X}", magic_enum::enum_name(type), magic_enum::enum_name(shaderClass), descriptor);
 
+			// strip debug info
 			ID3DBlob* strippedShaderBlob = nullptr;
 
 			const uint32_t stripFlags = D3DCOMPILER_STRIP_DEBUG_INFO |
@@ -1144,6 +1107,7 @@ namespace SIE
 			std::swap(shaderBlob, strippedShaderBlob);
 			strippedShaderBlob->Release();
 
+			// save shader to disk
 			if (useDiskCache) {
 				auto directoryPath = std::format("Data/ShaderCache/{}", shader.fxpFilename);
 				if (!std::filesystem::is_directory(directoryPath)) {
@@ -1157,21 +1121,19 @@ namespace SIE
 				const HRESULT saveResult = D3DWriteBlobToFile(shaderBlob, diskPath.c_str(), true);
 				if (FAILED(saveResult)) {
 					std::string str;
-					;
 					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
 						return (char)c;
 					});
 					logger::error("Failed to save shader to {}", str);
 				} else {
 					std::string str;
-					;
 					std::transform(diskPath.begin(), diskPath.end(), std::back_inserter(str), [](wchar_t c) {
 						return (char)c;
 					});
 					logger::debug("Saved shader to {}", str);
 				}
 			}
-
+			cache.AddCompletedShader(shaderClass, shader, descriptor, shaderBlob);
 			return shaderBlob;
 		}
 
@@ -1376,6 +1338,61 @@ namespace SIE
 		}
 
 		compilationSet.Clear();
+		std::unique_lock lock{ mapMutex };
+		shaderMap.clear();
+	}
+
+	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob)
+	{
+		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
+		auto status = a_blob ? ShaderCompilationTask::Status::Completed : ShaderCompilationTask::Status::Failed;
+		std::unique_lock lock{ mapMutex };
+		logger::debug("Adding {} shader to map: {}", magic_enum ::enum_name(status), key);
+		shaderMap.insert_or_assign(key, std::pair(a_blob, status));
+		return (bool)a_blob;
+	}
+
+	ID3DBlob* ShaderCache::GetCompletedShader(const std::string a_key)
+	{
+		std::scoped_lock lock{ mapMutex };
+		if (!shaderMap.empty() && shaderMap.contains(a_key)) {
+			auto status = shaderMap.at(a_key).second;
+			if (status != ShaderCompilationTask::Status::Pending)
+				return shaderMap.at(a_key).first;
+		}
+		return nullptr;
+	}
+
+	ID3DBlob* ShaderCache::GetCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader,
+		uint32_t descriptor)
+	{
+		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
+		return GetCompletedShader(key);
+	}
+
+	ID3DBlob* ShaderCache::GetCompletedShader(const ShaderCompilationTask& a_task)
+	{
+		auto key = a_task.GetString();
+		return GetCompletedShader(key);
+	}
+
+	ShaderCompilationTask::Status ShaderCache::GetShaderStatus(const std::string a_key)
+	{
+		std::scoped_lock lock{ mapMutex };
+		if (!shaderMap.empty() && shaderMap.contains(a_key)) {
+			return shaderMap.at(a_key).second;
+		}
+		return ShaderCompilationTask::Status::Pending;
+	}
+
+	std::string ShaderCache::GetShaderStatsString(bool a_timeOnly)
+	{
+		return compilationSet.GetStatsString(a_timeOnly);
+	}
+
+	bool ShaderCache::IsCompiling()
+	{
+		return compilationSet.totalTasks && compilationSet.completedTasks + compilationSet.failedTasks < compilationSet.totalTasks;
 	}
 
 	bool ShaderCache::IsEnabled() const
@@ -1420,7 +1437,7 @@ namespace SIE
 
 	void ShaderCache::DeleteDiskCache()
 	{
-		std::lock_guard lock(compilationSet.mutex);
+		std::scoped_lock lock{ compilationSet.compilationMutex };
 		try {
 			std::filesystem::remove_all(L"Data/ShaderCache");
 			logger::info("Deleted disk cache");
@@ -1465,10 +1482,8 @@ namespace SIE
 
 	ShaderCache::ShaderCache()
 	{
-		static const auto compilationThreadCount = static_cast<int32_t>(std::thread::hardware_concurrency());
-		for (size_t threadIndex = 0; threadIndex < compilationThreadCount; ++threadIndex) {
-			compilationThreads.push_back(std::jthread(&ShaderCache::ProcessCompilationSet, this));
-		}
+		logger::debug("ShaderCache initialized with {} compiler threads", (int)compilationThreadCount);
+		compilationPool.push_task(&ShaderCache::ManageCompilationSet, this, ssource.get_token());
 	}
 
 	RE::BSGraphics::VertexShader* ShaderCache::MakeAndAddVertexShader(const RE::BSShader& shader,
@@ -1529,24 +1544,54 @@ namespace SIE
 		return nullptr;
 	}
 
+	uint64_t ShaderCache::GetCachedHitTasks()
+	{
+		return compilationSet.cacheHitTasks;
+	}
 	uint64_t ShaderCache::GetCompletedTasks()
 	{
 		return compilationSet.completedTasks;
+	}
+	uint64_t ShaderCache::GetFailedTasks()
+	{
+		return compilationSet.failedTasks;
 	}
 
 	uint64_t ShaderCache::GetTotalTasks()
 	{
 		return compilationSet.totalTasks;
 	}
-
-	void ShaderCache::ProcessCompilationSet()
+	void ShaderCache::IncCacheHitTasks()
 	{
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-		while (true) {
-			const auto& task = compilationSet.WaitTake();
-			task.Perform();
-			compilationSet.Complete(task);
+		compilationSet.cacheHitTasks++;
+	}
+
+	bool ShaderCache::IsHideErrors()
+	{
+		return hideError;
+	}
+
+	void ShaderCache::ToggleErrorMessages()
+	{
+		hideError = !hideError;
+	}
+
+	void ShaderCache::ManageCompilationSet(std::stop_token stoken)
+	{
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+		while (!stoken.stop_requested()) {
+			const auto& task = compilationSet.WaitTake(stoken);
+			if (!task.has_value())
+				break;  // exit because thread told to end
+			compilationPool.push_task(&ShaderCache::ProcessCompilationSet, this, stoken, task.value());
 		}
+	}
+
+	void ShaderCache::ProcessCompilationSet(std::stop_token stoken, SIE::ShaderCompilationTask task)
+	{
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+		task.Perform();
+		compilationSet.Complete(task);
 	}
 
 	ShaderCompilationTask::ShaderCompilationTask(ShaderClass aShaderClass,
@@ -1571,27 +1616,44 @@ namespace SIE
 		       (static_cast<size_t>(shaderClass) << 60);
 	}
 
+	std::string ShaderCompilationTask::GetString() const
+	{
+		return SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
+	}
+
 	bool ShaderCompilationTask::operator==(const ShaderCompilationTask& other) const
 	{
 		return GetId() == other.GetId();
 	}
 
-	ShaderCompilationTask CompilationSet::WaitTake()
+	std::optional<ShaderCompilationTask> CompilationSet::WaitTake(std::stop_token stoken)
 	{
-		std::unique_lock lock(mutex);
-		conditionVariable.wait(lock, [this]() { return !availableTasks.empty(); });
-
+		std::unique_lock lock(compilationMutex);
+		auto& shaderCache = ShaderCache::Instance();
+		if (!conditionVariable.wait(
+				lock, stoken,
+				[this, &shaderCache]() { return !availableTasks.empty() &&
+			                                    // check against all tasks in queue to trickle the work. It cannot be the active tasks count because the thread pool itself is maximum.
+			                                    (int)shaderCache.compilationPool.get_tasks_total() <=
+			                                        (!shaderCache.backgroundCompilation ? shaderCache.compilationThreadCount : shaderCache.backgroundCompilationThreadCount); })) {
+			/*Woke up because of a stop request. */
+			return std::nullopt;
+		}
+		if (!ShaderCache::Instance().IsCompiling()) {  // we just got woken up because there's a task, start clock
+			lastCalculation = lastReset = high_resolution_clock::now();
+		}
 		auto node = availableTasks.extract(availableTasks.begin());
-		auto task = node.value();
+		auto& task = node.value();
 		tasksInProgress.insert(std::move(node));
 		return task;
 	}
 
 	void CompilationSet::Add(const ShaderCompilationTask& task)
 	{
-		std::unique_lock lock(mutex);
+		std::unique_lock lock(compilationMutex);
 		auto inProgressIt = tasksInProgress.find(task);
-		if (inProgressIt == tasksInProgress.end()) {
+		auto processedIt = processedTasks.find(task);
+		if (inProgressIt == tasksInProgress.end() && processedIt == processedTasks.end() && !ShaderCache::Instance().GetCompletedShader(task)) {
 			auto [availableIt, wasAdded] = availableTasks.insert(task);
 			lock.unlock();
 			if (wasAdded) {
@@ -1603,17 +1665,72 @@ namespace SIE
 
 	void CompilationSet::Complete(const ShaderCompilationTask& task)
 	{
-		std::unique_lock lock(mutex);
+		auto& cache = ShaderCache::Instance();
+		auto key = task.GetString();
+		auto shaderBlob = cache.GetCompletedShader(task);
+		if (shaderBlob) {
+			logger::debug("Compiling Task succeeded: {}", key);
+			completedTasks++;
+		} else {
+			logger::debug("Compiling Task failed: {}", key);
+			failedTasks++;
+		}
+		auto now = high_resolution_clock::now();
+		totalMs += duration_cast<milliseconds>(now - lastCalculation).count();
+		lastCalculation = now;
+		std::scoped_lock lock(compilationMutex);
+		processedTasks.insert(task);
 		tasksInProgress.erase(task);
-		completedTasks++;
+		conditionVariable.notify_one();
 	}
 
 	void CompilationSet::Clear()
 	{
-		std::lock_guard lock(mutex);
+		std::scoped_lock lock(compilationMutex);
 		availableTasks.clear();
 		tasksInProgress.clear();
+		processedTasks.clear();
 		totalTasks = 0;
 		completedTasks = 0;
+		failedTasks = 0;
+		cacheHitTasks = 0;
+		lastReset = high_resolution_clock::now();
+		lastCalculation = high_resolution_clock::now();
+		totalMs = (double)duration_cast<std::chrono::milliseconds>(lastReset - lastReset).count();
+	}
+
+	std::string CompilationSet::GetHumanTime(double a_totalms)
+	{
+		int milliseconds = (int)a_totalms;
+		int seconds = milliseconds / 1000;
+		milliseconds %= 1000;
+		int minutes = seconds / 60;
+		seconds %= 60;
+		int hours = minutes / 60;
+		minutes %= 60;
+
+		return fmt::format("{:02}:{:02}:{:02}", hours, minutes, seconds);
+	}
+
+	double CompilationSet::GetEta()
+	{
+		auto rate = completedTasks / totalMs;
+		auto remaining = totalTasks - completedTasks - failedTasks;
+		return std::max(remaining / rate, 0.0);
+	}
+
+	std::string CompilationSet::GetStatsString(bool a_timeOnly)
+	{
+		if (a_timeOnly)
+			return fmt::format("{}/{}",
+				GetHumanTime(totalMs),
+				GetHumanTime(GetEta() + totalMs));
+		return fmt::format("{}/{} (successful/total)\tfailed: {}\tcachehits: {}\nElapsed/Estimated Time: {}/{}",
+			(std::uint64_t)completedTasks,
+			(std::uint64_t)totalTasks,
+			(std::uint64_t)failedTasks,
+			(std::uint64_t)cacheHitTasks,
+			GetHumanTime(totalMs),
+			GetHumanTime(GetEta() + totalMs));
 	}
 }
