@@ -1759,10 +1759,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 #	endif
 
-#		if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
+#	if defined(RAIN_WETNESS_EFFECTS) && !defined(SNOW)
 	lightsDiffuseColor *= perPassRainWetnessEffects[0].RainDiffuseMultiplier;
 	lightsSpecularColor *= perPassRainWetnessEffects[0].RainSpecularMultiplier;
-#		endif  // RAIN_WETNESS_EFFECTS
+#	endif  // RAIN_WETNESS_EFFECTS
 
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
