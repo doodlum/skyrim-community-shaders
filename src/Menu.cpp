@@ -545,8 +545,8 @@ void Menu::DrawSettings()
 				ImGui::Text(
 					"Sets number of seconds before toggling between default USER and TEST config. "
 					"0 disables. Non-zero will enable testing mode. "
-					"Enabling will save current settings as TEST config."
-					"This has no impact if no settings are changed.");
+					"Enabling will save current settings as TEST config. "
+					"This has no impact if no settings are changed. ");
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
