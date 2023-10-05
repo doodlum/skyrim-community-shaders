@@ -338,10 +338,11 @@ void Menu::DrawSettings()
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-				ImGui::Text("The Disk Cache is a collection of compiled shaders on disk, which are automatically created when shaders are added to the Shader Cache.");
-				ImGui::Text("If you do not have a Disk Cache, or it is outdated or invalid, you will see \"Compiling Shaders\" in the upper-left corner.");
-				ImGui::Text("After this has completed you will no longer see this message apart from when loading from the Disk Cache.");
-				ImGui::Text("Only delete the Disk Cache manually if you are encountering issues.");
+				ImGui::Text(
+					"The Disk Cache is a collection of compiled shaders on disk, which are automatically created when shaders are added to the Shader Cache. "
+					"If you do not have a Disk Cache, or it is outdated or invalid, you will see \"Compiling Shaders\" in the upper-left corner. "
+					"After this has completed you will no longer see this message apart from when loading from the Disk Cache. "
+					"Only delete the Disk Cache manually if you are encountering issues. ");
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
