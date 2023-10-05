@@ -323,9 +323,10 @@ void Menu::DrawSettings()
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-				ImGui::Text("The Shader Cache is the collection of compiled shaders which replace the vanilla shaders at runtime.");
-				ImGui::Text("Clearing the shader cache will mean that shaders are recompiled only when the game re-encounters them.");
-				ImGui::Text("This is only needed for hot-loading shaders for development purposes.");
+				ImGui::Text(
+					"The Shader Cache is the collection of compiled shaders which replace the vanilla shaders at runtime. "
+					"Clearing the shader cache will mean that shaders are recompiled only when the game re-encounters them. "
+					"This is only needed for hot-loading shaders for development purposes. ");
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
