@@ -18,21 +18,16 @@ public:
 	struct Settings
 	{
 		uint32_t EnableRainWetnessEffects = 1;
-		float RainShininessMultiplierDay = 2.0f;
-		float RainSpecularMultiplierDay = 15.0f;
-		float RainDiffuseMultiplierDay = 0.5f;
-		float RainShininessMultiplierNight = 2.0f;
-		float RainSpecularMultiplierNight = 10.0f;
-		float RainDiffuseMultiplierNight = 0.9f;
+		float AlbedoColorPow = 1.5;
+		float WetnessWaterEdgeRange = 1;
 	};
 
 	struct alignas(16) PerPass
 	{
 		Settings settings;
-		float RainShininessMultiplier;
-		float RainSpecularMultiplier;
-		float RainDiffuseMultiplier;
-		float pad[2];
+		float wetness;
+		float waterHeight;
+		float pad[3];
 	};
 
 	Settings settings;
