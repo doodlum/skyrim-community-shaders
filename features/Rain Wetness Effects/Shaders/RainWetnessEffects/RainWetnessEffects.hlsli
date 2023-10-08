@@ -127,7 +127,7 @@ float GeometrySmith(float NdotV, float NdotL, float roughness)
 
 float3 GetWetnessSpecular(float3 N, float3 L, float3 V, float3 lightColor, float waterGlossiness)
 {	
-    float roughness = lerp(1.0, 0.1, waterGlossiness);
+    float roughness = lerp(1.0, 0.2, waterGlossiness);
 
     float3 H = normalize(V + L);
     float NdotL = saturate(dot(N, L));

@@ -1572,7 +1572,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	screenSpaceVertexNormal = normalize(screenSpaceVertexNormal);
 
 	float3 worldSpaceVertexNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceVertexNormal, 0)));
-	worldSpaceVertexNormal = normalize(worldSpaceNormal + worldSpaceVertexNormal);
+	worldSpaceVertexNormal = normalize(worldSpaceNormal + worldSpaceVertexNormal + worldSpaceVertexNormal);
 	if (!input.WorldSpace) 
 		normalizedDirLightDirectionWS = normalize(mul(input.World[eyeIndex], float4(normalizedDirLightDirectionWS, 0)));
 #	endif
