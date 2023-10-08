@@ -46,6 +46,8 @@ public:
 
 	virtual inline std::string GetName() { return "Dynamic Cubemaps"; }
 	virtual inline std::string GetShortName() { return "DynamicCubemaps"; }
+	inline std::string_view GetShaderDefineName() override { return "DYNAMIC_CUBEMAPS"; }
+	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual void SetupResources();
 	virtual void Reset();

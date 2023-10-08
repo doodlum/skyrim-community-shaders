@@ -973,6 +973,10 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #		include "RainWetnessEffects/RainWetnessEffects.hlsli"
 #	endif
 
+#	if defined(DYNAMIC_CUBEMAPS)
+#		include "DynamicCubemaps/DynamicCubemaps.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -1573,23 +1577,23 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		normalizedDirLightDirectionWS = normalize(mul(input.World[eyeIndex], float4(normalizedDirLightDirectionWS, 0)));
 #	endif
 
+#	if defined(RAIN_WETNESS_EFFECTS)
 	float3 waterSpecular = 0.0;
-#	if !defined(MODELSPACENORMALS)
-	float waterGlossinessAlbedo = saturate(worldSpaceVertexNormal.z) * perPassRainWetnessEffects[0].wetness;
-#else
-	float waterGlossinessAlbedo = saturate(worldSpaceNormal.z) * perPassRainWetnessEffects[0].wetness;
-
-#endif
+#		if !defined(MODELSPACENORMALS)
+	float waterGlossinessAlbedo = saturate(worldSpaceVertexNormal.z) * perPassRainWetnessEffects[0].Wetness;
+#		else
+	float waterGlossinessAlbedo = saturate(worldSpaceNormal.z) * perPassRainWetnessEffects[0].Wetness;
+#		endif
 	float waterGlossinessSpecular = waterGlossinessAlbedo;
 
 	{
-		float distToWater = abs(input.WorldPosition.z - perPassRainWetnessEffects[0].waterHeight);
+		float distToWater = abs(input.WorldPosition.z - perPassRainWetnessEffects[0].WaterHeight);
 		
 		float blendFactorAlbedo = 1.0;
-		float blendFactorSpecular = saturate(1.0 - (distToWater / 32));
+		float blendFactorSpecular = saturate(1.0 - (distToWater / 64));
 
-		if (input.WorldPosition.z > perPassRainWetnessEffects[0].waterHeight)
-			blendFactorAlbedo -= saturate(distToWater / 32);
+		if (input.WorldPosition.z > perPassRainWetnessEffects[0].WaterHeight)
+			blendFactorAlbedo -= saturate(distToWater / 64);
 		else 
 			blendFactorSpecular *= blendFactorSpecular;
 
@@ -1597,11 +1601,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		waterGlossinessSpecular = saturate(waterGlossinessSpecular + saturate(blendFactorSpecular));
 	}
 
-#	if !defined(MODELSPACENORMALS)
-	waterSpecular += GetWetnessSpecular(worldSpaceNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, dirLightColor, waterGlossinessSpecular);
+#if !defined(MODELSPACENORMALS)
+	waterSpecular += GetWetnessSpecular(worldSpaceVertexNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, dirLightColor, waterGlossinessSpecular);
 #else
 	waterSpecular += GetWetnessSpecular(worldSpaceNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, dirLightColor, waterGlossinessSpecular);
 #endif
+#	endif
+
 
 #	if defined(LIGHT_LIMIT_FIX)
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
@@ -1695,7 +1701,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 			lightsDiffuseColor += lightDiffuseColor * intensityMultiplier.xxx;
 
+#		if defined(RAIN_WETNESS_EFFECTS)
+#			if !defined(MODELSPACENORMALS)
+			waterSpecular += GetWetnessSpecular(worldSpaceVertexNormal, normalizedLightDirectionWS, worldSpaceViewDirection, lightColor, waterGlossinessSpecular) * intensityMultiplier;
+#			else
 			waterSpecular += GetWetnessSpecular(worldSpaceNormal, normalizedLightDirectionWS, worldSpaceViewDirection, lightColor, waterGlossinessSpecular) * intensityMultiplier;
+#			endif
+#		endif
+
 		}
 	}
 
@@ -1726,7 +1739,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		lightCount = min(1024, lightGrid[clusterIndex].lightCount);
 		if (lightCount) {
 			uint lightOffset = lightGrid[clusterIndex].offset;
-
 
 			float shadowQualityScale = saturate(1.0 - ((float)lightCount / 128.0));
 
@@ -1797,7 +1809,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			endif
 				lightsDiffuseColor += lightDiffuseColor * intensityMultiplier.xxx;
 
+#		if defined(RAIN_WETNESS_EFFECTS)
+#			if !defined(MODELSPACENORMALS)
+				waterSpecular += GetWetnessSpecular(worldSpaceVertexNormal, normalizedLightDirection, worldSpaceViewDirection, lightColor, waterGlossinessSpecular) * intensityMultiplier;
+#			else
 				waterSpecular += GetWetnessSpecular(worldSpaceNormal, normalizedLightDirection, worldSpaceViewDirection, lightColor, waterGlossinessSpecular) * intensityMultiplier;
+#			endif
+#		endif
 			}
 		}
 	}
@@ -1826,12 +1844,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float viewNormalAngle = dot(modelNormal.xyz, viewDirection);
 	float3 envSamplingPoint = (viewNormalAngle * 2) * modelNormal.xyz - viewDirection;
 	float3 envColor = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint).xyz * envMask.xxx;
-
-	float3 envColorBlurred = TexEnvSampler.SampleLevel(SampEnvSampler, envSamplingPoint, 4).x;
-	envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 - glossiness, envColorBlurred * envMask * 2.0);
-
+#		if defined(DYNAMIC_CUBEMAPS)
+	envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 - glossiness, envColor * envMask * 5.0);
+#		endif
 #	endif  // defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
-
+	
 	float3 emitColor = EmitColor;
 #	if !defined(LANDSCAPE)
 	if ((0x3F & (shaderDescriptors[0].PixelShaderDescriptor >> 24)) == _Glowmap) {
@@ -1843,18 +1860,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 directionalAmbientColor = mul(DirectionalAmbient, modelNormal);
 	diffuseColor = directionalAmbientColor + emitColor.xyz + diffuseColor;
 
-#	if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE)
-	waterGlossinessAlbedo = lerp(waterGlossinessAlbedo, 0, saturate(envMaskColor * 10));
-#	endif
-	waterGlossinessAlbedo = lerp(waterGlossinessAlbedo, 0, glossiness);
-
+#	if defined(RAIN_WETNESS_EFFECTS)
 	baseColor.xyz = lerp(baseColor.xyz, pow(baseColor.xyz, lerp(1.0, perPassRainWetnessEffects[0].AlbedoColorPow, 1.0 - glossiness)), waterGlossinessAlbedo);
-
-#	if !defined(MODELSPACENORMALS)
+#		if !defined(MODELSPACENORMALS)
 	waterSpecular += GetPBRAmbientSpecular(worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 - waterGlossinessSpecular, 0.02);
-#	else
+#		else
 	waterSpecular += GetPBRAmbientSpecular(worldSpaceNormal, worldSpaceViewDirection, 1.0 - waterGlossinessSpecular, 0.02);
-
+#		endif
 #	endif
 
 	float4 color;
@@ -1923,7 +1935,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = min(specularTmp.xyz, color.xyz);
 #	endif  // defined (SPECULAR) || defined(SPARKLE)
 
+#	if defined(RAIN_WETNESS_EFFECTS)
 	color.xyz += waterSpecular;
+#	endif
 
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
 	psout.Albedo.w = 0;
@@ -2007,10 +2021,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	tmp *= tmp * (3 + -2 * tmp);
 	psout.ScreenSpaceNormals.w = tmp * SSRParams.w;
 
-#	if !defined(MODELSPACENORMALS)
-	psout.ScreenSpaceNormals.xyz = normalize(psout.ScreenSpaceNormals.xyz + screenSpaceVertexNormal * perPassRainWetnessEffects[0].wetness);
+#	if defined(RAIN_WETNESS_EFFECTS)
+#		if !defined(MODELSPACENORMALS)
+	psout.ScreenSpaceNormals.xyz = normalize(psout.ScreenSpaceNormals.xyz + screenSpaceVertexNormal * perPassRainWetnessEffects[0].Wetness);
+#		endif
+	psout.ScreenSpaceNormals.w += perPassRainWetnessEffects[0].Wetness;
 #	endif
-	psout.ScreenSpaceNormals.w += perPassRainWetnessEffects[0].wetness;
 
 #	if defined(WATER_BLENDING)
 	if (perPassWaterBlending[0].EnableWaterBlendingSSR) {
