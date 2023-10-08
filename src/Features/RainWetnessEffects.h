@@ -16,7 +16,7 @@ public:
 	virtual inline std::string GetShortName() { return "RainWetnessEffects"; }
 	inline std::string_view GetShaderDefineName() override { return "RAIN_WETNESS_EFFECTS"; }
 
-	bool HasShaderDefine(RE::BSShader::Type shaderType) override;
+	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	struct Settings
 	{
@@ -25,12 +25,12 @@ public:
 		float WetnessWaterEdgeRange = 1;
 	};
 
-	struct alignas(16) PerPass
+	struct PerPass
 	{
-		Settings settings;
 		float wetness;
 		float waterHeight;
-		float pad[3];
+		DirectX::XMFLOAT3X4 DirectionalAmbientWS;
+		Settings settings;
 	};
 
 	Settings settings;

@@ -1,4 +1,5 @@
 #include "RainWetnessEffects.h"
+#include <Util.h>
 
 const float MIN_START_PERCENTAGE = 0.05f;
 const float DEFAULT_TRANSITION_PERCENTAGE = 1.0f;
@@ -110,6 +111,10 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 			}
 		}
 
+		auto& state = RE::BSShaderManager::State::GetSingleton();
+		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
+		Util::StoreTransform3x4NoScale(data.DirectionalAmbientWS, dalcTransform);
+
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
 		size_t bytes = sizeof(PerPass);
@@ -156,14 +161,4 @@ void RainWetnessEffects::Load(json& o_json)
 void RainWetnessEffects::Save(json& o_json)
 {
 	o_json[GetName()] = settings;
-}
-
-bool RainWetnessEffects::HasShaderDefine(RE::BSShader::Type shaderType)
-{
-	switch (shaderType) {
-	case RE::BSShader::Type::Lighting:
-		return true;
-	default:
-		return false;
-	}
 }
