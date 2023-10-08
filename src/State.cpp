@@ -316,8 +316,7 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 									(uint32_t)SIE::ShaderCache::LightingShaderFlags::BaseObjectIsSnow |
 									(uint32_t)SIE::ShaderCache::LightingShaderFlags::Snow);
 
-			a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AdditionalAlphaMask |
-								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
+			a_pixelDescriptor &= ~((uint32_t)SIE::ShaderCache::LightingShaderFlags::AmbientSpecular |
 								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::ShadowDir |
 								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::DefShadow |
 								   (uint32_t)SIE::ShaderCache::LightingShaderFlags::CharacterLight);
