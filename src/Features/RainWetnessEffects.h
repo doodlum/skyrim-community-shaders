@@ -34,10 +34,6 @@ public:
 
 	std::unique_ptr<Buffer> perPass = nullptr;
 
-	Texture2D* blurredReflectionsTexture = nullptr;
-
-	bool renderedScreenCamera = false;
-
 	virtual void SetupResources();
 	virtual void Reset();
 

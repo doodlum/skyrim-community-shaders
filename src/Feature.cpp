@@ -8,6 +8,7 @@
 #include "Features/RainWetnessEffects.h"
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/WaterBlending.h"
+#include "Features/DynamicCubemaps.h"
 
 void Feature::Load(json&)
 {
@@ -79,7 +80,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		ExtendedMaterials::GetSingleton(),
 		WaterBlending::GetSingleton(),
 		RainWetnessEffects::GetSingleton(),
-		LightLimitFix::GetSingleton()
+		LightLimitFix::GetSingleton(),
+		DynamicCubemaps::GetSingleton()
 	};
 
 	static std::vector<Feature*> featuresVR = {
