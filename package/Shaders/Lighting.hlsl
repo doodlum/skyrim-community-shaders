@@ -77,14 +77,12 @@ struct VS_OUTPUT
 	// #endif // !VR
 	float4 Color : COLOR0;
 	float4 FogParam : COLOR1;
-#if defined(LIGHT_LIMIT_FIX)
 #	if !defined(VR)
 	row_major float3x4 World[1] : POSITION3;
 #	else
 	row_major float3x4 World[2] : POSITION3;
 #	endif  // VR
 	bool WorldSpace : TEXCOORD11;
-#endif
 #if defined(VR)
 	float ClipDistance : SV_ClipDistance0;  // o11
 	float CullDistance : SV_CullDistance0;  // p11
@@ -440,7 +438,6 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.FogParam.xyz = lerp(FogNearColor.xyz, FogFarColor.xyz, fogColorParam);
 	vsout.FogParam.w = fogColorParam;
 
-#	if defined(LIGHT_LIMIT_FIX)
 	vsout.World[0] = World[0];
 #		ifdef VR
 	vsout.World[1] = World[1];
@@ -450,7 +447,6 @@ VS_OUTPUT main(VS_INPUT input)
 #		else
 	vsout.WorldSpace = false;
 #		endif
-#	endif
 
 #	ifdef VR
 	float4 r0;
