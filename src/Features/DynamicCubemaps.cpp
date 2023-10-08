@@ -199,8 +199,8 @@ void DynamicCubemaps::SetupResources()
 		irmapProgram = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\IrmapCS.hlsl", {}, "cs_5_0");
 
 		D3D11_TEXTURE2D_DESC texDesc{};
-		texDesc.Width = 32;
-		texDesc.Height = 32;
+		texDesc.Width = 8;
+		texDesc.Height = 8;
 		texDesc.MipLevels = 1;
 		texDesc.ArraySize = 6;
 		texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
