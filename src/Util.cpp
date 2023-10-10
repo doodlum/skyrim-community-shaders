@@ -251,10 +251,10 @@ namespace Util
 				{
 					float height = -RE::NI_INFINITY;
 					height = std::max(height, TryGetWaterHeight(0, 0));
-					height = std::max(height, TryGetWaterHeight(4096, 4096));
-					height = std::max(height, TryGetWaterHeight(4096, -4096));
-					height = std::max(height, TryGetWaterHeight(-4096, 4096));
-					height = std::max(height, TryGetWaterHeight(-4096, -4096));
+					height = std::max(height, TryGetWaterHeight(1024, 1024));
+					height = std::max(height, TryGetWaterHeight(1024, -1024));
+					height = std::max(height, TryGetWaterHeight(-1024, 1024));
+					height = std::max(height, TryGetWaterHeight(-1024, -1024));
 					return height;
 				}
 
