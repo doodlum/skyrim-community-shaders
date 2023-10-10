@@ -1,4 +1,5 @@
 #include "WaterBlending.h"
+#include <Util.h>
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	WaterBlending::Settings,
@@ -61,17 +62,7 @@ void WaterBlending::Draw(const RE::BSShader* shader, const uint32_t)
 		data.settings = settings;
 
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-
-		data.waterHeight = -FLT_MAX;
-
-		if (auto player = RE::PlayerCharacter::GetSingleton()) {
-			if (auto cell = player->GetParentCell()) {
-				if (!cell->IsInteriorCell()) {
-					auto height = cell->GetExteriorWaterHeight();
-					data.waterHeight = height - shadowState->GetRuntimeData().posAdjust.getEye().z;
-				}
-			}
-		}
+		data.waterHeight = Util::GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
 
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));

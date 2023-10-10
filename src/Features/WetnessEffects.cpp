@@ -100,12 +100,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 			}
 		}
 
-		data.waterHeight = -FLT_MAX;
-
-		if (auto player = RE::PlayerCharacter::GetSingleton())
-			if (auto cell = player->GetParentCell())
-				if (!cell->IsInteriorCell())
-					data.waterHeight = cell->GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
+		data.waterHeight = Util::GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
 
 		auto& state = RE::BSShaderManager::State::GetSingleton();
 		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;

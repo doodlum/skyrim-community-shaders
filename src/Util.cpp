@@ -230,4 +230,36 @@ namespace Util
 		}
 		return result;
 	}
+
+	float TryGetWaterHeight(float offsetX, float offsetY)
+	{
+		if (auto player = RE::PlayerCharacter::GetSingleton()) {
+			auto position = player->GetPosition();
+			position.x += offsetX;
+			position.y += offsetY;
+			if (auto cell = RE::TES::GetSingleton()->GetCell(position))
+				return cell->GetExteriorWaterHeight();
+		}
+		return -RE::NI_INFINITY;
+	}
+
+	float GetExteriorWaterHeight()
+	{
+		if (auto player = RE::PlayerCharacter::GetSingleton()) {
+			if (auto cell = player->GetParentCell()) {
+				if (!cell->IsInteriorCell())
+				{
+					float height = -RE::NI_INFINITY;
+					height = std::max(height, TryGetWaterHeight(0, 0));
+					height = std::max(height, TryGetWaterHeight(4096, 4096));
+					height = std::max(height, TryGetWaterHeight(4096, -4096));
+					height = std::max(height, TryGetWaterHeight(-4096, 4096));
+					height = std::max(height, TryGetWaterHeight(-4096, -4096));
+					return height;
+				}
+
+			}
+		}
+		return -RE::NI_INFINITY;
+	}
 }
