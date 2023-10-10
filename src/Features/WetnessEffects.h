@@ -3,26 +3,27 @@
 #include "Buffer.h"
 #include "Feature.h"
 
-struct RainWetnessEffects : Feature
+struct WetnessEffects : Feature
 {
 public:
-	static RainWetnessEffects* GetSingleton()
+	static WetnessEffects* GetSingleton()
 	{
-		static RainWetnessEffects singleton;
+		static WetnessEffects singleton;
 		return &singleton;
 	}
 
-	virtual inline std::string GetName() { return "Rain Wetness Effects"; }
-	virtual inline std::string GetShortName() { return "RainWetnessEffects"; }
-	inline std::string_view GetShaderDefineName() override { return "RAIN_WETNESS_EFFECTS"; }
+	virtual inline std::string GetName() { return "Wetness Effects"; }
+	virtual inline std::string GetShortName() { return "WetnessEffects"; }
+	inline std::string_view GetShaderDefineName() override { return "WETNESS_EFFECTS"; }
 
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	struct Settings
 	{
-		uint32_t EnableRainWetnessEffects = 1;
+		uint32_t EnableWetnessEffects = 1;
 		float AlbedoColorPow = 1.5;
-		float WetnessWaterEdgeRange = 1;
+		float MinimumRoughness = 0.2f;
+		uint32_t WaterEdgeRange = 32;
 	};
 
 	struct PerPass
@@ -41,8 +42,6 @@ public:
 	virtual void Reset();
 
 	virtual void DrawSettings();
-
-	void UpdateCubemap();
 
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 

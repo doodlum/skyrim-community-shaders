@@ -1,41 +1,41 @@
-#include "RainWetnessEffects.h"
+#include "WetnessEffects.h"
 #include <Util.h>
 
 const float MIN_START_PERCENTAGE = 0.05f;
 const float DEFAULT_TRANSITION_PERCENTAGE = 1.0f;
-const float DRY_SHININESS_MULTIPLIER = 1.0f;
-const float DRY_SPECULAR_MULTIPLIER = 1.0f;
-const float DRY_DIFFUSE_MULTIPLIER = 1.0f;
 const float TRANSITION_CURVE_MULTIPLIER = 3.0f;
 const float TRANSITION_DENOMINATOR = 256.0f;
-const float DAY = 0.0f;
-const float NIGHT = 1.0f;
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	RainWetnessEffects::Settings,
-	EnableRainWetnessEffects)
+	WetnessEffects::Settings,
+	EnableWetnessEffects,
+	AlbedoColorPow,
+	MinimumRoughness,
+	WaterEdgeRange)
 
-void RainWetnessEffects::DrawSettings()
+void WetnessEffects::DrawSettings()
 {
-	if (ImGui::TreeNodeEx("Rain Wetness Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::Checkbox("Enable Rain Wetness", (bool*)&settings.EnableRainWetnessEffects);
+	if (ImGui::TreeNodeEx("Wetness Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Checkbox("Enable Wetness", (bool*)&settings.EnableWetnessEffects);
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::Text("Enables a wetness effect when it is raining.");
+			ImGui::Text("Enables a wetness effect near water and when it is raining.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
 
-		ImGui::SliderFloat("Albedo Color Pow", &settings.AlbedoColorPow, 1, 2);
+		ImGui::SliderFloat("Albedo Color Pow", &settings.AlbedoColorPow, 1.0f, 2.0f);
 
-		ImGui::SliderFloat("Wetness Water Edge Range", &settings.WetnessWaterEdgeRange, 1, 100);
+		ImGui::SliderFloat("Minimum Roughness", &settings.MinimumRoughness, 0.0f, 1.0f);
+
+		ImGui::SliderInt("Water Edge Range", (int*)&settings.WaterEdgeRange, 1, 100);
 
 		ImGui::TreePop();
 	}
 }
 
-void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
+void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 {
 	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
@@ -51,7 +51,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 		float WetnessCurrentDay = 0.0f;
 		float WetnessPreviousDay = 0.0f;
 
-		if (settings.EnableRainWetnessEffects) {
+		if (settings.EnableWetnessEffects) {
 			if (auto player = RE::PlayerCharacter::GetSingleton()) {
 				if (auto cell = player->GetParentCell()) {
 					if (!cell->IsInteriorCell()) {
@@ -102,14 +102,10 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 
 		data.waterHeight = -FLT_MAX;
 
-		if (auto player = RE::PlayerCharacter::GetSingleton()) {
-			if (auto cell = player->GetParentCell()) {
-				if (!cell->IsInteriorCell()) {
-					auto height = cell->GetExteriorWaterHeight();
-					data.waterHeight = height - shadowState->GetRuntimeData().posAdjust.getEye().z;
-				}
-			}
-		}
+		if (auto player = RE::PlayerCharacter::GetSingleton())
+			if (auto cell = player->GetParentCell())
+				if (!cell->IsInteriorCell())
+					data.waterHeight = cell->GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
 
 		auto& state = RE::BSShaderManager::State::GetSingleton();
 		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
@@ -127,7 +123,7 @@ void RainWetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 	}
 }
 
-void RainWetnessEffects::SetupResources()
+void WetnessEffects::SetupResources()
 {
 	D3D11_BUFFER_DESC sbDesc{};
 	sbDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -146,11 +142,11 @@ void RainWetnessEffects::SetupResources()
 	perPass->CreateSRV(srvDesc);
 }
 
-void RainWetnessEffects::Reset()
+void WetnessEffects::Reset()
 {
 }
 
-void RainWetnessEffects::Load(json& o_json)
+void WetnessEffects::Load(json& o_json)
 {
 	if (o_json[GetName()].is_object())
 		settings = o_json[GetName()];
@@ -158,7 +154,7 @@ void RainWetnessEffects::Load(json& o_json)
 	Feature::Load(o_json);
 }
 
-void RainWetnessEffects::Save(json& o_json)
+void WetnessEffects::Save(json& o_json)
 {
 	o_json[GetName()] = settings;
 }
