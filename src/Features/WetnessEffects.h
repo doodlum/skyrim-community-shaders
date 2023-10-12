@@ -21,17 +21,20 @@ public:
 	struct Settings
 	{
 		uint32_t EnableWetnessEffects = 1;
-		float AlbedoColorPow = 1.5;
+		float DarkeningAmount = 2.0;
 		float MinimumRoughness = 0.2f;
 		uint32_t WaterEdgeRange = 32;
 	};
 
 	struct PerPass
 	{
-		float wetness;
-		float waterHeight;
+		bool Reflections;
+		float Wetness;
+		float WaterHeight;
 		DirectX::XMFLOAT3X4 DirectionalAmbientWS;
-		Settings settings;
+		float DarkeningAmount;
+		float MinimumRoughness;
+		uint32_t WaterEdgeRange;
 	};
 
 	Settings settings;

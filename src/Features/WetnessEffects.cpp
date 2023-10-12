@@ -9,7 +9,7 @@ const float TRANSITION_DENOMINATOR = 256.0f;
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	WetnessEffects::Settings,
 	EnableWetnessEffects,
-	AlbedoColorPow,
+	DarkeningAmount,
 	MinimumRoughness,
 	WaterEdgeRange)
 
@@ -25,7 +25,7 @@ void WetnessEffects::DrawSettings()
 			ImGui::EndTooltip();
 		}
 
-		ImGui::SliderFloat("Albedo Color Pow", &settings.AlbedoColorPow, 1.0f, 2.0f);
+		ImGui::SliderFloat("Darkening Amount", &settings.DarkeningAmount, 1.0f, 3.0f);
 
 		ImGui::SliderFloat("Minimum Roughness", &settings.MinimumRoughness, 0.0f, 1.0f);
 
@@ -43,13 +43,16 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 
 		PerPass data{};
-		data.settings = settings;
 
-		data.wetness = 0;
+		data.Reflections = (!REL::Module::IsVR() ?
+								   RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+								   RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
 
-		float WeatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
-		float WetnessCurrentDay = 0.0f;
-		float WetnessPreviousDay = 0.0f;
+		data.Wetness = 0;
+
+		float weatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
+		float wetnessCurrentWeather = 0.0f;
+		float wetnessOutgoingDay = 0.0f;
 
 		if (settings.EnableWetnessEffects) {
 			if (auto player = RE::PlayerCharacter::GetSingleton()) {
@@ -59,7 +62,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 							if (auto currentWeather = sky->currentWeather) {
 								if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
 									// Currently raining
-									WetnessCurrentDay = 1.0f;
+									wetnessCurrentWeather = 1.0f;
 
 									// Fade in gradually after precipitation has started
 									float beginFade = currentWeather->data.precipitationBeginFadeIn;
@@ -67,32 +70,32 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 									float startPercentage = (TRANSITION_DENOMINATOR - beginFade) * (1.0f / TRANSITION_DENOMINATOR);
 									startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
 									float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
-									WeatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
+									weatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
 								} else {				
-									WetnessCurrentDay = 0.0f;
+									wetnessCurrentWeather = 0.0f;
 								}
 
 								if (auto lastWeather = sky->lastWeather) {
 									if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
 										// Was raining before
-										WetnessPreviousDay = 1.0f;
+										wetnessOutgoingDay = 1.0f;
 
 										// Fade out gradually
-										WeatherTransitionPercentage = sky->currentWeatherPct;
+										weatherTransitionPercentage = sky->currentWeatherPct;
 
 									} else {
-										WetnessPreviousDay = 0.0f;
+										wetnessOutgoingDay = 0.0f;
 									}
 								} else {
 									// No last weather, 100% transition
-									WeatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
-									WetnessPreviousDay = WetnessCurrentDay;
+									weatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
+									wetnessOutgoingDay = wetnessCurrentWeather;
 								}
 
 								// Adjust the transition curve to ease in to the transition
-								WeatherTransitionPercentage = (exp2(TRANSITION_CURVE_MULTIPLIER * log2(WeatherTransitionPercentage)));
+								weatherTransitionPercentage = (exp2(TRANSITION_CURVE_MULTIPLIER * log2(weatherTransitionPercentage)));
 
-								data.wetness = std::lerp(WetnessPreviousDay, WetnessCurrentDay, WeatherTransitionPercentage);
+								data.Wetness = std::lerp(wetnessOutgoingDay, wetnessCurrentWeather, weatherTransitionPercentage);
 							}
 						}
 					}
@@ -100,11 +103,15 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 			}
 		}
 
-		data.waterHeight = Util::GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
+		data.WaterHeight = Util::GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
 
 		auto& state = RE::BSShaderManager::State::GetSingleton();
 		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
 		Util::StoreTransform3x4NoScale(data.DirectionalAmbientWS, dalcTransform);
+
+		data.DarkeningAmount = settings.DarkeningAmount;
+		data.MinimumRoughness = settings.MinimumRoughness;
+		data.WaterEdgeRange = settings.WaterEdgeRange;
 
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
