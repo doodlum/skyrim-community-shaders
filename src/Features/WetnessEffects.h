@@ -20,10 +20,17 @@ public:
 
 	struct Settings
 	{
-		uint32_t EnableWetnessEffects = 1;
-		float DarkeningAmount = 2.0;
-		float MinimumRoughness = 0.2f;
-		uint32_t WaterEdgeRange = 32;
+		uint EnableWetnessEffects = true;
+		float MaxWetness = 1.0f;
+		float MaxDarkness = 2.0f;
+		float MaxOcclusion = 0.3f;
+		float MinRoughness = 0.1f;
+		uint  ShoreRange = 32;
+		float ShoreCurve = 1.0f;
+		float PuddleMinWetness = 0.7f;
+		float PuddleRadius = 1.0f;
+		float PuddleMaxAngle = 0.9f;
+		float PuddleFlatness = 0.7f;
 	};
 
 	struct PerPass
@@ -32,9 +39,7 @@ public:
 		float Wetness;
 		float WaterHeight;
 		DirectX::XMFLOAT3X4 DirectionalAmbientWS;
-		float DarkeningAmount;
-		float MinimumRoughness;
-		uint32_t WaterEdgeRange;
+		Settings settings;
 	};
 
 	Settings settings;

@@ -9,9 +9,16 @@ const float TRANSITION_DENOMINATOR = 256.0f;
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	WetnessEffects::Settings,
 	EnableWetnessEffects,
-	DarkeningAmount,
-	MinimumRoughness,
-	WaterEdgeRange)
+	MaxWetness,
+	MaxDarkness,
+	MaxOcclusion,
+	MinRoughness,
+	ShoreRange,
+	ShoreCurve,
+	PuddleMinWetness,
+	PuddleRadius,
+	PuddleMaxAngle,
+	PuddleFlatness)
 
 void WetnessEffects::DrawSettings()
 {
@@ -25,11 +32,18 @@ void WetnessEffects::DrawSettings()
 			ImGui::EndTooltip();
 		}
 
-		ImGui::SliderFloat("Darkening Amount", &settings.DarkeningAmount, 1.0f, 3.0f);
+		ImGui::SliderFloat("Max Wetness", &settings.MaxWetness, 0.0f, 1.0f);
+		ImGui::SliderFloat("Max Darkeness", &settings.MaxDarkness, 1.0f, 3.0f);
+		ImGui::SliderFloat("Max Occlusion", &settings.MaxOcclusion, 0.0f, 1.0f);
+		ImGui::SliderFloat("Min Roughness", &settings.MinRoughness, 0.0f, 1.0f);
 
-		ImGui::SliderFloat("Minimum Roughness", &settings.MinimumRoughness, 0.0f, 1.0f);
+		ImGui::SliderInt("Shore Range", (int*)&settings.ShoreRange, 1, 64);
+		ImGui::SliderFloat("Shore Curve", &settings.ShoreCurve, 1, 10);
 
-		ImGui::SliderInt("Water Edge Range", (int*)&settings.WaterEdgeRange, 1, 100);
+		ImGui::SliderFloat("Puddle Min Wetness", &settings.PuddleMinWetness, 0.0f, 1.0f);
+		ImGui::SliderFloat("Puddle Radius", &settings.PuddleRadius, 0.0f, 3.0f);
+		ImGui::SliderFloat("Puddle Max Angle", &settings.PuddleMaxAngle, 0.0f, 1.0f);
+		ImGui::SliderFloat("Puddle Flatness", &settings.PuddleFlatness, 0.0f, 1.0f);
 
 		ImGui::TreePop();
 	}
@@ -60,42 +74,40 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 					if (!cell->IsInteriorCell()) {
 						if (auto sky = RE::Sky::GetSingleton()) {
 							if (auto currentWeather = sky->currentWeather) {
+								// Fade in gradually after precipitation has started
+								float beginFade = currentWeather->data.precipitationBeginFadeIn;
+								beginFade = beginFade > 0 ? beginFade : beginFade + TRANSITION_DENOMINATOR;
+								float startPercentage = (TRANSITION_DENOMINATOR - beginFade) * (1.0f / TRANSITION_DENOMINATOR);
+								startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
+								float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
+								weatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
+
+								float wetness = 0.0;
 								if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
 									// Currently raining
 									wetnessCurrentWeather = 1.0f;
-
-									// Fade in gradually after precipitation has started
-									float beginFade = currentWeather->data.precipitationBeginFadeIn;
-									beginFade = beginFade > 0 ? beginFade : beginFade + TRANSITION_DENOMINATOR;
-									float startPercentage = (TRANSITION_DENOMINATOR - beginFade) * (1.0f / TRANSITION_DENOMINATOR);
-									startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
-									float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
-									weatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
-								} else {				
+								} else if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kSnow)) {
+									wetnessCurrentWeather = 0.5f;
+								} else {
 									wetnessCurrentWeather = 0.0f;
 								}
+
+								wetness += wetnessCurrentWeather * std::pow(weatherTransitionPercentage, 0.5f);
 
 								if (auto lastWeather = sky->lastWeather) {
 									if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
 										// Was raining before
 										wetnessOutgoingDay = 1.0f;
-
-										// Fade out gradually
-										weatherTransitionPercentage = sky->currentWeatherPct;
-
+									} else if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kSnow)) {
+										wetnessOutgoingDay = 0.5f;
 									} else {
 										wetnessOutgoingDay = 0.0f;
 									}
-								} else {
-									// No last weather, 100% transition
-									weatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
-									wetnessOutgoingDay = wetnessCurrentWeather;
 								}
 
-								// Adjust the transition curve to ease in to the transition
-								weatherTransitionPercentage = (exp2(TRANSITION_CURVE_MULTIPLIER * log2(weatherTransitionPercentage)));
+								wetness += wetnessOutgoingDay * std::pow(1.0f - (sky->currentWeatherPct), 0.5f);
 
-								data.Wetness = std::lerp(wetnessOutgoingDay, wetnessCurrentWeather, weatherTransitionPercentage);
+								data.Wetness = std::clamp(wetness, 0.0f, 1.0f);
 							}
 						}
 					}
@@ -109,9 +121,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
 		Util::StoreTransform3x4NoScale(data.DirectionalAmbientWS, dalcTransform);
 
-		data.DarkeningAmount = settings.DarkeningAmount;
-		data.MinimumRoughness = settings.MinimumRoughness;
-		data.WaterEdgeRange = settings.WaterEdgeRange;
+		data.settings = settings;
 
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
