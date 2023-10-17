@@ -22,7 +22,7 @@ public:
 	{
 		uint EnableWetnessEffects = true;
 		float MaxWetness = 1.0f;
-		float MaxDarkness = 2.0f;
+		float MaxDarkness = 1.0f;
 		float MaxOcclusion = 0.3f;
 		float MinRoughness = 0.1f;
 		uint  ShoreRange = 32;
