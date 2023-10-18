@@ -1903,9 +1903,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 	float3 directionalAmbientColor = mul(DirectionalAmbient, modelNormal);
-#	if defined(DYNAMIC_CUBEMAPS) && !defined(LOD)
-	directionalAmbientColor = irradianceTexture.Sample(SampColorSampler, worldSpaceNormal).rgb * 1.5;
-#	endif
 	diffuseColor = directionalAmbientColor + emitColor.xyz + diffuseColor;
 
 #	if defined(WETNESS_EFFECTS)
