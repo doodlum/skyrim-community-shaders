@@ -7,6 +7,7 @@
 #include "ShaderCache.h"
 
 #include "Feature.h"
+#include "Util.h"
 
 void State::Draw()
 {
@@ -16,6 +17,7 @@ void State::Draw()
 		if (type > 0 && type < RE::BSShader::Type::Total) {
 			if (enabledClasses[type - 1]) {
 				ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
+				UpdateSharedData(currentShader, currentPixelDescriptor);
 
 				auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
@@ -50,6 +52,7 @@ void State::DrawDeferred()
 
 void State::Reset()
 {
+	lightingDataRequiresUpdate = true;
 	for (auto* feature : Feature::GetFeatureList())
 		if (feature->loaded)
 			feature->Reset();
@@ -271,14 +274,19 @@ void State::SetupResources()
 	sbDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	sbDesc.StructureByteStride = sizeof(PerShader);
 	sbDesc.ByteWidth = sizeof(PerShader);
-	perShader = std::make_unique<Buffer>(sbDesc);
+	shaderDataBuffer = std::make_unique<Buffer>(sbDesc);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.NumElements = 1;
-	perShader->CreateSRV(srvDesc);
+	shaderDataBuffer->CreateSRV(srvDesc);
+
+	sbDesc.StructureByteStride = sizeof(LightingData);
+	sbDesc.ByteWidth = sizeof(LightingData);
+	lightingDataBuffer = std::make_unique<Buffer>(sbDesc);
+	lightingDataBuffer->CreateSRV(srvDesc);
 }
 
 void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescriptor, uint& a_pixelDescriptor)
@@ -292,10 +300,10 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 			data.PixelShaderDescriptor = a_pixelDescriptor;
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
-			DX::ThrowIfFailed(context->Map(perShader->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+			DX::ThrowIfFailed(context->Map(shaderDataBuffer->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
 			size_t bytes = sizeof(PerShader);
 			memcpy_s(mapped.pData, bytes, &data, bytes);
-			context->Unmap(perShader->resource.get(), 0);
+			context->Unmap(shaderDataBuffer->resource.get(), 0);
 
 			lastVertexDescriptor = a_vertexDescriptor;
 			lastPixelDescriptor = a_pixelDescriptor;
@@ -357,7 +365,47 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 								   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior);
 		}
 
-		ID3D11ShaderResourceView* view = perShader->srv.get();
+		ID3D11ShaderResourceView* view = shaderDataBuffer->srv.get();
 		context->PSSetShaderResources(127, 1, &view);
+	}
+}
+
+void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
+{
+	if (a_shader->shaderType.get() == RE::BSShader::Type::Lighting) {
+		bool updateBuffer = false;
+
+		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
+		if (true) {
+			lightingDataRequiresUpdate = false;
+			for (int i = -2; i < 3; i++) {
+				for (int k = -2; k < 3; k++) {
+					int waterTile = (i + 2) + ((k + 2) * 5);
+					lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - shadowState->GetRuntimeData().posAdjust.getEye().z;
+				}
+			}
+			updateBuffer = true;
+		}
+
+		bool currentReflections = (!REL::Module::IsVR() ?
+										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+		if (lightingData.Reflections != currentReflections){}
+			updateBuffer = true;
+
+		lightingData.Reflections = currentReflections;
+
+		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+
+		if (updateBuffer) {
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			DX::ThrowIfFailed(context->Map(lightingDataBuffer->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+			size_t bytes = sizeof(LightingData);
+			memcpy_s(mapped.pData, bytes, &lightingData, bytes);
+			context->Unmap(lightingDataBuffer->resource.get(), 0);
+		}
+
+		ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
+		context->PSSetShaderResources(126, 1, &view);
 	}
 }

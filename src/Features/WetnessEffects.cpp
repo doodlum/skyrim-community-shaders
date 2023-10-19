@@ -1,7 +1,6 @@
 #include "WetnessEffects.h"
 #include <Util.h>
 
-
 const float MIN_START_PERCENTAGE = 0.05f;
 const float DEFAULT_TRANSITION_PERCENTAGE = 1.0f;
 const float TRANSITION_CURVE_MULTIPLIER = 3.0f;
@@ -10,12 +9,12 @@ const float TRANSITION_DENOMINATOR = 256.0f;
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	WetnessEffects::Settings,
 	EnableWetnessEffects,
-	MaxWetness,
+	MaxRainWetness,
+	MaxShoreWetness,
 	MaxDarkness,
 	MaxOcclusion,
 	MinRoughness,
 	ShoreRange,
-	ShoreCurve,
 	PuddleMinWetness,
 	PuddleRadius,
 	PuddleMaxAngle,
@@ -33,13 +32,13 @@ void WetnessEffects::DrawSettings()
 			ImGui::EndTooltip();
 		}
 
-		ImGui::SliderFloat("Max Wetness", &settings.MaxWetness, 0.0f, 1.0f);
-		ImGui::SliderFloat("Max Darkeness", &settings.MaxDarkness, 1.0f, 3.0f);
+		ImGui::SliderFloat("Max Rain Wetness", &settings.MaxRainWetness, 0.0f, 1.0f);
+		ImGui::SliderFloat("Max Shore Wetness", &settings.MaxShoreWetness, 0.0f, 1.0f);
+		ImGui::SliderFloat("Max Darkeness", &settings.MaxDarkness, 1.0f, 2.0f);
 		ImGui::SliderFloat("Max Occlusion", &settings.MaxOcclusion, 0.0f, 1.0f);
 		ImGui::SliderFloat("Min Roughness", &settings.MinRoughness, 0.0f, 1.0f);
 
 		ImGui::SliderInt("Shore Range", (int*)&settings.ShoreRange, 1, 64);
-		ImGui::SliderFloat("Shore Curve", &settings.ShoreCurve, 1, 10);
 
 		ImGui::SliderFloat("Puddle Min Wetness", &settings.PuddleMinWetness, 0.0f, 1.0f);
 		ImGui::SliderFloat("Puddle Radius", &settings.PuddleRadius, 0.0f, 3.0f);
@@ -52,100 +51,80 @@ void WetnessEffects::DrawSettings()
 
 void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 {
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
-
 	if (shader->shaderType.any(RE::BSShader::Type::Lighting)) {
-		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
+		if (requiresUpdate) {
+			requiresUpdate = false;
+			auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
-		PerPass data{};
+			PerPass data{};
+			data.Wetness = 0;
 
-		data.Reflections = (!REL::Module::IsVR() ?
-								   RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
-								   RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+			if (settings.EnableWetnessEffects) {
+				if (auto player = RE::PlayerCharacter::GetSingleton()) {
+					if (auto cell = player->GetParentCell()) {
+						if (!cell->IsInteriorCell()) {
+							if (auto sky = RE::Sky::GetSingleton()) {
+								float weatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
+								float wetnessCurrentWeather = 0.0f;
+								float wetnessOutgoingDay = 0.0f;
+								if (auto currentWeather = sky->currentWeather) {
+									// Fade in gradually after precipitation has started
+									float beginFade = currentWeather->data.precipitationBeginFadeIn;
+									beginFade = beginFade > 0 ? beginFade : beginFade + TRANSITION_DENOMINATOR;
+									float startPercentage = (TRANSITION_DENOMINATOR - beginFade) * (1.0f / TRANSITION_DENOMINATOR);
+									startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
+									float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
+									weatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
 
-		data.Wetness = 0;
-
-		float weatherTransitionPercentage = DEFAULT_TRANSITION_PERCENTAGE;
-		float wetnessCurrentWeather = 0.0f;
-		float wetnessOutgoingDay = 0.0f;
-
-		if (settings.EnableWetnessEffects) {
-			if (auto player = RE::PlayerCharacter::GetSingleton()) {
-				if (auto cell = player->GetParentCell()) {
-					if (!cell->IsInteriorCell()) {
-						if (auto sky = RE::Sky::GetSingleton()) {
-							if (auto currentWeather = sky->currentWeather) {
-								// Fade in gradually after precipitation has started
-								float beginFade = currentWeather->data.precipitationBeginFadeIn;
-								beginFade = beginFade > 0 ? beginFade : beginFade + TRANSITION_DENOMINATOR;
-								float startPercentage = (TRANSITION_DENOMINATOR - beginFade) * (1.0f / TRANSITION_DENOMINATOR);
-								startPercentage = startPercentage > MIN_START_PERCENTAGE ? startPercentage : MIN_START_PERCENTAGE;
-								float currentPercentage = (sky->currentWeatherPct - startPercentage) / (1 - startPercentage);
-								weatherTransitionPercentage = std::clamp(currentPercentage, 0.0f, 1.0f);
-
-								float wetness = 0.0;
-								if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
-									// Currently raining
-									wetnessCurrentWeather = 1.0f;
-								} else if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kSnow)) {
-									wetnessCurrentWeather = 0.5f;
-								} else {
-									wetnessCurrentWeather = 0.0f;
-								}
-
-								wetness += wetnessCurrentWeather * std::pow(weatherTransitionPercentage, 0.5f);
-
-								if (auto lastWeather = sky->lastWeather) {
-									if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
-										// Was raining before
-										wetnessOutgoingDay = 1.0f;
-									} else if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kSnow)) {
-										wetnessOutgoingDay = 0.5f;
+									float wetness = 0.0;
+									if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
+										// Currently raining
+										wetnessCurrentWeather = 1.0f;
+									} else if (currentWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kSnow)) {
+										wetnessCurrentWeather = 0.5f;
 									} else {
-										wetnessOutgoingDay = 0.0f;
+										wetnessCurrentWeather = 0.0f;
 									}
+
+									wetness += wetnessCurrentWeather * std::pow(weatherTransitionPercentage, 0.5f);
+
+									if (auto lastWeather = sky->lastWeather) {
+										if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
+											// Was raining before
+											wetnessOutgoingDay = 1.0f;
+										} else if (lastWeather->data.flags.any(RE::TESWeather::WeatherDataFlag::kSnow)) {
+											wetnessOutgoingDay = 0.5f;
+										} else {
+											wetnessOutgoingDay = 0.0f;
+										}
+									}
+
+									wetness += wetnessOutgoingDay * std::pow(1.0f - (sky->currentWeatherPct), 0.5f);
+
+									data.Wetness = std::clamp(wetness, 0.0f, 1.0f);
 								}
-
-								wetness += wetnessOutgoingDay * std::pow(1.0f - (sky->currentWeatherPct), 0.5f);
-
-								data.Wetness = std::clamp(wetness, 0.0f, 1.0f);
 							}
 						}
 					}
 				}
 			}
+
+			auto& state = RE::BSShaderManager::State::GetSingleton();
+			RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
+			Util::StoreTransform3x4NoScale(data.DirectionalAmbientWS, dalcTransform);
+
+			data.settings = settings;
+
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+			size_t bytes = sizeof(PerPass);
+			memcpy_s(mapped.pData, bytes, &data, bytes);
+			context->Unmap(perPass->resource.get(), 0);
+
+			ID3D11ShaderResourceView* views[1]{};
+			views[0] = perPass->srv.get();
+			context->PSSetShaderResources(22, ARRAYSIZE(views), views);
 		}
-	
-
-		if (auto player = RE::PlayerCharacter::GetSingleton()) {
-			if (auto cell = player->GetParentCell()) {
-				if (!cell->IsInteriorCell()) {
-					for (int i = -2; i < 3; i++) {
-						for (int k = -2; k < 3; k++) {
-							int waterTile = (i + 2) + ((k + 2) * 5);
-							data.waterTiles.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - shadowState->GetRuntimeData().posAdjust.getEye().z;
-						}
-					}
-				}
-			}
-		}
-
-
-		auto& state = RE::BSShaderManager::State::GetSingleton();
-		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
-		Util::StoreTransform3x4NoScale(data.DirectionalAmbientWS, dalcTransform);
-
-		data.settings = settings;
-
-		D3D11_MAPPED_SUBRESOURCE mapped;
-		DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-		size_t bytes = sizeof(PerPass);
-		memcpy_s(mapped.pData, bytes, &data, bytes);
-		context->Unmap(perPass->resource.get(), 0);
-
-		ID3D11ShaderResourceView* views[1]{};
-		views[0] = perPass->srv.get();
-		context->PSSetShaderResources(22, ARRAYSIZE(views), views);
 	}
 }
 
@@ -170,6 +149,7 @@ void WetnessEffects::SetupResources()
 
 void WetnessEffects::Reset()
 {
+	requiresUpdate = true;
 }
 
 void WetnessEffects::Load(json& o_json)

@@ -1,16 +1,14 @@
 struct PerPassWetnessEffects
 {
-    bool Reflections;
     float Wetness;
-    float WaterHeight[25];
     row_major float3x4 DirectionalAmbientWS;
-    uint EnableWetnessEffects;
-    float MaxWetness;
+    uint EnableWetnessEffects;    
+    float MaxRainWetness;
+    float MaxShoreWetness;
     float MaxDarkness;
     float MaxOcclusion;
     float MinRoughness;
     uint  ShoreRange;
-    float ShoreCurve;
     float PuddleMinWetness;
     float PuddleRadius;
     float PuddleMaxAngle;
@@ -39,25 +37,27 @@ float3 GetPBRAmbientSpecular(float3 N, float3 V, float roughness, float3 F0)
 
     float3 specularIrradiance = mul(perPassWetnessEffects[0].DirectionalAmbientWS, float4(-R, 1.0)) * 0.75;
 
-#if defined(DYNAMIC_CUBEMAPS)
-    if (!perPassWetnessEffects[0].Reflections)
+#   if defined(DYNAMIC_CUBEMAPS)
+#       if !defined(GRASS)
+    if (!lightingData[0].Reflections)
+#       endif
     {
         float level = roughness * 4.0;
- #if defined(GRASS)
+#      if defined(GRASS)
         level++;
- #endif
+#       endif
         specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level).rgb;
     }
-#endif
+#   endif
 
     specularIrradiance = max(0.01, pow(specularIrradiance, 2.2));
     
 	// Split-sum approximation factors for Cook-Torrance specular BRDF.
-#if defined(DYNAMIC_CUBEMAPS)
+#   if defined(DYNAMIC_CUBEMAPS)
     float2 specularBRDF = specularBRDF_LUT.Sample(LinearSampler, float2(NoV, roughness));
-#else
+#   else
     float2 specularBRDF = EnvBRDFApprox(F0, roughness, NoV);
-#endif
+#   endif
 
     // Roughness dependent fresnel
     // https://www.jcgt.org/published/0008/01/03/paper.pdf

@@ -5,6 +5,14 @@
 
 #define PI 3.1415927
 
+struct LightingData
+{
+	float WaterHeight[25];
+	bool Reflections;
+};
+
+StructuredBuffer<LightingData> lightingData : register(t126);
+
 #if (defined(TREE_ANIM) || defined(LANDSCAPE)) && !defined(VC)
 #	define VC
 #endif  // TREE_ANIM || LANDSCAPE || !VC
@@ -1585,10 +1593,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float porosity = 1.0;
 
-#	if defined(WETNESS_EFFECTS)
-
-	float wetness = 0.0;
-
+#	if defined(WATER_BLENDING) || defined(WETNESS_EFFECTS)
 	float2 cellF = ((input.WorldPosition.xy + CameraPosAdjust[0].xy) + (32 * 4096)) / 4096.0; // always positive
 	int2 cellInt;
 	float2 cellFrac = modf(cellF, cellInt);
@@ -1598,16 +1603,22 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	cellF -= cellFrac; // align to cell borders
 	cellInt = round(cellF);
 
-	int waterTile = cellInt.x + (cellInt.y * 5u); // remap xy to 0-24
+	uint waterTile = cellInt.x + (cellInt.y * 5u); // remap xy to 0-24
 	float waterHeight = -2147483648; // lowest 32-bit integer
 
 	if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0)
-		waterHeight = perPassWetnessEffects[0].WaterHeight[waterTile];
+		waterHeight = lightingData[0].WaterHeight[waterTile];
+#	endif
+
+#	if defined(WETNESS_EFFECTS)
+
+	float wetness = 0.0;
 
 	float wetnessDistToWater = abs(input.WorldPosition.z - waterHeight);	
 	float shoreFactor = saturate(1.0 - (wetnessDistToWater / (float)perPassWetnessEffects[0].ShoreRange));
-	shoreFactor *= shoreFactor;
+	
 	float shoreFactorAlbedo = shoreFactor;
+	shoreFactorAlbedo *= shoreFactorAlbedo;
 	if (input.WorldPosition.z < waterHeight)
 		shoreFactorAlbedo = 1.0;
 
@@ -1618,14 +1629,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		rainWetness = saturate(worldSpaceNormal.z) * rainWetness;
 #	endif
 
-	wetness = max(shoreFactor, rainWetness);
+	wetness = max(shoreFactor * perPassWetnessEffects[0].MaxShoreWetness, rainWetness * perPassWetnessEffects[0].MaxRainWetness);
 
 	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 * perPassWetnessEffects[0].PuddleRadius;
 	float puddle = 0;
 	if (wetness > 0.0){
 		puddle = FBM(puddleCoords, 3, 1.0) * 0.5 + 0.5;
 		puddle = lerp(0.25, 1.0, puddle);
-		puddle *= wetness * perPassWetnessEffects[0].MaxWetness;
+		puddle *= wetness;
 #		if !defined(HAIR)
 		puddle *= RGBToLuminance(input.Color.xyz);
 #		endif
@@ -2081,21 +2092,15 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	psout.ScreenSpaceNormals.w = tmp * SSRParams.w;
 
 #	if defined(WETNESS_EFFECTS)
-#		if !defined(MODELSPACENORMALS)
-	psout.ScreenSpaceNormals.xyz = normalize(psout.ScreenSpaceNormals.xyz + screenSpaceVertexNormal * perPassWetnessEffects[0].Wetness);
-#		endif
-	psout.ScreenSpaceNormals.w = max(psout.ScreenSpaceNormals.w, perPassWetnessEffects[0].Wetness);
+	psout.ScreenSpaceNormals.w = max(psout.ScreenSpaceNormals.w, wetnessGlossinessSpecular);
 #	endif
 
 #	if defined(WATER_BLENDING)
 	if (perPassWaterBlending[0].EnableWaterBlendingSSR) {
 		// Compute distance to water surface
-		float distToWater = max(0, input.WorldPosition.z - perPassWaterBlending[0].WaterHeight);
+		float distToWater = max(0, input.WorldPosition.z - waterHeight);
 		float blendFactor = smoothstep(viewPosition.z * 0.001 * 4, viewPosition.z * 0.001 * 16 * perPassWaterBlending[0].SSRBlendRange, distToWater);
-
 		// Reduce SSR amount
-		normal.z *= blendFactor;
-		normal.xyz = normalize(normal.xyz);
 		psout.ScreenSpaceNormals.w *= blendFactor;
 	}
 #	endif  // WATER_BLENDING

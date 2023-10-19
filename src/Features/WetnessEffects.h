@@ -18,20 +18,15 @@ public:
 
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
-	struct WaterTiles
-	{
-		float WaterHeight[25];
-	};
-
 	struct Settings
 	{
 		uint EnableWetnessEffects = true;
-		float MaxWetness = 1.0f;
+		float MaxRainWetness = 1.0f;
+		float MaxShoreWetness = 0.85f;
 		float MaxDarkness = 1.0f;
 		float MaxOcclusion = 0.15f;
 		float MinRoughness = 0.1f;
 		uint  ShoreRange = 32;
-		float ShoreCurve = 1.0f;
 		float PuddleMinWetness = 0.7f;
 		float PuddleRadius = 1.0f;
 		float PuddleMaxAngle = 0.9f;
@@ -40,9 +35,7 @@ public:
 
 	struct PerPass
 	{
-		bool Reflections;
 		float Wetness;
-		WaterTiles waterTiles;
 		DirectX::XMFLOAT3X4 DirectionalAmbientWS;
 		Settings settings;
 	};
@@ -50,6 +43,8 @@ public:
 	Settings settings;
 
 	std::unique_ptr<Buffer> perPass = nullptr;
+
+	bool requiresUpdate = true;
 
 	virtual void SetupResources();
 	virtual void Reset();
