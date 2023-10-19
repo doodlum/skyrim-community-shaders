@@ -1998,39 +1998,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = Lin2sRGB(color.xyz);
 #	endif
 
-
-
- #if defined(LIGHT_LIMIT_FIX) &&  defined(WETNESS_EFFECTS)
-// 	float3 trueWorldPosition = input.WorldPosition.xyz + CameraPosAdjust[0].xyz;
-// 	float2 cellF = trueWorldPosition.xy / float2(4096.0, 4096.0);
-	
-// 	int2 cellInt;
-// 	float2 cellFrac = modf(cellF, cellInt);
-
-// 	cellF = input.WorldPosition.xy / float2(4096.0, 4096.0);
-// 	cellF += 2; // 5x5 cell grid
-// 	cellF -= cellFrac;
-// 	cellFrac = modf(cellF, cellInt);
-
-// 	uint waterTile = cellInt.x + (cellInt.y * 5u);
-
-	// if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0){
-	//  	float3 colorCode = TurboColormap(waterTile / (25.0));
-	//  	color.xyz = colorCode;
-	// }
-	// if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0){
-
-	// if (waterTile == 24)
-	// {
-	// 	color.xyz = 0;
-	// }
-	// }
-	//color.xyz = cellFrac2;
-	// if (cellInt.x == 2 && cellInt.y == 2)
-	 //	color.xyz  = 0;
-
- #endif
-
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
 	psout.Albedo.w = 0;
 #	else
