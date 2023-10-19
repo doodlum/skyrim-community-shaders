@@ -1616,7 +1616,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float wetnessDistToWater = abs(input.WorldPosition.z - waterHeight);	
 	float shoreFactor = saturate(1.0 - (wetnessDistToWater / (float)perPassWetnessEffects[0].ShoreRange));
-	
+
 	float shoreFactorAlbedo = shoreFactor;
 	shoreFactorAlbedo *= shoreFactorAlbedo;
 	if (input.WorldPosition.z < waterHeight)
@@ -1624,9 +1624,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float rainWetness = perPassWetnessEffects[0].Wetness;
 	#	if !defined(MODELSPACENORMALS)
-		rainWetness = saturate(max(worldSpaceNormal.z, worldSpaceVertexNormal.z)) * rainWetness;
+		rainWetness *= quintic(perPassWetnessEffects[0].PuddleMaxAngle, 0.99, saturate(max(worldSpaceNormal.z, worldSpaceVertexNormal.z)));
 #	else
-		rainWetness = saturate(worldSpaceNormal.z) * rainWetness;
+		rainWetness *= quintic(perPassWetnessEffects[0].PuddleMaxAngle, 0.99, saturate(worldSpaceNormal.z));
 #	endif
 
 	wetness = max(shoreFactor * perPassWetnessEffects[0].MaxShoreWetness, rainWetness * perPassWetnessEffects[0].MaxRainWetness);
@@ -1635,7 +1635,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float puddle = 0;
 	if (wetness > 0.0){
 		puddle = FBM(puddleCoords, 3, 1.0) * 0.5 + 0.5;
-		puddle = lerp(0.25, 1.0, puddle);
+		puddle = lerp(0.5, 1.0, puddle);
 		puddle *= wetness;
 #		if !defined(HAIR)
 		puddle *= RGBToLuminance(input.Color.xyz);
@@ -1667,6 +1667,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.WorldPosition.z < waterHeight)
 		wetnessGlossinessSpecular *= shoreFactor;
+
 
 #	if !defined(MODELSPACENORMALS)
 		float flatnessAmount = perPassWetnessEffects[0].PuddleFlatness;

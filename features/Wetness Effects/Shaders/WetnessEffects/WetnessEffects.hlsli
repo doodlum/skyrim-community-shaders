@@ -175,3 +175,9 @@ float FBM(float3 pos, int octaves, float frequency) {
     }
     return height;
 }
+
+
+float quintic(float edge0, float edge1, float x) {
+    x = saturate((x - edge0) / (edge1 - edge0));
+    return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
+}

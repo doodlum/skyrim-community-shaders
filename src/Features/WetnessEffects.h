@@ -30,7 +30,7 @@ public:
 		float PuddleMinWetness = 0.7f;
 		float PuddleRadius = 1.0f;
 		float PuddleMaxAngle = 0.9f;
-		float PuddleFlatness = 0.7f;
+		float PuddleFlatness = 0.95f;
 	};
 
 	struct PerPass
