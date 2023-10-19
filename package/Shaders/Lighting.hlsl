@@ -1589,11 +1589,26 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float wetness = 0.0;
 
-	float wetnessDistToWater = abs(input.WorldPosition.z - perPassWetnessEffects[0].WaterHeight);	
+	float2 cellF = ((input.WorldPosition.xy + CameraPosAdjust[0].xy) + (32 * 4096)) / 4096.0; // always positive
+	int2 cellInt;
+	float2 cellFrac = modf(cellF, cellInt);
+
+	cellF = input.WorldPosition.xy / float2(4096.0, 4096.0); // remap to cell scale
+	cellF += 2.5; // 5x5 cell grid
+	cellF -= cellFrac; // align to cell borders
+	cellInt = round(cellF);
+
+	int waterTile = cellInt.x + (cellInt.y * 5u); // remap xy to 0-24
+	float waterHeight = -2147483648; // lowest 32-bit integer
+
+	if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0)
+		waterHeight = perPassWetnessEffects[0].WaterHeight[waterTile];
+
+	float wetnessDistToWater = abs(input.WorldPosition.z - waterHeight);	
 	float shoreFactor = saturate(1.0 - (wetnessDistToWater / (float)perPassWetnessEffects[0].ShoreRange));
 	shoreFactor *= shoreFactor;
 	float shoreFactorAlbedo = shoreFactor;
-	if (input.WorldPosition.z < perPassWetnessEffects[0].WaterHeight)
+	if (input.WorldPosition.z < waterHeight)
 		shoreFactorAlbedo = 1.0;
 
 	float rainWetness = perPassWetnessEffects[0].Wetness;
@@ -1609,6 +1624,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float puddle = 0;
 	if (wetness > 0.0){
 		puddle = FBM(puddleCoords, 3, 1.0) * 0.5 + 0.5;
+		puddle = lerp(0.25, 1.0, puddle);
 		puddle *= wetness * perPassWetnessEffects[0].MaxWetness;
 #		if !defined(HAIR)
 		puddle *= RGBToLuminance(input.Color.xyz);
@@ -1638,7 +1654,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float wetnessGlossinessSpecular = puddle;
 
-	if (input.WorldPosition.z < perPassWetnessEffects[0].WaterHeight)
+	if (input.WorldPosition.z < waterHeight)
 		wetnessGlossinessSpecular *= shoreFactor;
 
 #	if !defined(MODELSPACENORMALS)
@@ -1982,7 +1998,38 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = Lin2sRGB(color.xyz);
 #	endif
 
-	//color.xyz = wetnessGlossinessSpecular;
+
+
+ #if defined(LIGHT_LIMIT_FIX) &&  defined(WETNESS_EFFECTS)
+// 	float3 trueWorldPosition = input.WorldPosition.xyz + CameraPosAdjust[0].xyz;
+// 	float2 cellF = trueWorldPosition.xy / float2(4096.0, 4096.0);
+	
+// 	int2 cellInt;
+// 	float2 cellFrac = modf(cellF, cellInt);
+
+// 	cellF = input.WorldPosition.xy / float2(4096.0, 4096.0);
+// 	cellF += 2; // 5x5 cell grid
+// 	cellF -= cellFrac;
+// 	cellFrac = modf(cellF, cellInt);
+
+// 	uint waterTile = cellInt.x + (cellInt.y * 5u);
+
+	// if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0){
+	//  	float3 colorCode = TurboColormap(waterTile / (25.0));
+	//  	color.xyz = colorCode;
+	// }
+	// if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0){
+
+	// if (waterTile == 24)
+	// {
+	// 	color.xyz = 0;
+	// }
+	// }
+	//color.xyz = cellFrac2;
+	// if (cellInt.x == 2 && cellInt.y == 2)
+	 //	color.xyz  = 0;
+
+ #endif
 
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
 	psout.Albedo.w = 0;

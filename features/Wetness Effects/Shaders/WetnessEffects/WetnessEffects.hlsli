@@ -2,7 +2,7 @@ struct PerPassWetnessEffects
 {
     bool Reflections;
     float Wetness;
-    float WaterHeight;
+    float WaterHeight[25];
     row_major float3x4 DirectionalAmbientWS;
     uint EnableWetnessEffects;
     float MaxWetness;

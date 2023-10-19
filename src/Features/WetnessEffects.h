@@ -18,6 +18,11 @@ public:
 
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
+	struct WaterTiles
+	{
+		float WaterHeight[25];
+	};
+
 	struct Settings
 	{
 		uint EnableWetnessEffects = true;
@@ -37,7 +42,7 @@ public:
 	{
 		bool Reflections;
 		float Wetness;
-		float WaterHeight;
+		WaterTiles waterTiles;
 		DirectX::XMFLOAT3X4 DirectionalAmbientWS;
 		Settings settings;
 	};

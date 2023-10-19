@@ -1,6 +1,7 @@
 #include "WetnessEffects.h"
 #include <Util.h>
 
+
 const float MIN_START_PERCENTAGE = 0.05f;
 const float DEFAULT_TRANSITION_PERCENTAGE = 1.0f;
 const float TRANSITION_CURVE_MULTIPLIER = 3.0f;
@@ -114,8 +115,21 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 				}
 			}
 		}
+	
 
-		data.WaterHeight = Util::GetExteriorWaterHeight() - shadowState->GetRuntimeData().posAdjust.getEye().z;
+		if (auto player = RE::PlayerCharacter::GetSingleton()) {
+			if (auto cell = player->GetParentCell()) {
+				if (!cell->IsInteriorCell()) {
+					for (int i = -2; i < 3; i++) {
+						for (int k = -2; k < 3; k++) {
+							int waterTile = (i + 2) + ((k + 2) * 5);
+							data.waterTiles.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - shadowState->GetRuntimeData().posAdjust.getEye().z;
+						}
+					}
+				}
+			}
+		}
+
 
 		auto& state = RE::BSShaderManager::State::GetSingleton();
 		RE::NiTransform& dalcTransform = state.directionalAmbientTransform;
