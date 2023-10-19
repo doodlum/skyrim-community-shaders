@@ -376,7 +376,19 @@ void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
 		bool updateBuffer = false;
 
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-		if (true) {
+
+		bool currentReflections = (!REL::Module::IsVR() ?
+										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+
+		if (lightingData.Reflections != currentReflections) {
+			updateBuffer = true;
+			lightingDataRequiresUpdate = true;
+		}
+
+		lightingData.Reflections = currentReflections;
+
+		if (lightingDataRequiresUpdate) {
 			lightingDataRequiresUpdate = false;
 			for (int i = -2; i < 3; i++) {
 				for (int k = -2; k < 3; k++) {
@@ -386,14 +398,6 @@ void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
 			}
 			updateBuffer = true;
 		}
-
-		bool currentReflections = (!REL::Module::IsVR() ?
-										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
-										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
-		if (lightingData.Reflections != currentReflections){}
-			updateBuffer = true;
-
-		lightingData.Reflections = currentReflections;
 
 		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
