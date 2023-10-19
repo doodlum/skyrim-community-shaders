@@ -1583,12 +1583,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 #	endif
 
-#if defined(SPECULAR)
-	float porosity = 1.0 - glossiness;
-	porosity *= porosity;
-#else
 	float porosity = 1.0;
-#endif
 
 #	if defined(WETNESS_EFFECTS)
 
@@ -1596,11 +1591,19 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float wetnessDistToWater = abs(input.WorldPosition.z - perPassWetnessEffects[0].WaterHeight);	
 	float shoreFactor = saturate(1.0 - (wetnessDistToWater / (float)perPassWetnessEffects[0].ShoreRange));
+	shoreFactor *= shoreFactor;
 	float shoreFactorAlbedo = shoreFactor;
 	if (input.WorldPosition.z < perPassWetnessEffects[0].WaterHeight)
 		shoreFactorAlbedo = 1.0;
 
-	wetness = shoreFactor + perPassWetnessEffects[0].Wetness;
+	float rainWetness = perPassWetnessEffects[0].Wetness;
+	#	if !defined(MODELSPACENORMALS)
+		rainWetness = saturate(max(worldSpaceNormal.z, worldSpaceVertexNormal.z)) * rainWetness;
+#	else
+		rainWetness = saturate(worldSpaceNormal.z) * rainWetness;
+#	endif
+
+	wetness = max(shoreFactor, rainWetness);
 
 	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 * perPassWetnessEffects[0].PuddleRadius;
 	float puddle = 0;
@@ -1628,15 +1631,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	wetnessNormal = normalize(wetnessNormal);
 #	endif
 
-#	if !defined(MODELSPACENORMALS)
-		puddle = saturate(max(worldSpaceNormal.z, worldSpaceVertexNormal.z)) * puddle;
-#	else
-		puddle = saturate(worldSpaceNormal.z) * puddle;
-#	endif
-
 	float3 wetnessSpecular = 0.0;
 
-	float wetnessGlossinessAlbedo = max(shoreFactorAlbedo, puddle);
+	float wetnessGlossinessAlbedo = max(puddle, shoreFactorAlbedo);
 	wetnessGlossinessAlbedo *= wetnessGlossinessAlbedo;
 
 	float wetnessGlossinessSpecular = puddle;
@@ -1653,8 +1650,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float waterRoughnessSpecular = lerp(1.0, perPassWetnessEffects[0].MinRoughness, wetnessGlossinessSpecular);
 
-	if (waterRoughnessSpecular < 0.999)
-		wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, dirLightColor, waterRoughnessSpecular);
+	wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, dirLightColor, waterRoughnessSpecular);
 #	endif
 
 #	if defined(LIGHT_LIMIT_FIX)
@@ -1753,8 +1749,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			roomOcclusion += intensityMultiplier;
 
 #		if defined(WETNESS_EFFECTS)
-			if (waterRoughnessSpecular < 0.999)
-				wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedLightDirectionWS, worldSpaceViewDirection, lightColor, waterRoughnessSpecular) * intensityMultiplier;
+			wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedLightDirectionWS, worldSpaceViewDirection, lightColor, waterRoughnessSpecular) * intensityMultiplier;
 #		endif
 
 		}
@@ -1858,8 +1853,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				lightsDiffuseColor += lightDiffuseColor * intensityMultiplier.xxx;
 
 #		if defined(WETNESS_EFFECTS)
-				if (waterRoughnessSpecular < 0.999)
-					wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedLightDirection, worldSpaceViewDirection, lightColor, waterRoughnessSpecular) * intensityMultiplier;
+				wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedLightDirection, worldSpaceViewDirection, lightColor, waterRoughnessSpecular) * intensityMultiplier;
 #		endif
 			}
 		}
@@ -1913,8 +1907,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float wetnessDarkeningAmount = (porosity * wetnessGlossinessAlbedo * perPassWetnessEffects[0].MaxDarkness) * 0.5;
 	baseColor.xyz = pow(baseColor.xyz, 1 + wetnessDarkeningAmount);
 #		endif
-	if (waterRoughnessSpecular < 0.999)
-		wetnessSpecular += GetPBRAmbientSpecular(wetnessNormal, worldSpaceViewDirection, 1.0 - wetnessGlossinessSpecular, 0.02);
+	wetnessSpecular += GetPBRAmbientSpecular(wetnessNormal, worldSpaceViewDirection, 1.0 - wetnessGlossinessSpecular, 0.02);
 #	endif
 
 	float4 color;
@@ -1988,6 +1981,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz += wetnessSpecular * (1.0 - saturate(roomOcclusion * 2));
 	color.xyz = Lin2sRGB(color.xyz);
 #	endif
+
+	//color.xyz = wetnessGlossinessSpecular;
 
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
 	psout.Albedo.w = 0;
