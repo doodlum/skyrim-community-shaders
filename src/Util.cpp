@@ -233,13 +233,15 @@ namespace Util
 
 	float TryGetWaterHeight(float offsetX, float offsetY)
 	{
-		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-
-		auto position = shadowState->GetRuntimeData().posAdjust.getEye();
-		position.x += offsetX;
-		position.y += offsetY;
-		if (auto cell = RE::TES::GetSingleton()->GetCell(position))
-			return cell->GetExteriorWaterHeight();
+		if (auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton()) {
+			if (auto tes = RE::TES::GetSingleton()) {
+				auto position = shadowState->GetRuntimeData().posAdjust.getEye();
+				position.x += offsetX;
+				position.y += offsetY;
+				if (auto cell = tes->GetCell(position))
+					return cell->GetExteriorWaterHeight();
+			}
+		}
 		return -RE::NI_INFINITY;
 	}
 
