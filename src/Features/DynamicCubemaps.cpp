@@ -154,7 +154,8 @@ void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 	if (shader->shaderType.any(RE::BSShader::Type::Lighting)) {
 		// During world cubemap generation we cannot use the cubemap
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-		if (shadowState->GetRuntimeData().cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
+		auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
+		if (cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
 			ID3D11ShaderResourceView* views[4]{};
 			views[0] = nullptr;
 			views[1] = nullptr;

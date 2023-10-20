@@ -235,7 +235,7 @@ namespace Util
 	{
 		if (auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton()) {
 			if (auto tes = RE::TES::GetSingleton()) {
-				auto position = shadowState->GetRuntimeData().posAdjust.getEye();
+				auto position = !REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye() : shadowState->GetVRRuntimeData().posAdjust.getEye();
 				position.x += offsetX;
 				position.y += offsetY;
 				if (auto cell = tes->GetCell(position))
