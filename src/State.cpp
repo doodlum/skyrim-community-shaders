@@ -393,7 +393,8 @@ void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
 			for (int i = -2; i < 3; i++) {
 				for (int k = -2; k < 3; k++) {
 					int waterTile = (i + 2) + ((k + 2) * 5);
-					lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - shadowState->GetRuntimeData().posAdjust.getEye().z;
+					auto position = !REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye() : shadowState->GetVRRuntimeData().posAdjust.getEye();
+					lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - position.z;
 				}
 			}
 			updateBuffer = true;

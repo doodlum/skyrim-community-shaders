@@ -13,5 +13,5 @@ namespace Util
 	std::string DefinesToString(std::vector<D3D_SHADER_MACRO>& defines);
 	float TryGetWaterHeight(float offsetX, float offsetY);
 	float GetExteriorWaterHeight();
-
+	void DumpSettingsOptions();
 }
