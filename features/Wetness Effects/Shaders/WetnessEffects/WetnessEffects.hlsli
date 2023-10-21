@@ -35,7 +35,7 @@ float3 GetPBRAmbientSpecular(float3 N, float3 V, float roughness, float3 F0)
     float3 R = reflect(-V, N);
     float NoV = saturate(dot(N, V));
 
-    float3 specularIrradiance = mul(perPassWetnessEffects[0].DirectionalAmbientWS, float4(-R, 1.0)) * 0.75;
+    float3 specularIrradiance = mul(perPassWetnessEffects[0].DirectionalAmbientWS, float4(R, 1.0)) * 0.75;
 
 #   if defined(DYNAMIC_CUBEMAPS)
 #       if !defined(GRASS)

@@ -1624,9 +1624,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float rainWetness = perPassWetnessEffects[0].Wetness;
 	#	if !defined(MODELSPACENORMALS)
-		rainWetness *= quintic(perPassWetnessEffects[0].PuddleMaxAngle, 0.99, saturate(max(worldSpaceNormal.z, worldSpaceVertexNormal.z)));
+		rainWetness *= saturate(max(worldSpaceNormal.z, worldSpaceVertexNormal.z));
 #	else
-		rainWetness *= quintic(perPassWetnessEffects[0].PuddleMaxAngle, 0.99, saturate(worldSpaceNormal.z));
+		rainWetness *= saturate(worldSpaceNormal.z);
 #	endif
 
 	wetness = max(shoreFactor * perPassWetnessEffects[0].MaxShoreWetness, rainWetness * perPassWetnessEffects[0].MaxRainWetness);
