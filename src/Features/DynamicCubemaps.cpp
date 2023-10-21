@@ -78,24 +78,7 @@ void DynamicCubemaps::UpdateCubemap()
 	auto context = renderer->GetRuntimeData().context;
 
 	auto cubemap = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS];
-	//if (REL::Module::IsVR()) {
-	//	auto waterSystem = RE::TESWaterSystem::GetSingleton();
-	//	if (waterSystem)
-	//		for (auto& water : waterSystem->waterReflections) {
-	//			if (water) {
-	//				if (auto reflection = water.get()) {
-	//					logger::debug("Found reflection at {0:x}", reinterpret_cast<uintptr_t>(reflection));
-	//					if (auto texture = reflection->waterMaterial->staticReflectionTexture.get()->rendererTexture) {
-	//						cubemap.texture = (ID3D11Texture2D*)texture;
-	//						logger::debug(fmt::runtime("Found texture {} at {0:x}"), reflection->waterMaterial->staticReflectionTexture.get()->name, reinterpret_cast<uintptr_t>(texture));
-	//						/*cubemap.cubeSideRTV = (ID3D11RenderTargetView*)reflection->cubeMapSides;
-	//			cubemap.SRV = (ID3D11ShaderResourceView*)reflection->waterMaterial.staticReflectionTexture;*/
-	//						break;
-	//					}
-	//				}
-	//			}
-	//		}
-	//}
+
 	// Compute diffuse irradiance cubemap.
 	{
 		for (UINT face = 0; face < 6; face++) {
