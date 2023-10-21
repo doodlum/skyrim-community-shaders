@@ -3,8 +3,71 @@
 
 constexpr auto MIPLEVELS = 4;
 
+void DynamicCubemaps::DataLoaded()
+{
+	if (REL::Module::IsVR()) {
+		// enable cubemap settings in VR
+		for (const auto& settingName : iniVRCubeMapSettings) {
+			if (auto setting = RE::INISettingCollection::GetSingleton()->GetSetting(settingName); setting) {
+				if (!setting->data.b) {
+					logger::info("[DC] Changing {} from {} to {} to support Dynamic Cubemaps", settingName, setting->data.b, true);
+					setting->data.b = true;
+				}
+			}
+		}
+		for (const auto& settingPair : hiddenVRCubeMapSettings) {
+			const auto& settingName = settingPair.first;
+			const auto address = REL::Offset{ settingPair.second }.address();
+			bool* setting = reinterpret_cast<bool*>(address);
+			if (!*setting) {
+				logger::info("[DC] Changing {} from {} to {} to support Dynamic Cubemaps", settingName, *setting, true);
+				*setting = true;
+			}
+		}
+	}
+}
+
 void DynamicCubemaps::DrawSettings()
 {
+	if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (REL::Module::IsVR()) {
+			if (ImGui::BeginTable("##SettingsToggles", 3, ImGuiTableFlags_SizingStretchSame)) {
+				for (const auto& settingName : iniVRCubeMapSettings) {
+					if (auto setting = RE::INISettingCollection::GetSingleton()->GetSetting(settingName); setting) {
+						ImGui::TableNextColumn();
+						ImGui::Checkbox(settingName.c_str(), &setting->data.b);
+						if (ImGui::IsItemHovered()) {
+							ImGui::BeginTooltip();
+							ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+							//ImGui::Text(fmt::format(fmt::runtime("{} {0:x}"), settingName, &setting->data.b).c_str());
+							ImGui::Text(settingName.c_str());
+							ImGui::PopTextWrapPos();
+							ImGui::EndTooltip();
+						}
+					}
+				}
+				for (const auto& settingPair : hiddenVRCubeMapSettings) {
+					const auto& settingName = settingPair.first;
+					const auto address = REL::Offset{ settingPair.second }.address();
+					bool* setting = reinterpret_cast<bool*>(address);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox(settingName.c_str(), setting);
+					if (ImGui::IsItemHovered()) {
+						ImGui::BeginTooltip();
+						ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+						ImGui::Text(settingName.c_str());
+						//ImGui::Text(fmt::format(fmt::runtime("{} {0:x}"), settingName, address).c_str());
+						ImGui::PopTextWrapPos();
+						ImGui::EndTooltip();
+					}
+				}
+				ImGui::EndTable();
+			}
+		}
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::TreePop();
+	}
 }
 
 void DynamicCubemaps::UpdateCubemap()
@@ -15,7 +78,24 @@ void DynamicCubemaps::UpdateCubemap()
 	auto context = renderer->GetRuntimeData().context;
 
 	auto cubemap = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS];
-
+	//if (REL::Module::IsVR()) {
+	//	auto waterSystem = RE::TESWaterSystem::GetSingleton();
+	//	if (waterSystem)
+	//		for (auto& water : waterSystem->waterReflections) {
+	//			if (water) {
+	//				if (auto reflection = water.get()) {
+	//					logger::debug("Found reflection at {0:x}", reinterpret_cast<uintptr_t>(reflection));
+	//					if (auto texture = reflection->waterMaterial->staticReflectionTexture.get()->rendererTexture) {
+	//						cubemap.texture = (ID3D11Texture2D*)texture;
+	//						logger::debug(fmt::runtime("Found texture {} at {0:x}"), reflection->waterMaterial->staticReflectionTexture.get()->name, reinterpret_cast<uintptr_t>(texture));
+	//						/*cubemap.cubeSideRTV = (ID3D11RenderTargetView*)reflection->cubeMapSides;
+	//			cubemap.SRV = (ID3D11ShaderResourceView*)reflection->waterMaterial.staticReflectionTexture;*/
+	//						break;
+	//					}
+	//				}
+	//			}
+	//		}
+	//}
 	// Compute diffuse irradiance cubemap.
 	{
 		for (UINT face = 0; face < 6; face++) {
@@ -277,7 +357,6 @@ void DynamicCubemaps::SetupResources()
 		}
 	}
 }
-
 
 void DynamicCubemaps::Reset()
 {

@@ -53,9 +53,23 @@ public:
 	virtual void Reset();
 
 	virtual void DrawSettings();
+	virtual void DataLoaded() override;
 
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
+	std::vector<std::string> iniVRCubeMapSettings{
+		{ "bAutoWaterSilhouetteReflections:Water" },  //IniSettings 0x1eaa018
+		{ "bForceHighDetailReflections:Water" },      //IniSettings 0x1eaa030
+	};
+
+	std::map<std::string, uintptr_t> hiddenVRCubeMapSettings{
+		{ "bReflectExplosions:Water", 0x1eaa000 },
+		{ "bReflectLODLand:Water", 0x1eaa060 },
+		{ "bReflectLODObjects:Water", 0x1eaa078 },
+		{ "bReflectLODTrees:Water", 0x1eaa090 },
+		{ "bReflectSky:Water", 0x1eaa0a8 },
+		{ "bUseWaterRefractions:Water", 0x1eaa0c0 },
+	};
 };
