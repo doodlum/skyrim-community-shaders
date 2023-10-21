@@ -245,26 +245,6 @@ namespace Util
 		return -RE::NI_INFINITY;
 	}
 
-	float GetExteriorWaterHeight()
-	{
-		if (auto player = RE::PlayerCharacter::GetSingleton()) {
-			if (auto cell = player->GetParentCell()) {
-				if (!cell->IsInteriorCell())
-				{
-					float height = -RE::NI_INFINITY;
-					height = std::max(height, TryGetWaterHeight(0, 0));
-					height = std::max(height, TryGetWaterHeight(1024, 1024));
-					height = std::max(height, TryGetWaterHeight(1024, -1024));
-					height = std::max(height, TryGetWaterHeight(-1024, 1024));
-					height = std::max(height, TryGetWaterHeight(-1024, -1024));
-					return height;
-				}
-
-			}
-		}
-		return -RE::NI_INFINITY;
-	}
-
 	void DumpSettingsOptions()
 	{
 		std::vector<RE::SettingCollectionList<RE::Setting>*> collections = {
