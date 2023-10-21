@@ -264,4 +264,22 @@ namespace Util
 		}
 		return -RE::NI_INFINITY;
 	}
+
+	void DumpSettingsOptions()
+	{
+		std::vector<RE::SettingCollectionList<RE::Setting>*> collections = {
+			RE::INISettingCollection::GetSingleton(),
+			RE::INIPrefSettingCollection::GetSingleton(),
+		};
+		auto count = 0;
+		for (const auto& collection : collections) {
+			for (const auto set : collection->settings)
+				logger::info("Setting[{}] {}", count, set->GetName());
+			count++;
+		}
+		auto game = RE::GameSettingCollection::GetSingleton();
+		for (const auto& set : game->settings) {
+			logger::info("Game Setting {} {}", set.first, set.second->GetName());
+		}
+	}
 }
