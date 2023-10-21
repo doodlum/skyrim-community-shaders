@@ -31,15 +31,37 @@ public:
 
 	// Diffuse irradiance
 
-	ID3D11PixelShader* irmapProgramPS = nullptr;
 	ID3D11ComputeShader* irmapProgram = nullptr;
 	Texture2D* irmapTexture = nullptr;
 
-	//BRDF 2D LUT
+	// BRDF 2D LUT
 
 	ID3D11ComputeShader* spBRDFProgram = nullptr;
 	Texture2D* spBRDFLUT = nullptr;
 	ID3D11SamplerState* spBRDFSampler = nullptr;
+
+	// Reflection capture
+
+	ID3D11ComputeShader* accumulateCubemapCS = nullptr;
+	ID3D11ComputeShader* updateCubemapCS = nullptr;
+	ConstantBuffer* accumulateCubemapCB = nullptr;
+	Texture2D* accumulationDataRedTexture = nullptr;
+	Texture2D* accumulationDataGreenTexture = nullptr;
+	Texture2D* accumulationDataBlueTexture = nullptr;
+	Texture2D* accumulationDataCounterTexture = nullptr;
+
+	Texture2D* colorTextureTemp = nullptr;
+
+
+	Texture2D* dynamicCubemapTexture = nullptr;
+
+	struct alignas(16) AccumulateCubemapCB
+	{
+		float2 RcpBufferDim;
+		uint CubeMapSize;
+		float4x4 InvViewProjMatrix;
+		float pad[1];
+	};
 
 	void UpdateCubemap();
 	void CreateResources();
@@ -59,6 +81,7 @@ public:
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
+
 	std::vector<std::string> iniVRCubeMapSettings{
 		{ "bAutoWaterSilhouetteReflections:Water" },  //IniSettings 0x1eaa018
 		{ "bForceHighDetailReflections:Water" },      //IniSettings 0x1eaa030
@@ -72,4 +95,12 @@ public:
 		{ "bReflectSky:Water", 0x1eaa0a8 },
 		{ "bUseWaterRefractions:Water", 0x1eaa0c0 },
 	};
+
+	virtual void ClearShaderCache() override;
+	ID3D11ComputeShader* GetComputeShaderAccumulate();
+	ID3D11ComputeShader* GetComputeShaderUpdate();
+
+	void GenerateCubemap();
+
+	virtual void DrawDeferred();
 };

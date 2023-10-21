@@ -199,6 +199,36 @@ namespace Hooks
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
+	struct BSImagespaceShaderISSAOCompositeSAO_SetupTechnique
+	{
+		static void thunk(RE::BSShader* a_shader, RE::BSShaderMaterial* a_material)
+		{
+			State::GetSingleton()->DrawDeferred();
+			func(a_shader, a_material);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct BSImagespaceShaderISSAOCompositeFog_SetupTechnique
+	{
+		static void thunk(RE::BSShader* a_shader, RE::BSShaderMaterial* a_material)
+		{
+			State::GetSingleton()->DrawDeferred();
+			func(a_shader, a_material);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct BSImagespaceShaderISSAOCompositeSAOFog_SetupTechnique
+	{
+		static void thunk(RE::BSShader* a_shader, RE::BSShaderMaterial* a_material)
+		{
+			State::GetSingleton()->DrawDeferred();
+			func(a_shader, a_material);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
 	void Install()
 	{
 		logger::info("Hooking BSShader::LoadShaders");
@@ -209,5 +239,10 @@ namespace Hooks
 		*(uintptr_t*)&ptr_BSGraphics_SetDirtyStates = Detours::X64::DetourFunction(REL::RelocationID(75580, 77386).address(), (uintptr_t)&hk_BSGraphics_SetDirtyStates);
 		logger::info("Hooking BSGraphics::Renderer::InitD3D");
 		stl::write_thunk_call<BSGraphics_Renderer_Init_InitD3D>(REL::RelocationID(75595, 77226).address() + REL::Relocate(0x50, 0x2BC));
+
+		logger::info("Hooking deferred passes");
+		stl::write_vfunc<0x2, BSImagespaceShaderISSAOCompositeSAO_SetupTechnique>(RE::VTABLE_BSImagespaceShaderISSAOCompositeSAO[0]);
+		stl::write_vfunc<0x2, BSImagespaceShaderISSAOCompositeFog_SetupTechnique>(RE::VTABLE_BSImagespaceShaderISSAOCompositeFog[0]);
+		stl::write_vfunc<0x2, BSImagespaceShaderISSAOCompositeSAOFog_SetupTechnique>(RE::VTABLE_BSImagespaceShaderISSAOCompositeSAOFog[0]);
 	}
 }
