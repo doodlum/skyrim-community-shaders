@@ -74,40 +74,14 @@ void DynamicCubemaps::GenerateCubemap()
 	ID3D11ShaderResourceView* srvs[2] = { depth.depthSRV, colorTextureTemp->srv.get() };
 	context->CSSetShaderResources(0, 2, srvs);
 
-	ID3D11UnorderedAccessView* uavs[5] = { 
-		accumulationDataRedTexture->uav.get(), 
-		accumulationDataGreenTexture->uav.get(), 
-		accumulationDataBlueTexture->uav.get(), 
-		accumulationDataCounterTexture->uav.get() , 
-		envTexture->uav.get()
-	};
+	ID3D11UnorderedAccessView* uav = envTexture->uav.get();
+	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
-	context->CSSetUnorderedAccessViews(0, 5, uavs, nullptr);
-
-	auto viewport = RE::BSGraphics::State::GetSingleton();
-
-	float resolutionX = viewport->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-	float resolutionY = viewport->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
-
-	{
-		AccumulateCubemapCB data = {};
-		data.RcpBufferDim.x = 1.0f / resolutionX;
-		data.RcpBufferDim.y = 1.0f / resolutionY;
-
-		data.CubeMapSize = accumulationDataRedTexture->desc.Width;
-
-		auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
-		auto viewProjMatrix = state->GetRuntimeData().cameraData.getEye().viewProjMat;
-		data.InvViewProjMatrix = DirectX::XMMatrixInverse(nullptr, viewProjMatrix);
-
-		accumulateCubemapCB->Update(data);
-	}
-
-	ID3D11Buffer* buffer = spmapCB->CB();
+	ID3D11Buffer* buffer;
+	context->PSGetConstantBuffers(12, 1, &buffer);
 	context->CSSetConstantBuffers(0, 1, &buffer);
 
-	context->CSSetShader(GetComputeShaderAccumulate(), nullptr, 0);
-	context->Dispatch((uint32_t)std::ceil(resolutionX / 32.0f), (uint32_t)std::ceil(resolutionY / 32.0f), 1);
+	context->CSSetSamplers(0, 1, &computeSampler);
 
 	context->CSSetShader(GetComputeShaderUpdate(), nullptr, 0);
 	context->Dispatch((uint32_t)std::ceil(envTexture->desc.Width / 32.0f), (uint32_t)std::ceil(envTexture->desc.Height / 32.0f), 6);
@@ -116,17 +90,16 @@ void DynamicCubemaps::GenerateCubemap()
 	srvs[1] = nullptr;
 	context->CSSetShaderResources(0, 2, srvs);
 
-	uavs[0] = nullptr;
-	uavs[1] = nullptr;
-	uavs[2] = nullptr;
-	uavs[3] = nullptr;
-	uavs[4] = nullptr;
-	context->CSSetUnorderedAccessViews(0, 5, uavs, nullptr);
+	uav = nullptr;
+	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
 	buffer = nullptr;
 	context->CSSetConstantBuffers(0, 1, &buffer);
 
 	context->CSSetShader(nullptr, nullptr, 0);
+
+	ID3D11SamplerState* nullSampler = { nullptr };
+	context->CSSetSamplers(0, 1, &nullSampler);
 }
 
 void DynamicCubemaps::DrawDeferred()
@@ -412,15 +385,12 @@ void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 			if (!envTexture) {
 				CreateResources();
 			}
-//			UpdateCubemap();
+			UpdateCubemap();
 			renderedScreenCamera = true;
 			ID3D11ShaderResourceView* views[4]{};
-			//views[0] = unfilteredEnvTexture->srv.get();
-			//views[1] = irmapTexture->srv.get();
-			//views[2] = envTexture->srv.get();
-			views[0] = envTexture->srv.get();
-			views[1] = nullptr;
-			views[2] = nullptr;
+			views[0] = unfilteredEnvTexture->srv.get();
+			views[1] = irmapTexture->srv.get();
+			views[2] = envTexture->srv.get();
 			views[3] = spBRDFLUT->srv.get();
 			context->PSSetShaderResources(64, ARRAYSIZE(views), views);
 		}
