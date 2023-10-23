@@ -1,37 +1,123 @@
-RWTexture2DArray<uint> AccumulationDataRed : register(u0);
-RWTexture2DArray<uint> AccumulationDataGreen : register(u1);
-RWTexture2DArray<uint> AccumulationDataBlue : register(u2);
-RWTexture2DArray<uint> AccumulationDataCounter : register(u3);
-
-RWTexture2DArray<float4> DynamicCubemap : register(u4);
+RWTexture2DArray<float4> DynamicCubemap : register(u0);
 
 Texture2D<float> DepthTexture : register(t0);
 Texture2D<float4> ColorTexture : register(t1);
 
-// Function to unpack a uint back into a float
-float UnpackUIntWithDecimalToFloat(uint packedValue, float scaleFactor)
+SamplerState LinearSampler : register(s0);
+
+// Calculate normalized sampling direction vector based on current fragment coordinates.
+// This is essentially "inverse-sampling": we reconstruct what the sampling vector would be if we wanted it to "hit"
+// this particular fragment in a cubemap.
+float3 GetSamplingVector(uint3 ThreadID, in RWTexture2DArray<float4> OutputTexture)
 {
-    return float(packedValue) / scaleFactor;
+    float width  = 0.0f;
+    float height = 0.0f;
+    float depth  = 0.0f;
+    OutputTexture.GetDimensions(width, height, depth);
+
+    float2 st = ThreadID.xy / float2(width, height);
+    float2 uv = 2.0 * float2(st.x, 1.0 - st.y) - 1.0;
+
+	// Select vector based on cubemap face index.
+    float3 result = float3(0.0f, 0.0f, 0.0f);
+    switch (ThreadID.z)
+    {
+        case 0:
+            result = float3(1.0, uv.y, -uv.x);
+            break;
+        case 1:
+            result = float3(-1.0, uv.y, uv.x);
+            break;
+        case 2:
+            result = float3(uv.x, 1.0, -uv.y);
+            break;
+        case 3:
+            result = float3(uv.x, -1.0, uv.y);
+            break;
+        case 4:
+            result = float3(uv.x, uv.y, 1.0);
+            break;
+        case 5:
+            result = float3(-uv.x, uv.y, -1.0);
+            break;
+    }
+    return normalize(result);
 }
 
+cbuffer PerFrame : register(b0)
+{
+#if !defined(VR)
+	row_major float4x4 CameraView[1] : packoffset(c0);
+	row_major float4x4 CameraProj[1] : packoffset(c4);
+	row_major float4x4 CameraViewProj[1] : packoffset(c8);
+	row_major float4x4 CameraViewProjUnjittered[1] : packoffset(c12);
+	row_major float4x4 CameraPreviousViewProjUnjittered[1] : packoffset(c16);
+	row_major float4x4 CameraProjUnjittered[1] : packoffset(c20);
+	row_major float4x4 CameraProjUnjitteredInverse[1] : packoffset(c24);
+	row_major float4x4 CameraViewInverse[1] : packoffset(c28);
+	row_major float4x4 CameraViewProjInverse[1] : packoffset(c32);
+	row_major float4x4 CameraProjInverse[1] : packoffset(c36);
+	float4 CameraPosAdjust[1] : packoffset(c40);
+	float4 CameraPreviousPosAdjust[1] : packoffset(c41);  // fDRClampOffset in w
+	float4 FrameParams : packoffset(c42);                 // inverse fGamma in x, some flags in yzw
+	float4 DynamicResolutionParams1 : packoffset(c43);    // fDynamicResolutionWidthRatio in x,
+														  // fDynamicResolutionHeightRatio in y,
+														  // fDynamicResolutionPreviousWidthRatio in z,
+														  // fDynamicResolutionPreviousHeightRatio in w
+	float4 DynamicResolutionParams2 : packoffset(c44);    // inverse fDynamicResolutionWidthRatio in x, inverse
+														  // fDynamicResolutionHeightRatio in y,
+														  // fDynamicResolutionWidthRatio - fDRClampOffset in z,
+														  // fDynamicResolutionPreviousWidthRatio - fDRClampOffset in w
+#else
+	row_major float4x4 CameraView[2] : packoffset(c0);
+	row_major float4x4 CameraProj[2] : packoffset(c8);
+	row_major float4x4 CameraViewProj[2] : packoffset(c16);
+	row_major float4x4 CameraViewProjUnjittered[2] : packoffset(c24);
+	row_major float4x4 CameraPreviousViewProjUnjittered[2] : packoffset(c32);
+	row_major float4x4 CameraProjUnjittered[2] : packoffset(c40);
+	row_major float4x4 CameraProjUnjitteredInverse[2] : packoffset(c48);
+	row_major float4x4 CameraViewInverse[2] : packoffset(c56);
+	row_major float4x4 CameraViewProjInverse[2] : packoffset(c64);
+	row_major float4x4 CameraProjInverse[2] : packoffset(c72);
+	float4 CameraPosAdjust[2] : packoffset(c80);
+	float4 CameraPreviousPosAdjust[2] : packoffset(c82);  // fDRClampOffset in w
+	float4 FrameParams : packoffset(c84);                 // inverse fGamma in x, some flags in yzw
+	float4 DynamicResolutionParams1 : packoffset(c85);    // fDynamicResolutionWidthRatio in x,
+														  // fDynamicResolutionHeightRatio in y,
+														  // fDynamicResolutionPreviousWidthRatio in z,
+														  // fDynamicResolutionPreviousHeightRatio in w
+	float4 DynamicResolutionParams2 : packoffset(c86);    // inverse fDynamicResolutionWidthRatio in x, inverse
+														  // fDynamicResolutionHeightRatio in y,
+														  // fDynamicResolutionWidthRatio - fDRClampOffset in z,
+														  // fDynamicResolutionPreviousWidthRatio - fDRClampOffset in w
+#endif  // !VR
+}
+
+float3 WorldToView(float3 x, bool is_position = true, uint a_eyeIndex = 0)
+{
+	float4 newPosition = float4(x, (float)is_position);
+	return mul(CameraView[a_eyeIndex], newPosition).xyz;
+}
+
+float2 ViewToUV(float3 x, bool is_position = true, uint a_eyeIndex = 0)
+{
+	float4 newPosition = float4(x, (float)is_position);
+	float4 uv = mul(CameraProj[a_eyeIndex], newPosition);
+	return (uv.xy / uv.w) * float2(0.5f, -0.5f) + 0.5f;
+}
+
+bool IsSaturated(float value) { return value == saturate(value); }
+bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
+
 [numthreads(32, 32, 1)]
-void main(uint3 DTid : SV_DispatchThreadID)
+void main(uint3 ThreadID : SV_DispatchThreadID)
 {	
-    uint counter = AccumulationDataCounter[DTid.xyz];
-    if (counter)
-    {
-        float invSamples = 1.0 / counter;
-        float3 color = float3(
-            UnpackUIntWithDecimalToFloat(AccumulationDataRed[DTid.xyz], 10000) * invSamples,
-            UnpackUIntWithDecimalToFloat(AccumulationDataGreen[DTid.xyz], 10000) * invSamples,
-            UnpackUIntWithDecimalToFloat(AccumulationDataBlue[DTid.xyz], 10000) * invSamples
-        );
-        color.rgb = float3(1.0, 0, 0);
-        DynamicCubemap[DTid.xyz] = float4(color, 1.0);
-        
-        AccumulationDataRed[DTid.xyz] = 0;
-        AccumulationDataGreen[DTid.xyz] = 0;
-        AccumulationDataBlue[DTid.xyz] = 0;
-        AccumulationDataCounter[DTid.xyz] = 0;
+    float3 captureDirection  = -GetSamplingVector(ThreadID, DynamicCubemap);
+    float3 viewDirection  = WorldToView(captureDirection, false);
+    float2 uv = ViewToUV(viewDirection, false);
+
+    if (IsSaturated(uv) && viewDirection.z < 0.0) { // Check that the view direction exists in screenspace and that it is in front of the camera
+       	float3 color = ColorTexture.SampleLevel(LinearSampler, uv, 0);
+        DynamicCubemap[ThreadID] = float4(color, 1.0);   
     }
 }

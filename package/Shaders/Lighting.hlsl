@@ -1910,10 +1910,17 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float envMask = (EnvmapData.y * (envMaskColor - glossiness) + glossiness) * (EnvmapData.x * MaterialData.x);
 	float viewNormalAngle = dot(modelNormal.xyz, viewDirection);
 	float3 envSamplingPoint = (viewNormalAngle * 2) * modelNormal.xyz - viewDirection;
-	float3 envColor = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint).xyz * envMask.xxx;
+	float3 envColor = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint).xyz * envMask;
 #		if defined(DYNAMIC_CUBEMAPS)
-	envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 - glossiness, envColor * envMask * 3.0);
-#		endif
+	float envSizeX;
+	float envSizeY;
+	TexEnvSampler.GetDimensions(envSizeX, envSizeY);
+	bool dynamicCubemap = envSizeX == 0 && envSizeY == 0;
+	if (dynamicCubemap)
+		envColor = specularTexture.SampleLevel(SampColorSampler, envSamplingPoint, 1).rgb * envMask;
+	else
+		envColor *= specularTexture.SampleLevel(SampColorSampler, envSamplingPoint, 1).rgb * 2;
+#	endif
 #	endif  // defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
 	
 	float3 emitColor = EmitColor;
@@ -1973,6 +1980,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		specularColor = 0;
 	}
 
+#	if defined(DYNAMIC_CUBEMAPS)
+	# define diffuseColor 1.0
+#	endif
+
 #	if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
 #		if defined(CPM_AVAILABLE) && defined(ENVMAP)
 	vertexColor += diffuseColor * envColor * complexSpecular;
@@ -1981,6 +1992,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif  // defined (CPM_AVAILABLE) && defined(ENVMAP)
 #	endif      // (defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) \
 				// || defined(EYE))
+#	undef diffuseColor
 
 	color.xyz = lerp(vertexColor.xyz, input.FogParam.xyz, input.FogParam.w);
 	color.xyz = vertexColor.xyz - color.xyz * FogColor.w;

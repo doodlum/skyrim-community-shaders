@@ -28,6 +28,7 @@ public:
 	ConstantBuffer* spmapCB = nullptr;
 	Texture2D* envTexture = nullptr;
 	Texture2D* unfilteredEnvTexture = nullptr;
+	winrt::com_ptr<ID3D11UnorderedAccessView> uavArray[9];
 
 	// Diffuse irradiance
 
@@ -42,26 +43,14 @@ public:
 
 	// Reflection capture
 
-	ID3D11ComputeShader* accumulateCubemapCS = nullptr;
 	ID3D11ComputeShader* updateCubemapCS = nullptr;
-	ConstantBuffer* accumulateCubemapCB = nullptr;
-	Texture2D* accumulationDataRedTexture = nullptr;
-	Texture2D* accumulationDataGreenTexture = nullptr;
-	Texture2D* accumulationDataBlueTexture = nullptr;
-	Texture2D* accumulationDataCounterTexture = nullptr;
+	ID3D11ComputeShader* inferCubemapCS = nullptr;
+	ID3D11ComputeShader* resetCubemapCS = nullptr;
+
+	Texture2D* envCaptureTexture = nullptr;
+	Texture2D* envInferredTexture = nullptr;
 
 	Texture2D* colorTextureTemp = nullptr;
-
-
-	Texture2D* dynamicCubemapTexture = nullptr;
-
-	struct alignas(16) AccumulateCubemapCB
-	{
-		float2 RcpBufferDim;
-		uint CubeMapSize;
-		float4x4 InvViewProjMatrix;
-		float pad[1];
-	};
 
 	void UpdateCubemap();
 	void CreateResources();
@@ -97,8 +86,8 @@ public:
 	};
 
 	virtual void ClearShaderCache() override;
-	ID3D11ComputeShader* GetComputeShaderAccumulate();
 	ID3D11ComputeShader* GetComputeShaderUpdate();
+	ID3D11ComputeShader* GetComputeShaderInferrence();
 
 	void GenerateCubemap();
 
