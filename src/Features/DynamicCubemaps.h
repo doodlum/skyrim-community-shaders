@@ -46,11 +46,9 @@ public:
 	ID3D11ComputeShader* updateCubemapCS = nullptr;
 	ID3D11ComputeShader* inferCubemapCS = nullptr;
 	ID3D11ComputeShader* resetCubemapCS = nullptr;
-
 	Texture2D* envCaptureTexture = nullptr;
-	Texture2D* envInferredTexture = nullptr;
 
-	Texture2D* colorTextureTemp = nullptr;
+	bool activeReflections = false;
 
 	void UpdateCubemap();
 	void CreateResources();

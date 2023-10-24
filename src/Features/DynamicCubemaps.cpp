@@ -64,15 +64,10 @@ void DynamicCubemaps::GenerateCubemap()
 
 	auto context = renderer->GetRuntimeData().context;
 
-	ID3D11ShaderResourceView* noView = nullptr;
-	context->PSSetShaderResources(64, 1, &noView);
-
 	auto depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
 	auto snowSwap = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kSNOW_SWAP];
 
-	context->CopyResource(colorTextureTemp->resource.get(), renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kSNOW_SWAP].texture);
-
-	ID3D11ShaderResourceView* srvs[2] = { depth.depthSRV, colorTextureTemp->srv.get() };
+	ID3D11ShaderResourceView* srvs[2] = { depth.depthSRV, snowSwap.SRV };
 	context->CSSetShaderResources(0, 2, srvs);
 
 	ID3D11UnorderedAccessView* uav = envCaptureTexture->uav.get();
@@ -82,12 +77,10 @@ void DynamicCubemaps::GenerateCubemap()
 	context->PSGetConstantBuffers(12, 1, &buffer);
 	context->CSSetConstantBuffers(0, 1, &buffer);
 
-	context->CSSetSamplers(0, 1, &computeSampler);
-
 	context->CSSetShader(GetComputeShaderUpdate(), nullptr, 0);
 	context->Dispatch((uint32_t)std::ceil(envCaptureTexture->desc.Width / 32.0f), (uint32_t)std::ceil(envCaptureTexture->desc.Height / 32.0f), 6);
 	
-	uav = envInferredTexture->uav.get();
+	uav = unfilteredEnvTexture->uav.get();
 	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
 	context->GenerateMips(envCaptureTexture->srv.get());
@@ -96,12 +89,13 @@ void DynamicCubemaps::GenerateCubemap()
 	srvs[1] = nullptr;
 	context->CSSetShaderResources(0, 2, srvs);
 
+	context->CSSetSamplers(0, 1, &computeSampler);
+
 	context->CSSetShader(GetComputeShaderInferrence(), nullptr, 0);
-	context->Dispatch((uint32_t)std::ceil(envInferredTexture->desc.Width / 32.0f), (uint32_t)std::ceil(envInferredTexture->desc.Height / 32.0f), 6);
+	context->Dispatch((uint32_t)std::ceil(unfilteredEnvTexture->desc.Width / 32.0f), (uint32_t)std::ceil(unfilteredEnvTexture->desc.Height / 32.0f), 6);
 
 	srvs[0] = nullptr;
-	srvs[1] = nullptr;
-	context->CSSetShaderResources(0, 2, srvs);
+	context->CSSetShaderResources(0, 1, srvs);
 
 	uav = nullptr;
 	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
@@ -117,7 +111,8 @@ void DynamicCubemaps::GenerateCubemap()
 
 void DynamicCubemaps::DrawDeferred()
 {
-	GenerateCubemap();
+	if (!activeReflections)
+		GenerateCubemap();
 }
 
 void DynamicCubemaps::DrawSettings()
@@ -166,26 +161,42 @@ void DynamicCubemaps::DrawSettings()
 void DynamicCubemaps::UpdateCubemap()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-
 	auto context = renderer->GetRuntimeData().context;
 
-	auto cubemap = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS];
-
-	cubemap.texture = envInferredTexture->resource.get();
-	cubemap.SRV = envInferredTexture->srv.get();
-
-	// Compute diffuse irradiance cubemap.
 	{
-		for (uint face = 0; face < 6; face++) {
-			uint srcSubresourceIndex = D3D11CalcSubresource(0, face, MIPLEVELS);
-			context->CopySubresourceRegion(unfilteredEnvTexture->resource.get(), D3D11CalcSubresource(0, face, MIPLEVELS), 0, 0, 0, cubemap.texture, srcSubresourceIndex, nullptr);
-		}
+		ID3D11ShaderResourceView* views[4]{};
+		views[0] = nullptr;
+		views[1] = nullptr;
+		views[2] = nullptr;
+		views[3] = nullptr;
+		context->PSSetShaderResources(64, ARRAYSIZE(views), views);
+	}
 
-		context->GenerateMips(unfilteredEnvTexture->srv.get());
+	{
+		// Copy cubemap to other resources
+		{
+			if (!activeReflections) {
+				context->GenerateMips(unfilteredEnvTexture->srv.get());
 
-		for (uint face = 0; face < 6; face++) {
-			uint srcSubresourceIndex = D3D11CalcSubresource(0, face, MIPLEVELS);
-			context->CopySubresourceRegion(envTexture->resource.get(), D3D11CalcSubresource(0, face, MIPLEVELS), 0, 0, 0, cubemap.texture, srcSubresourceIndex, nullptr);
+				for (uint face = 0; face < 6; face++) {
+					uint srcSubresourceIndex = D3D11CalcSubresource(0, face, MIPLEVELS);
+					context->CopySubresourceRegion(envTexture->resource.get(), D3D11CalcSubresource(0, face, MIPLEVELS), 0, 0, 0, unfilteredEnvTexture->resource.get(), srcSubresourceIndex, nullptr);
+				}
+			} else {
+				auto cubemap = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS];
+
+				for (uint face = 0; face < 6; face++) {
+					uint srcSubresourceIndex = D3D11CalcSubresource(0, face, 1);
+					context->CopySubresourceRegion(unfilteredEnvTexture->resource.get(), D3D11CalcSubresource(0, face, MIPLEVELS), 0, 0, 0, cubemap.texture, srcSubresourceIndex, nullptr);
+				}
+
+				context->GenerateMips(unfilteredEnvTexture->srv.get());
+
+				for (uint face = 0; face < 6; face++) {
+					uint srcSubresourceIndex = D3D11CalcSubresource(0, face, 1);
+					context->CopySubresourceRegion(envTexture->resource.get(), D3D11CalcSubresource(0, face, MIPLEVELS), 0, 0, 0, cubemap.texture, srcSubresourceIndex, nullptr);
+				}
+			}
 		}
 
 		// Compute pre-filtered specular environment map.
@@ -203,7 +214,7 @@ void DynamicCubemaps::UpdateCubemap()
 
 			std::uint32_t size = std::max(envTexture->desc.Width, envTexture->desc.Height);
 
-			for (std::uint32_t level = 1; level < MIPLEVELS; ++level, size /= 2) {
+			for (std::uint32_t level = 1; level < MIPLEVELS; level++, size /= 2) {
 				const UINT numGroups = (UINT)std::max(1u, size / 32);
 
 				const SpecularMapFilterSettingsCB spmapConstants = { level * delta_roughness };
@@ -215,19 +226,6 @@ void DynamicCubemaps::UpdateCubemap()
 				context->Dispatch(numGroups, numGroups, 6);
 			}
 		}
-
-		// Compute diffuse irradiance cubemap.
-		//{
-		//	auto env_srv = cubemap.SRV;
-		//	context->CSSetShaderResources(0, 1, &env_srv);
-		//	auto uav = irmapTexture->uav.get();
-		//	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-		//	context->CSSetShader(irmapProgram, nullptr, 0);
-		//	context->Dispatch(irmapTexture->desc.Width / 32, irmapTexture->desc.Height / 32, 6);
-		//	uav = nullptr;
-		//	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-		//	context->CSSetShader(nullptr, nullptr, 0);
-		//}
 	}
 
 	ID3D11ShaderResourceView* nullSRV = { nullptr };
@@ -244,7 +242,6 @@ void DynamicCubemaps::UpdateCubemap()
 
 void DynamicCubemaps::CreateResources()
 {
-
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto context = renderer->GetRuntimeData().context;
 
@@ -296,23 +293,6 @@ void DynamicCubemaps::CreateResources()
 
 		uav = nullptr;
 		context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-
-		envInferredTexture = new Texture2D(texDesc);
-		envInferredTexture->CreateSRV(srvDesc);
-		envInferredTexture->CreateUAV(uavDesc);
-	}
-
-	{
-		auto snowSwapTexture = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kSNOW_SWAP];
-
-		D3D11_TEXTURE2D_DESC texDesc{};
-		snowSwapTexture.texture->GetDesc(&texDesc);
-
-		colorTextureTemp = new Texture2D(texDesc);
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		snowSwapTexture.SRV->GetDesc(&srvDesc);
-		colorTextureTemp->CreateSRV(srvDesc);
 	}
 
 	{
@@ -358,12 +338,7 @@ void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 		auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
 		if (cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
-			ID3D11ShaderResourceView* views[4]{};
-			views[0] = nullptr;
-			views[1] = nullptr;
-			views[2] = nullptr;
-			views[3] = nullptr;
-			context->PSSetShaderResources(64, ARRAYSIZE(views), views);
+			activeReflections = true;
 		} else if (!renderedScreenCamera) {
 			UpdateCubemap();
 			renderedScreenCamera = true;
@@ -479,6 +454,7 @@ void DynamicCubemaps::SetupResources()
 
 void DynamicCubemaps::Reset()
 {
+	activeReflections = false;
 	renderedScreenCamera = false;
 }
 
