@@ -3,6 +3,54 @@
 
 constexpr auto MIPLEVELS = 10;
 
+void DynamicCubemaps::DrawSettings()
+{
+	if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (REL::Module::IsVR()) {
+			if (ImGui::BeginTable("##SettingsToggles", 3, ImGuiTableFlags_SizingStretchSame)) {
+				for (const auto& settingName : iniVRCubeMapSettings) {
+					if (auto setting = RE::INISettingCollection::GetSingleton()->GetSetting(settingName); setting) {
+						ImGui::TableNextColumn();
+						ImGui::Checkbox(settingName.c_str(), &setting->data.b);
+						if (ImGui::IsItemHovered()) {
+							ImGui::BeginTooltip();
+							ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+							//ImGui::Text(fmt::format(fmt::runtime("{} {0:x}"), settingName, &setting->data.b).c_str());
+							ImGui::Text(settingName.c_str());
+							ImGui::PopTextWrapPos();
+							ImGui::EndTooltip();
+						}
+					}
+				}
+				for (const auto& settingPair : hiddenVRCubeMapSettings) {
+					const auto& settingName = settingPair.first;
+					const auto address = REL::Offset{ settingPair.second }.address();
+					bool* setting = reinterpret_cast<bool*>(address);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox(settingName.c_str(), setting);
+					if (ImGui::IsItemHovered()) {
+						ImGui::BeginTooltip();
+						ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+						ImGui::Text(settingName.c_str());
+						//ImGui::Text(fmt::format(fmt::runtime("{} {0:x}"), settingName, address).c_str());
+						ImGui::PopTextWrapPos();
+						ImGui::EndTooltip();
+					}
+				}
+				ImGui::EndTable();
+			}
+		}
+		ImGui::Spacing();
+		ImGui::Spacing();
+
+		ImGui::Checkbox("updateCapture", &updateCapture);
+		ImGui::Checkbox("updateIBL", &updateIBL);
+
+
+		ImGui::TreePop();
+	}
+}
+
 void DynamicCubemaps::DataLoaded()
 {
 	if (REL::Module::IsVR()) {
@@ -57,7 +105,7 @@ ID3D11ComputeShader* DynamicCubemaps::GetComputeShaderInferrence()
 	return inferCubemapCS;
 }
 
-void DynamicCubemaps::GenerateCubemap()
+void DynamicCubemaps::UpdateCubemapCapture()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 
@@ -112,51 +160,8 @@ void DynamicCubemaps::GenerateCubemap()
 
 void DynamicCubemaps::DrawDeferred()
 {
-	if (!activeReflections)
-		GenerateCubemap();
-}
-
-void DynamicCubemaps::DrawSettings()
-{
-	if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-		if (REL::Module::IsVR()) {
-			if (ImGui::BeginTable("##SettingsToggles", 3, ImGuiTableFlags_SizingStretchSame)) {
-				for (const auto& settingName : iniVRCubeMapSettings) {
-					if (auto setting = RE::INISettingCollection::GetSingleton()->GetSetting(settingName); setting) {
-						ImGui::TableNextColumn();
-						ImGui::Checkbox(settingName.c_str(), &setting->data.b);
-						if (ImGui::IsItemHovered()) {
-							ImGui::BeginTooltip();
-							ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-							//ImGui::Text(fmt::format(fmt::runtime("{} {0:x}"), settingName, &setting->data.b).c_str());
-							ImGui::Text(settingName.c_str());
-							ImGui::PopTextWrapPos();
-							ImGui::EndTooltip();
-						}
-					}
-				}
-				for (const auto& settingPair : hiddenVRCubeMapSettings) {
-					const auto& settingName = settingPair.first;
-					const auto address = REL::Offset{ settingPair.second }.address();
-					bool* setting = reinterpret_cast<bool*>(address);
-					ImGui::TableNextColumn();
-					ImGui::Checkbox(settingName.c_str(), setting);
-					if (ImGui::IsItemHovered()) {
-						ImGui::BeginTooltip();
-						ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-						ImGui::Text(settingName.c_str());
-						//ImGui::Text(fmt::format(fmt::runtime("{} {0:x}"), settingName, address).c_str());
-						ImGui::PopTextWrapPos();
-						ImGui::EndTooltip();
-					}
-				}
-				ImGui::EndTable();
-			}
-		}
-		ImGui::Spacing();
-		ImGui::Spacing();
-		ImGui::TreePop();
-	}
+	if (!activeReflections && updateCapture)
+		UpdateCubemapCapture();
 }
 
 void DynamicCubemaps::UpdateCubemap()
@@ -165,12 +170,10 @@ void DynamicCubemaps::UpdateCubemap()
 	auto context = renderer->GetRuntimeData().context;
 
 	{
-		ID3D11ShaderResourceView* views[4]{};
+		ID3D11ShaderResourceView* views[2]{};
 		views[0] = nullptr;
 		views[1] = nullptr;
-		views[2] = nullptr;
-		views[3] = nullptr;
-		context->PSSetShaderResources(64, 4, views);
+		context->PSSetShaderResources(64, 2, views);
 	}
 
 	{
@@ -236,14 +239,13 @@ void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 		if (cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
 			activeReflections = true;
 		} else if (!renderedScreenCamera) {
-			UpdateCubemap();
+			if (updateIBL)
+				UpdateCubemap();
 			renderedScreenCamera = true;
-			ID3D11ShaderResourceView* views[4]{};
-			views[0] = nullptr;
-			views[1] = irmapTexture->srv.get();
-			views[2] = envTexture->srv.get();
-			views[3] = spBRDFLUT->srv.get();
-			context->PSSetShaderResources(64, ARRAYSIZE(views), views);
+			ID3D11ShaderResourceView* views[2]{};
+			views[0] = envTexture->srv.get();
+			views[1] = spBRDFLUT->srv.get();
+			context->PSSetShaderResources(64, 2, views);
 		}
 	}
 }
@@ -256,7 +258,7 @@ void DynamicCubemaps::SetupResources()
 
 	{
 		D3D11_SAMPLER_DESC samplerDesc = {};
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // Should be linear but point is faster
 		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -264,39 +266,6 @@ void DynamicCubemaps::SetupResources()
 		samplerDesc.MinLOD = 0;
 		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 		DX::ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &computeSampler));
-	}
-
-	{
-		irmapProgram = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\IrmapCS.hlsl", {}, "cs_5_0");
-
-		D3D11_TEXTURE2D_DESC texDesc{};
-		texDesc.Width = 32;
-		texDesc.Height = 32;
-		texDesc.MipLevels = 1;
-		texDesc.ArraySize = 6;
-		texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		texDesc.SampleDesc.Count = 1;
-		texDesc.Usage = D3D11_USAGE_DEFAULT;
-		texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-		texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
-		irmapTexture = new Texture2D(texDesc);
-
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = texDesc.Format;
-		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-		uavDesc.Texture2DArray.MipSlice = 0;
-		uavDesc.Texture2DArray.FirstArraySlice = 0;
-		uavDesc.Texture2DArray.ArraySize = texDesc.ArraySize;
-
-		irmapTexture->CreateUAV(uavDesc);
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-		srvDesc.Format = texDesc.Format;
-		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		srvDesc.TextureCube.MostDetailedMip = 0;
-		srvDesc.TextureCube.MipLevels = (UINT)-1;
-		irmapTexture->CreateSRV(srvDesc);
 	}
 
 	{

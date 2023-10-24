@@ -14,10 +14,10 @@ public:
 
 	bool renderedScreenCamera = false;
 
-	// Compute pre-filtered specular environment map.
+	// Specular irradiance
+
 	ID3D11SamplerState* computeSampler = nullptr;
 
-	// Specular irradiance
 	struct alignas(16) SpecularMapFilterSettingsCB
 	{
 		float roughness;
@@ -28,11 +28,6 @@ public:
 	ConstantBuffer* spmapCB = nullptr;
 	Texture2D* envTexture = nullptr;
 	winrt::com_ptr<ID3D11UnorderedAccessView> uavArray[9];
-
-	// Diffuse irradiance
-
-	ID3D11ComputeShader* irmapProgram = nullptr;
-	Texture2D* irmapTexture = nullptr;
 
 	// BRDF 2D LUT
 
@@ -48,6 +43,9 @@ public:
 	Texture2D* envCaptureTexture = nullptr;
 
 	bool activeReflections = false;
+
+	bool updateCapture = true;
+	bool updateIBL = true;
 
 	ID3D11UnorderedAccessView* cubemapUAV;
 
@@ -87,7 +85,7 @@ public:
 	ID3D11ComputeShader* GetComputeShaderUpdate();
 	ID3D11ComputeShader* GetComputeShaderInferrence();
 
-	void GenerateCubemap();
+	void UpdateCubemapCapture();
 
 	virtual void DrawDeferred();
 };

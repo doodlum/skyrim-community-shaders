@@ -1,9 +1,5 @@
-
-
-TextureCube<float4> unfilteredEnvTexture : register(t64);
-TextureCube<float4> irradianceTexture    : register(t65);
-TextureCube<float4> specularTexture	     : register(t66);
-Texture2D<float4>   specularBRDF_LUT     : register(t67);
+TextureCube<float4> specularTexture	     : register(t64);
+Texture2D<float4>   specularBRDF_LUT     : register(t65);
 
 #define LinearSampler SampShadowMaskSampler
 // Separable SSS Reflectance Pixel Shader
