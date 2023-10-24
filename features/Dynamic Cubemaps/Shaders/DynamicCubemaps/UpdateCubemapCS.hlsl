@@ -3,8 +3,6 @@ RWTexture2DArray<float4> DynamicCubemap : register(u0);
 Texture2D<float> DepthTexture : register(t0);
 Texture2D<float4> ColorTexture : register(t1);
 
-SamplerState LinearSampler : register(s0);
-
 // Calculate normalized sampling direction vector based on current fragment coordinates.
 // This is essentially "inverse-sampling": we reconstruct what the sampling vector would be if we wanted it to "hit"
 // this particular fragment in a cubemap.
@@ -106,18 +104,41 @@ float2 ViewToUV(float3 x, bool is_position = true, uint a_eyeIndex = 0)
 	return (uv.xy / uv.w) * float2(0.5f, -0.5f) + 0.5f;
 }
 
+float2 GetDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
+{
+	float2 adjustedScreenPosition =
+		max(0.0.xx, DynamicResolutionParams1.xy * screenPosition);
+	return min(float2(DynamicResolutionParams2.z, DynamicResolutionParams1.y),
+		adjustedScreenPosition);
+}
+
 bool IsSaturated(float value) { return value == saturate(value); }
 bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
 
 [numthreads(32, 32, 1)]
 void main(uint3 ThreadID : SV_DispatchThreadID)
 {	
-    float3 captureDirection  = -GetSamplingVector(ThreadID, DynamicCubemap);
-    float3 viewDirection  = WorldToView(captureDirection, false);
-    float2 uv = ViewToUV(viewDirection, false);
+	float3 captureDirection  = -GetSamplingVector(ThreadID, DynamicCubemap);
+	float3 viewDirection  = WorldToView(captureDirection, false);
+	float2 uv = ViewToUV(viewDirection, false);
 
     if (IsSaturated(uv) && viewDirection.z < 0.0) { // Check that the view direction exists in screenspace and that it is in front of the camera
-       	float3 color = ColorTexture.SampleLevel(LinearSampler, uv, 0);
-        DynamicCubemap[ThreadID] = float4(color, 1.0);   
-    }
+		uv = GetDynamicResolutionAdjustedScreenPosition(uv);
+#	if defined(VR)
+		uv.x *= 0.5;
+#	endif
+		float2 textureDims;
+		DepthTexture.GetDimensions(textureDims.x, textureDims.y);
+
+		float depth = DepthTexture[uv * textureDims];
+
+		if (depth > 0.1){
+       		float3 color = ColorTexture[uv * textureDims];
+       	 	DynamicCubemap[ThreadID] = float4(color, 1.0); 
+		}
+    } else {
+    	float cameraDistance = distance(CameraPosAdjust[0].xyz, CameraPreviousPosAdjust[0].xyz);
+		if (cameraDistance > 0.0)
+			DynamicCubemap[ThreadID] *= lerp(1.0, saturate(1.0 / cameraDistance), 0.025);
+	}
 }
