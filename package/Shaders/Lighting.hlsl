@@ -1980,19 +1980,27 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		specularColor = 0;
 	}
 
-#	if defined(DYNAMIC_CUBEMAPS)
-	# define diffuseColor 1.0
-#	endif
-
 #	if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
+#	if defined(DYNAMIC_CUBEMAPS)
+	float softenedDiffuseColor = 1.0;
+	if (shaderDescriptors[0].PixelShaderDescriptor & _DefShadow){
+		if (shaderDescriptors[0].PixelShaderDescriptor & _ShadowDir){
+			float upAngle = dot(float3(0, 0, 1), normalizedDirLightDirectionWS.xyz);
+			softenedDiffuseColor *= lerp(1.0, shadowColor.x, upAngle * lerp(1.0, saturate(envSamplingPoint.z), 0.5) * 0.5);
+		}
+	}
+
+	# define diffuseColor softenedDiffuseColor
+#	endif
 #		if defined(CPM_AVAILABLE) && defined(ENVMAP)
 	vertexColor += diffuseColor * envColor * complexSpecular;
 #		else
 	vertexColor += diffuseColor * envColor;
 #		endif  // defined (CPM_AVAILABLE) && defined(ENVMAP)
+#	undef diffuseColor
 #	endif      // (defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) \
 				// || defined(EYE))
-#	undef diffuseColor
+
 
 	color.xyz = lerp(vertexColor.xyz, input.FogParam.xyz, input.FogParam.w);
 	color.xyz = vertexColor.xyz - color.xyz * FogColor.w;
@@ -2020,6 +2028,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = sRGB2Lin(color.xyz);
 	color.xyz += wetnessSpecular * (1.0 - saturate(roomOcclusion * 2));
 	color.xyz = Lin2sRGB(color.xyz);
+#	endif
+
+#	if defined(ENVMAP)
+	//color.xyz  = specularTexture.SampleLevel(SampEnvSampler, envSamplingPoint, 0).xyz;
 #	endif
 
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
