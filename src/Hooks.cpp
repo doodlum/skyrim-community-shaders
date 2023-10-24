@@ -207,6 +207,16 @@ HRESULT WINAPI hk_D3D11CreateDeviceAndSwapChain(
 	return hr;
 }
 
+void hk_BSShaderRenderTargets_Create();
+
+decltype(&hk_BSShaderRenderTargets_Create) ptr_BSShaderRenderTargets_Create;
+
+void hk_BSShaderRenderTargets_Create()
+{
+	(ptr_BSShaderRenderTargets_Create)();
+	State::GetSingleton()->Setup();
+}
+
 namespace Hooks
 {
 	struct BSGraphics_Renderer_Init_InitD3D
@@ -234,7 +244,6 @@ namespace Hooks
 				*(uintptr_t*)&ptrCreateVertexShader = Detours::X64::DetourClassVTable(*(uintptr_t*)device, &hk_CreateVertexShader, 12);
 				*(uintptr_t*)&ptrCreatePixelShader = Detours::X64::DetourClassVTable(*(uintptr_t*)device, &hk_CreatePixelShader, 15);
 			}
-			State::GetSingleton()->Setup();
 			Menu::GetSingleton()->Init(swapchain, device, context);
 		}
 		static inline REL::Relocation<decltype(thunk)> func;
@@ -289,5 +298,8 @@ namespace Hooks
 		logger::info("Hooking D3D11CreateDeviceAndSwapChain");
 		*(FARPROC*)&ptrD3D11CreateDeviceAndSwapChain = GetProcAddress(GetModuleHandleA("d3d11.dll"), "D3D11CreateDeviceAndSwapChain");
 		SKSE::PatchIAT(hk_D3D11CreateDeviceAndSwapChain, "d3d11.dll", "D3D11CreateDeviceAndSwapChain");
+
+		logger::info("Hooking BSShaderRenderTargets::Create");
+		*(uintptr_t*)&ptr_BSShaderRenderTargets_Create = Detours::X64::DetourFunction(REL::RelocationID(100458, 107175).address(), (uintptr_t)&hk_BSShaderRenderTargets_Create);
 	}
 }
