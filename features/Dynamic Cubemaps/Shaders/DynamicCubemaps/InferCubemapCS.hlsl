@@ -50,7 +50,7 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 	float4 color = EnvCaptureTexture.SampleLevel(LinearSampler, uv, 0);
 	uint mipLevel = 1;
     float brightness = 4.0;
-	while (color.w < 1.0 && mipLevel <= 10)
+	while (color.w < 0.999 && mipLevel <= 10)
 	{
 		float4 tempColor = 0.0;
         if (mipLevel < 10){
@@ -64,12 +64,10 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
             tempColor += EnvCaptureTexture.SampleLevel(LinearSampler, lerp(uv, float3(0.0, 0.0, 1.0), 0.5), 9);
         }
         tempColor *= brightness;
-		if (color.w + tempColor.w >= 1.0){
-			color.xyzw += tempColor / tempColor.w;
-            break;
-        } else {
+		if (color.w + tempColor.w > 0.999)
+			color.xyzw += tempColor / tempColor.w;      
+        else
 			color.xyzw += tempColor;
-        }
         mipLevel++;
         if (mipLevel < 9) // Final mip is computed differently
             brightness *= 4.0;
