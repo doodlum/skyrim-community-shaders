@@ -27,7 +27,6 @@ public:
 	ID3D11ComputeShader* spmapProgram = nullptr;
 	ConstantBuffer* spmapCB = nullptr;
 	Texture2D* envTexture = nullptr;
-	Texture2D* unfilteredEnvTexture = nullptr;
 	winrt::com_ptr<ID3D11UnorderedAccessView> uavArray[9];
 
 	// Diffuse irradiance
@@ -50,8 +49,9 @@ public:
 
 	bool activeReflections = false;
 
+	ID3D11UnorderedAccessView* cubemapUAV;
+
 	void UpdateCubemap();
-	void CreateResources();
 
 	virtual inline std::string GetName() { return "Dynamic Cubemaps"; }
 	virtual inline std::string GetShortName() { return "DynamicCubemaps"; }
