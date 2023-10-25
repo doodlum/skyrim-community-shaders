@@ -149,11 +149,11 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 
 		if (depth > 16.5) { // First person
        		float3 color = ColorTexture[round(uv * textureDims)];
-       	 	DynamicCubemap[ThreadID] = float4(color, 1.0); 
+       	 	DynamicCubemap[ThreadID] = float4(pow(color, 2.2), 1.0); 
 		}
     } else {
     	float cameraDistance = distance(CameraPosAdjust[0].xyz, CameraPreviousPosAdjust[0].xyz);
 		if (cameraDistance > 0.0)
-			DynamicCubemap[ThreadID] *= lerp(1.0, saturate(1.0 / cameraDistance), 0.05);
+			DynamicCubemap[ThreadID] *= lerp(1.0, saturate(1.0 / cameraDistance), 0.025);
 	}
 }

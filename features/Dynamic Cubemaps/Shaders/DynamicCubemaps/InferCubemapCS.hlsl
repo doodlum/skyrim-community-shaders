@@ -41,7 +41,7 @@ float3 GetSamplingVector(uint3 ThreadID, in RWTexture2DArray<float4> OutputTextu
             break;
     }
     return normalize(result);
-}
+} 
 
 [numthreads(32, 32, 1)]
 void main(uint3 ThreadID : SV_DispatchThreadID)
@@ -50,11 +50,13 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 	float4 color = EnvCaptureTexture.SampleLevel(LinearSampler, uv, 0);
 	uint mipLevel = 1;
     float brightness = 4.0;
-	while (color.w < 0.999 && mipLevel <= 10)
+    float3 startUV = uv;
+	while (color.w < 1.0 && mipLevel <= 10)
 	{
 		float4 tempColor = 0.0;
         if (mipLevel < 10){
            tempColor = EnvCaptureTexture.SampleLevel(LinearSampler, uv, mipLevel);
+           tempColor *= brightness;
         } else { // The lowest cubemap mip is 6x6, a 1x1 result needs to be calculated      
             tempColor += EnvCaptureTexture.SampleLevel(LinearSampler, lerp(uv, float3(-1.0, 0.0, 0.0), 0.5), 9);
             tempColor += EnvCaptureTexture.SampleLevel(LinearSampler, lerp(uv, float3(1.0, 0.0, 0.0), 0.5), 9);
@@ -63,14 +65,15 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
             tempColor += EnvCaptureTexture.SampleLevel(LinearSampler, lerp(uv, float3(0.0, 0.0, -1.0), 0.5), 9);
             tempColor += EnvCaptureTexture.SampleLevel(LinearSampler, lerp(uv, float3(0.0, 0.0, 1.0), 0.5), 9);
         }
-        tempColor *= brightness;
-		if (color.w + tempColor.w > 0.999)
+
+		if (color.w + tempColor.w >= 1.0)
 			color.xyzw += tempColor / tempColor.w;      
         else
 			color.xyzw += tempColor;
         mipLevel++;
         if (mipLevel < 9) // Final mip is computed differently
-            brightness *= 4.0;
+            brightness = 4.0;
 	}
+    color.rgb = pow(color.rgb, 1.0 / 2.2);
 	EnvInferredTexture[ThreadID] = color;
 }
