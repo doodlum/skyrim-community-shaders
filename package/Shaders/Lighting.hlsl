@@ -1689,17 +1689,27 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if !defined(LOD)
 	if (numLights > 0) {
-		[loop] for (float lightIndex = 0; lightIndex < numLights; ++lightIndex)
+#		if defined(LIGHT_LIMIT_FIX)
+		[loop] for (uint lightIndex = 0; lightIndex < strictLightData[0].NumLights; lightIndex++)
 		{
-			int intLightIndex = lightIndex;
-			float3 lightDirection = PointLightPosition[eyeIndex * numLights + intLightIndex].xyz - input.InputPosition.xyz;
+			float3 lightDirection = strictLightData[0].PointLightPosition[lightIndex] - input.InputPosition;
 			float lightDist = length(lightDirection);
-			float intensityFactor = saturate(lightDist / PointLightPosition[intLightIndex].w);
+			float intensityFactor = saturate(lightDist / strictLightData[0].PointLightRadius[lightIndex]);
 			if (intensityFactor == 1)
 				continue;
 			float intensityMultiplier = 1 - intensityFactor * intensityFactor;
-
-			float3 lightColor = PointLightColor[intLightIndex].xyz;
+			float3 lightColor = strictLightData[0].PointLightColor[lightIndex];
+#		else
+		[loop] for (uint lightIndex = 0; lightIndex < numLights; ++lightIndex)
+		{
+			float3 lightDirection = PointLightPosition[eyeIndex * numLights + lightIndex].xyz - input.InputPosition.xyz;
+			float lightDist = length(lightDirection);
+			float intensityFactor = saturate(lightDist / PointLightPosition[lightIndex].w);
+			if (intensityFactor == 1)
+				continue;
+			float intensityMultiplier = 1 - intensityFactor * intensityFactor;
+			float3 lightColor = PointLightColor[lightIndex].xyz;
+#		endif
 			float3 nsLightColor = lightColor;
 
 			float shadowComponent = 1.0;
@@ -2105,9 +2115,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(LIGHT_LIMIT_FIX)
 	if (perPassLLF[0].EnableLightsVisualisation) {
 		if (perPassLLF[0].LightsVisualisationMode == 0) {
-			psout.Albedo.xyz = TurboColormap(perPassLLF[0].StrictLightsCount > 7);
+			psout.Albedo.xyz = TurboColormap(strictLightData[0].NumLights >= 7.0);
 		} else if (perPassLLF[0].LightsVisualisationMode == 1) {
-			psout.Albedo.xyz = TurboColormap((float)perPassLLF[0].StrictLightsCount / 7.0);
+			psout.Albedo.xyz = TurboColormap((float)strictLightData[0].NumLights / 15.0);
 		} else {
 			psout.Albedo.xyz = TurboColormap((float)lightCount / 128.0);
 		}
