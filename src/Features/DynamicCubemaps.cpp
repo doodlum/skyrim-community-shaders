@@ -73,6 +73,34 @@ void DynamicCubemaps::DataLoaded()
 			}
 		}
 	}
+	MenuOpenCloseEventHandler::Register();
+}
+
+RE::BSEventNotifyControl MenuOpenCloseEventHandler::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
+{
+	// When entering a new cell, reset the capture
+	if (a_event->menuName == RE::LoadingMenu::MENU_NAME) {
+		if (!a_event->opening)
+			DynamicCubemaps::GetSingleton()->resetCapture = true;
+	}
+	return RE::BSEventNotifyControl::kContinue;
+}
+
+bool MenuOpenCloseEventHandler::Register()
+{
+	static MenuOpenCloseEventHandler singleton;
+	auto ui = RE::UI::GetSingleton();
+
+	if (!ui) {
+		logger::error("UI event source not found");
+		return false;
+	}
+
+	ui->GetEventSource<RE::MenuOpenCloseEvent>()->AddEventSink(&singleton);
+
+	logger::info("Registered {}", typeid(singleton).name());
+
+	return true;
 }
 
 void DynamicCubemaps::ClearShaderCache()
@@ -122,9 +150,18 @@ void DynamicCubemaps::UpdateCubemapCapture()
 	ID3D11UnorderedAccessView* uav = envCaptureTexture->uav.get();
 	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
-	ID3D11Buffer* buffer;
-	context->PSGetConstantBuffers(12, 1, &buffer);
-	context->CSSetConstantBuffers(0, 1, &buffer);
+	ID3D11Buffer* buffers[2];
+	context->PSGetConstantBuffers(12, 1, buffers);
+
+	UpdateCubemapCB updateData{};
+	updateData.CameraData = Util::GetCameraData();
+	updateData.Reset = resetCapture;
+	updateCubemapCB->Update(updateData);
+	buffers[1] = updateCubemapCB->CB();
+
+	context->CSSetConstantBuffers(0, 2, buffers);
+
+	resetCapture = false;
 
 	context->CSSetShader(GetComputeShaderUpdate(), nullptr, 0);
 	context->Dispatch((uint32_t)std::ceil(envCaptureTexture->desc.Width / 32.0f), (uint32_t)std::ceil(envCaptureTexture->desc.Height / 32.0f), 6);
@@ -149,8 +186,9 @@ void DynamicCubemaps::UpdateCubemapCapture()
 	uav = nullptr;
 	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
-	buffer = nullptr;
-	context->CSSetConstantBuffers(0, 1, &buffer);
+	buffers[0] = nullptr;
+	buffers[1] = nullptr;
+	context->CSSetConstantBuffers(0, 2, buffers);
 
 	context->CSSetShader(nullptr, nullptr, 0);
 
@@ -369,22 +407,14 @@ void DynamicCubemaps::SetupResources()
 		envCaptureTexture = new Texture2D(texDesc);
 		envCaptureTexture->CreateSRV(srvDesc);
 		envCaptureTexture->CreateUAV(uavDesc);
+
+		updateCubemapCB = new ConstantBuffer(ConstantBufferDesc<UpdateCubemapCB>());
+
 	}
 
 	{
 		spmapProgram = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\SpmapCS.hlsl", {}, "cs_5_0");
 		spmapCB = new ConstantBuffer(ConstantBufferDesc<SpecularMapFilterSettingsCB>());
-
-		resetCubemapCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\ResetCubemapCS.hlsl", {}, "cs_5_0");
-
-		ID3D11UnorderedAccessView* uav = envCaptureTexture->uav.get();
-		context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-
-		context->CSSetShader(resetCubemapCS, nullptr, 0);
-		context->Dispatch((uint32_t)std::ceil(envCaptureTexture->desc.Width / 32.0f), (uint32_t)std::ceil(envCaptureTexture->desc.Height / 32.0f), 6);
-
-		uav = nullptr;
-		context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 	}
 
 	{

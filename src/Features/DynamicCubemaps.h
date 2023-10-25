@@ -3,6 +3,13 @@
 #include "Buffer.h"
 #include "Feature.h"
 
+class MenuOpenCloseEventHandler : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+{
+public:
+	virtual RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_eventSource);
+	static bool Register();
+};
+
 struct DynamicCubemaps : Feature
 {
 public:
@@ -21,7 +28,7 @@ public:
 	struct alignas(16) SpecularMapFilterSettingsCB
 	{
 		float roughness;
-		float padding[3];
+		float pad[3];
 	};
 
 	ID3D11ComputeShader* spmapProgram = nullptr;
@@ -37,12 +44,22 @@ public:
 
 	// Reflection capture
 
+	struct alignas(16) UpdateCubemapCB
+	{
+		float4 CameraData;
+		uint Reset;
+		float pad[3];
+	};
+
 	ID3D11ComputeShader* updateCubemapCS = nullptr;
+	ConstantBuffer* updateCubemapCB = nullptr;
+
 	ID3D11ComputeShader* inferCubemapCS = nullptr;
-	ID3D11ComputeShader* resetCubemapCS = nullptr;
 	Texture2D* envCaptureTexture = nullptr;
 
 	bool activeReflections = false;
+
+	bool resetCapture = true;
 
 	bool updateCapture = true;
 	bool updateIBL = true;

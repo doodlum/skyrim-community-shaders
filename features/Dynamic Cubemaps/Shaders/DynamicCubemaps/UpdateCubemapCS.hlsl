@@ -91,6 +91,12 @@ cbuffer PerFrame : register(b0)
 #endif  // !VR
 }
 
+cbuffer UpdateData : register(b1)
+{
+	float4 CameraData;
+	uint Reset;
+}
+
 float3 WorldToView(float3 x, bool is_position = true, uint a_eyeIndex = 0)
 {
 	float4 newPosition = float4(x, (float)is_position);
@@ -102,6 +108,11 @@ float2 ViewToUV(float3 x, bool is_position = true, uint a_eyeIndex = 0)
 	float4 newPosition = float4(x, (float)is_position);
 	float4 uv = mul(CameraProj[a_eyeIndex], newPosition);
 	return (uv.xy / uv.w) * float2(0.5f, -0.5f) + 0.5f;
+}
+
+float GetScreenDepth(float depth)
+{
+	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
 }
 
 float2 GetDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
@@ -122,23 +133,29 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 	float3 viewDirection  = WorldToView(captureDirection, false);
 	float2 uv = ViewToUV(viewDirection, false);
 
+	if (Reset)
+		DynamicCubemap[ThreadID] = 0.0;
+
     if (IsSaturated(uv) && viewDirection.z < 0.0) { // Check that the view direction exists in screenspace and that it is in front of the camera
 		uv = GetDynamicResolutionAdjustedScreenPosition(uv);
+
 #	if defined(VR)
 		uv.x *= 0.5;
 #	endif
+
 		float2 textureDims;
 		DepthTexture.GetDimensions(textureDims.x, textureDims.y);
 
-		float depth = DepthTexture[uv * textureDims];
+		float depth = DepthTexture[round(uv * textureDims)];
+		depth = GetScreenDepth(depth);
 
-		if (depth > 0.1){
-       		float3 color = ColorTexture[uv * textureDims];
+		if (depth > 16.5) { // First person
+       		float3 color = ColorTexture[round(uv * textureDims)];
        	 	DynamicCubemap[ThreadID] = float4(color, 1.0); 
 		}
     } else {
     	float cameraDistance = distance(CameraPosAdjust[0].xyz, CameraPreviousPosAdjust[0].xyz);
 		if (cameraDistance > 0.0)
-			DynamicCubemap[ThreadID] *= lerp(1.0, saturate(1.0 / cameraDistance), 0.025);
+			DynamicCubemap[ThreadID] *= lerp(1.0, saturate(1.0 / cameraDistance), 0.05);
 	}
 }
