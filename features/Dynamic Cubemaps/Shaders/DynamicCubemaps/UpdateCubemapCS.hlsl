@@ -1,3 +1,4 @@
+#include "../Common/VR.hlsl"
 RWTexture2DArray<float4> DynamicCubemap : register(u0);
 
 Texture2D<float> DepthTexture : register(t0);
@@ -138,10 +139,7 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 
     if (IsSaturated(uv) && viewDirection.z < 0.0) { // Check that the view direction exists in screenspace and that it is in front of the camera
 		uv = GetDynamicResolutionAdjustedScreenPosition(uv);
-
-#	if defined(VR)
-		uv.x *= 0.5;
-#	endif
+		uv = ConvertToStereoUV(uv, 0);
 
 		float2 textureDims;
 		DepthTexture.GetDimensions(textureDims.x, textureDims.y);
