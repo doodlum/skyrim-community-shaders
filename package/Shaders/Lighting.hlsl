@@ -2046,8 +2046,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = Lin2sRGB(color.xyz);
 #	endif
 
-#	if defined(ENVMAP)
-	//color.xyz  = specularTexture.SampleLevel(SampEnvSampler, envSamplingPoint, 0).xyz;
+#	if defined(ENVMAP) && defined(TESTCUBEMAP)
+	color.xyz = specularTexture.SampleLevel(SampEnvSampler, envSamplingPoint, 0).xyz;
 #	endif
 
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
