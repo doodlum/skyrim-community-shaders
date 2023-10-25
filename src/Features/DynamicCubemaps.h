@@ -31,7 +31,7 @@ public:
 		float pad[3];
 	};
 
-	ID3D11ComputeShader* spmapProgram = nullptr;
+	ID3D11ComputeShader* specularIrradianceCS = nullptr;
 	ConstantBuffer* spmapCB = nullptr;
 	Texture2D* envTexture = nullptr;
 	winrt::com_ptr<ID3D11UnorderedAccessView> uavArray[9];
@@ -101,6 +101,7 @@ public:
 	virtual void ClearShaderCache() override;
 	ID3D11ComputeShader* GetComputeShaderUpdate();
 	ID3D11ComputeShader* GetComputeShaderInferrence();
+	ID3D11ComputeShader* GetComputeShaderSpecularIrradiance();
 
 	void UpdateCubemapCapture();
 

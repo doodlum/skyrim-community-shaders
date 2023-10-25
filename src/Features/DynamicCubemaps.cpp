@@ -113,6 +113,10 @@ void DynamicCubemaps::ClearShaderCache()
 		inferCubemapCS->Release();
 		inferCubemapCS = nullptr;
 	}
+	if (specularIrradianceCS) {
+		specularIrradianceCS->Release();
+		specularIrradianceCS = nullptr;
+	}
 }
 
 ID3D11ComputeShader* DynamicCubemaps::GetComputeShaderUpdate()
@@ -131,6 +135,15 @@ ID3D11ComputeShader* DynamicCubemaps::GetComputeShaderInferrence()
 		inferCubemapCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\InferCubemapCS.hlsl", {}, "cs_5_0");
 	}
 	return inferCubemapCS;
+}
+
+ID3D11ComputeShader* DynamicCubemaps::GetComputeShaderSpecularIrradiance()
+{
+	if (!specularIrradianceCS) {
+		logger::debug("Compiling SpecularIrradianceCS");
+		specularIrradianceCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\SpecularIrradianceCS.hlsl", {}, "cs_5_0");
+	}
+	return specularIrradianceCS;
 }
 
 void DynamicCubemaps::UpdateCubemapCapture()
@@ -230,7 +243,7 @@ void DynamicCubemaps::UpdateCubemap()
 			auto srv = cubemap.SRV;
 			context->CSSetShaderResources(0, 1, &srv);
 			context->CSSetSamplers(0, 1, &computeSampler);
-			context->CSSetShader(spmapProgram, nullptr, 0);
+			context->CSSetShader(GetComputeShaderSpecularIrradiance(), nullptr, 0);
 
 			ID3D11Buffer* buffers[1];
 			buffers[0] = spmapCB->CB();
@@ -413,7 +426,6 @@ void DynamicCubemaps::SetupResources()
 	}
 
 	{
-		spmapProgram = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DynamicCubemaps\\SpmapCS.hlsl", {}, "cs_5_0");
 		spmapCB = new ConstantBuffer(ConstantBufferDesc<SpecularMapFilterSettingsCB>());
 	}
 
