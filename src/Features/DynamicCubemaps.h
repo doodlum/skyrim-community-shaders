@@ -3,6 +3,13 @@
 #include "Buffer.h"
 #include "Feature.h"
 
+class MenuOpenCloseEventHandler : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+{
+public:
+	virtual RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_eventSource);
+	static bool Register();
+};
+
 struct DynamicCubemaps : Feature
 {
 public:
@@ -14,35 +21,52 @@ public:
 
 	bool renderedScreenCamera = false;
 
-	// Compute pre-filtered specular environment map.
+	// Specular irradiance
+
 	ID3D11SamplerState* computeSampler = nullptr;
 
-	// Specular irradiance
 	struct alignas(16) SpecularMapFilterSettingsCB
 	{
 		float roughness;
-		float padding[3];
+		float pad[3];
 	};
 
-	ID3D11ComputeShader* spmapProgram = nullptr;
+	ID3D11ComputeShader* specularIrradianceCS = nullptr;
 	ConstantBuffer* spmapCB = nullptr;
 	Texture2D* envTexture = nullptr;
-	Texture2D* unfilteredEnvTexture = nullptr;
+	winrt::com_ptr<ID3D11UnorderedAccessView> uavArray[9];
 
-	// Diffuse irradiance
-
-	ID3D11PixelShader* irmapProgramPS = nullptr;
-	ID3D11ComputeShader* irmapProgram = nullptr;
-	Texture2D* irmapTexture = nullptr;
-
-	//BRDF 2D LUT
+	// BRDF 2D LUT
 
 	ID3D11ComputeShader* spBRDFProgram = nullptr;
 	Texture2D* spBRDFLUT = nullptr;
 	ID3D11SamplerState* spBRDFSampler = nullptr;
 
+	// Reflection capture
+
+	struct alignas(16) UpdateCubemapCB
+	{
+		float4 CameraData;
+		uint Reset;
+		float pad[3];
+	};
+
+	ID3D11ComputeShader* updateCubemapCS = nullptr;
+	ConstantBuffer* updateCubemapCB = nullptr;
+
+	ID3D11ComputeShader* inferCubemapCS = nullptr;
+	Texture2D* envCaptureTexture = nullptr;
+
+	bool activeReflections = false;
+
+	bool resetCapture = true;
+
+	bool updateCapture = true;
+	bool updateIBL = true;
+
+	ID3D11UnorderedAccessView* cubemapUAV;
+
 	void UpdateCubemap();
-	void CreateResources();
 
 	virtual inline std::string GetName() { return "Dynamic Cubemaps"; }
 	virtual inline std::string GetShortName() { return "DynamicCubemaps"; }
@@ -59,6 +83,7 @@ public:
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
+
 	std::vector<std::string> iniVRCubeMapSettings{
 		{ "bAutoWaterSilhouetteReflections:Water" },  //IniSettings 0x1eaa018
 		{ "bForceHighDetailReflections:Water" },      //IniSettings 0x1eaa030
@@ -72,4 +97,13 @@ public:
 		{ "bReflectSky:Water", 0x1eaa0a8 },
 		{ "bUseWaterRefractions:Water", 0x1eaa0c0 },
 	};
+
+	virtual void ClearShaderCache() override;
+	ID3D11ComputeShader* GetComputeShaderUpdate();
+	ID3D11ComputeShader* GetComputeShaderInferrence();
+	ID3D11ComputeShader* GetComputeShaderSpecularIrradiance();
+
+	void UpdateCubemapCapture();
+
+	virtual void DrawDeferred();
 };

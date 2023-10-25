@@ -142,6 +142,8 @@ namespace Util
 			macros.push_back({ "COMPUTESHADER", "" });
 		else if (!_stricmp(ProgramType, "cs_4_0"))
 			macros.push_back({ "COMPUTESHADER", "" });
+		else if (!_stricmp(ProgramType, "cs_5_1"))
+			macros.push_back({ "COMPUTESHADER", "" });
 		else
 			return nullptr;
 
@@ -261,5 +263,16 @@ namespace Util
 		for (const auto& set : game->settings) {
 			logger::info("Game Setting {} {}", set.first, set.second->GetName());
 		}
+	}
+	float4 GetCameraData()
+	{
+		auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
+
+		float4 cameraData;
+		cameraData.x = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar;
+		cameraData.y = accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
+		cameraData.z = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar - accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
+		cameraData.w = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar * accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
+		return cameraData;
 	}
 }

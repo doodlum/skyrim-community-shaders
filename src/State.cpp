@@ -43,11 +43,59 @@ void State::Draw()
 
 void State::DrawDeferred()
 {
+	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
+	auto context = renderer->GetRuntimeData().context;
+
+	ID3D11ShaderResourceView* srvs[16];
+	context->PSGetShaderResources(0, 16, srvs);
+
+	ID3D11ShaderResourceView* srvsCS[16];
+	context->CSGetShaderResources(0, 16, srvsCS);
+
+	ID3D11UnorderedAccessView* uavsCS[16];
+	context->CSGetUnorderedAccessViews(0, 16, uavsCS);
+
+	ID3D11UnorderedAccessView* nullUavs[16] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	context->CSSetUnorderedAccessViews(0, 16, nullUavs, nullptr);
+
+	ID3D11ShaderResourceView* nullSrvs[16] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	context->PSSetShaderResources(0, 16, nullSrvs);
+	context->CSSetShaderResources(0, 16, nullSrvs);
+
+	ID3D11RenderTargetView* views[8];
+	ID3D11DepthStencilView* dsv;
+	context->OMGetRenderTargets(8, views, &dsv);
+
+	ID3D11RenderTargetView* nullViews[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	ID3D11DepthStencilView* nullDsv = nullptr;
+	context->OMSetRenderTargets(8, nullViews, nullDsv);
+
 	for (auto* feature : Feature::GetFeatureList()) {
 		if (feature->loaded) {
 			feature->DrawDeferred();
 		}
 	}
+
+	context->PSSetShaderResources(0, 16, srvs);
+	context->CSSetShaderResources(0, 16, srvsCS);
+	context->CSSetUnorderedAccessViews(0, 16, uavsCS, nullptr);
+	context->OMSetRenderTargets(8, views, dsv);
+
+	for (int i = 0; i < 16; i++)
+	{
+		if (srvs[i])
+			srvs[i]->Release();
+		if (srvsCS[i])
+			srvsCS[i]->Release();
+	}
+
+	for (int i = 0; i < 8; i++) {
+		if (views[i])
+			views[i]->Release();
+	}
+
+	if (dsv)
+		dsv->Release();
 }
 
 void State::Reset()
