@@ -1,14 +1,14 @@
 #include "Feature.h"
 
 #include "Features/DistantTreeLighting.h"
+#include "Features/DynamicCubemaps.h"
 #include "Features/ExtendedMaterials.h"
 #include "Features/GrassCollision.h"
 #include "Features/GrassLighting.h"
 #include "Features/LightLimitFix.h"
-#include "Features/WetnessEffects.h"
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/WaterBlending.h"
-#include "Features/DynamicCubemaps.h"
+#include "Features/WetnessEffects.h"
 
 void Feature::Load(json&)
 {

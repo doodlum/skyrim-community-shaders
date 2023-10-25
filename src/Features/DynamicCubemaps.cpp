@@ -46,7 +46,6 @@ void DynamicCubemaps::DrawSettings()
 		ImGui::Checkbox("updateCapture", &updateCapture);
 		ImGui::Checkbox("updateIBL", &updateIBL);
 
-
 		ImGui::TreePop();
 	}
 }
@@ -309,7 +308,7 @@ void DynamicCubemaps::SetupResources()
 
 	{
 		D3D11_SAMPLER_DESC samplerDesc = {};
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; // Should be linear but point is faster
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;  // Should be linear but point is faster
 		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -422,7 +421,6 @@ void DynamicCubemaps::SetupResources()
 		envCaptureTexture->CreateUAV(uavDesc);
 
 		updateCubemapCB = new ConstantBuffer(ConstantBufferDesc<UpdateCubemapCB>());
-
 	}
 
 	{

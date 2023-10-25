@@ -26,7 +26,7 @@ public:
 		float MaxDarkness = 1.0f;
 		float MaxOcclusion = 0.15f;
 		float MinRoughness = 0.1f;
-		uint  ShoreRange = 32;
+		uint ShoreRange = 32;
 		float PuddleMinWetness = 0.7f;
 		float PuddleRadius = 1.0f;
 		float PuddleMaxAngle = 0.9f;

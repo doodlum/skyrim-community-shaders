@@ -30,7 +30,7 @@ float radicalInverse_VdC(uint bits)
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+	return float(bits) * 2.3283064365386963e-10;  // / 0x100000000
 }
 
 // Sample i-th point from Hammersley point set of NumSamples points total.
@@ -46,8 +46,8 @@ float3 sampleGGX(float u1, float u2, float roughness)
 {
 	float alpha = roughness * roughness;
 
-	float cosTheta = sqrt((1.0 - u2) / (1.0 + (alpha*alpha - 1.0) * u2));
-	float sinTheta = sqrt(1.0 - cosTheta*cosTheta); // Trig. identity
+	float cosTheta = sqrt((1.0 - u2) / (1.0 + (alpha * alpha - 1.0) * u2));
+	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);  // Trig. identity
 	float phi = TwoPI * u1;
 
 	// Convert to Cartesian upon return.
@@ -58,7 +58,7 @@ float3 sampleGGX(float u1, float u2, float roughness)
 // Uses Disney's reparametrization of alpha = roughness^2.
 float ndfGGX(float cosLh, float roughness)
 {
-	float alpha   = roughness * roughness;
+	float alpha = roughness * roughness;
 	float alphaSq = alpha * alpha;
 
 	float denom = (cosLh * cosLh) * (alphaSq - 1.0) + 1.0;
@@ -73,21 +73,32 @@ float3 getSamplingVector(uint3 ThreadID)
 	float outputWidth, outputHeight, outputDepth;
 	outputTexture.GetDimensions(outputWidth, outputHeight, outputDepth);
 
-    float2 st = ThreadID.xy/float2(outputWidth, outputHeight);
-    float2 uv = 2.0 * float2(st.x, 1.0-st.y) - 1.0;
+	float2 st = ThreadID.xy / float2(outputWidth, outputHeight);
+	float2 uv = 2.0 * float2(st.x, 1.0 - st.y) - 1.0;
 
 	// Select vector based on cubemap face index.
 	float3 ret = 0.0f;
-	switch(ThreadID.z)
-	{
-	case 0: ret = float3(1.0,  uv.y, -uv.x); break;
-	case 1: ret = float3(-1.0, uv.y,  uv.x); break;
-	case 2: ret = float3(uv.x, 1.0, -uv.y);  break;
-	case 3: ret = float3(uv.x, -1.0, uv.y);  break;
-	case 4: ret = float3(uv.x, uv.y, 1.0);   break;
-	case 5: ret = float3(-uv.x, uv.y, -1.0); break;
+	switch (ThreadID.z) {
+	case 0:
+		ret = float3(1.0, uv.y, -uv.x);
+		break;
+	case 1:
+		ret = float3(-1.0, uv.y, uv.x);
+		break;
+	case 2:
+		ret = float3(uv.x, 1.0, -uv.y);
+		break;
+	case 3:
+		ret = float3(uv.x, -1.0, uv.y);
+		break;
+	case 4:
+		ret = float3(uv.x, uv.y, 1.0);
+		break;
+	case 5:
+		ret = float3(-uv.x, uv.y, -1.0);
+		break;
 	}
-    return normalize(ret);
+	return normalize(ret);
 }
 
 // Compute orthonormal basis for converting from tanget/shading space to world space.
@@ -107,16 +118,15 @@ float3 tangentToWorld(const float3 v, const float3 N, const float3 S, const floa
 	return S * v.x + T * v.y + N * v.z;
 }
 
-[numthreads(32, 32, 1)]
-void main(uint3 ThreadID : SV_DispatchThreadID)
-{
+[numthreads(32, 32, 1)] void main(uint3 ThreadID
+								  : SV_DispatchThreadID) {
 	// Make sure we won't write past output when computing higher mipmap levels.
 	uint outputWidth, outputHeight, outputDepth;
 	outputTexture.GetDimensions(outputWidth, outputHeight, outputDepth);
-	if(ThreadID.x >= outputWidth || ThreadID.y >= outputHeight) {
+	if (ThreadID.x >= outputWidth || ThreadID.y >= outputHeight) {
 		return;
 	}
-	
+
 	// Get input cubemap dimensions at zero mipmap level.
 	float inputWidth, inputHeight, inputLevels;
 	inputTexture.GetDimensions(0, inputWidth, inputHeight, inputLevels);
@@ -124,11 +134,11 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 	// Solid angle associated with a single cubemap texel at zero mipmap level.
 	// This will come in handy for importance sampling below.
 	float wt = 4.0 * PI / (6 * inputWidth * inputHeight);
-	
+
 	// Approximation: Assume zero viewing angle (isotropic reflections).
 	float3 N = getSamplingVector(ThreadID);
 	float3 Lo = N;
-	
+
 	float3 S, T;
 	computeBasisVectors(N, S, T);
 
@@ -137,7 +147,7 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 
 	// Convolve environment map using GGX NDF importance sampling.
 	// Weight by cosine term since Epic claims it generally improves quality.
-	for(uint i=0; i<NumSamples; ++i) {
+	for (uint i = 0; i < NumSamples; ++i) {
 		float2 u = sampleHammersley(i);
 		float3 Lh = tangentToWorld(sampleGGX(u.x, u.y, roughness), N, S, T);
 
@@ -145,7 +155,7 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 		float3 Li = 2.0 * dot(Lo, Lh) * Lh - Lo;
 
 		float cosLi = dot(N, Li);
-		if(cosLi > 0.0) {
+		if (cosLi > 0.0) {
 			// Use Mipmap Filtered Importance Sampling to improve convergence.
 			// See: https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch20.html, section 20.4
 
@@ -161,7 +171,7 @@ void main(uint3 ThreadID : SV_DispatchThreadID)
 			// Mip level to sample from.
 			float mipLevel = max(0.5 * log2(ws / wt) + 1.0, 0.0);
 
-            color += inputTexture.SampleLevel(linear_wrap_sampler, Li, mipLevel).rgb * cosLi;
+			color += inputTexture.SampleLevel(linear_wrap_sampler, Li, mipLevel).rgb * cosLi;
 			weight += cosLi;
 		}
 	}

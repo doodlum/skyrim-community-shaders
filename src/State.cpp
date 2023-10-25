@@ -81,8 +81,7 @@ void State::DrawDeferred()
 	context->CSSetUnorderedAccessViews(0, 16, uavsCS, nullptr);
 	context->OMSetRenderTargets(8, views, dsv);
 
-	for (int i = 0; i < 16; i++)
-	{
+	for (int i = 0; i < 16; i++) {
 		if (srvs[i])
 			srvs[i]->Release();
 		if (srvsCS[i])

@@ -375,8 +375,8 @@ float3x3 CalculateTBN(float3 N, float3 p, float2 uv)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
 
-#define SampColorSampler SampBaseSampler
-#define PI 3.1415927
+#	define SampColorSampler SampBaseSampler
+#	define PI 3.1415927
 
 #	if defined(DYNAMIC_CUBEMAPS)
 #		include "DynamicCubemaps/DynamicCubemaps.hlsli"
@@ -499,29 +499,28 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	// Applies lighting across the whole surface apart from what is already lit.
 	lightsDiffuseColor += subsurfaceColor * dirLightColor * GetSoftLightMultiplier(dirLightAngle, SubsurfaceScatteringAmount);
 
-
-	if (complex){
-		lightsSpecularColor += subsurfaceColor * GetLightSpecularInput(DirLightDirection, viewDirection, worldNormal, dirLightColor, Glossiness);	
+	if (complex) {
+		lightsSpecularColor += subsurfaceColor * GetLightSpecularInput(DirLightDirection, viewDirection, worldNormal, dirLightColor, Glossiness);
 		// Not physically accurate but grass will otherwise look too flat.
 		lightsSpecularColor += subsurfaceColor * GetLightSpecularInput(-DirLightDirection, viewDirection, worldNormal, dirLightColor.xyz, Glossiness);
 	}
 
-#	if defined(WETNESS_EFFECTS)
+#		if defined(WETNESS_EFFECTS)
 	float waterSpecular = 0.0;
 
 	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * lerp(0.03, 0.02, perPassWetnessEffects[0].Wetness);
-	float puddle  = pow(saturate(FBM(puddleCoords, 3, 1.0) * 0.5 + 0.5), 1) * perPassWetnessEffects[0].Wetness;
+	float puddle = pow(saturate(FBM(puddleCoords, 3, 1.0) * 0.5 + 0.5), 1) * perPassWetnessEffects[0].Wetness;
 
 	float waterGlossinessSpecular = saturate(worldNormal.z) * max(perPassWetnessEffects[0].Wetness * saturate(worldNormal.z) * 0.5, puddle);
-	
+
 	float waterRoughnessSpecular = 1.0 - waterGlossinessSpecular;
 	waterRoughnessSpecular = lerp(perPassWetnessEffects[0].MinRoughness, 1.0, waterRoughnessSpecular);
 
-	if (waterRoughnessSpecular < 1.0){
+	if (waterRoughnessSpecular < 1.0) {
 		waterSpecular += GetWetnessSpecular(worldNormal, DirLightDirection, viewDirection, dirLightColor, waterRoughnessSpecular);
 		waterSpecular += GetPBRAmbientSpecular(worldNormal, viewDirection, 1.0 - waterGlossinessSpecular, 0.02);
 	}
-#	endif
+#		endif
 
 #		if defined(LIGHT_LIMIT_FIX)
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
@@ -581,18 +580,18 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	diffuseColor += lightsDiffuseColor;
 
 	float3 color = diffuseColor * baseColor.xyz * input.VertexColor.xyz;
-	
-	if (complex){
+
+	if (complex) {
 		specularColor += lightsSpecularColor;
 		specularColor *= specColor.w * SpecularStrength;
 		color.xyz += specularColor;
 	}
-	
-#	if defined(WETNESS_EFFECTS)
+
+#		if defined(WETNESS_EFFECTS)
 	color.xyz = sRGB2Lin(color.xyz);
 	color.xyz += waterSpecular;
 	color.xyz = Lin2sRGB(color.xyz);
-#	endif
+#		endif
 
 #		if defined(LIGHT_LIMIT_FIX)
 	if (perPassLLF[0].EnableLightsVisualisation) {
