@@ -1930,10 +1930,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	#			endif
 		else
 			F0 = envColor * 2.0;
+			
+		float envRoughness = 1.0 / (20.0 * (envMask + 0.05));
+		envRoughness = saturate(envRoughness);
+
 #				if defined(EYE)
-		envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 / (10.0 * envMask), envMask * 0.1);
+		envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, envRoughness, envMask * 0.1);
 #				else
-		envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 / (10.0 * envMask), F0);
+		envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, envRoughness, F0);
 #				endif
 	}
 #	endif
