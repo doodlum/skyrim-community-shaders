@@ -1901,8 +1901,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		diffuseColor += (charLightMul * charLightColor).xxx;
 	}
 #	endif
+
 #	if defined(EYE)
 	modelNormal.xyz = input.EyeNormal;
+#		if (!defined(DRAW_IN_WORLDSPACE))
+	if (!input.WorldSpace) 
+		worldSpaceNormal = normalize(mul(input.World[eyeIndex], float4(modelNormal.xyz, 0)));
+#		endif
 #	endif  // EYE
 
 #	if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE)
@@ -1912,14 +1917,25 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 envSamplingPoint = (viewNormalAngle * 2) * modelNormal.xyz - viewDirection;
 	float3 envColor = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint).xyz * envMask;
 #		if defined(DYNAMIC_CUBEMAPS)
-	float envSizeX;
-	float envSizeY;
-	TexEnvSampler.GetDimensions(envSizeX, envSizeY);
-	bool dynamicCubemap = envSizeX == 0 && envSizeY == 0;
-	if (dynamicCubemap)
-		envColor = specularTexture.SampleLevel(SampColorSampler, envSamplingPoint, 1).rgb * envMask;
-	else
-		envColor *= specularTexture.SampleLevel(SampColorSampler, envSamplingPoint, 1).rgb * 2;
+	if (envMask != 0){
+		uint2 envSize;
+		TexEnvSampler.GetDimensions(envSize.x, envSize.y);
+		bool dynamicCubemap = envSize.x == 1 && envSize.y == 1;
+		float3 F0;
+		if (dynamicCubemap)
+	#			if defined(CPM_AVAILABLE)
+			F0 = complexSpecular;
+	#			else
+			F0 = 1.0;
+	#			endif
+		else
+			F0 = envColor * 2.0;
+#				if defined(EYE)
+		envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 / (10.0 * envMask), envMask * 0.1);
+#				else
+		envColor = GetDynamicCubemap(worldSpaceNormal, worldSpaceViewDirection, 1.0 / (10.0 * envMask), F0);
+#				endif
+	}
 #	endif
 #	endif  // defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
 	

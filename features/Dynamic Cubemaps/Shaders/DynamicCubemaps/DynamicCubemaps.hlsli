@@ -26,7 +26,7 @@ float3 GetDynamicCubemap(float3 N, float3 V, float roughness, float3 F0)
     float3 R = reflect(-V, N);
     float NoV = saturate(dot(N, V));
     
-    float level = max(1.0, roughness * 10.0);
+    float level = roughness * 10.0;
 
     float3 specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level).rgb;
 
