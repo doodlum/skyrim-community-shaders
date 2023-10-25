@@ -264,4 +264,15 @@ namespace Util
 			logger::info("Game Setting {} {}", set.first, set.second->GetName());
 		}
 	}
+	float4 GetCameraData()
+	{
+		auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
+
+		float4 cameraData;
+		cameraData.x = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar;
+		cameraData.y = accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
+		cameraData.z = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar - accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
+		cameraData.w = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar * accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
+		return cameraData;
+	}
 }
