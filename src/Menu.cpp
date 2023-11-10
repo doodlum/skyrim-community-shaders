@@ -448,7 +448,7 @@ void Menu::DrawSettings()
 				ImGui::Text("Press any key to set as a toggle key for all effects...");
 			} else {
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Toggle Key:");
+				ImGui::Text("Effect Toggle Key:");
 				ImGui::SameLine();
 				ImGui::AlignTextToFramePadding();
 				ImGui::TextColored(ImVec4(1, 1, 0, 1), "%s", KeyIdToString(effectToggleKey));
