@@ -16,7 +16,6 @@
 #define SETTING_MENU_FONTSCALE "Font Scale"
 #define SETTING_MENU_TOGGLE_SHADERS_KEY "Toggle Effects Key"
 
-
 void SetupImGuiStyle()
 {
 	auto& style = ImGui::GetStyle();

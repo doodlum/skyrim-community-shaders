@@ -30,7 +30,7 @@ public:
 
 private:
 	uint32_t toggleKey = VK_END;
-	uint32_t effectToggleKey = VK_MULTIPLY; //toggle all effects
+	uint32_t effectToggleKey = VK_MULTIPLY;  //toggle all effects
 	uint32_t skipCompilationKey = VK_ESCAPE;
 	bool settingToggleKey = false;
 	bool settingSkipCompilationKey = false;
