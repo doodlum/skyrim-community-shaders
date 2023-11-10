@@ -236,7 +236,7 @@ RE::BSEventNotifyControl Menu::ProcessEvent(RE::InputEvent* const* a_event, RE::
 						auto& shaderCache = SIE::ShaderCache::Instance();
 						shaderCache.backgroundCompilation = true;
 					} else if (key == effectToggleKey) {
-						auto& shaderCache = SIE::ShaderCache::Instance()
+						auto& shaderCache = SIE::ShaderCache::Instance();
 						shaderCache.SetEnabled(!shaderCache.IsEnabled());
 					}
 				}
