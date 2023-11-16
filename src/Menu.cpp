@@ -454,7 +454,7 @@ void Menu::DrawSettings()
 
 				ImGui::AlignTextToFramePadding();
 				ImGui::SameLine();
-				if (ImGui::Button("Change##toggle")) {
+				if (ImGui::Button("Change##EffectToggle")) {
 					settingsEffectsToggle = true;
 				}
 			}
