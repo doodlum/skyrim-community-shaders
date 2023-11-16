@@ -653,6 +653,8 @@ void Menu::DrawSettings()
 
 void Menu::DrawOverlay()
 {
+	ProcessInputEventQueue();  //Synchronize Inputs to frame
+
 	// Start the Dear ImGui frame
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -734,33 +736,6 @@ void Menu::DrawOverlay()
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-}
-
-const char* Menu::KeyIdToString(uint32_t key)
-{
-	if (key >= 256)
-		return "";
-
-	static const char* keyboard_keys_international[256] = {
-		"", "Left Mouse", "Right Mouse", "Cancel", "Middle Mouse", "X1 Mouse", "X2 Mouse", "", "Backspace", "Tab", "", "", "Clear", "Enter", "", "",
-		"Shift", "Control", "Alt", "Pause", "Caps Lock", "", "", "", "", "", "", "Escape", "", "", "", "",
-		"Space", "Page Up", "Page Down", "End", "Home", "Left Arrow", "Up Arrow", "Right Arrow", "Down Arrow", "Select", "", "", "Print Screen", "Insert", "Delete", "Help",
-		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "", "", "", "", "", "",
-		"", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
-		"P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "Left Windows", "Right Windows", "Apps", "", "Sleep",
-		"Numpad 0", "Numpad 1", "Numpad 2", "Numpad 3", "Numpad 4", "Numpad 5", "Numpad 6", "Numpad 7", "Numpad 8", "Numpad 9", "Numpad *", "Numpad +", "", "Numpad -", "Numpad Decimal", "Numpad /",
-		"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16",
-		"F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "", "", "", "", "", "", "", "",
-		"Num Lock", "Scroll Lock", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-		"Left Shift", "Right Shift", "Left Control", "Right Control", "Left Menu", "Right Menu", "Browser Back", "Browser Forward", "Browser Refresh", "Browser Stop", "Browser Search", "Browser Favorites", "Browser Home", "Volume Mute", "Volume Down", "Volume Up",
-		"Next Track", "Previous Track", "Media Stop", "Media Play/Pause", "Mail", "Media Select", "Launch App 1", "Launch App 2", "", "", "OEM ;", "OEM +", "OEM ,", "OEM -", "OEM .", "OEM /",
-		"OEM ~", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-		"", "", "", "", "", "", "", "", "", "", "", "OEM [", "OEM \\", "OEM ]", "OEM '", "OEM 8",
-		"", "", "OEM <", "", "", "", "", "", "", "", "", "", "", "", "", "",
-		"", "", "", "", "", "", "Attn", "CrSel", "ExSel", "Erase EOF", "Play", "Zoom", "", "PA1", "OEM Clear", ""
-	};
-
-	return keyboard_keys_international[key];
 }
 
 const ImGuiKey Menu::VirtualKeyToImGuiKey(WPARAM vkKey)
@@ -977,4 +952,181 @@ const ImGuiKey Menu::VirtualKeyToImGuiKey(WPARAM vkKey)
 	default:
 		return ImGuiKey_None;
 	};
+}
+
+inline const uint32_t Menu::DIKToVK(uint32_t DIK)
+{
+	switch (DIK) {
+	case DIK_LEFTARROW:
+		return VK_LEFT;
+	case DIK_RIGHTARROW:
+		return VK_RIGHT;
+	case DIK_UPARROW:
+		return VK_UP;
+	case DIK_DOWNARROW:
+		return VK_DOWN;
+	case DIK_DELETE:
+		return VK_DELETE;
+	case DIK_END:
+		return VK_END;
+	case DIK_HOME:
+		return VK_HOME;  // pos1
+	case DIK_PRIOR:
+		return VK_PRIOR;  // page up
+	case DIK_NEXT:
+		return VK_NEXT;  // page down
+	case DIK_INSERT:
+		return VK_INSERT;
+	case DIK_NUMPAD0:
+		return VK_NUMPAD0;
+	case DIK_NUMPAD1:
+		return VK_NUMPAD1;
+	case DIK_NUMPAD2:
+		return VK_NUMPAD2;
+	case DIK_NUMPAD3:
+		return VK_NUMPAD3;
+	case DIK_NUMPAD4:
+		return VK_NUMPAD4;
+	case DIK_NUMPAD5:
+		return VK_NUMPAD5;
+	case DIK_NUMPAD6:
+		return VK_NUMPAD6;
+	case DIK_NUMPAD7:
+		return VK_NUMPAD7;
+	case DIK_NUMPAD8:
+		return VK_NUMPAD8;
+	case DIK_NUMPAD9:
+		return VK_NUMPAD9;
+	case DIK_DECIMAL:
+		return VK_DECIMAL;
+	case DIK_NUMPADENTER:
+		return IM_VK_KEYPAD_ENTER;
+	case DIK_RMENU:
+		return VK_RMENU;  // right alt
+	case DIK_RCONTROL:
+		return VK_RCONTROL;  // right control
+	case DIK_LWIN:
+		return VK_LWIN;  // left win
+	case DIK_RWIN:
+		return VK_RWIN;  // right win
+	case DIK_APPS:
+		return VK_APPS;
+	default:
+		return DIK;
+	}
+}
+
+void Menu::ProcessInputEventQueue()
+{
+	std::unique_lock<std::shared_mutex> mutex(_inputEventMutex);
+	ImGuiIO& io = ImGui::GetIO();
+
+	if (_keyEventQueue.size() > 0)
+		logger::info("Got Called From renderer with {} elements, got keycode {}, got device {}", _keyEventQueue.size(), _keyEventQueue[0].keyCode, (uint32_t)_keyEventQueue[0].device);
+
+	for (auto& event : _keyEventQueue) {
+		if (event.eventType == RE::INPUT_EVENT_TYPE::kChar) {
+			io.AddInputCharacter(event.keyCode);
+		}
+
+		if (event.device == RE::INPUT_DEVICE::kMouse) {
+			if (event.keyCode > 7) {
+				io.AddMouseWheelEvent(0, event.value * (event.keyCode == 8 ? 1 : -1));
+			} else {
+				if (event.keyCode > 5)
+					event.keyCode = 5;
+				io.AddMouseButtonEvent(event.keyCode, event.IsPressed());
+			}
+		}
+
+		if (event.device == RE::INPUT_DEVICE::kKeyboard) {
+			uint32_t key = DIKToVK(event.keyCode);
+			if (key == event.keyCode)
+				key = MapVirtualKeyEx(event.keyCode, MAPVK_VSC_TO_VK_EX, GetKeyboardLayout(0));
+			if (!event.IsPressed()) {
+				if (settingToggleKey) {
+					toggleKey = key;
+					settingToggleKey = false;
+				} else if (settingSkipCompilationKey) {
+					skipCompilationKey = key;
+					settingSkipCompilationKey = false;
+				} else if (settingsEffectsToggle) {
+					effectToggleKey = key;
+					settingsEffectsToggle = false;
+				} else if (key == toggleKey) {
+					IsEnabled = !IsEnabled;
+				} else if (key == skipCompilationKey) {
+					auto& shaderCache = SIE::ShaderCache::Instance();
+					shaderCache.backgroundCompilation = true;
+				} else if (key == effectToggleKey) {
+					auto& shaderCache = SIE::ShaderCache::Instance();
+					shaderCache.SetEnabled(!shaderCache.IsEnabled());
+				}
+			}
+
+			io.AddKeyEvent(VirtualKeyToImGuiKey(key), event.IsPressed());
+
+			if (key == VK_LCONTROL || key == VK_RCONTROL)
+				io.AddKeyEvent(ImGuiMod_Ctrl, event.IsPressed());
+			else if (key == VK_LSHIFT || key == VK_RSHIFT)
+				io.AddKeyEvent(ImGuiMod_Shift, event.IsPressed());
+			else if (key == VK_LMENU || key == VK_RMENU)
+				io.AddKeyEvent(ImGuiMod_Alt, event.IsPressed());
+		}
+	}
+
+	_keyEventQueue.clear();
+}
+
+void Menu::addToEventQueue(KeyEvent e)
+{
+	std::unique_lock<std::shared_mutex> mutex(_inputEventMutex);
+	_keyEventQueue.emplace_back(e);
+}
+
+void Menu::OnFocusLost()  //todo implement wndproc hook to catch WM_KILLFOCUS
+{
+	std::unique_lock<std::shared_mutex> mutex(_inputEventMutex);
+	_keyEventQueue.clear();
+}
+
+void Menu::ProcessInputEvents(RE::InputEvent* const* a_events)
+{
+	for (auto it = *a_events; it; it = it->next) {
+		auto event = it->GetEventType() == RE::INPUT_EVENT_TYPE::kButton ? KeyEvent(static_cast<RE::ButtonEvent*>(it)) : it->GetEventType() == RE::INPUT_EVENT_TYPE::kChar ? KeyEvent(static_cast<CharEvent*>(it)) :
+		                                                                                                                                                                     KeyEvent(nullptr);  // last ternary operation should never be taken
+		addToEventQueue(event);
+	}
+}
+
+bool Menu::ShouldSwallowInput()
+{
+	return IsEnabled;
+}
+
+const char* Menu::KeyIdToString(uint32_t key)
+{
+	if (key >= 256)
+		return "";
+
+	static const char* keyboard_keys_international[256] = {
+		"", "Left Mouse", "Right Mouse", "Cancel", "Middle Mouse", "X1 Mouse", "X2 Mouse", "", "Backspace", "Tab", "", "", "Clear", "Enter", "", "",
+		"Shift", "Control", "Alt", "Pause", "Caps Lock", "", "", "", "", "", "", "Escape", "", "", "", "",
+		"Space", "Page Up", "Page Down", "End", "Home", "Left Arrow", "Up Arrow", "Right Arrow", "Down Arrow", "Select", "", "", "Print Screen", "Insert", "Delete", "Help",
+		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "", "", "", "", "", "",
+		"", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+		"P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "Left Windows", "Right Windows", "Apps", "", "Sleep",
+		"Numpad 0", "Numpad 1", "Numpad 2", "Numpad 3", "Numpad 4", "Numpad 5", "Numpad 6", "Numpad 7", "Numpad 8", "Numpad 9", "Numpad *", "Numpad +", "", "Numpad -", "Numpad Decimal", "Numpad /",
+		"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16",
+		"F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "", "", "", "", "", "", "", "",
+		"Num Lock", "Scroll Lock", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+		"Left Shift", "Right Shift", "Left Control", "Right Control", "Left Menu", "Right Menu", "Browser Back", "Browser Forward", "Browser Refresh", "Browser Stop", "Browser Search", "Browser Favorites", "Browser Home", "Volume Mute", "Volume Down", "Volume Up",
+		"Next Track", "Previous Track", "Media Stop", "Media Play/Pause", "Mail", "Media Select", "Launch App 1", "Launch App 2", "", "", "OEM ;", "OEM +", "OEM ,", "OEM -", "OEM .", "OEM /",
+		"OEM ~", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "", "", "", "", "OEM [", "OEM \\", "OEM ]", "OEM '", "OEM 8",
+		"", "", "OEM <", "", "", "", "", "", "", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "Attn", "CrSel", "ExSel", "Erase EOF", "Play", "Zoom", "", "PA1", "OEM Clear", ""
+	};
+
+	return keyboard_keys_international[key];
 }

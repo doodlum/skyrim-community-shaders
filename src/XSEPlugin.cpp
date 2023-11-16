@@ -113,7 +113,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 			}
 
 			if (errors.empty()) {
-				RE::BSInputDeviceManager::GetSingleton()->AddEventSink(Menu::GetSingleton());
+				//RE::BSInputDeviceManager::GetSingleton()->AddEventSink(Menu::GetSingleton());
 
 				auto& shaderCache = SIE::ShaderCache::Instance();
 				shaderCache.menuLoaded = true;
