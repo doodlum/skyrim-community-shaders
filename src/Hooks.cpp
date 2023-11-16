@@ -227,7 +227,7 @@ void hk_PollInputDevices(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::
 	if (a_events)
 		menu->ProcessInputEvents(a_events);
 
-	if (menu->ShouldSwallowInput()) { //the menu is open, eat all keypresses
+	if (menu->ShouldSwallowInput()) {  //the menu is open, eat all keypresses
 		constexpr RE::InputEvent* const dummy[] = { nullptr };
 		_InputFunc(a_dispatcher, dummy);
 		return;
