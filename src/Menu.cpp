@@ -1027,7 +1027,8 @@ void Menu::ProcessInputEventQueue()
 		}
 
 		if (event.device == RE::INPUT_DEVICE::kMouse) {
-			if (event.keyCode > 7) {
+			logger::trace("Detect mouse scan code {} value {} pressed: {}", event.keyCode, event.value, event.IsPressed());
+			if (event.keyCode > 7) {  // middle scroll
 				io.AddMouseWheelEvent(0, event.value * (event.keyCode == 8 ? 1 : -1));
 			} else {
 				if (event.keyCode > 5)
@@ -1038,6 +1039,7 @@ void Menu::ProcessInputEventQueue()
 
 		if (event.device == RE::INPUT_DEVICE::kKeyboard) {
 			uint32_t key = DIKToVK(event.keyCode);
+			logger::trace("Detected key code {} ({})", event.keyCode, key);
 			if (key == event.keyCode)
 				key = MapVirtualKeyEx(event.keyCode, MAPVK_VSC_TO_VK_EX, GetKeyboardLayout(0));
 			if (!event.IsPressed()) {
