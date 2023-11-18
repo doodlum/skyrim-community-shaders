@@ -1090,7 +1090,7 @@ void Menu::OnFocusLost()  //todo implement wndproc hook to catch WM_KILLFOCUS
 void Menu::ProcessInputEvents(RE::InputEvent* const* a_events)
 {
 	for (auto it = *a_events; it; it = it->next) {
-		if (it->GetEventType() != RE::INPUT_EVENT_TYPE::kButton || it->GetEventType() != RE::INPUT_EVENT_TYPE::kChar)  // we do not care about non button or char events
+		if (it->GetEventType() != RE::INPUT_EVENT_TYPE::kButton && it->GetEventType() != RE::INPUT_EVENT_TYPE::kChar)  // we do not care about non button or char events
 			continue;
 
 		auto event = it->GetEventType() == RE::INPUT_EVENT_TYPE::kButton ? KeyEvent(static_cast<RE::ButtonEvent*>(it)) : it->GetEventType() == RE::INPUT_EVENT_TYPE::kChar ? KeyEvent(static_cast<CharEvent*>(it)) :
