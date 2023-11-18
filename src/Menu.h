@@ -8,7 +8,7 @@
 
 using namespace std::chrono;
 
-class Menu : public RE::BSTEventSink<RE::InputEvent*>
+class Menu
 {
 public:
 	~Menu();
@@ -21,9 +21,6 @@ public:
 
 	void Load(json& o_json);
 	void Save(json& o_json);
-
-	RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event,
-		RE::BSTEventSource<RE::InputEvent*>* a_eventSource) override;
 
 	void Init(IDXGISwapChain* swapchain, ID3D11Device* device, ID3D11DeviceContext* context);
 	void DrawSettings();
