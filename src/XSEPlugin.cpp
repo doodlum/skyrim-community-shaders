@@ -90,6 +90,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 			}
 
 			if (errors.empty()) {
+				State::GetSingleton()->PostPostLoad();
 				Hooks::Install();
 
 				auto& shaderCache = SIE::ShaderCache::Instance();
