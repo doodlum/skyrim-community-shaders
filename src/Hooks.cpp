@@ -303,7 +303,7 @@ namespace Hooks
 		SKSE::AllocTrampoline(14);
 		auto& trampoline = SKSE::GetTrampoline();
 		logger::info("Hooking BSInputDeviceManager::PollInputDevices");
-		_InputFunc = trampoline.write_call<5>(REL::VariantID(67315, 68617, 0xC519E0).address() + REL::VariantOffset(0x7B, 0x7B, 0x81).offset(), hk_PollInputDevices);  //BSInputDeviceManager::PollInputDevices -> Inputfunc
+		_InputFunc = trampoline.write_call<5>(REL::RelocationID(67315, 68617).address() + REL::Relocate(0x7B, 0x7B, 0x81), hk_PollInputDevices);  //BSInputDeviceManager::PollInputDevices -> Inputfunc
 
 		logger::info("Hooking BSShader::LoadShaders");
 		*(uintptr_t*)&ptr_BSShader_LoadShaders = Detours::X64::DetourFunction(REL::RelocationID(101339, 108326).address(), (uintptr_t)&hk_BSShader_LoadShaders);
