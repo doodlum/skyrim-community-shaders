@@ -431,7 +431,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		worldNormal = normalize(mul(normalColor, CalculateTBN(worldNormal, -input.WorldPosition, input.TexCoord.xy)));
 	}
 
-	if (!complex || (complex && OverrideComplexGrassSettings))
+	if (!complex || OverrideComplexGrassSettings)
 		baseColor.xyz *= BasicGrassBrightness;
 
 	float3 dirLightColor = DirLightColor.xyz;
