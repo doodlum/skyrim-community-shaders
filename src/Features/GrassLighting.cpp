@@ -49,7 +49,7 @@ void GrassLighting::DrawSettings()
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 			ImGui::Text(
-				"Subsurface Scattering (SSS) amount "
+				"Subsurface Scattering (SSS) amount. "
 				"Soft lighting controls how evenly lit an object is. "
 				"Back lighting illuminates the back face of an object. "
 				"Combined to model the transport of light through the surface. ");
