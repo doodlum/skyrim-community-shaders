@@ -37,9 +37,6 @@ void ExtendedMaterials::DrawSettings()
 				"Enables support for the Complex Material specification which makes use of the environment mask. "
 				"This includes parallax, as well as more realistic metals and specular reflections. "
 				"May lead to some warped textures on modded content which have an invalid alpha channel in their environment mask. ");
-			// ImGui::Text("Enables support for the Complex Material specification which makes use of the environment mask.\n");
-			// ImGui::Text("This includes parallax, as well as more realistic metals and specular reflections.\n");
-			// ImGui::Text("May lead to some warped textures on modded content which have an invalid alpha channel in their environment mask.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
@@ -70,8 +67,6 @@ void ExtendedMaterials::DrawSettings()
 			ImGui::Text(
 				"Enables terrain parallax using the alpha channel of each landscape texture. "
 				"Therefore, all landscape textures must support parallax for this effect to work properly. ");
-			// ImGui::Text("Enables terrain parallax using the alpha channel of each landscape texture.\n");
-			// ImGui::Text("Therefore, all landscape textures must support parallax for this effect to work properly.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
@@ -84,9 +79,6 @@ void ExtendedMaterials::DrawSettings()
 				"Doubles the sample count and approximates the intersection point using Parallax Occlusion Mapping. "
 				"Significantly improves the quality and removes aliasing. "
 				"TAA or the Skyrim Upscaler is recommended when using this option due to CRPM artifacts. ");
-			// ImGui::Text("Doubles the sample count and approximates the intersection point using Parallax Occlusion Mapping.\n");
-			// ImGui::Text("Significantly improves the quality and removes aliasing.\n");
-			// ImGui::Text("TAA or the Skyrim Upscaler is recommended when using this option due to CRPM artifacts.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
@@ -118,8 +110,6 @@ void ExtendedMaterials::DrawSettings()
 			ImGui::Text(
 				"The range that parallax blends from Parallax Occlusion Mapping (POM) to bump mapping, and bump mapping to nothing. "
 				"This value should be set as low as possible due to the performance impact of blending POM and relief mapping. ");
-			// ImGui::Text("The range that parallax blends from Parallax Occlusion Mapping (POM) to bump mapping, and bump mapping to nothing.\n");
-			// ImGui::Text("This value should be set as low as possible due to the performance impact of blending POM and relief mapping.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
@@ -146,8 +136,6 @@ void ExtendedMaterials::DrawSettings()
 			ImGui::Text(
 				"Enables cheap soft shadows when using parallax. "
 				"This applies to all directional and point lights. ");
-			// ImGui::Text("Enables cheap soft shadows when using parallax.\n");
-			// ImGui::Text("This applies to all directional and point lights.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}

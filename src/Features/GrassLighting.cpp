@@ -53,10 +53,6 @@ void GrassLighting::DrawSettings()
 				"Soft lighting controls how evenly lit an object is. "
 				"Back lighting illuminates the back face of an object. "
 				"Combined to model the transport of light through the surface. ");
-			// ImGui::Text("Subsurface Scattering (SSS) amount\n");
-			// ImGui::Text("Soft lighting controls how evenly lit an object is.\n");
-			// ImGui::Text("Back lighting illuminates the back face of an object.\n");
-			// ImGui::Text("Combined to model the transport of light through the surface.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
