@@ -486,9 +486,9 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Albedo : SV_Target0;
-	float4 MotionVectors : SV_Target1;
-	float4 ScreenSpaceNormals : SV_Target2;
+    float4 Albedo : SV_Target0;
+    float4 MotionVectors : SV_Target1;
+    float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
 #endif
@@ -1587,9 +1587,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 
 #		if !defined(LOD)
-	wetness = max(shoreFactor * perPassWetnessEffects[0].MaxShoreWetness, rainWetness * perPassWetnessEffects[0].MaxRainWetness);
+	wetness = max(shoreFactor * perPassWetnessEffects[0].MaxShoreWetness, rainWetness);
 #		else
-	wetness = rainWetness * perPassWetnessEffects[0].MaxRainWetness;
+	wetness = rainWetness;
 #		endif
 	float3 wetnessNormal = worldSpaceNormal;
 

@@ -22,14 +22,18 @@ public:
 	{
 		uint EnableWetnessEffects = true;
 		float MaxRainWetness = 1.0f;
+		float MaxSnowWetness = 0.8f;
+		float MaxFogWetness = 0.5f;
 		float MaxShoreWetness = 0.5f;
 		uint ShoreRange = 32;
 		float PuddleRadius = 1.0f;
 		float PuddleMaxAngle = 0.95f;
 		float PuddleMinWetness = 0.75f;
+		float FogPowerThreshold = 0.5f;
+		float FogNearDistanceThreshold = 0.0f;
 	};
 
-	struct PerPass
+	struct alignas(16) PerPass
 	{
 		float Wetness;
 		DirectX::XMFLOAT3X4 DirectionalAmbientWS;
@@ -51,4 +55,7 @@ public:
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
+
+	float CalculateWeatherTransitionPercentage(RE::TESWeather* weather, float skyCurrentWeatherPct, float beginFade);
+	float CalculateWetness(RE::TESWeather* weather, RE::Sky* sky);
 };

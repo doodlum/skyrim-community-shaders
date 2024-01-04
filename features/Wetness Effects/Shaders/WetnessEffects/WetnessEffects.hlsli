@@ -6,13 +6,15 @@ struct PerPassWetnessEffects
 	row_major float3x4 DirectionalAmbientWS;
 	uint EnableWetnessEffects;
 	float MaxRainWetness;
+	float MaxSnowWetness;
+    float MaxFogWetness;
 	float MaxShoreWetness;
-	float MaxOcclusion;
 	uint ShoreRange;
-	float PuddleMinWetness;
 	float PuddleRadius;
 	float PuddleMaxAngle;
-	float PuddleFlatness;
+    float PuddleMinWetness;
+    float FogPowerThreshold;
+    float FogNearDistanceThreshold;
 };
 
 StructuredBuffer<PerPassWetnessEffects> perPassWetnessEffects : register(t22);
