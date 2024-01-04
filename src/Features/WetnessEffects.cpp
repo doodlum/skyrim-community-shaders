@@ -123,11 +123,10 @@ float WetnessEffects::CalculateWetness(RE::TESWeather* weather, RE::Sky* sky)
 							int sunriseBeginTime = (sunriseBeginTM.tm_hour * 3600) + (sunriseBeginTM.tm_min * 60) + sunriseBeginTM.tm_sec;
 							int sunsetEndTime = (sunsetEndTM.tm_hour * 3600) + (sunsetEndTM.tm_min * 60) + sunsetEndTM.tm_sec;
 							int time = static_cast<int>(gameHour * 3600);
-							int nightToDayBegin = sunriseBeginTime - TIME_BEFORE; 
+							int nightToDayBegin = sunriseBeginTime - TIME_BEFORE;
 							int nightToDayEnd = sunriseBeginTime + TIME_AFTER;
 							int dayToNightBegin = sunsetEndTime - TIME_BEFORE;
 							int dayToNightEnd = sunsetEndTime + TIME_AFTER;
-
 
 							if (dayToNightEnd > dayToNightBegin && dayToNightBegin >= nightToDayEnd && nightToDayEnd > nightToDayBegin && nightToDayBegin >= 0) {
 								if ((time - nightToDayBegin) < 0 || (time - dayToNightEnd) > 0) {
@@ -204,7 +203,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 									}
 
 									// Transition between CurrentWeather and LastWeather wetness values
-									data.Wetness = std::lerp(wetnessLastWeather, wetnessCurrentWeather, weatherTransitionPercentage);									
+									data.Wetness = std::lerp(wetnessLastWeather, wetnessCurrentWeather, weatherTransitionPercentage);
 								}
 							}
 						}
@@ -219,7 +218,6 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 			data.settings = settings;
 			// Disable Shore Wetness if Wetness Effects are Disabled
 			data.settings.MaxShoreWetness = settings.EnableWetnessEffects ? settings.MaxShoreWetness : 0.0f;
-
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
