@@ -67,7 +67,7 @@ float WetnessEffects::CalculateWetness(RE::TESWeather* weather, RE::Sky* sky)
 			if (weather->precipitationData && weather->data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy)) {
 				// Raining
 				wetness = settings.MaxRainWetness;
-			} 
+			}
 		}
 	}
 	return wetness;
