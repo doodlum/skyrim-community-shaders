@@ -22,15 +22,11 @@ public:
 	{
 		uint EnableWetnessEffects = true;
 		float MaxRainWetness = 1.0f;
-		float MaxSnowWetness = 0.8f;
-		float MaxFogWetness = 0.5f;
 		float MaxShoreWetness = 0.5f;
 		uint ShoreRange = 32;
 		float PuddleRadius = 1.0f;
 		float PuddleMaxAngle = 0.95f;
 		float PuddleMinWetness = 0.75f;
-		float FogPowerThreshold = 0.5f;
-		float FogNearDistanceThreshold = 0.0f;
 	};
 
 	struct alignas(16) PerPass
