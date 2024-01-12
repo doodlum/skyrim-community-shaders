@@ -1967,9 +1967,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	// AlphaPass and FirstPerson both act to turn the fog on/off in the lighting shader
 	float FirstPerson = FrameParams.y;  // 0.0 if rendering first person body, 1.0 otherwise
 #	if defined(VR)
-		FirstPerson = 0.0; // vr is always in first person but doesn't return 0.0
+	FirstPerson = 0.0;  // vr is always in first person but doesn't return 0.0
 #	endif
-	float AlphaPass = FrameParams.z;    // 0.0 for the majority of BSLightingShader render passes, 1.0 for passes after the fog imagespace shader(?) haven't verified
+	float AlphaPass = FrameParams.z;  // 0.0 for the majority of BSLightingShader render passes, 1.0 for passes after the fog imagespace shader(?) haven't verified
 
 	float enableFogInLightingShader = FirstPerson * AlphaPass;
 
