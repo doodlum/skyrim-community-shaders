@@ -485,3 +485,7 @@ void DynamicCubemaps::Load(json& o_json)
 void DynamicCubemaps::Save(json&)
 {
 }
+
+void DynamicCubemaps::RestoreDefaultSettings()
+{
+}
