@@ -35,7 +35,9 @@ struct VS_OUTPUT
 	float4 WorldPosition : POSITION1;
 	float4 PreviousWorldPosition : POSITION2;
 #endif
+#ifdef TREE_LOD_LIGHTING
 	float3 SphereNormal : TEXCOORD4;
+#endif
 };
 
 #ifdef VSHADER
@@ -75,12 +77,14 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.Position = viewPosition;
 	vsout.TexCoord = float3(input.TexCoord0.xy, FogParam.z);
 
+#	ifdef TREE_LOD_LIGHTING
 	scaledModelPosition = input.Position.xyz;
 	adjustedModelPosition.x = dot(float2(1, -1) * input.InstanceData2.xy, scaledModelPosition.xy);
 	adjustedModelPosition.y = dot(input.InstanceData2.yx, scaledModelPosition.xy);
 	adjustedModelPosition.z = scaledModelPosition.z;
 
 	vsout.SphereNormal.xyz = mul(World, normalize(adjustedModelPosition));
+#	endif
 
 	return vsout;
 }
@@ -102,6 +106,10 @@ struct PS_OUTPUT
 SamplerState SampDiffuse : register(s0);
 SamplerState SampShadowMaskSampler : register(s14);
 Texture2D<float4> TexDiffuse : register(t0);
+
+#	ifdef TREE_LOD_LIGHTING
+#		include "TreeLODLighting/TreeLODLighting.hlsli"
+#	endif
 
 cbuffer AlphaTestRefCB : register(b11)
 {
@@ -132,41 +140,6 @@ const static float DepthOffsets[16] = {
 	0.866666675,
 	0.333333343
 };
-
-float GetSoftLightMultiplier(float angle, float strength)
-{
-	float softLightParam = saturate((strength + angle) / (1 + strength));
-	float arg1 = (softLightParam * softLightParam) * (3 - 2 * softLightParam);
-	float clampedAngle = saturate(angle);
-	float arg2 = (clampedAngle * clampedAngle) * (3 - 2 * clampedAngle);
-	float softLigtMul = saturate(arg1 - arg2);
-	return softLigtMul;
-}
-
-float3 TransformNormal(float3 normal)
-{
-	return normal * 2 + -1.0.xxx;
-}
-
-// http://www.thetenthplanet.de/archives/1180
-float3x3 CalculateTBN(float3 N, float3 p, float2 uv)
-{
-	// get edge vectors of the pixel triangle
-	float3 dp1 = ddx_coarse(p);
-	float3 dp2 = ddy_coarse(p);
-	float2 duv1 = ddx_coarse(uv);
-	float2 duv2 = ddy_coarse(uv);
-
-	// solve the linear system
-	float3 dp2perp = cross(dp2, N);
-	float3 dp1perp = cross(N, dp1);
-	float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-	float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-	// construct a scale-invariant frame
-	float invmax = rsqrt(max(dot(T, T), dot(B, B)));
-	return float3x3(T * invmax, B * invmax, N);
-}
 
 Texture2D<float4> TexShadowMaskSampler : register(t17);
 
@@ -210,9 +183,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float2 screenMotionVector = GetSSMotionVector(input.WorldPosition, input.PreviousWorldPosition);
 
-	float shadowColor = TexShadowMaskSampler.Load(int3(input.Position.xy, 0));
-
 	psout.MotionVector = screenMotionVector;
+
+#		ifdef TREE_LOD_LIGHTING
+	float shadowColor = TexShadowMaskSampler.Load(int3(input.Position.xy, 0));
 
 	float3 ddx = ddx_coarse(input.WorldPosition);
 	float3 ddy = ddy_coarse(input.WorldPosition);
@@ -245,10 +219,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 nsDirLightColor = dirLightColor;
 
-#		if defined(SCREEN_SPACE_SHADOWS)
+#			if defined(SCREEN_SPACE_SHADOWS)
 	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition);
 	shadowColor *= dirLightSShadow;
-#		endif
+#			endif
 
 	float3 diffuseColor = 0;
 
@@ -275,6 +249,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 color = diffuseColor * baseColor.xyz;
 	psout.Albedo.xyz = color;
 	psout.Albedo.w = 1;
+#		else
+	psout.Normal = float4(0.5, 0.5, 0, 0);
+#		endif  // TREE_LOD_LIGHTING
 #	endif
 
 	return psout;

@@ -13,6 +13,8 @@ struct DistantTreeLighting : Feature
 
 	virtual inline std::string GetName() { return "Tree LOD Lighting"; }
 	virtual inline std::string GetShortName() { return "TreeLODLighting"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "TREE_LOD_LIGHTING"; }
+	virtual bool HasShaderDefine(RE::BSShader::Type type) override { return type == RE::BSShader::Type::DistantTree; };
 
 	struct Settings
 	{
