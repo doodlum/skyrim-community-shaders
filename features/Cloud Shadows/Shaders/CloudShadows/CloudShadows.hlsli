@@ -44,7 +44,7 @@ float3 getCloudShadowMult(float3 rel_pos, float3 eye_to_sun, SamplerState samp)
 
 	float4 cloudCubeSample = cloudShadows.Sample(samp, cloudSampleDir);
 	float3 cloudDiffuseLight = cloudCubeSample.xyz * perPassCloudShadow[0].DiffuseLightBrightness;
-	cloudDiffuseLight = saturate(lerp(length(cloudDiffuseLight), cloudDiffuseLight, perPassCloudShadow[0].DiffuseLightSaturation));
+	cloudDiffuseLight = saturate(lerp(dot(cloudDiffuseLight, float3(0.2125, 0.7154, 0.0721)), cloudDiffuseLight, perPassCloudShadow[0].DiffuseLightSaturation));
 	float cloudShadowBlend = lerp(0, saturate(cloudCubeSample.w), perPassCloudShadow[0].ShadowBlend);
 
 	return lerp(1.0, cloudDiffuseLight, cloudShadowBlend);
