@@ -2,6 +2,14 @@
 #include "Common/FrameBuffer.hlsl"
 #include "Common/MotionBlur.hlsl"
 
+struct LightingData
+{
+	float WaterHeight[25];
+	bool Reflections;
+};
+
+StructuredBuffer<LightingData> lightingData : register(t126);
+
 #define GRASS
 
 struct VS_INPUT
@@ -355,6 +363,10 @@ float3x3 CalculateTBN(float3 N, float3 p, float2 uv)
 #		include "DynamicCubemaps/DynamicCubemaps.hlsli"
 #	endif
 
+#	if defined(CLOUD_SHADOW)
+#		include "CloudShadow/CloudShadow.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -434,6 +446,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	if (EnableDirLightFix) {
 		dirLightColor *= SunlightScale;
 	}
+
+#		if defined(CLOUD_SHADOW)
+	float3 cloudShadowMult = 1.0;
+	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
+		cloudShadowMult = getCloudShadowMult(input.WorldPosition.xyz, DirLightDirection.xyz, SampColorSampler);
+		dirLightColor *= cloudShadowMult;
+	}
+#		endif
 
 	dirLightColor *= shadowColor.x;
 
