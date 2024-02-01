@@ -14,4 +14,14 @@ namespace Util
 	float TryGetWaterHeight(float offsetX, float offsetY);
 	void DumpSettingsOptions();
 	float4 GetCameraData();
+
+	class HoverTooltipWrapper
+	{
+	private:
+		bool hovered;
+
+	public:
+		~HoverTooltipWrapper();
+		operator bool();
+	};
 }

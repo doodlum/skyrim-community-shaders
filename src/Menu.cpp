@@ -476,14 +476,27 @@ void Menu::DrawSettings()
 			}
 
 			ImGui::TableNextColumn();
+
+			bool shownFeature = selectedFeature < featureList.size();
+			if (shownFeature) {
+				if (ImGui::Button("Restore Defaults", { -1, 0 })) {
+					featureList[selectedFeature]->RestoreDefaultSettings();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::Text(
+						"Restores the feature's settings back to their default values. "
+						"You will still need to Save Settings to make these changes permanent. ");
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
+			}
+
 			if (ImGui::BeginChild("##FeatureConfigFrame", { 0, 0 }, true)) {
-				bool shownFeature = false;
-				for (size_t i = 0; i < featureList.size(); i++)
-					if (i == selectedFeature) {
-						shownFeature = true;
-						featureList[i]->DrawSettings();
-					}
-				if (!shownFeature)
+				if (shownFeature)
+					featureList[selectedFeature]->DrawSettings();
+				else
 					ImGui::TextDisabled("Please select a feature on the left.");
 			}
 			ImGui::EndChild();
