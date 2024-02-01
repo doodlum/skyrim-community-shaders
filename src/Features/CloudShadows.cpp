@@ -148,12 +148,6 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 			blendState = modifiedBlendStates[blendState];
 			context->OMSetBlendState(blendState, blendFactor, sampleMask);
 		}
-
-		// auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
-		// state->GetRuntimeData().stateUpdateFlags = RE::BSGraphics::ShaderFlags(
-		// 	(uint32_t)state->GetRuntimeData().stateUpdateFlags |
-		// 	(uint32_t)RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND |
-		// 	(uint32_t)RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET);
 	}
 }
 
