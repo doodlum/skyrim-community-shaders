@@ -276,15 +276,13 @@ namespace Util
 		return cameraData;
 	}
 
-	HoverTooltipWrapper::operator bool()
-	{
-		hovered = ImGui::IsItemHovered();
+	HoverTooltipWrapper::HoverTooltipWrapper(){
+hovered = ImGui::IsItemHovered();
 		if (hovered) {
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 		}
-		return hovered;
-	};
+	}
 
 	HoverTooltipWrapper::~HoverTooltipWrapper()
 	{

@@ -27,7 +27,8 @@ namespace Util
 		bool hovered;
 
 	public:
+		HoverTooltipWrapper();
 		~HoverTooltipWrapper();
-		operator bool();
+		inline operator bool() { return hovered; }
 	};
 }
