@@ -1445,31 +1445,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 dirLightColor = DirLightColor.xyz;
 	float selfShadowFactor = 1.0f;
 
-	float3 screenSpaceNormal;
-	screenSpaceNormal.x = dot(input.ScreenNormalTransform0.xyz, normal.xyz);
-	screenSpaceNormal.y = dot(input.ScreenNormalTransform1.xyz, normal.xyz);
-	screenSpaceNormal.z = dot(input.ScreenNormalTransform2.xyz, normal.xyz);
-	screenSpaceNormal = normalize(screenSpaceNormal);
-
-	float3 worldSpaceNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceNormal, 0)));
 	float3 normalizedDirLightDirectionWS = DirLightDirection;
-
-#	if (defined(SKINNED) || !defined(MODELSPACENORMALS))
-	float3 vertexNormal = tbnTr[2];
-
-#		if !defined(MODELSPACENORMALS)
-	float3 screenSpaceVertexNormal;
-	screenSpaceVertexNormal.x = dot(input.ScreenNormalTransform0.xyz, vertexNormal);
-	screenSpaceVertexNormal.y = dot(input.ScreenNormalTransform1.xyz, vertexNormal);
-	screenSpaceVertexNormal.z = dot(input.ScreenNormalTransform2.xyz, vertexNormal);
-	screenSpaceVertexNormal = normalize(screenSpaceVertexNormal);
-
-	float3 worldSpaceVertexNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceVertexNormal, 0)));
-#		endif
-
-#		if (!defined(DRAW_IN_WORLDSPACE))
+#	if ((defined(SKINNED) || !defined(MODELSPACENORMALS)) && !defined(DRAW_IN_WORLDSPACE))
 	normalizedDirLightDirectionWS = lerp(normalize(mul(input.World[eyeIndex], float4(DirLightDirection, 0))), normalizedDirLightDirectionWS, input.WorldSpace);
-#		endif
+	// temp fix for tree barks
+	normalizedDirLightDirectionWS = any(isnan(normalizedDirLightDirectionWS)) ? DirLightDirection : normalizedDirLightDirectionWS;
 #	endif
 
 #	if defined(CLOUD_SHADOWS)
@@ -1550,6 +1530,28 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 
 	lightsDiffuseColor += dirDiffuseColor;
+
+	float3 screenSpaceNormal;
+	screenSpaceNormal.x = dot(input.ScreenNormalTransform0.xyz, normal.xyz);
+	screenSpaceNormal.y = dot(input.ScreenNormalTransform1.xyz, normal.xyz);
+	screenSpaceNormal.z = dot(input.ScreenNormalTransform2.xyz, normal.xyz);
+	screenSpaceNormal = normalize(screenSpaceNormal);
+
+	float3 worldSpaceNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceNormal, 0)));
+
+#	if (defined(SKINNED) || !defined(MODELSPACENORMALS))
+	float3 vertexNormal = tbnTr[2];
+
+#		if !defined(MODELSPACENORMALS)
+	float3 screenSpaceVertexNormal;
+	screenSpaceVertexNormal.x = dot(input.ScreenNormalTransform0.xyz, vertexNormal);
+	screenSpaceVertexNormal.y = dot(input.ScreenNormalTransform1.xyz, vertexNormal);
+	screenSpaceVertexNormal.z = dot(input.ScreenNormalTransform2.xyz, vertexNormal);
+	screenSpaceVertexNormal = normalize(screenSpaceVertexNormal);
+
+	float3 worldSpaceVertexNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceVertexNormal, 0)));
+#		endif
+#	endif
 
 	float porosity = 1.0;
 
