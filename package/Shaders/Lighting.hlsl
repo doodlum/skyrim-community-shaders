@@ -1005,6 +1005,10 @@ float2 ComputeTriplanarUV(float3 InputPosition)
 #		include "WetnessEffects/WetnessEffects.hlsli"
 #	endif
 
+#	if defined(CLOUD_SHADOW)
+#		include "CloudShadow/CloudShadow.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -1441,6 +1445,41 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 dirLightColor = DirLightColor.xyz;
 	float selfShadowFactor = 1.0f;
 
+	float3 screenSpaceNormal;
+	screenSpaceNormal.x = dot(input.ScreenNormalTransform0.xyz, normal.xyz);
+	screenSpaceNormal.y = dot(input.ScreenNormalTransform1.xyz, normal.xyz);
+	screenSpaceNormal.z = dot(input.ScreenNormalTransform2.xyz, normal.xyz);
+	screenSpaceNormal = normalize(screenSpaceNormal);
+
+	float3 worldSpaceNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceNormal, 0)));
+	float3 normalizedDirLightDirectionWS = DirLightDirection;
+
+#	if (defined(SKINNED) || !defined(MODELSPACENORMALS))
+	float3 vertexNormal = tbnTr[2];
+
+#		if !defined(MODELSPACENORMALS)
+	float3 screenSpaceVertexNormal;
+	screenSpaceVertexNormal.x = dot(input.ScreenNormalTransform0.xyz, vertexNormal);
+	screenSpaceVertexNormal.y = dot(input.ScreenNormalTransform1.xyz, vertexNormal);
+	screenSpaceVertexNormal.z = dot(input.ScreenNormalTransform2.xyz, vertexNormal);
+	screenSpaceVertexNormal = normalize(screenSpaceVertexNormal);
+
+	float3 worldSpaceVertexNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceVertexNormal, 0)));
+#		endif
+
+#		if (!defined(DRAW_IN_WORLDSPACE))
+	normalizedDirLightDirectionWS = lerp(normalize(mul(input.World[eyeIndex], float4(DirLightDirection, 0))), normalizedDirLightDirectionWS, input.WorldSpace);
+#		endif
+#	endif
+
+#	if defined(CLOUD_SHADOW)
+	float3 cloudShadowMult = 1.0;
+	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
+		cloudShadowMult = getCloudShadowMult(input.WorldPosition.xyz, normalizedDirLightDirectionWS, SampColorSampler);
+		dirLightColor *= cloudShadowMult;
+	}
+#	endif
+
 	float3 nsDirLightColor = dirLightColor;
 
 	if ((shaderDescriptors[0].PixelShaderDescriptor & _DefShadow) && (shaderDescriptors[0].PixelShaderDescriptor & _ShadowDir))
@@ -1511,33 +1550,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 
 	lightsDiffuseColor += dirDiffuseColor;
-
-	float3 screenSpaceNormal;
-	screenSpaceNormal.x = dot(input.ScreenNormalTransform0.xyz, normal.xyz);
-	screenSpaceNormal.y = dot(input.ScreenNormalTransform1.xyz, normal.xyz);
-	screenSpaceNormal.z = dot(input.ScreenNormalTransform2.xyz, normal.xyz);
-	screenSpaceNormal = normalize(screenSpaceNormal);
-
-	float3 worldSpaceNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceNormal, 0)));
-	float3 normalizedDirLightDirectionWS = DirLightDirection;
-
-#	if (defined(SKINNED) || !defined(MODELSPACENORMALS))
-	float3 vertexNormal = tbnTr[2];
-
-#		if !defined(MODELSPACENORMALS)
-	float3 screenSpaceVertexNormal;
-	screenSpaceVertexNormal.x = dot(input.ScreenNormalTransform0.xyz, vertexNormal);
-	screenSpaceVertexNormal.y = dot(input.ScreenNormalTransform1.xyz, vertexNormal);
-	screenSpaceVertexNormal.z = dot(input.ScreenNormalTransform2.xyz, vertexNormal);
-	screenSpaceVertexNormal = normalize(screenSpaceVertexNormal);
-
-	float3 worldSpaceVertexNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceVertexNormal, 0)));
-#		endif
-
-#		if (!defined(DRAW_IN_WORLDSPACE))
-	normalizedDirLightDirectionWS = lerp(normalize(mul(input.World[eyeIndex], float4(DirLightDirection, 0))), normalizedDirLightDirectionWS, input.WorldSpace);
-#		endif
-#	endif
 
 	float porosity = 1.0;
 
@@ -1935,7 +1947,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 
 #		if defined(CPM_AVAILABLE) && defined(ENVMAP)
+#			if defined(DYNAMIC_CUBEMAPS)
 	vertexColor += envColor * lerp(complexSpecular, 1.0, dynamicCubemap) * diffuseColor;
+#			else
+	vertexColor += envColor * complexSpecular * diffuseColor;
+#			endif
 #		else
 	vertexColor += envColor * diffuseColor;
 #		endif

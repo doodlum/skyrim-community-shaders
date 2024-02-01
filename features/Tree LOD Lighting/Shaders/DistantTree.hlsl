@@ -2,6 +2,14 @@
 #include "Common/FrameBuffer.hlsl"
 #include "Common/MotionBlur.hlsl"
 
+struct LightingData
+{
+	float WaterHeight[25];
+	bool Reflections;
+};
+
+StructuredBuffer<LightingData> lightingData : register(t126);
+
 cbuffer PerFrame : register(b3)
 {
 	row_major float3x4 DirectionalAmbient;
@@ -174,6 +182,10 @@ Texture2D<float4> TexShadowMaskSampler : register(t17);
 #		include "ScreenSpaceShadows/ShadowsPS.hlsli"
 #	endif
 
+#	if defined(CLOUD_SHADOW)
+#		include "CloudShadow/CloudShadow.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -242,6 +254,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	if (EnableDirLightFix) {
 		dirLightColor *= DirLightScale;
 	}
+
+#		if defined(CLOUD_SHADOW)
+	float3 cloudShadowMult = 1.0;
+	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
+		cloudShadowMult = getCloudShadowMult(input.WorldPosition.xyz, DirLightDirection.xyz, SampDiffuse);
+		dirLightColor *= cloudShadowMult;
+	}
+#		endif
 
 	float3 nsDirLightColor = dirLightColor;
 
