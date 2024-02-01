@@ -15,6 +15,12 @@ namespace Util
 	void DumpSettingsOptions();
 	float4 GetCameraData();
 
+	/**
+	 * Usage:
+	 * if (auto _tt = Util::HoverTooltipWrapper()){
+	 *     ImGui::Text("What the tooltip says.");
+	 * }
+	*/
 	class HoverTooltipWrapper
 	{
 	private:
