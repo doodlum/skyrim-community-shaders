@@ -2,6 +2,14 @@
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
 
+struct LightingData
+{
+	float WaterHeight[25];
+	bool Reflections;
+};
+
+StructuredBuffer<LightingData> lightingData : register(t126);
+
 #define WATER
 
 struct VS_INPUT
@@ -507,6 +515,10 @@ float3 GetSunColor(float3 normal, float3 viewDirection)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
 
+#	if defined(CLOUD_SHADOW)
+#		include "CloudShadow/CloudShadow.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
@@ -623,6 +635,15 @@ PS_OUTPUT main(PS_INPUT input)
 	                    finalSpecularColor;
 #			else
 	float3 sunColor = GetSunColor(normal, viewDirection);
+
+#				if defined(CLOUD_SHADOW)
+	float3 cloudShadowMult = 1.0;
+	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
+		cloudShadowMult = getCloudShadowMult(input.WPosition.xyz, SunDir.xyz, CubeMapSampler);
+		sunColor *= cloudShadowMult;
+	}
+#				endif
+
 	float specularFraction = lerp(1, fresnel * depthControl.x, distanceFactor);
 	float3 finalColorPreFog = lerp(diffuseColor, specularColor, specularFraction) + sunColor * depthControl.w;
 	float3 finalColor = lerp(finalColorPreFog, input.FogParam.xyz, input.FogParam.w);
