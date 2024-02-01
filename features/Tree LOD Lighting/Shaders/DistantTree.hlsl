@@ -186,8 +186,8 @@ Texture2D<float4> TexShadowMaskSampler : register(t17);
 #		include "ScreenSpaceShadows/ShadowsPS.hlsli"
 #	endif
 
-#	if defined(CLOUD_SHADOW)
-#		include "CloudShadow/CloudShadow.hlsli"
+#	if defined(CLOUD_SHADOWS)
+#		include "CloudShadows/CloudShadows.hlsli"
 #	endif
 
 PS_OUTPUT main(PS_INPUT input, bool frontFace
@@ -259,11 +259,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		dirLightColor *= DirLightScale;
 	}
 
-#		if defined(CLOUD_SHADOW)
+#		if defined(CLOUD_SHADOWS)
 	float3 normalizedDirLightDirectionWS = -normalize(mul(input.World, float4(DirLightDirection.xyz, 0))).xyz;
 
 	float3 cloudShadowMult = 1.0;
-	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
+	if (perPassCloudShadow[0].EnableCloudShadows && !lightingData[0].Reflections) {
 		cloudShadowMult = getCloudShadowMult(input.WorldPosition.xyz, normalizedDirLightDirectionWS.xyz, SampDiffuse);
 		dirLightColor *= cloudShadowMult;
 	}

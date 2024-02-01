@@ -1,6 +1,6 @@
 struct PerPassCloudShadow
 {
-	uint EnableCloudShadow;
+	uint EnableCloudShadows;
 
 	float CloudHeight;
 	float PlanetRadius;

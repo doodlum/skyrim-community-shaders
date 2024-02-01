@@ -1,10 +1,10 @@
-#include "CloudShadow.h"
+#include "CloudShadows.h"
 
 #include "Util.h"
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	CloudShadow::Settings,
-	EnableCloudShadow,
+	CloudShadows::Settings,
+	EnableCloudShadows,
 	CloudHeight,
 	PlanetRadius,
 	DiffuseLightBrightness,
@@ -25,10 +25,10 @@ public:
 	inline bool isNewFrame() { return isNewFrame(RE::BSGraphics::State::GetSingleton()->uiFrameCount); }
 };
 
-void CloudShadow::DrawSettings()
+void CloudShadows::DrawSettings()
 {
-	if (ImGui::TreeNodeEx("Cloud Shadow", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::Checkbox("Enable Cloud Shadow", (bool*)&settings.EnableCloudShadow);
+	if (ImGui::TreeNodeEx("Cloud Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Checkbox("Enable Cloud Shadows", (bool*)&settings.EnableCloudShadows);
 
 		if (ImGui::TreeNodeEx("Mixing", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::SliderFloat("Effect Mix", &settings.ShadowBlend, 0.0f, 1.0f, "%.2f");
@@ -63,7 +63,7 @@ void CloudShadow::DrawSettings()
 	}
 }
 
-void CloudShadow::CheckResourcesSide(int side)
+void CloudShadows::CheckResourcesSide(int side)
 {
 	static FrameChecker frame_checker[6];
 	if (!frame_checker[side].isNewFrame())
@@ -75,7 +75,7 @@ void CloudShadow::CheckResourcesSide(int side)
 	context->ClearRenderTargetView(cubemapCloudOccRTVs[side], black);
 }
 
-void CloudShadow::ModifySky(const RE::BSShader*, const uint32_t descriptor)
+void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 {
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
@@ -156,7 +156,7 @@ void CloudShadow::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 	}
 }
 
-void CloudShadow::ModifyLighting()
+void CloudShadows::ModifyLighting()
 {
 	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
@@ -179,7 +179,7 @@ void CloudShadow::ModifyLighting()
 	context->PSSetShaderResources(23, ARRAYSIZE(views), views);
 }
 
-void CloudShadow::Draw(const RE::BSShader* shader, const uint32_t descriptor)
+void CloudShadows::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 {
 	static FrameChecker frame_checker;
 	if (frame_checker.isNewFrame()) {
@@ -211,7 +211,7 @@ void CloudShadow::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 	}
 }
 
-void CloudShadow::Load(json& o_json)
+void CloudShadows::Load(json& o_json)
 {
 	if (o_json[GetName()].is_object())
 		settings = o_json[GetName()];
@@ -219,12 +219,12 @@ void CloudShadow::Load(json& o_json)
 	Feature::Load(o_json);
 }
 
-void CloudShadow::Save(json& o_json)
+void CloudShadows::Save(json& o_json)
 {
 	o_json[GetName()] = settings;
 }
 
-void CloudShadow::SetupResources()
+void CloudShadows::SetupResources()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto device = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().forwarder;
@@ -272,7 +272,7 @@ void CloudShadow::SetupResources()
 	}
 }
 
-void CloudShadow::RestoreDefaultSettings()
+void CloudShadows::RestoreDefaultSettings()
 {
 	settings = {};
 }

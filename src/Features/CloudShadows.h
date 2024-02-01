@@ -3,22 +3,22 @@
 #include "Buffer.h"
 #include "Feature.h"
 
-struct CloudShadow : Feature
+struct CloudShadows : Feature
 {
-	static CloudShadow* GetSingleton()
+	static CloudShadows* GetSingleton()
 	{
-		static CloudShadow singleton;
+		static CloudShadows singleton;
 		return &singleton;
 	}
 
-	virtual inline std::string GetName() { return "Cloud Shadow"; }
-	virtual inline std::string GetShortName() { return "CloudShadow"; }
-	virtual inline std::string_view GetShaderDefineName() { return "CLOUD_SHADOW"; }
+	virtual inline std::string GetName() { return "Cloud Shadows"; }
+	virtual inline std::string GetShortName() { return "CloudShadows"; }
+	virtual inline std::string_view GetShaderDefineName() { return "CLOUD_SHADOWS"; }
 	virtual inline bool HasShaderDefine(RE::BSShader::Type) { return true; }
 
 	struct Settings
 	{
-		uint EnableCloudShadow = true;
+		uint EnableCloudShadows = true;
 
 		float CloudHeight = 2e3f / 1.428e-2f;
 		float PlanetRadius = 6371e3f / 1.428e-2f;

@@ -515,8 +515,8 @@ float3 GetSunColor(float3 normal, float3 viewDirection)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
 
-#	if defined(CLOUD_SHADOW)
-#		include "CloudShadow/CloudShadow.hlsli"
+#	if defined(CLOUD_SHADOWS)
+#		include "CloudShadows/CloudShadows.hlsli"
 #	endif
 
 PS_OUTPUT main(PS_INPUT input)
@@ -636,9 +636,9 @@ PS_OUTPUT main(PS_INPUT input)
 #			else
 	float3 sunColor = GetSunColor(normal, viewDirection);
 
-#				if defined(CLOUD_SHADOW)
+#				if defined(CLOUD_SHADOWS)
 	float3 cloudShadowMult = 1.0;
-	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
+	if (perPassCloudShadow[0].EnableCloudShadows && !lightingData[0].Reflections) {
 		cloudShadowMult = getCloudShadowMult(input.WPosition.xyz, SunDir.xyz, CubeMapSampler);
 		sunColor *= cloudShadowMult;
 	}
