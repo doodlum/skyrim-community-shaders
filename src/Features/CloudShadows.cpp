@@ -205,6 +205,8 @@ void CloudShadows::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 		break;
 	case RE::BSShader::Type::Lighting:
 	case RE::BSShader::Type::DistantTree:
+	case RE::BSShader::Type::Grass:
+		// case RE::BSShader::Type::Water:
 		ModifyLighting();
 		break;
 	default:

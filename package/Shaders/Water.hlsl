@@ -636,13 +636,10 @@ PS_OUTPUT main(PS_INPUT input)
 #			else
 	float3 sunColor = GetSunColor(normal, viewDirection);
 
-#				if defined(CLOUD_SHADOWS)
-	float3 cloudShadowMult = 1.0;
-	if (perPassCloudShadow[0].EnableCloudShadows && !lightingData[0].Reflections) {
-		cloudShadowMult = getCloudShadowMult(input.WPosition.xyz, SunDir.xyz, CubeMapSampler);
-		sunColor *= cloudShadowMult;
-	}
-#				endif
+	// #				if defined(CLOUD_SHADOWS)
+	// 	if (perPassCloudShadow[0].EnableCloudShadows && !lightingData[0].Reflections)
+	// 		sunColor *= getCloudShadowMult(input.WPosition.xyz, SunDir.xyz, CubeMapSampler);
+	// #				endif
 
 	float specularFraction = lerp(1, fresnel * depthControl.x, distanceFactor);
 	float3 finalColorPreFog = lerp(diffuseColor, specularColor, specularFraction) + sunColor * depthControl.w;
