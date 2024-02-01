@@ -44,6 +44,8 @@ struct VS_OUTPUT
 	float4 PreviousWorldPosition : POSITION2;
 #endif
 	float3 SphereNormal : TEXCOORD4;
+
+	row_major float3x4 World : POSITION3;
 };
 
 #ifdef VSHADER
@@ -89,6 +91,8 @@ VS_OUTPUT main(VS_INPUT input)
 	adjustedModelPosition.z = scaledModelPosition.z;
 
 	vsout.SphereNormal.xyz = mul(World, normalize(adjustedModelPosition));
+
+	vsout.World = World;
 
 	return vsout;
 }
@@ -256,9 +260,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 
 #		if defined(CLOUD_SHADOW)
+	float3 normalizedDirLightDirectionWS = -normalize(mul(input.World, float4(DirLightDirection.xyz, 0))).xyz;
+
 	float3 cloudShadowMult = 1.0;
 	if (perPassCloudShadow[0].EnableCloudShadow && !lightingData[0].Reflections) {
-		cloudShadowMult = getCloudShadowMult(input.WorldPosition.xyz, DirLightDirection.xyz, SampDiffuse);
+		cloudShadowMult = getCloudShadowMult(input.WorldPosition.xyz, normalizedDirLightDirectionWS.xyz, SampDiffuse);
 		dirLightColor *= cloudShadowMult;
 	}
 #		endif

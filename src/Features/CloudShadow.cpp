@@ -1,5 +1,7 @@
 #include "CloudShadow.h"
 
+#include "Util.h"
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	CloudShadow::Settings,
 	EnableCloudShadow,
@@ -32,12 +34,8 @@ void CloudShadow::DrawSettings()
 			ImGui::SliderFloat("Effect Mix", &settings.ShadowBlend, 0.0f, 1.0f, "%.2f");
 
 			ImGui::SliderFloat("Diffuse Light Brightness", &settings.DiffuseLightBrightness, 0.0f, 1.0f, "%.2f");
-			if (ImGui::IsItemHovered()) {
-				ImGui::BeginTooltip();
-				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::Text("Simulates diffuse light \"filtered\" by the cloud.");
-				ImGui::PopTextWrapPos();
-				ImGui::EndTooltip();
 			}
 
 			ImGui::SliderFloat("Diffuse Light Saturation", &settings.DiffuseLightSaturation, 0.0f, 2.0f, "%.2f");
@@ -47,45 +45,21 @@ void CloudShadow::DrawSettings()
 
 		if (ImGui::TreeNodeEx("Geometry")) {
 			ImGui::SliderFloat("Cloud Height", &settings.CloudHeight, 1e3f / 1.428e-2f, 10e3f / 1.428e-2f, "%.1f units");
-			if (ImGui::IsItemHovered()) {
-				ImGui::BeginTooltip();
-				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::BulletText(std::format("approx: {:.2f} km / {:.2f} miles", settings.CloudHeight * 1.428e-5f, settings.CloudHeight * 8.877e-6f).data());
-				ImGui::Text("This setting affects the scale of the cloud movement. Higher clouds casts greater shadow.");
-				ImGui::PopTextWrapPos();
-				ImGui::EndTooltip();
+				ImGui::Text("This setting affects the scale of the cloud movement. Higher clouds casts slightly greater shadow.");
 			}
 
 			ImGui::SliderFloat("Planet Radius", &settings.PlanetRadius, 2000e3f / 1.428e-2f, 10000e3f / 1.428e-2f, "%.1f units");
 
-			if (ImGui::IsItemHovered()) {
-				ImGui::BeginTooltip();
-				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::BulletText(std::format("approx: {:.1f} km / {:.1f} miles", settings.PlanetRadius * 1.428e-5f, settings.PlanetRadius * 8.877e-6f).data());
 				ImGui::Text("This setting affects distortion of clouds near horizon.");
-				ImGui::PopTextWrapPos();
-				ImGui::EndTooltip();
 			}
 			ImGui::TreePop();
 		}
 
 		ImGui::TreePop();
-	}
-
-	ImGui::Spacing();
-	ImGui::Spacing();
-
-	if (ImGui::Button("Restore Defaults", { -1, 0 })) {
-		RestoreDefaultSettings();
-	}
-	if (ImGui::IsItemHovered()) {
-		ImGui::BeginTooltip();
-		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-		ImGui::Text(
-			"Restores the feature's settings back to their default values. "
-			"You will still need to Save Settings to make these changes permanent. ");
-		ImGui::PopTextWrapPos();
-		ImGui::EndTooltip();
 	}
 }
 
