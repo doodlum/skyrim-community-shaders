@@ -82,6 +82,9 @@ void CloudShadows::CheckResourcesSide(int side)
 
 void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 {
+	if (!settings.EnableCloudShadows)
+		return;
+
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
 	if (cubeMapRenderTarget != RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS)
