@@ -5,9 +5,10 @@ struct PerPassCloudShadow
 	float CloudHeight;
 	float PlanetRadius;
 
-	float ShadowBlend;
-	float DiffuseLightBrightness;
-	float DiffuseLightSaturation;
+	float EffectMix;
+
+	float TransparencyPower;
+	float AbsorptionAmbient;
 
 	float RcpHPlusR;
 };
@@ -43,9 +44,7 @@ float3 getCloudShadowMult(float3 rel_pos, float3 eye_to_sun, SamplerState samp)
 	float3 cloudSampleDir = getCloudShadowSampleDir(rel_pos, eye_to_sun).xyz;
 
 	float4 cloudCubeSample = cloudShadows.Sample(samp, cloudSampleDir);
-	float3 cloudDiffuseLight = cloudCubeSample.xyz * perPassCloudShadow[0].DiffuseLightBrightness;
-	cloudDiffuseLight = saturate(lerp(dot(cloudDiffuseLight, float3(0.2125, 0.7154, 0.0721)), cloudDiffuseLight, perPassCloudShadow[0].DiffuseLightSaturation));
-	float cloudShadowBlend = lerp(0, saturate(cloudCubeSample.w), perPassCloudShadow[0].ShadowBlend);
+	float alpha = pow(saturate(cloudCubeSample.w), perPassCloudShadow[0].TransparencyPower);
 
-	return lerp(1.0, cloudDiffuseLight, cloudShadowBlend);
+	return lerp(1.0, 1.0 - alpha, perPassCloudShadow[0].EffectMix);
 }

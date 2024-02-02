@@ -9,8 +9,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	EnableCloudShadows,
 	CloudHeight,
 	PlanetRadius,
-	DiffuseLightBrightness,
-	DiffuseLightSaturation)
+	EffectMix,
+	TransparencyPower,
+	AbsorptionAmbient)
 
 class FrameChecker
 {
@@ -32,14 +33,20 @@ void CloudShadows::DrawSettings()
 	ImGui::Checkbox("Enable Cloud Shadows", (bool*)&settings.EnableCloudShadows);
 
 	if (ImGui::TreeNodeEx("Mixing", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::SliderFloat("Effect Mix", &settings.ShadowBlend, 0.0f, 1.0f, "%.2f");
+		ImGui::SliderFloat("Effect Mix", &settings.EffectMix, 0.0f, 1.0f, "%.2f");
 
-		ImGui::SliderFloat("Diffuse Light Brightness", &settings.DiffuseLightBrightness, 0.0f, 1.0f, "%.2f");
-		if (auto _tt = Util::HoverTooltipWrapper()) {
-			ImGui::Text("Simulates diffuse light \"filtered\" by the cloud.");
-		}
+		ImGui::SliderFloat("Transparency Power", &settings.TransparencyPower, -2.f, 2.f, "%.1f");
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text(
+				"The amount of light absorbed by the cloud is determined by the alpha of the cloud. "
+				"Negative value will result in more light absorbed, and more contrast between lit and occluded areas.");
 
-		ImGui::SliderFloat("Diffuse Light Saturation", &settings.DiffuseLightSaturation, 0.0f, 2.0f, "%.2f");
+		ImGui::SliderFloat("Ambient Absorption", &settings.AbsorptionAmbient, 0.f, 1.f, "%.2f");
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text(
+				"By default, ambient light is not affected by cloud, as it is an approximation of reflected light. "
+				"However, if you want darker ambient, you may turn it up a bit. "
+				"Not entirely physical, nonetheless helpful.");
 
 		ImGui::TreePop();
 	}
@@ -48,7 +55,7 @@ void CloudShadows::DrawSettings()
 		ImGui::SliderFloat("Cloud Height", &settings.CloudHeight, 1e3f / 1.428e-2f, 10e3f / 1.428e-2f, "%.1f units");
 		if (auto _tt = Util::HoverTooltipWrapper()) {
 			ImGui::BulletText(std::format("approx: {:.2f} km / {:.2f} miles", settings.CloudHeight * 1.428e-5f, settings.CloudHeight * 8.877e-6f).data());
-			ImGui::Text("This setting affects the scale of the cloud movement. Higher clouds casts slightly greater shadow.");
+			ImGui::Text("This setting affects the scale of the cloud movement. Higher clouds casts greater shadow.");
 		}
 
 		ImGui::SliderFloat("Planet Radius", &settings.PlanetRadius, 2000e3f / 1.428e-2f, 10000e3f / 1.428e-2f, "%.1f units");
@@ -184,6 +191,7 @@ void CloudShadows::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 		PerPass perPassData{};
 
 		perPassData.Settings = settings;
+		perPassData.Settings.TransparencyPower = exp2(perPassData.Settings.TransparencyPower);
 		perPassData.RcpHPlusR = 1.f / (settings.CloudHeight + settings.PlanetRadius);
 
 		D3D11_MAPPED_SUBRESOURCE mapped;

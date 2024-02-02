@@ -23,9 +23,10 @@ struct CloudShadows : Feature
 		float CloudHeight = 2e3f / 1.428e-2f;
 		float PlanetRadius = 6371e3f / 1.428e-2f;
 
-		float ShadowBlend = 1.f;
-		float DiffuseLightBrightness = 0.5f;
-		float DiffuseLightSaturation = 1.f;
+		float EffectMix = 1.f;
+
+		float TransparencyPower = 0.1f;
+		float AbsorptionAmbient = 0.2f;
 	} settings;
 
 	struct alignas(16) PerPass
