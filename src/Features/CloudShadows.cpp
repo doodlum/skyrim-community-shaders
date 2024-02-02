@@ -102,8 +102,8 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 
 	auto tech_enum = static_cast<SkyShaderTechniques>(descriptor);
 	if (tech_enum == SkyShaderTechniques::Clouds || tech_enum == SkyShaderTechniques::CloudsLerp || tech_enum == SkyShaderTechniques::CloudsFade) {
-		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 		auto renderer = RE::BSGraphics::Renderer::GetSingleton();
+		auto context = renderer->GetRuntimeData().context;
 		auto device = renderer->GetRuntimeData().forwarder;
 
 		{
@@ -232,7 +232,7 @@ void CloudShadows::Save(json& o_json)
 void CloudShadows::SetupResources()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto device = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().forwarder;
+	auto device = renderer->GetRuntimeData().forwarder;
 
 	{
 		auto reflections = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGET_CUBEMAP::kREFLECTIONS];
