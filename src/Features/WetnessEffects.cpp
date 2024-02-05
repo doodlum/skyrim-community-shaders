@@ -8,11 +8,11 @@ const float TRANSITION_CURVE_MULTIPLIER = 2.0f;
 const float TRANSITION_DENOMINATOR = 256.0f;
 const float DRY_WETNESS = 0.0f;
 const float RAIN_DELTA_PER_SECOND = 2.0f / 3600.0f;
-const float SNOWY_DAY_DELTA_PER_SECOND = -0.489f / 3600.0f; // Only doing evaporation until snow wetness feature is added
+const float SNOWY_DAY_DELTA_PER_SECOND = -0.489f / 3600.0f;  // Only doing evaporation until snow wetness feature is added
 const float CLOUDY_DAY_DELTA_PER_SECOND = -0.735f / 3600.0f;
 const float CLEAR_DAY_DELTA_PER_SECOND = -1.518f / 3600.0f;
 const float WETNESS_SCALE = 2.0;  // Speed at which wetness builds up and drys.
-const float PUDDLE_SCALE = 1.0;  // Speed at which puddles build up and dry
+const float PUDDLE_SCALE = 1.0;   // Speed at which puddles build up and dry
 const float MAX_PUDDLE_DEPTH = 3.0f;
 const float MAX_WETNESS_DEPTH = 2.0f;
 const float MAX_PUDDLE_WETNESS = 1.0f;
@@ -128,7 +128,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 
 		if (requiresUpdate) {
 			requiresUpdate = false;
-			
+
 			PerPass data{};
 			data.Wetness = DRY_WETNESS;
 			data.PuddleWetness = DRY_WETNESS;
@@ -149,8 +149,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 								float seconds = currentGameTime - lastGameTimeValue;
 								lastGameTimeValue = currentGameTime;
 
-								if (abs(seconds) >= MAX_TIME_DELTA)
-								{
+								if (abs(seconds) >= MAX_TIME_DELTA) {
 									// If too much time has passed, snap wetness depths to the current weather.
 									seconds = 0.0f;
 									currentWeatherWetnessDepth = 0.0f;
@@ -184,13 +183,13 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 								} else {
 									lastWeatherID = previousLastWeatherID;
 								}
-								
+
 								// Calculate the wetness value from the water depth
-								data.Wetness = std::min(wetnessDepth, MAX_WETNESS); //data.settings.PuddleMinWetness);
+								data.Wetness = std::min(wetnessDepth, MAX_WETNESS);  //data.settings.PuddleMinWetness);
 								data.PuddleWetness = std::min(puddleDepth, MAX_PUDDLE_WETNESS);
 							}
 						}
-					} 
+					}
 				}
 			}
 

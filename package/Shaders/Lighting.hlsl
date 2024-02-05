@@ -490,9 +490,9 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-    float4 Albedo : SV_Target0;
-    float4 MotionVectors : SV_Target1;
-    float4 ScreenSpaceNormals : SV_Target2;
+	float4 Albedo : SV_Target0;
+	float4 MotionVectors : SV_Target1;
+	float4 ScreenSpaceNormals : SV_Target2;
 #if defined(SNOW)
 	float2 SnowParameters : SV_Target3;
 #endif
