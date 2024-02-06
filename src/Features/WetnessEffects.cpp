@@ -50,7 +50,7 @@ void WetnessEffects::DrawSettings()
 	ImGui::Spacing();
 
 	if (ImGui::TreeNodeEx("Advanced", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::SliderFloat("Wether transition speed", &settings.WeatherTransitionSpeed, 0.5f, 5.0f);
+		ImGui::SliderFloat("Weather transition speed", &settings.WeatherTransitionSpeed, 0.5f, 5.0f);
 		ImGui::SliderFloat("Min Rain Wetness", &settings.MinRainWetness, 0.0f, 0.9f);
 		ImGui::SliderFloat("Skin Wetness", &settings.SkinWetness, 0.0f, 1.0f);
 		if (auto _tt = Util::HoverTooltipWrapper()) {
