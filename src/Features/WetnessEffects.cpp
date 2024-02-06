@@ -185,7 +185,7 @@ void WetnessEffects::Draw(const RE::BSShader* shader, const uint32_t)
 								}
 
 								// Calculate the wetness value from the water depth
-								data.Wetness = std::min(wetnessDepth, MAX_WETNESS);  //data.settings.PuddleMinWetness);
+								data.Wetness = std::min(wetnessDepth, MAX_WETNESS);
 								data.PuddleWetness = std::min(puddleDepth, MAX_PUDDLE_WETNESS);
 							}
 						}
