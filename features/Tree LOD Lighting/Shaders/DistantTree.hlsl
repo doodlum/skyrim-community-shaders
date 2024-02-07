@@ -1,7 +1,7 @@
 #include "Common/Color.hlsl"
 #include "Common/FrameBuffer.hlsl"
-#include "Common/MotionBlur.hlsl"
 #include "Common/LightingData.hlsl"
+#include "Common/MotionBlur.hlsl"
 
 cbuffer PerFrame : register(b3)
 {
