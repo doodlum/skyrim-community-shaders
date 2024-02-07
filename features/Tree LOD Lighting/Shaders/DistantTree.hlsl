@@ -1,14 +1,7 @@
 #include "Common/Color.hlsl"
 #include "Common/FrameBuffer.hlsl"
 #include "Common/MotionBlur.hlsl"
-
-struct LightingData
-{
-	float WaterHeight[25];
-	bool Reflections;
-};
-
-StructuredBuffer<LightingData> lightingData : register(t126);
+#include "Common/LightingData.hlsl"
 
 cbuffer PerFrame : register(b3)
 {
