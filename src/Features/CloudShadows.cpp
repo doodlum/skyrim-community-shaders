@@ -82,7 +82,7 @@ void CloudShadows::CheckResourcesSide(int side)
 
 void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 {
-	if (!settings.EnableCloudShadows)
+	if (!(settings.EnableCloudShadows && RE::Sky::GetSingleton()->mode == RE::Sky::Mode::kFull))
 		return;
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
@@ -117,9 +117,9 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 		auto reflections = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGET_CUBEMAP::kREFLECTIONS];
 
 		// render targets
-		ID3D11RenderTargetView* rtvs[4];
+		ID3D11RenderTargetView* rtvs[8];
 		ID3D11DepthStencilView* depthStencil;
-		context->OMGetRenderTargets(3, rtvs, &depthStencil);
+		context->OMGetRenderTargets(7, rtvs, &depthStencil);
 
 		int side = -1;
 		for (int i = 0; i < 6; ++i)
@@ -132,8 +132,8 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 
 		CheckResourcesSide(side);
 
-		rtvs[3] = cubemapCloudOccRTVs[side];
-		context->OMSetRenderTargets(4, rtvs, depthStencil);
+		rtvs[7] = cubemapCloudOccRTVs[side];
+		context->OMSetRenderTargets(8, rtvs, depthStencil);
 
 		// blend states
 		ID3D11BlendState* blendState;
@@ -147,7 +147,7 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 				D3D11_BLEND_DESC blendDesc;
 				blendState->GetDesc(&blendDesc);
 
-				blendDesc.RenderTarget[3] = blendDesc.RenderTarget[0];
+				blendDesc.RenderTarget[7] = blendDesc.RenderTarget[0];
 
 				ID3D11BlendState* modifiedBlendState;
 				DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &modifiedBlendState));
@@ -194,6 +194,7 @@ void CloudShadows::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 		PerPass perPassData{};
 
 		perPassData.Settings = settings;
+		perPassData.Settings.EnableCloudShadows = perPassData.Settings.EnableCloudShadows && RE::Sky::GetSingleton()->mode == RE::Sky::Mode::kFull;
 		perPassData.Settings.TransparencyPower = exp2(perPassData.Settings.TransparencyPower);
 		perPassData.RcpHPlusR = 1.f / (settings.CloudHeight + settings.PlanetRadius);
 
