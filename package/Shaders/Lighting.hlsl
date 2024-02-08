@@ -1052,7 +1052,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float depthSampledLinear = GetScreenDepth(depthSampled);
 	float depthPixelLinear = GetScreenDepth(input.Position.z);
 
-	float blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / (0.05 * depthSampledLinear));
+	float blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / 5.0);
+
 	clip(blendFactorTerrain);
 	blendFactorTerrain = saturate(blendFactorTerrain);
 #	endif
@@ -2154,10 +2155,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float pixelDepthOffset = depthPixelLinear;
 
 		if (depthComp > 0){
-			pixelDepthOffset -= (height * 2 - 1) * (0.05 * depthSampledLinear);
+			pixelDepthOffset -= (height * 2 - 1) * 5.0;
 		}
 
-		blendFactorTerrain = 1.0 - (pixelDepthOffset - depthSampledLinear) / (0.05 * depthSampledLinear);
+		blendFactorTerrain = 1.0 - (pixelDepthOffset - depthSampledLinear) / 5.0;
 
 		clip(blendFactorTerrain);
 		blendFactorTerrain = saturate(blendFactorTerrain);
