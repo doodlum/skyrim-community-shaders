@@ -702,6 +702,9 @@ void LightLimitFix::UpdateLights()
 {
 	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 
+	if (!(accumulator && accumulator->kCamera))
+		return;
+
 	lightsNear = std::max(0.0f, accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear);
 	lightsFar = std::min(16384.0f, accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar);
 
@@ -736,8 +739,7 @@ void LightLimitFix::UpdateLights()
 
 	static float* g_deltaTime = (float*)RELOCATION_ID(523660, 410199).address();  // 2F6B948, 30064C8
 	static double timer = 0;
-	if (!RE::UI::GetSingleton()->GameIsPaused())
-		timer += *g_deltaTime;
+	timer += *g_deltaTime;
 
 	//process point lights
 	for (auto& e : shadowSceneNode->GetRuntimeData().activePointLights) {
