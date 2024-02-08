@@ -2159,7 +2159,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 		float pixelDepthOffset = depthPixelLinear;
 
-		if (depthComp > 0){
+		if (depthComp > 0) {
 			pixelDepthOffset -= (height * 2 - 1) * 5.0;
 			pixelDepthOffset -= 1;
 		}
