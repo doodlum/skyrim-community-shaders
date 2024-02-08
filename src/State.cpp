@@ -465,8 +465,8 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 
 	auto viewport = RE::BSGraphics::State::GetSingleton();
 
-	float resolutionX = viewport->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-	float resolutionY = viewport->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+	float resolutionX = (float)viewport->screenWidth;
+	float resolutionY = (float)viewport->screenHeight;
 
 	float2 bufferDim = { resolutionX, resolutionY };
 

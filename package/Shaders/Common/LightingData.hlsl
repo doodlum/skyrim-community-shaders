@@ -1,5 +1,7 @@
 #include "Common/VR.hlsl"
 
+#if defined(PSHADER)
+
 struct LightingData
 {
 	float WaterHeight[25];
@@ -16,6 +18,7 @@ Texture2D<float4> TexDepthSampler : register(t20);
 float GetDepth(float2 uv, uint a_eyeIndex = 0)
 {
 	uv = ConvertToStereoUV(uv, a_eyeIndex);
+	uv = GetDynamicResolutionAdjustedScreenPosition(uv);
 	return TexDepthSampler.Load(int3(uv * lightingData[0].BufferDim, 0));
 }
 
@@ -29,3 +32,5 @@ float GetScreenDepth(float2 uv, uint a_eyeIndex = 0)
 	float depth = GetDepth(uv, a_eyeIndex);
 	return GetScreenDepth(depth);
 }
+
+#endif

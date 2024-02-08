@@ -1045,7 +1045,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
 
 #	if defined(TERRAIN_BLENDING)
-	float depthSampled = TexDepthSampler.Load(int3((screenUV * lightingData[0].BufferDim), 0));
+	float depthSampled = GetDepth(screenUV, eyeIndex);
 	float depthComp = input.Position.z - depthSampled;
 
 	float depthSampledLinear = GetScreenDepth(depthSampled);

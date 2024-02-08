@@ -1,6 +1,7 @@
 
 #define EFFECT
 
+#include "Common/FrameBuffer.hlsl"
 #include "Common/LightingData.hlsl"
 
 struct VS_INPUT
