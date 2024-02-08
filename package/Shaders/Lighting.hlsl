@@ -2,7 +2,6 @@
 #include "Common/FrameBuffer.hlsl"
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
-#include "Common/LightingData.hlsl"
 
 #define PI 3.1415927
 
