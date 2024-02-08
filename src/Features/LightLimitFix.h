@@ -65,8 +65,6 @@ public:
 		uint LightsVisualisationMode;
 		float LightsNear;
 		float LightsFar;
-		float4 CameraData;
-		float2 BufferDim;
 		uint FrameCount;
 	};
 

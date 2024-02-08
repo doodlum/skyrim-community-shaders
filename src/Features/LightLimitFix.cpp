@@ -360,17 +360,15 @@ void LightLimitFix::Bind()
 		}
 
 		{
-			ID3D11ShaderResourceView* views[4]{};
+			ID3D11ShaderResourceView* views[3]{};
 			views[0] = lights->srv.get();
 			views[1] = lightList->srv.get();
 			views[2] = lightGrid->srv.get();
-			views[3] = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
 			context->PSSetShaderResources(17, ARRAYSIZE(views), views);
 		}
 
 		{
 			PerPass perPassData{};
-			perPassData.CameraData = Util::GetCameraData();
 
 			auto viewport = RE::BSGraphics::State::GetSingleton();
 			if (!screenSpaceShadowsTexture) {
@@ -381,13 +379,9 @@ void LightLimitFix::Bind()
 				texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET;
 				screenSpaceShadowsTexture = new Texture2D(texDesc);
 			}
-			float resolutionX = screenSpaceShadowsTexture->desc.Width * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-			float resolutionY = screenSpaceShadowsTexture->desc.Height * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
 
 			perPassData.LightsNear = lightsNear;
 			perPassData.LightsFar = lightsFar;
-
-			perPassData.BufferDim = { resolutionX, resolutionY };
 
 			const auto imageSpaceManager = RE::ImageSpaceManager::GetSingleton();
 			auto bTAA = !REL::Module::IsVR() ? imageSpaceManager->GetRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled :

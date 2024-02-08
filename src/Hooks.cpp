@@ -121,6 +121,7 @@ bool hk_BSShader_BeginTechnique(RE::BSShader* shader, int vertexDescriptor, int 
 	state->currentShader = shader;
 	state->currentVertexDescriptor = vertexDescriptor;
 	state->currentPixelDescriptor = pixelDescriptor;
+	state->updateShader = true;
 	return (ptr_BSShader_BeginTechnique)(shader, vertexDescriptor, pixelDescriptor, skipPIxelShader);
 }
 

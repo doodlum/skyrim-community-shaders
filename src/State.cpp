@@ -16,28 +16,38 @@ void State::Draw()
 		auto type = currentShader->shaderType.get();
 		if (type > 0 && type < RE::BSShader::Type::Total) {
 			if (enabledClasses[type - 1]) {
-				ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
+				if (updateShader) {
+					ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
+				}
+
 				UpdateSharedData(currentShader, currentPixelDescriptor);
 
 				auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+				
+				static RE::BSGraphics::VertexShader* vertexShader = nullptr;
+				static RE::BSGraphics::PixelShader* pixelShader = nullptr;
 
-				if (auto vertexShader = shaderCache.GetVertexShader(*currentShader, currentVertexDescriptor)) {
-					if (auto pixelShader = shaderCache.GetPixelShader(*currentShader, currentPixelDescriptor)) {
+				if (updateShader)
+				{
+					vertexShader = shaderCache.GetVertexShader(*currentShader, currentVertexDescriptor);
+					pixelShader = shaderCache.GetPixelShader(*currentShader, currentPixelDescriptor);
+					if (vertexShader && pixelShader) {
 						context->VSSetShader(vertexShader->shader, NULL, NULL);
 						context->PSSetShader(pixelShader->shader, NULL, NULL);
+						updateShader = false;
+					}
+				}
 
-						for (auto* feature : Feature::GetFeatureList()) {
-							if (feature->loaded) {
-								feature->Draw(currentShader, currentPixelDescriptor);
-							}
+				if (vertexShader && pixelShader) {
+					for (auto* feature : Feature::GetFeatureList()) {
+						if (feature->loaded) {
+							feature->Draw(currentShader, currentPixelDescriptor);
 						}
 					}
 				}
 			}
 		}
 	}
-
-	currentShader = nullptr;
 }
 
 void State::DrawDeferred()
@@ -419,47 +429,69 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 	}
 }
 
-void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
+void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 {
-	if (a_shader->shaderType.get() == RE::BSShader::Type::Lighting) {
-		bool updateBuffer = false;
+	bool updateBuffer = false;
 
-		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
+	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-		bool currentReflections = (!REL::Module::IsVR() ?
-										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
-										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+	bool currentReflections = (!REL::Module::IsVR() ?
+										RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+										RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
 
-		if (lightingData.Reflections != (uint)currentReflections) {
-			updateBuffer = true;
-			lightingDataRequiresUpdate = true;
-		}
+	if (lightingData.Reflections != (uint)currentReflections) {
+		updateBuffer = true;
+		lightingDataRequiresUpdate = true;
+	}
 
-		lightingData.Reflections = currentReflections;
+	lightingData.Reflections = currentReflections;
 
-		if (lightingDataRequiresUpdate) {
-			lightingDataRequiresUpdate = false;
-			for (int i = -2; i < 3; i++) {
-				for (int k = -2; k < 3; k++) {
-					int waterTile = (i + 2) + ((k + 2) * 5);
-					auto position = !REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye() : shadowState->GetVRRuntimeData().posAdjust.getEye();
-					lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - position.z;
-				}
+	if (lightingDataRequiresUpdate) {
+		lightingDataRequiresUpdate = false;
+		for (int i = -2; i < 3; i++) {
+			for (int k = -2; k < 3; k++) {
+				int waterTile = (i + 2) + ((k + 2) * 5);
+				auto position = !REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye() : shadowState->GetVRRuntimeData().posAdjust.getEye();
+				lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - position.z;
 			}
-			updateBuffer = true;
 		}
+		updateBuffer = true;
+	}
 
-		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto cameraData = Util::GetCameraData();
+	if (lightingData.CameraData != cameraData) {
+		lightingData.CameraData = cameraData;
+		updateBuffer = true;
+	}
 
-		if (updateBuffer) {
-			D3D11_MAPPED_SUBRESOURCE mapped;
-			DX::ThrowIfFailed(context->Map(lightingDataBuffer->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-			size_t bytes = sizeof(LightingData);
-			memcpy_s(mapped.pData, bytes, &lightingData, bytes);
-			context->Unmap(lightingDataBuffer->resource.get(), 0);
-		}
+	auto viewport = RE::BSGraphics::State::GetSingleton();
 
-		ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
-		context->PSSetShaderResources(126, 1, &view);
+	float resolutionX = viewport->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
+	float resolutionY = viewport->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+	
+	float2 bufferDim = { resolutionX, resolutionY };
+
+	if (bufferDim != lightingData.BufferDim) {
+		lightingData.BufferDim = bufferDim;
+		updateBuffer = true;
+	}
+
+	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+
+	if (updateBuffer) {
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		DX::ThrowIfFailed(context->Map(lightingDataBuffer->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+		size_t bytes = sizeof(LightingData);
+		memcpy_s(mapped.pData, bytes, &lightingData, bytes);
+		context->Unmap(lightingDataBuffer->resource.get(), 0);
+	}
+
+	ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
+	context->PSSetShaderResources(126, 1, &view);
+
+	{
+		ID3D11ShaderResourceView* views[1]{};
+		views[0] = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
+		context->PSSetShaderResources(20, 1, views);
 	}
 }

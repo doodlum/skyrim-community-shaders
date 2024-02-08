@@ -1,4 +1,8 @@
+#include "Common/VR.hlsl"
+
 #define EFFECT
+
+#include "Common/LightingData.hlsl"
 
 struct VS_INPUT
 {
@@ -420,7 +424,7 @@ SamplerState SampGrayscaleSampler : register(s4);
 Texture2D<float4> TexBaseSampler : register(t0);
 Texture2D<float4> TexNormalSampler : register(t1);
 Texture2D<float4> TexNoiseSampler : register(t2);
-Texture2D<float4> TexDepthSampler : register(t3);
+Texture2D<float4> TexDepthSamplerEffect : register(t3);
 Texture2D<float4> TexGrayscaleSampler : register(t4);
 
 struct PS_OUTPUT
@@ -536,7 +540,7 @@ PS_OUTPUT main(PS_INPUT input)
 
 	float softMul = 1;
 #	if defined(SOFT)
-	float depth = TexDepthSampler.Load(int3(input.Position.xy, 0)).x;
+	float depth = TexDepthSamplerEffect.Load(int3(input.Position.xy, 0)).x;
 	softMul = saturate(-input.TexCoord0.w + LightingInfluence.y / ((1 - depth) * CameraData.z + CameraData.y));
 #	endif
 
