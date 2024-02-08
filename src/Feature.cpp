@@ -8,9 +8,9 @@
 #include "Features/GrassLighting.h"
 #include "Features/LightLimitFix.h"
 #include "Features/ScreenSpaceShadows.h"
+#include "Features/TerrainBlending.h"
 #include "Features/WaterBlending.h"
 #include "Features/WetnessEffects.h"
-#include "Features/TerrainBlending.h"
 
 void Feature::Load(json&)
 {
