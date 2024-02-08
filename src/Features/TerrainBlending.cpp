@@ -11,8 +11,7 @@ void TerrainBlending::Draw(const RE::BSShader* shader, const uint32_t descriptor
 	if (!enableBlending)
 		return;
 
-	if (shader->shaderType.get() == RE::BSShader::Type::Lighting && objectDistance <= optimisationDistance)
-	{
+	if (shader->shaderType.get() == RE::BSShader::Type::Lighting && objectDistance <= optimisationDistance) {
 		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 		auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 

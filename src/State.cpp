@@ -23,12 +23,11 @@ void State::Draw()
 				UpdateSharedData(currentShader, currentPixelDescriptor);
 
 				auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
-				
+
 				static RE::BSGraphics::VertexShader* vertexShader = nullptr;
 				static RE::BSGraphics::PixelShader* pixelShader = nullptr;
 
-				if (updateShader)
-				{
+				if (updateShader) {
 					vertexShader = shaderCache.GetVertexShader(*currentShader, currentVertexDescriptor);
 					pixelShader = shaderCache.GetPixelShader(*currentShader, currentPixelDescriptor);
 					if (vertexShader && pixelShader) {
@@ -436,8 +435,8 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 
 	bool currentReflections = (!REL::Module::IsVR() ?
-										RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
-										RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+									  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+									  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
 
 	if (lightingData.Reflections != (uint)currentReflections) {
 		updateBuffer = true;
@@ -468,7 +467,7 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 
 	float resolutionX = viewport->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
 	float resolutionY = viewport->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
-	
+
 	float2 bufferDim = { resolutionX, resolutionY };
 
 	if (bufferDim != lightingData.BufferDim) {

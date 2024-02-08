@@ -1,8 +1,8 @@
 #include "Common/Color.hlsl"
 #include "Common/FrameBuffer.hlsl"
+#include "Common/LightingData.hlsl"
 #include "Common/MotionBlur.hlsl"
 #include "Common/VR.hlsl"
-#include "Common/LightingData.hlsl"
 
 #define GRASS
 

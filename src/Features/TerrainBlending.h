@@ -16,7 +16,7 @@ public:
 	{
 		Hooks::Install();
 	}
-	
+
 	ID3D11DepthStencilState* depthStencilStateBackup;
 	UINT stencilRefBackup;
 
