@@ -3,7 +3,7 @@ struct LightingData
 	float WaterHeight[25];
 	bool Reflections;
 	float4 CameraData;
-	float2 BufferDim;
+    float2 BufferDim;
 };
 
 StructuredBuffer<LightingData> lightingData : register(t126);
