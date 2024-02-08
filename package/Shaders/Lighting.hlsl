@@ -1,9 +1,9 @@
 #include "Common/Color.hlsl"
 #include "Common/FrameBuffer.hlsl"
+#include "Common/LightingData.hlsl"
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
 #include "Common/VR.hlsl"
-#include "Common/LightingData.hlsl"
 
 #define PI 3.1415927
 
@@ -1056,7 +1056,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(COMPLEX_PARALLAX_MATERIALS)
 	if (perPassParallax[0].EnableTerrainParallax)
-	blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / 10.0);
+		blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / 10.0);
 #		endif
 
 	clip(blendFactorTerrain);
@@ -1642,7 +1642,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float puddle = wetness;
 	if (wetness > 0.0 || puddleWetness > 0) {
 #		if !defined(SKINNED)
-		puddle = noise(puddleCoords)  + 0.5;
+		puddle = noise(puddleCoords) + 0.5;
 #		endif
 		wetness = lerp(wetness, puddleWetness, saturate(puddle - 0.25));
 		puddle *= wetness;
@@ -2142,20 +2142,20 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(TERRAIN_BLENDING)
 	// Pixel Depth Offset
 #		if defined(COMPLEX_PARALLAX_MATERIALS)
-	if (perPassParallax[0].EnableTerrainParallax){
+	if (perPassParallax[0].EnableTerrainParallax) {
 		float height = 0;
 		if (input.LandBlendWeights1.x > 0)
-			height 	+= pixelOffset[0] * input.LandBlendWeights1.x;
+			height += pixelOffset[0] * input.LandBlendWeights1.x;
 		if (input.LandBlendWeights1.y > 0)
-			height 	+= pixelOffset[1] * input.LandBlendWeights1.y;
+			height += pixelOffset[1] * input.LandBlendWeights1.y;
 		if (input.LandBlendWeights1.z > 0)
-			height 	+= pixelOffset[2] * input.LandBlendWeights1.z;
+			height += pixelOffset[2] * input.LandBlendWeights1.z;
 		if (input.LandBlendWeights1.w > 0)
-			height 	+= pixelOffset[3] * input.LandBlendWeights1.w;
+			height += pixelOffset[3] * input.LandBlendWeights1.w;
 		if (input.LandBlendWeights2.x > 0)
-			height 	+= pixelOffset[4] * input.LandBlendWeights2.x;
+			height += pixelOffset[4] * input.LandBlendWeights2.x;
 		if (input.LandBlendWeights2.y > 0)
-			height 	+= pixelOffset[5] * input.LandBlendWeights2.y;
+			height += pixelOffset[5] * input.LandBlendWeights2.y;
 
 		float pixelDepthOffset = depthPixelLinear;
 
@@ -2174,7 +2174,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	psout.Albedo.w = blendFactorTerrain;
 	psout.ScreenSpaceNormals.w = blendFactorTerrain;
 
-#		if defined(SNOW) 
+#		if defined(SNOW)
 	psout.SnowParameters.w = blendFactorTerrain;
 #		endif
 #	endif
