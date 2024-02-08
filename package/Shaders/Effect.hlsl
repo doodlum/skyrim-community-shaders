@@ -1,4 +1,3 @@
-#include "Common/VR.hlsl"
 
 #define EFFECT
 

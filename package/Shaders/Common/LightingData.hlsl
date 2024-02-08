@@ -1,3 +1,5 @@
+#include "Common/VR.hlsl"
+
 struct LightingData
 {
 	float WaterHeight[25];
