@@ -2,10 +2,10 @@
 
 #include <detours/Detours.h>
 
+#include "Bindings.h"
 #include "Menu.h"
 #include "ShaderCache.h"
 #include "State.h"
-#include "Bindings.h"
 
 #include "ShaderTools/BSShaderHooks.h"
 

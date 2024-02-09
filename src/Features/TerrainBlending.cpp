@@ -1,7 +1,7 @@
 #include "TerrainBlending.h"
 
-#include "State.h"
 #include "Bindings.h"
+#include "State.h"
 
 void TerrainBlending::DrawSettings()
 {
@@ -29,7 +29,7 @@ bool TerrainBlending::TerrainBlendingPass(RE::BSRenderPass* a_pass)
 	return false;
 }
 
-void TerrainBlending::Draw(const RE::BSShader* , const uint32_t )
+void TerrainBlending::Draw(const RE::BSShader*, const uint32_t)
 {
 }
 
