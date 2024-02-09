@@ -18,10 +18,7 @@ void State::Draw()
 		auto type = currentShader->shaderType.get();
 		if (type > 0 && type < RE::BSShader::Type::Total) {
 			if (enabledClasses[type - 1]) {
-				if (updateShader) {
-					ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
-				}
-
+				ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
 				UpdateSharedData(currentShader, currentPixelDescriptor);
 
 				auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
@@ -29,21 +26,18 @@ void State::Draw()
 				static RE::BSGraphics::VertexShader* vertexShader = nullptr;
 				static RE::BSGraphics::PixelShader* pixelShader = nullptr;
 
-				if (updateShader) {
-					vertexShader = shaderCache.GetVertexShader(*currentShader, currentVertexDescriptor);
-					pixelShader = shaderCache.GetPixelShader(*currentShader, currentPixelDescriptor);
-					if (vertexShader && pixelShader) {
-						context->VSSetShader(vertexShader->shader, NULL, NULL);
-						context->PSSetShader(pixelShader->shader, NULL, NULL);
-					}
+				vertexShader = shaderCache.GetVertexShader(*currentShader, currentVertexDescriptor);
+				pixelShader = shaderCache.GetPixelShader(*currentShader, currentPixelDescriptor);
+
+				if (vertexShader && pixelShader) {
+					context->VSSetShader(vertexShader->shader, NULL, NULL);
+					context->PSSetShader(pixelShader->shader, NULL, NULL);
 				}
 
 				if (vertexShader && pixelShader) {
-					if (updateShader) {
-						for (auto* feature : Feature::GetFeatureList()) {
-							if (feature->loaded) {
-								feature->Draw(currentShader, currentPixelDescriptor);
-							}
+					for (auto* feature : Feature::GetFeatureList()) {
+						if (feature->loaded) {
+							feature->Draw(currentShader, currentPixelDescriptor);
 						}
 					}
 				}
@@ -58,21 +52,21 @@ void State::DrawDeferred()
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto context = renderer->GetRuntimeData().context;
 
-	ID3D11ShaderResourceView* srvs[16];
-	context->PSGetShaderResources(0, 16, srvs);
+	ID3D11ShaderResourceView* srvs[8];
+	context->PSGetShaderResources(0, 8, srvs);
 
-	ID3D11ShaderResourceView* srvsCS[16];
-	context->CSGetShaderResources(0, 16, srvsCS);
+	ID3D11ShaderResourceView* srvsCS[8];
+	context->CSGetShaderResources(0, 8, srvsCS);
 
-	ID3D11UnorderedAccessView* uavsCS[16];
-	context->CSGetUnorderedAccessViews(0, 16, uavsCS);
+	ID3D11UnorderedAccessView* uavsCS[8];
+	context->CSGetUnorderedAccessViews(0, 8, uavsCS);
 
-	ID3D11UnorderedAccessView* nullUavs[16] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	context->CSSetUnorderedAccessViews(0, 16, nullUavs, nullptr);
+	ID3D11UnorderedAccessView* nullUavs[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	context->CSSetUnorderedAccessViews(0, 8, nullUavs, nullptr);
 
-	ID3D11ShaderResourceView* nullSrvs[16] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	context->PSSetShaderResources(0, 16, nullSrvs);
-	context->CSSetShaderResources(0, 16, nullSrvs);
+	ID3D11ShaderResourceView* nullSrvs[8] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	context->PSSetShaderResources(0, 8, nullSrvs);
+	context->CSSetShaderResources(0, 8, nullSrvs);
 
 	ID3D11RenderTargetView* views[8];
 	ID3D11DepthStencilView* dsv;
@@ -88,12 +82,12 @@ void State::DrawDeferred()
 		}
 	}
 
-	context->PSSetShaderResources(0, 16, srvs);
-	context->CSSetShaderResources(0, 16, srvsCS);
-	context->CSSetUnorderedAccessViews(0, 16, uavsCS, nullptr);
+	context->PSSetShaderResources(0, 8, srvs);
+	context->CSSetShaderResources(0, 8, srvsCS);
+	context->CSSetUnorderedAccessViews(0, 8, uavsCS, nullptr);
 	context->OMSetRenderTargets(8, views, dsv);
 
-	for (int i = 0; i < 16; i++) {
+	for (int i = 0; i < 8; i++) {
 		if (srvs[i])
 			srvs[i]->Release();
 		if (srvsCS[i])
@@ -486,14 +480,11 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 		size_t bytes = sizeof(LightingData);
 		memcpy_s(mapped.pData, bytes, &lightingData, bytes);
 		context->Unmap(lightingDataBuffer->resource.get(), 0);
-
+		
 		ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
 		context->PSSetShaderResources(126, 1, &view);
 
-		{
-			ID3D11ShaderResourceView* views[1]{};
-			views[0] = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
-			context->PSSetShaderResources(20, 1, views);
-		}
+		view = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
+		context->PSSetShaderResources(20, 1, &view);
 	}
 }
