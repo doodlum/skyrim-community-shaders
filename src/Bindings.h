@@ -11,13 +11,13 @@ public:
 
 	bool overrideTerrain = false;
 
-	void DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode Mode);
+	void DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode a_mode);
 
-	void AlphaBlendStateSetMode(uint32_t Mode);
-	void AlphaBlendStateSetAlphaToCoverage(uint32_t Value);
-	void AlphaBlendStateSetWriteMode(uint32_t Value);
+	void AlphaBlendStateSetMode(uint32_t a_mode);
+	void AlphaBlendStateSetAlphaToCoverage(uint32_t a_value);
+	void AlphaBlendStateSetWriteMode(uint32_t a_value);
 
-	void SetOverwriteTerrainMode(bool enable);
+	void SetOverwriteTerrainMode(bool a_enable);
 
-	void SetDirtyStates(bool IsComputeShader);
+	void SetDirtyStates(bool a_isComputeShader);
 };

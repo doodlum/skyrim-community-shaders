@@ -1,54 +1,54 @@
 #include "Bindings.h"
 
-void Bindings::DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode Mode)
+void Bindings::DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode a_mode)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-	if (state->GetRuntimeData().depthStencilDepthMode != Mode) {
-		state->GetRuntimeData().depthStencilDepthMode = Mode;
-		if (state->GetRuntimeData().depthStencilDepthModePrevious != Mode)
+	if (state->GetRuntimeData().depthStencilDepthMode != a_mode) {
+		state->GetRuntimeData().depthStencilDepthMode = a_mode;
+		if (state->GetRuntimeData().depthStencilDepthModePrevious != a_mode)
 			state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE);
 		else
 			state->GetRuntimeData().stateUpdateFlags.reset(RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE);
 	}
 }
 
-void Bindings::AlphaBlendStateSetMode(uint32_t Mode)
+void Bindings::AlphaBlendStateSetMode(uint32_t a_mode)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-	if (state->GetRuntimeData().alphaBlendMode != Mode) {
-		state->GetRuntimeData().alphaBlendMode = Mode;
+	if (state->GetRuntimeData().alphaBlendMode != a_mode) {
+		state->GetRuntimeData().alphaBlendMode = a_mode;
 		state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND);
 	}
 }
 
-void Bindings::AlphaBlendStateSetAlphaToCoverage(uint32_t Value)
+void Bindings::AlphaBlendStateSetAlphaToCoverage(uint32_t a_value)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-	if (state->GetRuntimeData().alphaBlendAlphaToCoverage != Value) {
-		state->GetRuntimeData().alphaBlendAlphaToCoverage = Value;
+	if (state->GetRuntimeData().alphaBlendAlphaToCoverage != a_value) {
+		state->GetRuntimeData().alphaBlendAlphaToCoverage = a_value;
 		state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND);
 	}
 }
 
-void Bindings::AlphaBlendStateSetWriteMode(uint32_t Value)
+void Bindings::AlphaBlendStateSetWriteMode(uint32_t a_value)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-	if (state->GetRuntimeData().alphaBlendWriteMode != Value) {
-		state->GetRuntimeData().alphaBlendWriteMode = Value;
+	if (state->GetRuntimeData().alphaBlendWriteMode != a_value) {
+		state->GetRuntimeData().alphaBlendWriteMode = a_value;
 		state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND);
 	}
 }
 
-void Bindings::SetOverwriteTerrainMode(bool enable)
+void Bindings::SetOverwriteTerrainMode(bool a_enable)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-	if (overrideTerrain != enable) {
-		overrideTerrain = enable;
+	if (overrideTerrain != a_enable) {
+		overrideTerrain = a_enable;
 		state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE);
 		state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND);
 	}
@@ -116,7 +116,7 @@ public:
 
 // Reimplementation of the renderer's bindings system with additional features
 
-void Bindings::SetDirtyStates(bool IsComputeShader)
+void Bindings::SetDirtyStates(bool a_isComputeShader)
 {
 	AutoPtr(HACK_Globals, Globals, REL::RelocationID(524724, 411387).address());
 
@@ -258,7 +258,7 @@ void Bindings::SetDirtyStates(bool IsComputeShader)
 		}
 
 		// Shader input layout creation + updates
-		//if (!IsComputeShader && state->GetRuntimeData().stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_VERTEX_DESC))
+		//if (!a_isComputeShader && state->GetRuntimeData().stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_VERTEX_DESC))
 		//{
 		//	// Exists in original function
 		//}
@@ -269,12 +269,12 @@ void Bindings::SetDirtyStates(bool IsComputeShader)
 		}
 
 		// Compute shaders are pretty much custom and always require state to be reset
-		if (IsComputeShader) {
+		if (a_isComputeShader) {
 			state->GetRuntimeData().stateUpdateFlags.reset(
 				RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET,
 				RE::BSGraphics::ShaderFlags::DIRTY_VIEWPORT,
 				RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE, RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_STENCILREF_MODE, RE::BSGraphics::ShaderFlags::DIRTY_UNKNOWN1, RE::BSGraphics::ShaderFlags::DIRTY_RASTER_CULL_MODE, RE::BSGraphics::ShaderFlags::DIRTY_RASTER_DEPTH_BIAS,
-				RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND, RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_TEST_REF, RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_ENABLE_TEST, RE::BSGraphics::ShaderFlags::DIRTY_UNKNOWN2);
+				RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND, RE::BSGraphics::ShaderFlags::DIRTY_UNKNOWN2);
 
 			state->GetRuntimeData().stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_PRIMITIVE_TOPO);
 
@@ -283,7 +283,7 @@ void Bindings::SetDirtyStates(bool IsComputeShader)
 				RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET,
 				RE::BSGraphics::ShaderFlags::DIRTY_VIEWPORT,
 				RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE, RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_STENCILREF_MODE, RE::BSGraphics::ShaderFlags::DIRTY_UNKNOWN1, RE::BSGraphics::ShaderFlags::DIRTY_RASTER_CULL_MODE, RE::BSGraphics::ShaderFlags::DIRTY_RASTER_DEPTH_BIAS,
-				RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND, RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_TEST_REF, RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_ENABLE_TEST, RE::BSGraphics::ShaderFlags::DIRTY_PRIMITIVE_TOPO, RE::BSGraphics::ShaderFlags::DIRTY_UNKNOWN2);
+				RE::BSGraphics::ShaderFlags::DIRTY_ALPHA_BLEND, RE::BSGraphics::ShaderFlags::DIRTY_PRIMITIVE_TOPO, RE::BSGraphics::ShaderFlags::DIRTY_UNKNOWN2);
 		}
 	}
 }
