@@ -5,6 +5,7 @@
 #include "Menu.h"
 #include "ShaderCache.h"
 #include "State.h"
+#include "Bindings.h"
 
 #include "ShaderTools/BSShaderHooks.h"
 
@@ -111,18 +112,39 @@ void hk_BSShader_LoadShaders(RE::BSShader* shader, std::uintptr_t stream)
 	BSShaderHooks::hk_LoadShaders((REX::BSShader*)shader, stream);
 };
 
-bool hk_BSShader_BeginTechnique(RE::BSShader* shader, int vertexDescriptor, int pixelDescriptor, bool skipPIxelShader);
+bool hk_BSShader_BeginTechnique(RE::BSShader* shader, uint32_t vertexDescriptor, uint32_t pixelDescriptor, bool skipPixelShader);
 
 decltype(&hk_BSShader_BeginTechnique) ptr_BSShader_BeginTechnique;
 
-bool hk_BSShader_BeginTechnique(RE::BSShader* shader, int vertexDescriptor, int pixelDescriptor, bool skipPIxelShader)
+bool hk_BSShader_BeginTechnique(RE::BSShader* shader, uint32_t vertexDescriptor, uint32_t pixelDescriptor, bool skipPixelShader)
 {
 	auto state = State::GetSingleton();
 	state->currentShader = shader;
 	state->currentVertexDescriptor = vertexDescriptor;
 	state->currentPixelDescriptor = pixelDescriptor;
 	state->updateShader = true;
-	return (ptr_BSShader_BeginTechnique)(shader, vertexDescriptor, pixelDescriptor, skipPIxelShader);
+	//if (shaderFound) {
+	//	return shaderFound;
+	//}
+
+	//auto& shaderCache = SIE::ShaderCache::Instance();
+	//State::GetSingleton()->ModifyShaderLookup(*shader, vertexDescriptor, pixelDescriptor);
+	//RE::BSGraphics::VertexShader* vertexShader = shaderCache.GetVertexShader(*shader, vertexDescriptor);
+	//RE::BSGraphics::PixelShader* pixelShader = shaderCache.GetPixelShader(*shader, pixelDescriptor);
+	//if (vertexShader == nullptr || pixelShader == nullptr) {
+	//	return false;
+	//}
+	//RE::BSGraphics::RendererShadowState::GetSingleton()->SetVertexShader(vertexShader);
+	//if (skipPixelShader) {
+	//	pixelShader = nullptr;
+	//}
+	//RE::BSGraphics::RendererShadowState::GetSingleton()->SetPixelShader(pixelShader);
+
+	//state->currentShader = shader;
+	//state->currentVertexDescriptor = vertexDescriptor;
+	//state->currentPixelDescriptor = pixelDescriptor;
+
+	return (ptr_BSShader_BeginTechnique)(shader, vertexDescriptor, pixelDescriptor, skipPixelShader);
 }
 
 decltype(&IDXGISwapChain::Present) ptr_IDXGISwapChain_Present;
@@ -140,6 +162,9 @@ decltype(&hk_BSGraphics_SetDirtyStates) ptr_BSGraphics_SetDirtyStates;
 
 void hk_BSGraphics_SetDirtyStates(bool isCompute)
 {
+	auto& shaderCache = SIE::ShaderCache::Instance();
+	if (shaderCache.IsEnabled())
+		Bindings::GetSingleton()->SetDirtyStates(isCompute);
 	(ptr_BSGraphics_SetDirtyStates)(isCompute);
 	State::GetSingleton()->Draw();
 }

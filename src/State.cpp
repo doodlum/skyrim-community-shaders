@@ -9,10 +9,12 @@
 #include "Feature.h"
 #include "Util.h"
 
+#include "Features/TerrainBlending.h"
+
 void State::Draw()
 {
 	auto& shaderCache = SIE::ShaderCache::Instance();
-	if (shaderCache.IsEnabled() && currentShader) {
+	if (shaderCache.IsEnabled() && currentShader && updateShader) {
 		auto type = currentShader->shaderType.get();
 		if (type > 0 && type < RE::BSShader::Type::Total) {
 			if (enabledClasses[type - 1]) {
@@ -33,20 +35,22 @@ void State::Draw()
 					if (vertexShader && pixelShader) {
 						context->VSSetShader(vertexShader->shader, NULL, NULL);
 						context->PSSetShader(pixelShader->shader, NULL, NULL);
-						updateShader = false;
 					}
 				}
 
 				if (vertexShader && pixelShader) {
-					for (auto* feature : Feature::GetFeatureList()) {
-						if (feature->loaded) {
-							feature->Draw(currentShader, currentPixelDescriptor);
+					if (updateShader) {
+						for (auto* feature : Feature::GetFeatureList()) {
+							if (feature->loaded) {
+								feature->Draw(currentShader, currentPixelDescriptor);
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+	updateShader = false;
 }
 
 void State::DrawDeferred()
@@ -411,7 +415,6 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 				if (technique == (uint32_t)SIE::ShaderCache::LightingShaderTechniques::Glowmap)
 					a_pixelDescriptor &= ~(0x3F << 24);
 			}
-
 		} else {
 			a_vertexDescriptor &= ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
 									(uint32_t)SIE::ShaderCache::WaterShaderFlags::Cubemap |
@@ -483,14 +486,14 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 		size_t bytes = sizeof(LightingData);
 		memcpy_s(mapped.pData, bytes, &lightingData, bytes);
 		context->Unmap(lightingDataBuffer->resource.get(), 0);
-	}
 
-	ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
-	context->PSSetShaderResources(126, 1, &view);
+		ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
+		context->PSSetShaderResources(126, 1, &view);
 
-	{
-		ID3D11ShaderResourceView* views[1]{};
-		views[0] = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
-		context->PSSetShaderResources(20, 1, views);
+		{
+			ID3D11ShaderResourceView* views[1]{};
+			views[0] = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
+			context->PSSetShaderResources(20, 1, views);
+		}
 	}
 }

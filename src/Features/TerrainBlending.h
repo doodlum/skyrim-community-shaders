@@ -17,18 +17,10 @@ public:
 		Hooks::Install();
 	}
 
-	ID3D11DepthStencilState* depthStencilStateBackup;
-	UINT stencilRefBackup;
-
 	bool enableBlending = true;
 	int optimisationDistance = 4096;
-	float objectDistance = 0;
 
-	std::set<ID3D11BlendState*> mappedBlendStates;
-	std::map<ID3D11BlendState*, ID3D11BlendState*> modifiedBlendStates;
-
-	std::set<ID3D11DepthStencilState*> mappedDepthStencilStates;
-	std::map<ID3D11DepthStencilState*, ID3D11DepthStencilState*> modifiedDepthStencilStates;
+	bool overrideTerrain = false;
 
 	virtual inline std::string GetName() { return "Terrain Blending"; }
 	virtual inline std::string GetShortName() { return "TerrainBlending"; }
@@ -40,6 +32,8 @@ public:
 
 	virtual void DrawSettings();
 
+	bool TerrainBlendingPass(RE::BSRenderPass* Pass);
+
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
 	virtual void Load(json& o_json);
@@ -48,16 +42,26 @@ public:
 	virtual void RestoreDefaultSettings();
 	virtual void PostPostLoad() override;
 
-	void BSLightingShader_SetupGeometry_Before(RE::BSRenderPass* Pass);
+	void SetupGeometry(RE::BSRenderPass* a_pass);
 
 	struct Hooks
 	{
 		struct BSLightingShader_SetupGeometry
 		{
-			static void thunk(RE::BSShader* This, RE::BSRenderPass* Pass, uint32_t RenderFlags)
+			static void thunk(RE::BSShader* This, RE::BSRenderPass* a_pass, uint32_t a_renderFlags)
 			{
-				GetSingleton()->BSLightingShader_SetupGeometry_Before(Pass);
-				func(This, Pass, RenderFlags);
+				func(This, a_pass, a_renderFlags);
+				GetSingleton()->SetupGeometry(a_pass);
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
+		struct BSGrassShader_SetupGeometry
+		{
+			static void thunk(RE::BSShader* This, RE::BSRenderPass* a_pass, uint32_t a_renderFlags)
+			{
+				func(This, a_pass, a_renderFlags);
+				GetSingleton()->SetupGeometry(a_pass);
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
@@ -65,8 +69,9 @@ public:
 		static void Install()
 		{
 			stl::write_vfunc<0x6, BSLightingShader_SetupGeometry>(RE::VTABLE_BSLightingShader[0]);
+			stl::write_vfunc<0x6, BSGrassShader_SetupGeometry>(RE::VTABLE_BSGrassShader[0]);
 
-			logger::info("[SSS] Installed hooks");
+			logger::info("[Terrain Blending] Installed hooks");
 		}
 	};
 };
