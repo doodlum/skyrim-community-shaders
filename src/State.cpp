@@ -480,7 +480,7 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 		size_t bytes = sizeof(LightingData);
 		memcpy_s(mapped.pData, bytes, &lightingData, bytes);
 		context->Unmap(lightingDataBuffer->resource.get(), 0);
-		
+
 		ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
 		context->PSSetShaderResources(126, 1, &view);
 
