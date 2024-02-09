@@ -20,8 +20,6 @@ public:
 	bool enableBlending = true;
 	int optimisationDistance = 4096;
 
-	bool overrideTerrain = false;
-
 	virtual inline std::string GetName() { return "Terrain Blending"; }
 	virtual inline std::string GetShortName() { return "TerrainBlending"; }
 	virtual inline std::string_view GetShaderDefineName() { return "TERRAIN_BLENDING"; }
