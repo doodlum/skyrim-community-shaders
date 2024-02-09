@@ -1,9 +1,6 @@
 
 #define EFFECT
 
-#include "Common/FrameBuffer.hlsl"
-#include "Common/LightingData.hlsl"
-
 struct VS_INPUT
 {
 	float4 Position : POSITION0;
@@ -445,6 +442,7 @@ struct PS_OUTPUT
 #	include "Common/FrameBuffer.hlsl"
 #	include "Common/MotionBlur.hlsl"
 #	include "Common/Permutation.hlsl"
+#	include "Common/LightingData.hlsl"
 
 cbuffer AlphaTestRefBuffer : register(b11)
 {
