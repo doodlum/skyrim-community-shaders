@@ -117,7 +117,7 @@ bool hk_BSShader_BeginTechnique(RE::BSShader* shader, uint32_t vertexDescriptor,
 decltype(&hk_BSShader_BeginTechnique) ptr_BSShader_BeginTechnique;
 
 bool hk_BSShader_BeginTechnique(RE::BSShader* shader, uint32_t vertexDescriptor, uint32_t pixelDescriptor, bool skipPixelShader)
-{	
+{
 	auto state = State::GetSingleton();
 	state->currentShader = shader;
 	state->currentVertexDescriptor = vertexDescriptor;
