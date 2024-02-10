@@ -144,7 +144,7 @@ void hk_BSGraphics_SetDirtyStates(bool isCompute)
 {
 	auto& shaderCache = SIE::ShaderCache::Instance();
 
-	if (shaderCache.IsEnabled() && !isCompute)
+	if (shaderCache.IsEnabled())
 		Bindings::GetSingleton()->SetDirtyStates(isCompute);
 
 	(ptr_BSGraphics_SetDirtyStates)(isCompute);
