@@ -66,13 +66,13 @@ struct BlendStates
 
 // Reimplementation of elements of the renderer's bindings system to support additional features
 
-void Bindings::SetDirtyStates(bool )
+void Bindings::SetDirtyStates(bool)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 	auto& runtimeData = state->GetRuntimeData();
 
-	static DepthStates* depthStates = (DepthStates*)REL::RelocationID(524747, 411362, 0x317EA60).address(); 
+	static DepthStates* depthStates = (DepthStates*)REL::RelocationID(524747, 411362, 0x317EA60).address();
 	static BlendStates* blendStates = (BlendStates*)REL::RelocationID(524749, 411364, 0x317F6C0).address();
 
 	if (runtimeData.stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_STENCILREF_MODE, RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE)) {
