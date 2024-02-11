@@ -11,7 +11,6 @@ public:
 		return &singleton;
 	}
 
-
 	bool overrideTerrain = false;
 
 	enum class TerrainMaskMode : uint32_t
@@ -32,8 +31,6 @@ public:
 	void AlphaBlendStateSetWriteMode(uint32_t a_value);
 
 	void SetOverwriteTerrainMode(bool a_enable);
-
-
 
 	void SetOverwriteTerrainMaskingMode(TerrainMaskMode a_mode);
 
