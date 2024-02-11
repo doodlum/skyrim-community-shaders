@@ -1,4 +1,5 @@
 
+Texture2D<float4> TerrainBlendingMaskTexture : register(t35);
 
 float2 ShiftTerrain(float blendFactor, float2 coords, float3 viewDir, float3x3 tbn)
 {

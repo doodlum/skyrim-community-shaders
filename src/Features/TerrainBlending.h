@@ -2,6 +2,7 @@
 
 #include "Buffer.h"
 #include "Feature.h"
+#include "Bindings.h"
 
 struct TerrainBlending : Feature
 {
@@ -30,7 +31,7 @@ public:
 
 	virtual void DrawSettings();
 
-	bool TerrainBlendingPass(RE::BSRenderPass* Pass);
+	bool ValidBlendingPass(RE::BSRenderPass* a_pass);
 
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
@@ -54,12 +55,25 @@ public:
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
+		struct BSLightingShader_SetupTechnique
+		{
+			static bool thunk(RE::BSShader* This, uint32_t a_technique)
+			{
+				auto ret = func(This, a_technique);
+				GetSingleton()->SetupTechnique(a_technique);
+				return ret;
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
 		struct BSGrassShader_SetupGeometry
 		{
 			static void thunk(RE::BSShader* This, RE::BSRenderPass* a_pass, uint32_t a_renderFlags)
 			{
 				func(This, a_pass, a_renderFlags);
-				GetSingleton()->SetupGeometry(a_pass);
+				Bindings::GetSingleton()->SetOverwriteTerrainMode(false);
+				Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(Bindings::TerrainMaskMode::kNone);	
+
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
@@ -67,6 +81,8 @@ public:
 		static void Install()
 		{
 			stl::write_vfunc<0x6, BSLightingShader_SetupGeometry>(RE::VTABLE_BSLightingShader[0]);
+			stl::write_vfunc<0x2, BSLightingShader_SetupTechnique>(RE::VTABLE_BSLightingShader[0]);
+
 			stl::write_vfunc<0x6, BSGrassShader_SetupGeometry>(RE::VTABLE_BSGrassShader[0]);
 
 			logger::info("[Terrain Blending] Installed hooks");

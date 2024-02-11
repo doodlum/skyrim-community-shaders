@@ -490,9 +490,12 @@ struct PS_OUTPUT
 	float4 Albedo : SV_Target0;
 	float4 MotionVectors : SV_Target1;
 	float4 ScreenSpaceNormals : SV_Target2;
-#if defined(SNOW)
+#	if defined(SNOW)
 	float4 SnowParameters : SV_Target3;
-#endif
+	float4 TerrainMask : SV_Target4;
+#	else
+	float4 TerrainMask : SV_Target3;
+#	endif
 };
 
 #ifdef PSHADER
@@ -1050,12 +1053,16 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float depthSampledLinear = GetScreenDepth(depthSampled);
 	float depthPixelLinear = GetScreenDepth(input.Position.z);
+	
+	float2 screenUVmod = GetDynamicResolutionAdjustedScreenPosition(screenUV);
+	
+	float blendingMask = TerrainBlendingMaskTexture.Load(int3(screenUVmod * lightingData[0].BufferDim, 0)).x;
 
-	float blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / 5.0);
+	float blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / lerp(5.0, 1.0, blendingMask));
 
 #		if defined(COMPLEX_PARALLAX_MATERIALS)
 	if (perPassParallax[0].EnableTerrainParallax)
-		blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / 10.0);
+		blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / lerp(10.0, 2.0, blendingMask));
 #		endif
 
 	clip(blendFactorTerrain);
@@ -2159,11 +2166,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float pixelDepthOffset = depthPixelLinear;
 
 		if (depthComp > 0) {
-			pixelDepthOffset -= (height * 2 - 1) * 5.0;
+			pixelDepthOffset -= (height * 2 - 1) * lerp(5.0, 1.0, blendingMask);
 			pixelDepthOffset -= 1;
 		}
 
-		blendFactorTerrain = 1.0 - (pixelDepthOffset - depthSampledLinear) / 5.0;
+		blendFactorTerrain = 1.0 - (pixelDepthOffset - depthSampledLinear) / lerp(5.0, 1.0, blendingMask);
 
 		clip(blendFactorTerrain);
 		blendFactorTerrain = saturate(blendFactorTerrain);
@@ -2180,6 +2187,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(OUTLINE)
 	psout.Albedo = float4(1, 0, 0, 1);
 #	endif  // OUTLINE
+
+	psout.TerrainMask = 1.0;
 
 	return psout;
 }

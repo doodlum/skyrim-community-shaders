@@ -109,6 +109,7 @@ void State::Reset()
 	for (auto* feature : Feature::GetFeatureList())
 		if (feature->loaded)
 			feature->Reset();
+	Bindings::GetSingleton()->Reset();
 }
 
 void State::Setup()
@@ -117,6 +118,7 @@ void State::Setup()
 		if (feature->loaded)
 			feature->SetupResources();
 	SetupResources();
+	Bindings::GetSingleton()->SetupResources();
 }
 
 void State::Load(bool a_test)

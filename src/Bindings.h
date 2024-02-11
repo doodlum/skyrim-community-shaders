@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Buffer.h"
+
 class Bindings
 {
 public:
@@ -9,7 +11,19 @@ public:
 		return &singleton;
 	}
 
+
 	bool overrideTerrain = false;
+
+	enum class TerrainMaskMode : uint32_t
+	{
+		kNone,
+		kWrite,
+		kRead
+	};
+
+	TerrainMaskMode terrainMask = TerrainMaskMode::kNone;
+
+	Texture2D* terrainBlendingMask;
 
 	void DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode a_mode);
 
@@ -19,5 +33,11 @@ public:
 
 	void SetOverwriteTerrainMode(bool a_enable);
 
+
+
+	void SetOverwriteTerrainMaskingMode(TerrainMaskMode a_mode);
+
 	void SetDirtyStates(bool a_isComputeShader);
+	void SetupResources();
+	void Reset();
 };
