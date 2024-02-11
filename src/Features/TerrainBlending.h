@@ -55,17 +55,6 @@ public:
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
-		struct BSLightingShader_SetupTechnique
-		{
-			static bool thunk(RE::BSShader* This, uint32_t a_technique)
-			{
-				auto ret = func(This, a_technique);
-				GetSingleton()->SetupTechnique(a_technique);
-				return ret;
-			}
-			static inline REL::Relocation<decltype(thunk)> func;
-		};
-
 		struct BSGrassShader_SetupGeometry
 		{
 			static void thunk(RE::BSShader* This, RE::BSRenderPass* a_pass, uint32_t a_renderFlags)
