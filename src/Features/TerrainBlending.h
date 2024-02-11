@@ -69,8 +69,6 @@ public:
 		static void Install()
 		{
 			stl::write_vfunc<0x6, BSLightingShader_SetupGeometry>(RE::VTABLE_BSLightingShader[0]);
-			stl::write_vfunc<0x2, BSLightingShader_SetupTechnique>(RE::VTABLE_BSLightingShader[0]);
-
 			stl::write_vfunc<0x6, BSGrassShader_SetupGeometry>(RE::VTABLE_BSGrassShader[0]);
 
 			logger::info("[Terrain Blending] Installed hooks");

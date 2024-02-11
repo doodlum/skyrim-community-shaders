@@ -57,8 +57,6 @@ void TerrainBlending::PostPostLoad()
 	Hooks::Install();
 }
 
-uint32_t rawTechnique = 0;
-
 void TerrainBlending::SetupGeometry(RE::BSRenderPass* a_pass)
 {
 	if (!enableBlending) {
