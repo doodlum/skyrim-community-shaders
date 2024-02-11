@@ -490,12 +490,12 @@ struct PS_OUTPUT
 	float4 Albedo : SV_Target0;
 	float4 MotionVectors : SV_Target1;
 	float4 ScreenSpaceNormals : SV_Target2;
-#	if defined(SNOW)
+#if defined(SNOW)
 	float4 SnowParameters : SV_Target3;
 	float4 TerrainMask : SV_Target4;
-#	else
+#else
 	float4 TerrainMask : SV_Target3;
-#	endif
+#endif
 };
 
 #ifdef PSHADER
@@ -1053,9 +1053,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float depthSampledLinear = GetScreenDepth(depthSampled);
 	float depthPixelLinear = GetScreenDepth(input.Position.z);
-	
+
 	float2 screenUVmod = GetDynamicResolutionAdjustedScreenPosition(screenUV);
-	
+
 	float blendingMask = TerrainBlendingMaskTexture.Load(int3(screenUVmod * lightingData[0].BufferDim, 0)).x;
 
 	float blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / lerp(5.0, 1.0, blendingMask));

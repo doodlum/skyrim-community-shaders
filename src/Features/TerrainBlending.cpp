@@ -19,8 +19,8 @@ bool TerrainBlending::ValidBlendingPass(RE::BSRenderPass* a_pass)
 		auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 
 		auto reflections = (!REL::Module::IsVR() ?
-									RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
-									RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+								   RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+								   RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
 
 		return !reflections && accumulator->GetRuntimeData().activeShadowSceneNode == RE::BSShaderManager::State::GetSingleton().shadowSceneNode[0];
 	}
@@ -61,10 +61,9 @@ uint32_t rawTechnique = 0;
 
 void TerrainBlending::SetupGeometry(RE::BSRenderPass* a_pass)
 {
-	if (!enableBlending)
-	{
+	if (!enableBlending) {
 		Bindings::GetSingleton()->SetOverwriteTerrainMode(false);
-		Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(Bindings::TerrainMaskMode::kNone);	
+		Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(Bindings::TerrainMaskMode::kNone);
 		return;
 	}
 
@@ -94,6 +93,6 @@ void TerrainBlending::SetupGeometry(RE::BSRenderPass* a_pass)
 				}
 			}
 		}
-		Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(validPass && !staticReference ? Bindings::TerrainMaskMode::kWrite : Bindings::TerrainMaskMode::kNone);	
+		Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(validPass && !staticReference ? Bindings::TerrainMaskMode::kWrite : Bindings::TerrainMaskMode::kNone);
 	}
 }

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Bindings.h"
 #include "Buffer.h"
 #include "Feature.h"
-#include "Bindings.h"
 
 struct TerrainBlending : Feature
 {
@@ -61,8 +61,7 @@ public:
 			{
 				func(This, a_pass, a_renderFlags);
 				Bindings::GetSingleton()->SetOverwriteTerrainMode(false);
-				Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(Bindings::TerrainMaskMode::kNone);	
-
+				Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(Bindings::TerrainMaskMode::kNone);
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};

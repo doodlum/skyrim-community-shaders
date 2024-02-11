@@ -101,7 +101,7 @@ void Bindings::SetDirtyStates(bool)
 						}
 					}
 					break;
-				} else {			
+				} else {
 					renderTargetViews[i] = rendererData->GetRuntimeData().renderTargets[state->GetRuntimeData().renderTargets[i]].RTV;
 				}
 
@@ -172,7 +172,6 @@ void Bindings::SetDirtyStates(bool)
 
 		context->OMSetRenderTargets(viewCount, renderTargetViews, depthStencil);
 		runtimeData.stateUpdateFlags.reset(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET);
-
 	}
 
 	if (runtimeData.stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_STENCILREF_MODE, RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE)) {
@@ -191,7 +190,6 @@ void Bindings::SetDirtyStates(bool)
 			context->OMSetBlendState(blendStates->a[runtimeData.alphaBlendMode][runtimeData.alphaBlendAlphaToCoverage][runtimeData.alphaBlendWriteMode][runtimeData.alphaBlendModeExtra], nullptr, 0xFFFFFFFF);
 	}
 }
-
 
 void Bindings::SetupResources()
 {
