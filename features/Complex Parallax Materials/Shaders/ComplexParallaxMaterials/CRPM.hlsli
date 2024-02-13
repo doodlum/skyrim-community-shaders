@@ -46,7 +46,11 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 	float nearBlendToMid = smoothstep(perPassParallax[0].CRPMRange - perPassParallax[0].BlendRange, perPassParallax[0].CRPMRange, distance);
 	float midBlendToFar = smoothstep(1.0 - perPassParallax[0].BlendRange, 1.0, distance);
 
-	float maxHeight = perPassParallax[0].Height;
+#if defined(LANDSCAPE)
+    float maxHeight = perPassParallax[0].LandscapeHeight;
+#else
+    float maxHeight = perPassParallax[0].Height;
+#endif
 	float minHeight = maxHeight * 0.5;
 
 	float2 output;
@@ -225,7 +229,8 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 float GetParallaxSoftShadowMultiplier(float2 coords, float mipLevel, float3 L, float sh0, Texture2D<float4> tex, SamplerState texSampler, uint channel, float quality)
 {
 	if (quality > 0.0) {
-		const float height = 0.025;
+
+        const float height = 0.025;
 		const float2 rayDir = L.xy * height;
 
 		const float h0 = 1.0 - sh0;

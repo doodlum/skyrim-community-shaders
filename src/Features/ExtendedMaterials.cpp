@@ -12,6 +12,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	CRPMRange,
 	BlendRange,
 	Height,
+	LandscapeHeight,
 	EnableShadows,
 	ShadowsStartFade,
 	ShadowsEndFade)
@@ -92,6 +93,10 @@ void ExtendedMaterials::DrawSettings()
 		if (auto _tt = Util::HoverTooltipWrapper()) {
 			ImGui::Text("The range between the highest and lowest point a surface can be offset by.");
 		}
+		ImGui::SliderFloat("Landscape Height", &settings.LandscapeHeight, 0, 0.2f);
+		if (auto _tt = Util::HoverTooltipWrapper()) {
+			ImGui::Text("The range between the highest and lowest point a landscape surface can be offset by.");
+		}
 
 		ImGui::Spacing();
 		ImGui::Spacing();
@@ -118,7 +123,6 @@ void ExtendedMaterials::DrawSettings()
 		if (auto _tt = Util::HoverTooltipWrapper()) {
 			ImGui::Text("Distance shadows finish fading.");
 		}
-
 		ImGui::TreePop();
 	}
 }

@@ -29,6 +29,7 @@ struct ExtendedMaterials : Feature
 		float CRPMRange = 0.5f;
 		float BlendRange = 0.25f;
 		float Height = 0.1f;
+		float LandscapeHeight = 0.1f;
 
 		uint32_t EnableShadows = 1;
 		uint32_t ShadowsStartFade = 512;

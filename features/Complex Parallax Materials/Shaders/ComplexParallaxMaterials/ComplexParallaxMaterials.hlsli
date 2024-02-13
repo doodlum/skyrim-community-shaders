@@ -11,6 +11,7 @@ struct PerPassParallax
 	float CRPMRange;
 	float BlendRange;
 	float Height;
+    float LandscapeHeight;
 
 	bool EnableShadows;
 	uint ShadowsStartFade;
