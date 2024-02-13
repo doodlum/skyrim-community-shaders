@@ -104,8 +104,6 @@ public:
 
 	std::uint32_t lightCount = 0;
 
-	Texture2D* screenSpaceShadowsTexture = nullptr;
-
 	struct ParticleLightInfo
 	{
 		RE::NiColorA color;

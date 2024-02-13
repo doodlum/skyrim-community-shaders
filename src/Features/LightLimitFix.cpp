@@ -371,14 +371,6 @@ void LightLimitFix::Bind()
 			PerPass perPassData{};
 
 			auto viewport = RE::BSGraphics::State::GetSingleton();
-			if (!screenSpaceShadowsTexture) {
-				auto shadowMask = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kSHADOW_MASK];
-				D3D11_TEXTURE2D_DESC texDesc{};
-				shadowMask.texture->GetDesc(&texDesc);
-				texDesc.Format = DXGI_FORMAT_R16_FLOAT;
-				texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET;
-				screenSpaceShadowsTexture = new Texture2D(texDesc);
-			}
 
 			perPassData.LightsNear = lightsNear;
 			perPassData.LightsFar = lightsFar;
