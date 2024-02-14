@@ -463,9 +463,15 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 	}
 
 	auto viewport = RE::BSGraphics::State::GetSingleton();
+	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 
-	float resolutionX = (float)viewport->screenWidth;
-	float resolutionY = (float)viewport->screenHeight;
+	// grab main texture to get resolution
+	// VR cannot use viewport->screenWidth/Height as it's the desktop preview window's resolution and not HMD
+	D3D11_TEXTURE2D_DESC texDesc{};
+	renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMAIN].texture->GetDesc(&texDesc);
+
+	float resolutionX = (float)texDesc.Width * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
+	float resolutionY = (float)texDesc.Height * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
 
 	float2 bufferDim = { resolutionX, resolutionY };
 
