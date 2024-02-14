@@ -12,7 +12,7 @@ bool TerrainBlending::ValidBlendingPass(RE::BSRenderPass* a_pass)
 {
 	auto eyePosition = !REL::Module::IsVR() ? RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().posAdjust.getEye(0) : RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().posAdjust.getEye(0);
 	auto objectPosition = a_pass->geometry->world.translate;
-	objectPosition = objectPosition - eyePosition;
+	objectPosition -= eyePosition;
 	auto objectDistance = objectPosition.Length();
 
 	if (objectDistance < optimisationDistance) {
