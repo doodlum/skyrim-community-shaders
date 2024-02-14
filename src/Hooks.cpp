@@ -142,10 +142,10 @@ decltype(&hk_BSGraphics_SetDirtyStates) ptr_BSGraphics_SetDirtyStates;
 
 void hk_BSGraphics_SetDirtyStates(bool isCompute)
 {
-	auto& shaderCache = SIE::ShaderCache::Instance();
+	//auto& shaderCache = SIE::ShaderCache::Instance();
 
-	if (shaderCache.IsEnabled())
-		Bindings::GetSingleton()->SetDirtyStates(isCompute);
+	//if (shaderCache.IsEnabled())
+	//	Bindings::GetSingleton()->SetDirtyStates(isCompute);
 
 	(ptr_BSGraphics_SetDirtyStates)(isCompute);
 
