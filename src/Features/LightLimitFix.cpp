@@ -746,11 +746,11 @@ void LightLimitFix::UpdateLights()
 	eastl::vector<LightData> lightsData{};
 	lightsData.reserve(MAX_LIGHTS);
 
-	static float* g_deltaTime = (float*)REL::RelocationID(523660, 410199).address();  // 2F6B948, 30064C8
+	static float* deltaTime = (float*)REL::RelocationID(523660, 410199).address();
 	static double timer = 0;
-	timer += *g_deltaTime;
+	timer += *deltaTime;
 
-	//process point lights
+	// Process point lights
 
 	for (auto& e : shadowSceneNode->GetRuntimeData().activePointLights) {
 		if (auto bsLight = e.get()) {
@@ -810,7 +810,7 @@ void LightLimitFix::UpdateLights()
 		for (const auto& particleLight : particleLights) {
 			if (const auto particleSystem = netimmerse_cast<RE::NiParticleSystem*>(particleLight.first);
 				particleSystem && particleSystem->GetParticleRuntimeData().particleData.get()) {
-				// process BSGeometry
+				// Process BSGeometry
 				auto particleData = particleSystem->GetParticleRuntimeData().particleData.get();
 
 				auto numVertices = particleData->GetActiveVertexCount();
@@ -819,7 +819,7 @@ void LightLimitFix::UpdateLights()
 
 					auto initialPosition = particleData->GetParticlesRuntimeData().positions[p];
 					if (!particleSystem->GetParticleSystemRuntimeData().isWorldspace) {
-						// detect first-person meshes
+						// Detect first-person meshes
 						if ((particleLight.first->GetModelData().modelBound.radius * particleLight.first->world.scale) != particleLight.first->worldBound.radius)
 							initialPosition += particleLight.first->worldBound.center;
 						else
@@ -871,7 +871,7 @@ void LightLimitFix::UpdateLights()
 				}
 
 			} else {
-				// process billboard
+				// Process billboard
 				LightData light{};
 
 				light.color.x = particleLight.second.color.red;
@@ -882,10 +882,10 @@ void LightLimitFix::UpdateLights()
 
 				light.color *= particleLight.second.color.alpha;
 
-				float radius = (particleLight.first->worldBound.radius / std::max(FLT_MIN, particleLight.first->GetModelData().modelBound.radius)) * particleLight.second.radius * 64;  // correct bad model bounds
+				float radius = (particleLight.first->worldBound.radius / std::max(FLT_MIN, particleLight.first->GetModelData().modelBound.radius)) * particleLight.second.radius * 64;  // Correct bad model bounds
 				light.radius = radius * settings.ParticleLightsRadiusBillboards;
 
-				SetLightPosition(light, particleLight.first->world.translate);  // light is complete for both eyes by now
+				SetLightPosition(light, particleLight.first->world.translate);  // Light is complete for both eyes by now
 
 				AddCachedParticleLights(lightsData, light, &particleLight.second.config, particleLight.first, timer);
 			}
@@ -905,7 +905,7 @@ void LightLimitFix::UpdateLights()
 		}
 	}
 
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	static auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
 	{
 		auto projMatrixUnjittered = eyeCount == 1 ? state->GetRuntimeData().cameraData.getEye().projMatrixUnjittered : state->GetVRRuntimeData().cameraData.getEye().projMatrixUnjittered;
