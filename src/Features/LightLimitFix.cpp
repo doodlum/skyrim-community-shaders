@@ -744,6 +744,7 @@ void LightLimitFix::UpdateLights()
 	}
 
 	eastl::vector<LightData> lightsData{};
+	lightsData.reserve(MAX_LIGHTS);
 
 	static float* g_deltaTime = (float*)REL::RelocationID(523660, 410199).address();  // 2F6B948, 30064C8
 	static double timer = 0;
