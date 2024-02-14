@@ -91,6 +91,10 @@ void TerrainBlending::SetupGeometry(RE::BSRenderPass* a_pass)
 				}
 			}
 		}
-		Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(validPass && !staticReference ? Bindings::TerrainMaskMode::kWrite : Bindings::TerrainMaskMode::kNone);
+		Bindings::GetSingleton()->SetOverwriteTerrainMaskingMode(validPass && !staticReference ?
+																	 (!REL::Module::IsVR() ?
+																			 Bindings::TerrainMaskMode::kWrite :
+																			 Bindings::TerrainMaskMode::kRead) :  // Fix VR artifact where static objects would appear shifted in each eye
+																	 Bindings::TerrainMaskMode::kNone);
 	}
 }
