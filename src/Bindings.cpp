@@ -108,13 +108,14 @@ void Bindings::SetDirtyStates(bool)
 	DEFINE_VALUE(setRenderTargetMode)
 	DEFINE_VALUE(stateUpdateFlags)
 	DEFINE_VALUE(stencilRef)
+	DEFINE_VALUE(PSTexture)
 
 	auto rendererData = RE::BSGraphics::Renderer::GetSingleton();
 
 	static DepthStates* depthStates = (DepthStates*)REL::RelocationID(524747, 411362).address();
 	static BlendStates* blendStates = (BlendStates*)REL::RelocationID(524749, 411364).address();
 
-	if (stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET)) {
+	if (stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET, RE::BSGraphics::ShaderFlags::DIRTY_VRPREVIEW)) {
 		// Build active render target view array
 		ID3D11RenderTargetView* renderTargetViews[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
 		uint32_t viewCount = 0;
@@ -161,6 +162,16 @@ void Bindings::SetDirtyStates(bool)
 			break;
 		}
 
+		// VR Only
+		if (REL::Module::IsVR() && rendererData->GetRuntimeData().readOnlyDepth && depthStencil != -1) {
+			rendererData->GetRuntimeData().readOnlyDepth = false;
+			for (int i = 0; i < 16; i++) {  // not sure what 16 is from
+				if (PSTexture[i] == rendererData->GetDepthStencilData().depthStencils[depthStencil].depthSRV ||
+					PSTexture[i] == rendererData->GetDepthStencilData().depthStencils[depthStencil].stencilSRV)
+					rendererData->GetRuntimeData().readOnlyDepth = true;
+			}
+		}
+
 		//
 		// Determine which depth stencil to render to. When there's no active depth stencil,
 		// simply send a nullptr to dx11.
@@ -199,8 +210,15 @@ void Bindings::SetDirtyStates(bool)
 			}
 		}
 
-		context->OMSetRenderTargets(viewCount, renderTargetViews, newDepthStencil);
-		stateUpdateFlags.reset(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET);
+		if (!REL::Module::IsVR())
+			context->OMSetRenderTargets(viewCount, renderTargetViews, newDepthStencil);
+		else {
+			// VR calls a function instead of using OMSetRenderTargets
+			typedef void (*_VR_OMSetRenderTargets)(ID3D11RenderTargetView* a_renderTargetView[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT], ID3D11DepthStencilView* a_depthStencilView, uint32_t a_numRTV);
+			REL::Relocation<_VR_OMSetRenderTargets> VR_OMSetRenderTargets{ REL::Offset(0x0dc4240) };
+			VR_OMSetRenderTargets(renderTargetViews, newDepthStencil, viewCount);
+		}
+		stateUpdateFlags.reset(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET, RE::BSGraphics::ShaderFlags::DIRTY_VRPREVIEW);
 	}
 
 	if (stateUpdateFlags.any(RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_STENCILREF_MODE, RE::BSGraphics::ShaderFlags::DIRTY_DEPTH_MODE)) {
