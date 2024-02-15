@@ -234,7 +234,6 @@ void DynamicCubemaps::UpdateCubemap()
 	}
 
 	auto cubemap = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS];
-	context->GenerateMips(cubemap.SRV);  // Optimisation
 
 	if (nextTask == NextTask::kInferrence) {
 		nextTask = NextTask::kIrradiance;
@@ -320,7 +319,7 @@ void DynamicCubemaps::UpdateCubemap()
 
 void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 {
-	if (shader->shaderType.any(RE::BSShader::Type::Lighting)) {
+	if (shader->shaderType.get() == RE::BSShader::Type::Lighting || shader->shaderType.get() == RE::BSShader::Type::Water) {
 		// During world cubemap generation we cannot use the cubemap
 		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 		auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
@@ -421,14 +420,11 @@ void DynamicCubemaps::SetupResources()
 		cubemap.texture->Release();
 		cubemap.texture = nullptr;
 
-		// Create the new texture and views with mipmaps
+		// Create the new texture and views with UAV access
 
-		texDesc.MipLevels = MIPLEVELS;
 		texDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
-		texDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
-		DX::ThrowIfFailed(device->CreateTexture2D(&texDesc, nullptr, &cubemap.texture));
 
-		srvDesc.TextureCube.MipLevels = MIPLEVELS;
+		DX::ThrowIfFailed(device->CreateTexture2D(&texDesc, nullptr, &cubemap.texture));
 		DX::ThrowIfFailed(device->CreateShaderResourceView(cubemap.texture, &srvDesc, &cubemap.SRV));
 
 		for (int i = 0; i < 6; i++) {
@@ -436,6 +432,10 @@ void DynamicCubemaps::SetupResources()
 		}
 
 		// Create additional resources
+
+		texDesc.MipLevels = MIPLEVELS;
+		texDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		srvDesc.TextureCube.MipLevels = MIPLEVELS;
 
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.Format = texDesc.Format;
