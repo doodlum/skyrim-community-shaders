@@ -186,6 +186,8 @@ void DynamicCubemaps::UpdateCubemapCapture()
 
 	resetCapture = false;
 
+	context->CSSetSamplers(0, 1, &computeSampler);
+
 	context->CSSetShader(GetComputeShaderUpdate(), nullptr, 0);
 	context->Dispatch((uint32_t)std::ceil(envCaptureTexture->desc.Width / 32.0f), (uint32_t)std::ceil(envCaptureTexture->desc.Height / 32.0f), 6);
 
@@ -203,6 +205,9 @@ void DynamicCubemaps::UpdateCubemapCapture()
 	context->CSSetConstantBuffers(0, 2, buffers);
 
 	context->CSSetShader(nullptr, nullptr, 0);
+
+	ID3D11SamplerState* nullSampler = { nullptr };
+	context->CSSetSamplers(0, 1, &nullSampler);
 }
 
 void DynamicCubemaps::DrawDeferred()
