@@ -8,7 +8,6 @@ void WaterParallax::Draw(const RE::BSShader*, const uint32_t)
 {
 }
 
-
 void WaterParallax::SetupResources()
 {
 }

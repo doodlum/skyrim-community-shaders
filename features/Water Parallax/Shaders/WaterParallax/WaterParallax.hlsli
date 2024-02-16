@@ -41,9 +41,9 @@ float2 GetParallaxOffset(PS_INPUT input, float3 normalScalesRcp)
 {
 	float3 viewDirection = normalize(input.WPosition.xyz);
 	float2 parallaxOffsetTS = viewDirection.xy / -viewDirection.z;
-	
+
 	// Parallax scale is also multiplied by normalScalesRcp
-	parallaxOffsetTS *= 20.0; 
+	parallaxOffsetTS *= 20.0;
 
 	float3 mipLevels;
 	mipLevels.x = GetMipLevel(input.TexCoord1.xy, Normals01Tex);
