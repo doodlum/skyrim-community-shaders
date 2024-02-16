@@ -111,7 +111,6 @@ void State::DrawPreProcess()
 	ID3D11ShaderResourceView* srvs[8];
 	context->PSGetShaderResources(0, 8, srvs);
 
-
 	ID3D11ShaderResourceView* srvsCS[8];
 	context->CSGetShaderResources(0, 8, srvsCS);
 
