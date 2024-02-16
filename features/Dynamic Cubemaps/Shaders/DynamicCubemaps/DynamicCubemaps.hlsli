@@ -1,7 +1,7 @@
 TextureCube<float4> specularTexture : register(t64);
 Texture2D<float4> specularBRDF_LUT : register(t65);
 
-#	if !defined(WATER)
+#if !defined(WATER)
 float3 GetDynamicCubemap(float3 N, float3 V, float roughness, float3 F0, float complexMaterial)
 {
 	float3 R = reflect(-V, N);
@@ -23,4 +23,4 @@ float3 GetDynamicCubemap(float3 N, float3 V, float roughness, float3 F0, float c
 
 	return lerp(specularIrradiance * F0, specularIrradiance * ((F0 + S) * specularBRDF.x + specularBRDF.y), complexMaterial);
 }
-#	endif
+#endif

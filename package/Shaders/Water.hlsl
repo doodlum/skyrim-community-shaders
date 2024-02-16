@@ -366,9 +366,9 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 	return finalNormal;
 }
 
-#	if defined(DYNAMIC_CUBEMAPS)
-#		include "DynamicCubemaps/DynamicCubemaps.hlsli"
-#	endif
+#		if defined(DYNAMIC_CUBEMAPS)
+#			include "DynamicCubemaps/DynamicCubemaps.hlsli"
+#		endif
 
 float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float distanceFactor, float refractionsDepthFactor)
@@ -379,11 +379,11 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 		float3 reflectionColor = 0;
 		if (shaderDescriptors[0].PixelShaderDescriptor & _Cubemap) {
 			float3 cubemapUV = reflect(viewDirection, WaterParams.y * normal + float3(0, 0, 1 - WaterParams.y));
-#	if defined(DYNAMIC_CUBEMAPS)
+#		if defined(DYNAMIC_CUBEMAPS)
 			reflectionColor = specularTexture.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz;
-#	else
+#		else
 			reflectionColor = CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz;
-#	endif
+#		endif
 		} else {
 #		if !defined(LOD) && NUM_SPECULAR_LIGHTS == 0
 			float4 reflectionNormalRaw = float4((VarAmounts.w * refractionsDepthFactor) * normal.xy + input.MPosition.xy, input.MPosition.z, 1);
