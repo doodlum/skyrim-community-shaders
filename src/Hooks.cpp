@@ -196,7 +196,7 @@ HRESULT WINAPI hk_D3D11CreateDeviceAndSwapChain(
 	const D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_1;  // Create a device with only the latest feature level
 
 #ifndef NDEBUG
-	// Flags |= D3D11_CREATE_DEVICE_DEBUG;
+	Flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
 	HRESULT hr = (*ptrD3D11CreateDeviceAndSwapChain)(
@@ -260,6 +260,7 @@ void hk_PollInputDevices(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::
 	_InputFunc(a_dispatcher, a_events);
 }
 
+
 namespace Hooks
 {
 	struct BSGraphics_Renderer_Init_InitD3D
@@ -322,6 +323,26 @@ namespace Hooks
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
+	struct BSImagespaceShaderHDRTonemapBlendCinematic_SetupTechnique
+	{
+		static void thunk(RE::BSShader* a_shader, RE::BSShaderMaterial* a_material)
+		{
+			State::GetSingleton()->DrawPreProcess();
+			func(a_shader, a_material);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct BSImagespaceShaderHDRTonemapBlendCinematicFade_SetupTechnique
+	{
+		static void thunk(RE::BSShader* a_shader, RE::BSShaderMaterial* a_material)
+		{
+			State::GetSingleton()->DrawPreProcess();
+			func(a_shader, a_material);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
 	struct WndProcHandler_Hook
 	{
 		static LRESULT thunk(HWND a_hwnd, UINT a_msg, WPARAM a_wParam, LPARAM a_lParam)
@@ -369,6 +390,10 @@ namespace Hooks
 		stl::write_vfunc<0x2, BSImagespaceShaderISSAOCompositeSAO_SetupTechnique>(RE::VTABLE_BSImagespaceShaderISSAOCompositeSAO[0]);
 		stl::write_vfunc<0x2, BSImagespaceShaderISSAOCompositeFog_SetupTechnique>(RE::VTABLE_BSImagespaceShaderISSAOCompositeFog[0]);
 		stl::write_vfunc<0x2, BSImagespaceShaderISSAOCompositeSAOFog_SetupTechnique>(RE::VTABLE_BSImagespaceShaderISSAOCompositeSAOFog[0]);
+
+		logger::info("Hooking preprocess passes");
+		stl::write_vfunc<0x2, BSImagespaceShaderHDRTonemapBlendCinematic_SetupTechnique>(RE::VTABLE_BSImagespaceShaderHDRTonemapBlendCinematic[0]);
+		stl::write_vfunc<0x2, BSImagespaceShaderHDRTonemapBlendCinematicFade_SetupTechnique>(RE::VTABLE_BSImagespaceShaderHDRTonemapBlendCinematicFade[0]);
 
 		logger::info("Hooking WndProcHandler");
 		stl::write_thunk_call_6<RegisterClassA_Hook>(REL::VariantID(75591, 77226, 0xDC4B90).address() + REL::VariantOffset(0x8E, 0x15C, 0x99).offset());

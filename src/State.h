@@ -31,6 +31,7 @@ public:
 
 	void Draw();
 	void DrawDeferred();
+	void DrawPreProcess();
 	void Reset();
 	void Setup();
 
