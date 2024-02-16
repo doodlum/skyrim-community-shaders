@@ -260,7 +260,6 @@ void hk_PollInputDevices(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::
 	_InputFunc(a_dispatcher, a_events);
 }
 
-
 namespace Hooks
 {
 	struct BSGraphics_Renderer_Init_InitD3D
