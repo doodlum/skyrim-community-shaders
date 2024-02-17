@@ -12,6 +12,7 @@
 #include "Features/WaterBlending.h"
 #include "Features/WetnessEffects.h"
 #include "Features/WaterParallax.h"
+#include "Features/WaterCaustics.h"
 
 void Feature::Load(json&)
 {
@@ -87,7 +88,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		DynamicCubemaps::GetSingleton(),
 		CloudShadows::GetSingleton(),
 		TerrainBlending::GetSingleton(),
-		WaterParallax::GetSingleton()
+		WaterParallax::GetSingleton(),
+		WaterCaustics::GetSingleton()
 	};
 
 	static std::vector<Feature*> featuresVR = {
@@ -97,7 +99,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		ExtendedMaterials::GetSingleton(),
 		WetnessEffects::GetSingleton(),
 		LightLimitFix::GetSingleton(),
-		TerrainBlending::GetSingleton()
+		TerrainBlending::GetSingleton(),
+		WaterCaustics::GetSingleton()
 	};
 
 	return REL::Module::IsVR() ? featuresVR : features;

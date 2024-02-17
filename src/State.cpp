@@ -166,6 +166,8 @@ void State::Reset()
 		if (feature->loaded)
 			feature->Reset();
 	Bindings::GetSingleton()->Reset();
+	static float* deltaTime = (float*)REL::RelocationID(523660, 410199).address();
+	timer += *deltaTime;
 }
 
 void State::Setup()
@@ -535,6 +537,8 @@ void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
 		lightingData.BufferDim = bufferDim;
 		updateBuffer = true;
 	}
+
+	lightingData.Timer = timer;
 
 	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 

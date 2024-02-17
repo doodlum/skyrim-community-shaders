@@ -29,6 +29,8 @@ public:
 
 	bool upscalerLoaded = false;
 
+	float timer = 0;
+
 	void Draw();
 	void DrawDeferred();
 	void DrawPreProcess();
@@ -100,6 +102,7 @@ public:
 		uint Reflections;
 		float4 CameraData;
 		float2 BufferDim;
+		float Timer;
 	};
 
 	LightingData lightingData{};
