@@ -12,7 +12,6 @@ void WaterCaustics::Draw(const RE::BSShader*, const uint32_t)
 	context->PSSetShaderResources(70, 1, &causticsView);
 }
 
-
 void WaterCaustics::SetupResources()
 {
 	auto device = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().forwarder;

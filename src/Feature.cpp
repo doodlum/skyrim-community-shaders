@@ -10,9 +10,9 @@
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/TerrainBlending.h"
 #include "Features/WaterBlending.h"
+#include "Features/WaterCaustics.h"
 #include "Features/WaterParallax.h"
 #include "Features/WetnessEffects.h"
-#include "Features/WaterCaustics.h"
 
 void Feature::Load(json&)
 {
