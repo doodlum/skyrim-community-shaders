@@ -300,20 +300,20 @@ float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float 
 }
 #		endif
 
-#	if (defined(FLOWMAP) && !defined(BLEND_NORMALS)) || defined(LOD)
-#	undef WATER_PARALLAX
-#	endif
+#		if (defined(FLOWMAP) && !defined(BLEND_NORMALS)) || defined(LOD)
+#			undef WATER_PARALLAX
+#		endif
 
-#	if defined(WATER_PARALLAX)
-#		include "WaterParallax/WaterParallax.hlsli"
-#	endif
+#		if defined(WATER_PARALLAX)
+#			include "WaterParallax/WaterParallax.hlsli"
+#		endif
 
 float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFactor)
 {
-#	if defined(WATER_PARALLAX)
+#		if defined(WATER_PARALLAX)
 	float3 normalScalesRcp = rcp(input.NormalsScale.xyz);
 	float2 parallaxOffset = GetParallaxOffset(input, normalScalesRcp);
-#	endif
+#		endif
 
 #		if defined(FLOWMAP)
 	float2 normalMul =
@@ -338,24 +338,24 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 		sqrt(1 - flowmapNormal.x * flowmapNormal.x - flowmapNormal.y * flowmapNormal.y);
 #		endif
 
-#	if defined(WATER_PARALLAX)
+#		if defined(WATER_PARALLAX)
 	float3 normals1 = Normals01Tex.Sample(Normals01Sampler, input.TexCoord1.xy + parallaxOffset.xy * normalScalesRcp.x).xyz * 2.0 + float3(-1, -1, -2);
-#	else
+#		else
 	float3 normals1 = Normals01Tex.Sample(Normals01Sampler, input.TexCoord1.xy).xyz * 2.0 + float3(-1, -1, -2);
-#	endif
+#		endif
 
 #		if defined(FLOWMAP) && !defined(BLEND_NORMALS)
 	float3 finalNormal =
 		normalize(lerp(normals1 + float3(0, 0, 1), flowmapNormal, distanceFactor));
 #		elif !defined(LOD)
 
-#	if defined(WATER_PARALLAX)
+#			if defined(WATER_PARALLAX)
 	float3 normals2 = Normals02Tex.Sample(Normals02Sampler, input.TexCoord1.zw + parallaxOffset.xy * normalScalesRcp.y).xyz * 2.0 - 1.0;
 	float3 normals3 = Normals03Tex.Sample(Normals03Sampler, input.TexCoord2.xy + parallaxOffset.xy * normalScalesRcp.z).xyz * 2.0 - 1.0;
-#	else
+#			else
 	float3 normals2 = Normals02Tex.Sample(Normals02Sampler, input.TexCoord1.zw).xyz * 2.0 - 1.0;
 	float3 normals3 = Normals03Tex.Sample(Normals03Sampler, input.TexCoord2.xy).xyz * 2.0 - 1.0;
-#	endif
+#			endif
 
 	float3 blendedNormal = normalize(float3(0, 0, 1) + NormalsAmplitude.x * normals1 +
 									 NormalsAmplitude.y * normals2 + NormalsAmplitude.z * normals3);
@@ -390,9 +390,9 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 	return finalNormal;
 }
 
-#	if defined(DYNAMIC_CUBEMAPS)
-#		include "DynamicCubemaps/DynamicCubemaps.hlsli"
-#	endif
+#		if defined(DYNAMIC_CUBEMAPS)
+#			include "DynamicCubemaps/DynamicCubemaps.hlsli"
+#		endif
 
 float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float distanceFactor, float refractionsDepthFactor)
@@ -404,12 +404,12 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 		float3 reflectionColor = 0;
 		if (shaderDescriptors[0].PixelShaderDescriptor & _Cubemap) {
 			float3 cubemapUV = reflect(viewDirection, WaterParams.y * normal + float3(0, 0, 1 - WaterParams.y));
-#	if defined(DYNAMIC_CUBEMAPS)
+#		if defined(DYNAMIC_CUBEMAPS)
 			dynamicCubemap = specularTexture.SampleLevel(CubeMapSampler, cubemapUV, 0);
 			reflectionColor = lerp(dynamicCubemap.xyz, CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz, saturate(length(input.WPosition.xyz) * 0.0001));
-#	else
+#		else
 			reflectionColor = CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz;
-#	endif
+#		endif
 		} else {
 #		if !defined(LOD) && NUM_SPECULAR_LIGHTS == 0
 			float4 reflectionNormalRaw = float4((VarAmounts.w * refractionsDepthFactor) * normal.xy + input.MPosition.xy, input.MPosition.z, 1);
