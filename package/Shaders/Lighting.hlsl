@@ -490,12 +490,12 @@ struct PS_OUTPUT
 	float4 Albedo : SV_Target0;
 	float4 MotionVectors : SV_Target1;
 	float4 ScreenSpaceNormals : SV_Target2;
-#if defined(SNOW)
+#	if defined(SNOW)
 	float4 SnowParameters : SV_Target3;
 	float4 TerrainMask : SV_Target4;
-#else
+#	else
 	float4 TerrainMask : SV_Target4;
-#endif
+#	endif
 };
 
 #ifdef PSHADER
@@ -956,6 +956,11 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #	endif
 }
 
+
+#	if defined(WATER_CAUSTICS)
+#		include "WaterCaustics/WaterCaustics.hlsli"
+#	endif
+
 float2 ComputeTriplanarUV(float3 InputPosition)
 {
 	float3 posDDX = ddx(InputPosition.xyz);
@@ -1053,9 +1058,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float depthSampledLinear = GetScreenDepth(depthSampled);
 	float depthPixelLinear = GetScreenDepth(input.Position.z);
-
+	
 	float2 screenUVmod = GetDynamicResolutionAdjustedScreenPosition(screenUV);
-
+	
 	float blendingMask = 0;
 
 	float blendFactorTerrain = depthComp <= 0.0 ? 1.0 : 1.0 - ((depthPixelLinear - depthSampledLinear) / lerp(5.0, 1.0, blendingMask));
@@ -1578,7 +1583,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 worldSpaceNormal = normalize(mul(CameraViewInverse[eyeIndex], float4(screenSpaceNormal, 0)));
 
-#	if !defined(MODELSPACENORMALS)
+#	if	!defined(MODELSPACENORMALS)
 	float3 vertexNormal = tbnTr[2];
 
 	float3 screenSpaceVertexNormal;
@@ -1592,24 +1597,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float porosity = 1.0;
 
-#	if defined(WATER_BLENDING) || defined(WETNESS_EFFECTS)
-	float2 cellF = (((input.WorldPosition.xy + CameraPosAdjust[0].xy)) / 4096.0) + 64;  // always positive
-	int2 cellInt;
-	float2 cellFrac = modf(cellF, cellInt);
-
-	cellF = input.WorldPosition.xy / float2(4096.0, 4096.0);  // remap to cell scale
-	cellF += 2.5;                                             // 5x5 cell grid
-	cellF -= cellFrac;                                        // align to cell borders
-	cellInt = round(cellF);
-
-	uint waterTile = (uint)clamp(cellInt.x + (cellInt.y * 5), 0, 24);  // remap xy to 0-24
-	float waterHeight = -2147483648;                                   // lowest 32-bit integer
-
-	[flatten] if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0)
-		waterHeight = lightingData[0].WaterHeight[waterTile];
-
-#	endif
-
+	float waterHeight = GetWaterHeight(input.WorldPosition.xyz);
 	float nearFactor = smoothstep(4096.0 * 2.5, 0.0, viewPosition.z);
 
 #	if defined(WETNESS_EFFECTS)
@@ -1877,6 +1865,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 #	endif
 
+
+
 	diffuseColor += lightsDiffuseColor;
 	specularColor += lightsSpecularColor;
 
@@ -1907,6 +1897,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	if (perPassCloudShadow[0].EnableCloudShadows)
 		directionalAmbientColor *= lerp(1.0, cloudShadowMult, perPassCloudShadow[0].AbsorptionAmbient);
 #	endif
+
 	diffuseColor = directionalAmbientColor + emitColor.xyz + diffuseColor;
 
 #	if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE)
@@ -2019,11 +2010,17 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz += specularColor;
 #	endif  // defined (CPM_AVAILABLE) && defined(ENVMAP)
 
-#	if defined(WETNESS_EFFECTS)
 	color.xyz = sRGB2Lin(color.xyz);
+
+#	if defined(WETNESS_EFFECTS)
 	color.xyz += wetnessSpecular * wetnessGlossinessSpecular;
-	color.xyz = Lin2sRGB(color.xyz);
 #	endif
+
+#	if defined(WATER_CAUSTICS)
+	color.xyz *= ComputeWaterCaustics(waterHeight, input.WorldPosition.xyz);
+#	endif
+
+	color.xyz = Lin2sRGB(color.xyz);
 
 #	if defined(SPECULAR) || defined(SPARKLE)
 	float3 specularTmp = lerp(color.xyz, input.FogParam.xyz, input.FogParam.w);

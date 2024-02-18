@@ -485,74 +485,75 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 	}
 }
 
-void State::UpdateSharedData(const RE::BSShader*, const uint32_t)
+void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
 {
-	bool updateBuffer = false;
+	if (a_shader->shaderType.get() == RE::BSShader::Type::Lighting) {
+		bool updateBuffer = false;
 
-	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
+		auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 
-	bool currentReflections = (!REL::Module::IsVR() ?
-									  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
-									  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
+		bool currentReflections = (!REL::Module::IsVR() ?
+										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().cubeMapRenderTarget :
+										  RE::BSGraphics::RendererShadowState::GetSingleton()->GetVRRuntimeData().cubeMapRenderTarget) == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS;
 
-	if (lightingData.Reflections != (uint)currentReflections) {
-		updateBuffer = true;
-		lightingDataRequiresUpdate = true;
-	}
-
-	lightingData.Reflections = currentReflections;
-
-	if (lightingDataRequiresUpdate) {
-		lightingDataRequiresUpdate = false;
-		for (int i = -2; i < 3; i++) {
-			for (int k = -2; k < 3; k++) {
-				int waterTile = (i + 2) + ((k + 2) * 5);
-				auto position = !REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye() : shadowState->GetVRRuntimeData().posAdjust.getEye();
-				lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - position.z;
-			}
+		if (lightingData.Reflections != (uint)currentReflections) {
+			updateBuffer = true;
+			lightingDataRequiresUpdate = true;
 		}
-		updateBuffer = true;
-	}
 
-	auto cameraData = Util::GetCameraData();
-	if (lightingData.CameraData != cameraData) {
-		lightingData.CameraData = cameraData;
-		updateBuffer = true;
-	}
+		lightingData.Reflections = currentReflections;
 
-	auto viewport = RE::BSGraphics::State::GetSingleton();
-	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
+		if (lightingDataRequiresUpdate) {
+			lightingDataRequiresUpdate = false;
+			for (int i = -2; i < 3; i++) {
+				for (int k = -2; k < 3; k++) {
+					int waterTile = (i + 2) + ((k + 2) * 5);
+					auto position = !REL::Module::IsVR() ? shadowState->GetRuntimeData().posAdjust.getEye() : shadowState->GetVRRuntimeData().posAdjust.getEye();
+					lightingData.WaterHeight[waterTile] = Util::TryGetWaterHeight((float)i * 4096.0f, (float)k * 4096.0f) - position.z;
+				}
+			}
+			updateBuffer = true;
+		}
 
-	// grab main texture to get resolution
-	// VR cannot use viewport->screenWidth/Height as it's the desktop preview window's resolution and not HMD
-	D3D11_TEXTURE2D_DESC texDesc{};
-	renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMAIN].texture->GetDesc(&texDesc);
+		auto cameraData = Util::GetCameraData();
+		if (lightingData.CameraData != cameraData) {
+			lightingData.CameraData = cameraData;
+			updateBuffer = true;
+		}
 
-	float resolutionX = (float)texDesc.Width * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-	float resolutionY = (float)texDesc.Height * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+		auto viewport = RE::BSGraphics::State::GetSingleton();
+		auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 
-	float2 bufferDim = { resolutionX, resolutionY };
+		// grab main texture to get resolution
+		// VR cannot use viewport->screenWidth/Height as it's the desktop preview window's resolution and not HMD
+		D3D11_TEXTURE2D_DESC texDesc{};
+		renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMAIN].texture->GetDesc(&texDesc);
 
-	if (bufferDim != lightingData.BufferDim) {
-		lightingData.BufferDim = bufferDim;
-		updateBuffer = true;
-	}
+		float resolutionX = (float)texDesc.Width * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
+		float resolutionY = (float)texDesc.Height * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
 
-	lightingData.Timer = timer;
+		float2 bufferDim = { resolutionX, resolutionY };
 
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+		if (bufferDim != lightingData.BufferDim) {
+			lightingData.BufferDim = bufferDim;
+		}
 
-	if (updateBuffer) {
-		D3D11_MAPPED_SUBRESOURCE mapped;
-		DX::ThrowIfFailed(context->Map(lightingDataBuffer->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-		size_t bytes = sizeof(LightingData);
-		memcpy_s(mapped.pData, bytes, &lightingData, bytes);
-		context->Unmap(lightingDataBuffer->resource.get(), 0);
+		lightingData.Timer = timer;
 
-		ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
-		context->PSSetShaderResources(126, 1, &view);
+		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
-		view = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
-		context->PSSetShaderResources(20, 1, &view);
+		if (updateBuffer) {
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			DX::ThrowIfFailed(context->Map(lightingDataBuffer->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+			size_t bytes = sizeof(LightingData);
+			memcpy_s(mapped.pData, bytes, &lightingData, bytes);
+			context->Unmap(lightingDataBuffer->resource.get(), 0);
+
+			ID3D11ShaderResourceView* view = lightingDataBuffer->srv.get();
+			context->PSSetShaderResources(126, 1, &view);
+
+			view = RE::BSGraphics::Renderer::GetSingleton()->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
+			context->PSSetShaderResources(20, 1, &view);
+		}
 	}
 }
