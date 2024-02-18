@@ -2017,7 +2017,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 #	if defined(WATER_CAUSTICS)
-	color.xyz *= ComputeWaterCaustics(waterHeight, input.WorldPosition.xyz);
+	color.xyz *= ComputeWaterCaustics(waterHeight, input.WorldPosition.xyz, worldSpaceNormal);
 #	endif
 
 	color.xyz = Lin2sRGB(color.xyz);

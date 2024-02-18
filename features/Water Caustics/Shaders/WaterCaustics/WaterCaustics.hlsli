@@ -69,7 +69,7 @@ float2 ComputeWaterCausticsUV(float3 position)
 				((0.5 * (abs(posDDX.x) + abs(posDDY.x)) < abs(posDDX.y) + abs(posDDY.y)) ? position.yz : position.xz));
 }
 
-float3 ComputeWaterCaustics(float3 waterHeight, float3 worldPosition)
+float3 ComputeWaterCaustics(float3 waterHeight, float3 worldPosition, float3 worldSpaceNormal)
 {
 	float causticsDistToWater = waterHeight - worldPosition.z;
 	float shoreFactorCaustics = saturate(causticsDistToWater / 64.0);
@@ -89,7 +89,7 @@ float3 ComputeWaterCaustics(float3 waterHeight, float3 worldPosition)
 
 	causticsUV *= 0.5;
 
-	causticsUV1 = PanCausticsUV(causticsUV, 0.75 * 0.1, 1.0 );
+	causticsUV1 = PanCausticsUV(causticsUV, 0.75 * 0.1, 1.0);
 	causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.1, -0.75);
 
 	caustics1 = SampleCaustics(causticsUV1, 0.002);
@@ -97,8 +97,11 @@ float3 ComputeWaterCaustics(float3 waterHeight, float3 worldPosition)
 
 	float3 causticsLow = sqrt(min(caustics1, caustics2));
 
+	float upAmount = (worldSpaceNormal.z + 1.0) * 0.5;
+
 	float3 caustics = lerp(causticsLow, causticsHigh, causticsFade);
-	return lerp(1.0, caustics, shoreFactorCaustics);
+	caustics = lerp(causticsLow, caustics, upAmount);
+	return lerp(1.0, caustics, shoreFactorCaustics * upAmount);
 }
 
 #	endif
