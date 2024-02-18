@@ -511,7 +511,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float3 refractionColor = RefractionTex.Sample(RefractionSampler, refractionUV).xyz;
 	float3 refractionDiffuseColor = lerp(ShallowColor.xyz, DeepColor.xyz, distanceMul.y);
 
-#	if defined(WATER_CAUSTICS) && defined(DEPTH) && !defined(VERTEX_ALPHA_DEPTH)
+#			if defined(WATER_CAUSTICS) && defined(DEPTH) && !defined(VERTEX_ALPHA_DEPTH)
 	float depthDifference = depth - length(input.WPosition.xyz);
 	float2 viewOffset = viewDirection.xy * depthDifference;
 
@@ -523,7 +523,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 
 	float3 blendedCaustics = NormalsAmplitude.xxx * caustics1 + NormalsAmplitude.yyy * caustics2 + NormalsAmplitude.zzz * caustics3;
 	refractionColor *= lerp(1.0, blendedCaustics, distanceMul.x);
-#	endif
+#			endif
 
 #			if defined(UNDERWATER)
 	float refractionMul = 0;
