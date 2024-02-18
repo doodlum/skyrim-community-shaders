@@ -308,6 +308,16 @@ float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float 
 #			include "WaterParallax/WaterParallax.hlsli"
 #		endif
 
+#		if defined(DYNAMIC_CUBEMAPS)
+#			include "DynamicCubemaps/DynamicCubemaps.hlsli"
+#		endif
+
+#		define SampColorSampler Normals01Sampler
+
+#		if defined(WATER_CAUSTICS)
+#			include "WaterCaustics/WaterCaustics.hlsli"
+#		endif
+
 float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFactor)
 {
 #		if defined(WATER_PARALLAX)
@@ -389,10 +399,6 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 
 	return finalNormal;
 }
-
-#		if defined(DYNAMIC_CUBEMAPS)
-#			include "DynamicCubemaps/DynamicCubemaps.hlsli"
-#		endif
 
 float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float distanceFactor, float refractionsDepthFactor)
@@ -504,6 +510,21 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float2 refractionUV = GetDynamicResolutionAdjustedScreenPosition(refractionUvRaw);
 	float3 refractionColor = RefractionTex.Sample(RefractionSampler, refractionUV).xyz;
 	float3 refractionDiffuseColor = lerp(ShallowColor.xyz, DeepColor.xyz, distanceMul.y);
+
+#	if defined(WATER_CAUSTICS) && defined(DEPTH) && !defined(VERTEX_ALPHA_DEPTH)
+	float depthDifference = depth - length(input.WPosition.xyz);
+	float2 viewOffset = viewDirection.xy * depthDifference;
+
+	float3 normalScalesRcp = rcp(input.NormalsScale.xyz);
+
+	float3 caustics1 = ComputeWaterCaustics(input.TexCoord1.xy + viewOffset.xy * normalScalesRcp.x, depthDifference);
+	float3 caustics2 = ComputeWaterCaustics(input.TexCoord1.zw + viewOffset.xy * normalScalesRcp.y, depthDifference);
+	float3 caustics3 = ComputeWaterCaustics(input.TexCoord1.xy + viewOffset.xy * normalScalesRcp.z, depthDifference);
+
+	float3 blendedCaustics = NormalsAmplitude.xxx * caustics1 + NormalsAmplitude.yyy * caustics2 + NormalsAmplitude.zzz * caustics3;
+	refractionColor *= lerp(1.0, blendedCaustics, distanceMul.x);
+#	endif
+
 #			if defined(UNDERWATER)
 	float refractionMul = 0;
 #			else
