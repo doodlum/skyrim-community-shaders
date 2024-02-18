@@ -165,7 +165,7 @@ float3 InverseProjectUVZ(float2 uv, float z)
 		float depth = DepthTexture.SampleLevel(LinearSampler, uv, 0);
 		float linearDepth = GetScreenDepth(depth);
 
-		if (linearDepth > 16.5) {  // First person
+		if (linearDepth > 128.0) {  // Ignore objects which are too close
 			float3 color = ColorTexture.SampleLevel(LinearSampler, uv, 0);
 			float4 output = float4(sRGB2Lin(color), 1.0);
 			float lerpFactor = 0.5;
