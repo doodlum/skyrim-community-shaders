@@ -25,11 +25,11 @@ float3 ComputeWaterCaustics(float2 uv, float depthDifference)
 {
 	float2 causticsUV = uv * 5.0;
 
-	float2 causticsUV1 = PanCausticsUV(causticsUV, 0.75 * 0.2, 1.0);
-	float2 causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.2, -0.75);
+	float2 causticsUV1 = PanCausticsUV(causticsUV, 0.5 * 0.2, 1.0);
+	float2 causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.2, -0.5);
 
 	float3 caustics1 = SampleCaustics(causticsUV1, 0.001);
-	float3 caustics2 = SampleCaustics(causticsUV2, 0.001);
+	float3 caustics2 = SampleCaustics(causticsUV2, 0.002);
 
 	float3 caustics = min(caustics1, caustics2) * 5.0;
 
@@ -78,20 +78,20 @@ float3 ComputeWaterCaustics(float3 waterHeight, float3 worldPosition, float3 wor
 
 	float2 causticsUV = ComputeWaterCausticsUV((worldPosition.xyz + CameraPosAdjust[0].xyz)) * 0.005;
 
-	float2 causticsUV1 = PanCausticsUV(causticsUV, 0.75 * 0.2, 1.0);
-	float2 causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.2, -0.75);
+	float2 causticsUV1 = PanCausticsUV(causticsUV, 0.5 * 0.2, 1.0);
+	float2 causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.2, -0.5);
 
 	float3 caustics1 = SampleCaustics(causticsUV1, 0.001);
-	float3 caustics2 = SampleCaustics(causticsUV2, 0.001);
+	float3 caustics2 = SampleCaustics(causticsUV2, 0.002);
 
 	float3 causticsHigh = min(caustics1, caustics2) * 5.0;
 
 	causticsUV *= 0.5;
 
-	causticsUV1 = PanCausticsUV(causticsUV, 0.75 * 0.1, 1.0);
-	causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.1, -0.75);
+	causticsUV1 = PanCausticsUV(causticsUV, 0.5 * 0.1, 1.0);
+	causticsUV2 = PanCausticsUV(causticsUV, 1.0 * 0.1, -0.5);
 
-	caustics1 = SampleCaustics(causticsUV1, 0.002);
+	caustics1 = SampleCaustics(causticsUV1, 0.001);
 	caustics2 = SampleCaustics(causticsUV2, 0.002);
 
 	float3 causticsLow = sqrt(min(caustics1, caustics2));
