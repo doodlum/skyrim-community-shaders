@@ -14,8 +14,9 @@ float3 GetDynamicCubemap(float2 uv, float3 N, float3 V, float roughness, float3 
 
 	float level = roughness * 9.0;
 
-#	if defined(DYNAMIC_CUBEMAPS) && !defined(VR)
+#	if defined(DYNAMIC_CUBEMAPS)
 	float3 specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level);
+#		if !defined(VR)
 	if (!FrameParams.z && FrameParams.y) {
 		float4 ssrBlurred = ssrTexture.SampleLevel(SampColorSampler, uv, 0);
 		float4 ssrRaw = ssrRawTexture.SampleLevel(SampColorSampler, uv, 0);
@@ -24,8 +25,9 @@ float3 GetDynamicCubemap(float2 uv, float3 N, float3 V, float roughness, float3 
 	} else {
 		specularIrradiance = sRGB2Lin(specularIrradiance);
 	}
-#	else
+#		else  // !VR
 	specularIrradiance = sRGB2Lin(specularIrradiance);
+#		endif
 #	endif
 
 	F0 = sRGB2Lin(F0);
