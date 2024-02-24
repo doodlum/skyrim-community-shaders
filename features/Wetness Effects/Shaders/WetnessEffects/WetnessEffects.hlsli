@@ -61,15 +61,13 @@ float3 GetWetnessAmbientSpecular(float2 uv, float3 N, float3 V, float roughness)
 #if defined(DYNAMIC_CUBEMAPS)
 	float3 R = reflect(-V, N);
 	float NoV = saturate(dot(N, V));
-
+	
 	float level = roughness * 9.0;
-
+	
 	float3 specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level);
 
 #	if defined(DYNAMIC_CUBEMAPS) && !defined(VR)
-	float4 ssrBlurred = ssrTexture.SampleLevel(SampColorSampler, uv, 0);
-	float4 ssrRaw = ssrRawTexture.SampleLevel(SampColorSampler, uv, 0);
-	float4 ssrTexture = lerp(ssrRaw, ssrBlurred, sqrt(roughness));
+	float4 ssrTexture = ssrRawTexture.SampleLevel(SampColorSampler, uv, 0);
 	specularIrradiance = sRGB2Lin(lerp(specularIrradiance, ssrTexture.rgb, ssrTexture.a));
 #	else
 	specularIrradiance = sRGB2Lin(specularIrradiance);
