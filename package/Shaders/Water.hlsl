@@ -24,6 +24,9 @@ struct VS_INPUT
 	float4 Color : COLOR0;
 #	endif
 #endif
+#if defined(VR)
+	uint InstanceID : SV_INSTANCEID;
+#endif  // VR
 };
 
 struct VS_OUTPUT
@@ -68,13 +71,21 @@ struct VS_OUTPUT
 #endif
 
 	float4 NormalsScale : TEXCOORD8;
+#if defined(VR)
+	float ClipDistance : SV_ClipDistance0;  // o11
+	float CullDistance : SV_CullDistance0;  // p11
+#endif                                      // VR
 };
 
 #ifdef VSHADER
 
 cbuffer PerTechnique : register(b0)
 {
-	float4 QPosAdjust : packoffset(c0);
+#	if !defined(VR)
+	float4 QPosAdjust[1] : packoffset(c0);
+#	else
+	float4 QPosAdjust[2] : packoffset(c0);
+#	endif  // VR
 };
 
 cbuffer PerMaterial : register(b1)
@@ -89,22 +100,50 @@ cbuffer PerMaterial : register(b1)
 
 cbuffer PerGeometry : register(b2)
 {
-	row_major float4x4 World : packoffset(c0);
-	row_major float4x4 PreviousWorld : packoffset(c4);
-	row_major float4x4 WorldViewProj : packoffset(c8);
+#	if !defined(VR)
+	row_major float4x4 World[1] : packoffset(c0);
+	row_major float4x4 PreviousWorld[1] : packoffset(c4);
+	row_major float4x4 WorldViewProj[1] : packoffset(c8);
 	float3 ObjectUV : packoffset(c12);
 	float4 CellTexCoordOffset : packoffset(c13);
+#	else   // VR has 25 vs 13 entries
+	row_major float4x4 World[2] : packoffset(c0);
+	row_major float4x4 PreviousWorld[2] : packoffset(c8);
+	row_major float4x4 WorldViewProj[2] : packoffset(c16);
+	float3 ObjectUV : packoffset(c24);
+	float4 CellTexCoordOffset : packoffset(c25);
+#	endif  // VR
+};
+
+#	ifdef VR
+cbuffer cb13 : register(b13)
+{
+	float AlphaThreshold : packoffset(c0);
+	float cb13 : packoffset(c0.y);
+	float2 EyeOffsetScale : packoffset(c0.z);
+	float4 EyeClipEdge[2] : packoffset(c1);
+}
+#	endif  // VR
+
+const static float4x4 M_IdentityMatrix = {
+	{ 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 }
 };
 
 VS_OUTPUT main(VS_INPUT input)
 {
 	VS_OUTPUT vsout;
 
+#	if !defined(VR)
+	uint eyeIndex = 0;
+#	else   // VR
+	uint eyeIndex = cb13 * (input.InstanceID.x & 1);
+#	endif  // VR
+
 	vsout.NormalsScale = NormalsScale;
 
 	float4 inputPosition = float4(input.Position.xyz, 1.0);
-	float4 worldPos = mul(World, inputPosition);
-	float4 worldViewPos = mul(WorldViewProj, inputPosition);
+	float4 worldPos = mul(World[eyeIndex], inputPosition);
+	float4 worldViewPos = mul(WorldViewProj[eyeIndex], inputPosition);
 
 	float heightMult = min((1.0 / 10000.0) * max(worldViewPos.z - 70000, 0), 1);
 
@@ -114,7 +153,7 @@ VS_OUTPUT main(VS_INPUT input)
 
 #	if defined(STENCIL)
 	vsout.WorldPosition = worldPos;
-	vsout.PreviousWorldPosition = mul(PreviousWorld, inputPosition);
+	vsout.PreviousWorldPosition = mul(PreviousWorld[eyeIndex], inputPosition);
 #	else
 	float fogColorParam = min(VSFogFarColor.w,
 		pow(saturate(length(worldViewPos.xyz) * VSFogParam.y - VSFogParam.x), NormalsScale.w));
@@ -126,7 +165,7 @@ VS_OUTPUT main(VS_INPUT input)
 
 #		if defined(LOD)
 	float4 posAdjust =
-		ObjectUV.x ? 0.0 : (QPosAdjust.xyxy + worldPos.xyxy) / NormalsScale.xxyy;
+		ObjectUV.x ? 0.0 : (QPosAdjust[eyeIndex].xyxy + worldPos.xyxy) / NormalsScale.xxyy;
 
 	vsout.TexCoord1.xyzw = NormalsScroll0 + posAdjust;
 #		else
@@ -134,7 +173,7 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.MPosition.xyzw = inputPosition.xyzw;
 #			endif
 
-	float2 posAdjust = worldPos.xy + QPosAdjust.xy;
+	float2 posAdjust = worldPos.xy + QPosAdjust[eyeIndex].xy;
 
 	float2 scrollAdjust1 = posAdjust / NormalsScale.xx;
 	float2 scrollAdjust2 = posAdjust / NormalsScale.yy;
@@ -203,6 +242,28 @@ VS_OUTPUT main(VS_INPUT input)
 #		endif
 #	endif
 
+#	ifdef VR
+	float4 r0;
+	float4 projSpacePosition = vsout.HPosition;
+	r0.xyzw = 0;
+	if (0 < cb13) {
+		r0.yz = dot(projSpacePosition, EyeClipEdge[eyeIndex]);  // projSpacePosition is clipPos
+	} else {
+		r0.yz = float2(1, 1);
+	}
+
+	r0.w = 2 + -cb13;
+	r0.x = dot(EyeOffsetScale, M_IdentityMatrix[eyeIndex].xy);
+	r0.xw = r0.xw * projSpacePosition.wx;
+	r0.x = cb13 * r0.x;
+
+	vsout.HPosition.x = r0.w * 0.5 + r0.x;
+	vsout.HPosition.yzw = projSpacePosition.yzw;
+
+	vsout.ClipDistance.x = r0.z;
+	vsout.CullDistance.x = r0.y;
+#	endif  // VR
+
 	return vsout;
 }
 
@@ -252,11 +313,19 @@ Texture2D<float4> RawSSRReflectionTex : register(t11);
 
 cbuffer PerTechnique : register(b0)
 {
-	float4 VPOSOffset : packoffset(c0);  // inverse main render target width and height in xy, 0 in zw
-	float4 PosAdjust : packoffset(c1);   // inverse framebuffer range in w
+#	if !defined(VR)
+	float4 VPOSOffset : packoffset(c0);    // inverse main render target width and height in xy, 0 in zw
+	float4 PosAdjust[1] : packoffset(c1);  // inverse framebuffer range in w
 	float4 CameraData : packoffset(c2);
 	float4 SunDir : packoffset(c3);
 	float4 SunColor : packoffset(c4);
+#	else
+	float4 VPOSOffset : packoffset(c0);    // inverse main render target width and height in xy, 0 in zw
+	float4 PosAdjust[2] : packoffset(c1);  // inverse framebuffer range in w
+	float4 CameraData : packoffset(c3);
+	float4 SunDir : packoffset(c4);
+	float4 SunColor : packoffset(c5);
+#	endif
 }
 
 cbuffer PerMaterial : register(b1)
@@ -279,12 +348,30 @@ cbuffer PerMaterial : register(b1)
 
 cbuffer PerGeometry : register(b2)
 {
-	float4x4 TextureProj : packoffset(c0);
-	float4 ReflectPlane : packoffset(c4);
+#	if !defined(VR)
+	float4x4 TextureProj[1] : packoffset(c0);
+	float4 ReflectPlane[1] : packoffset(c4);
 	float4 ProjData : packoffset(c5);
 	float4 LightPos[8] : packoffset(c6);
 	float4 LightColor[8] : packoffset(c14);
+#	else
+	float4x4 TextureProj[2] : packoffset(c0);
+	float4 ReflectPlane[2] : packoffset(c8);
+	float4 ProjData : packoffset(c10);
+	float4 LightPos[8] : packoffset(c11);
+	float4 LightColor[8] : packoffset(c19);
+#	endif  //VR
 }
+
+#	ifdef VR
+cbuffer cb13 : register(b13)
+{
+	float AlphaThreshold : packoffset(c0);
+	float cb13 : packoffset(c0.y);
+	float2 EyeOffsetScale : packoffset(c0.z);
+	float4 EyeClipEdge[2] : packoffset(c1);
+}
+#	endif  // VR
 
 #	define SampColorSampler Normals01Sampler
 
@@ -452,7 +539,7 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 }
 
 float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection,
-	float distanceFactor, float refractionsDepthFactor)
+	float distanceFactor, float refractionsDepthFactor, uint a_eyeIndex = 0)
 {
 	float4 dynamicCubemap = 0.0;
 	if (shaderDescriptors[0].PixelShaderDescriptor & _Reflections) {
@@ -474,7 +561,7 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			float4 reflectionNormalRaw = float4(VarAmounts.w * normal.xy, 0, 1);
 #		endif
 
-			float4 reflectionNormal = mul(transpose(TextureProj), reflectionNormalRaw);
+			float4 reflectionNormal = mul(transpose(TextureProj[a_eyeIndex]), reflectionNormalRaw);
 			reflectionColor = ReflectionTex.SampleLevel(ReflectionSampler, reflectionNormal.xy / reflectionNormal.ww, 0).xyz;
 		}
 
@@ -528,19 +615,20 @@ float GetFresnelValue(float3 normal, float3 viewDirection)
 
 #		if defined(WATER_CAUSTICS)
 float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
-	float4 distanceMul, float refractionsDepthFactor, float fresnel, float3 caustics)
+	float4 distanceMul, float refractionsDepthFactor, float fresnel, float3 caustics, uint a_eyeIndex = 0)
 #		else
 float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
-	float4 distanceMul, float refractionsDepthFactor, float fresnel)
+	float4 distanceMul, float refractionsDepthFactor, float fresnel, uint a_eyeIndex = 0)
 #		endif
 {
 #		if defined(REFRACTIONS)
-	float4 refractionNormal = mul(transpose(TextureProj),
+	float4 refractionNormal = mul(transpose(TextureProj[a_eyeIndex]),
 		float4((VarAmounts.w * refractionsDepthFactor).xx * normal.xy + input.MPosition.xy,
 			input.MPosition.z, 1));
 
 	float2 refractionUvRaw =
 		float2(refractionNormal.x, refractionNormal.w - refractionNormal.y) / refractionNormal.ww;
+	refractionUvRaw = ConvertToStereoUV(refractionUvRaw, a_eyeIndex);
 
 #			if defined(DEPTH) && !defined(VERTEX_ALPHA_DEPTH)
 	float depth = GetScreenDepthWater(DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy));
@@ -552,14 +640,15 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 			refractionDepth));
 
 	float3 refractionDepthAdjustedViewDirection = -viewDirection * refractionDepthMul;
-	float refractionViewSurfaceAngle = dot(refractionDepthAdjustedViewDirection, ReflectPlane.xyz);
+	float refractionViewSurfaceAngle = dot(refractionDepthAdjustedViewDirection, ReflectPlane[a_eyeIndex].xyz);
 
 	float refractionPlaneMul =
-		sign(refractionViewSurfaceAngle) * (1 - ReflectPlane.w / refractionViewSurfaceAngle);
+		sign(refractionViewSurfaceAngle) * (1 - ReflectPlane[a_eyeIndex].w / refractionViewSurfaceAngle);
 
 	if (refractionPlaneMul < 0) {
 		refractionUvRaw =
 			DynamicResolutionParams2.xy * input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;
+		//refractionUvRaw = ConvertToStereoUV(refractionUvRaw, a_eyeIndex);
 	}
 #			endif
 
@@ -616,6 +705,16 @@ PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
 
+#	if !defined(VR)
+	uint eyeIndex = 0;
+#	else
+	float4 r0, r1, r3, stereoUV;
+	stereoUV.xy = input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;
+	stereoUV.x = DynamicResolutionParams2.x * stereoUV.x;
+	stereoUV.x = (stereoUV.x >= 0.5);
+	uint eyeIndex = (uint)(((int)((uint)cb13)) * (int)stereoUV.x);
+#	endif
+
 #	if defined(SIMPLE) || defined(UNDERWATER) || defined(LOD) || defined(SPECULAR)
 	float3 viewDirection = normalize(input.WPosition.xyz);
 
@@ -641,9 +740,9 @@ PS_OUTPUT main(PS_INPUT input)
 	float depthMul = length(float3((depthOffset * 2 - 1) * depth / ProjData.xy, depth));
 
 	float3 depthAdjustedViewDirection = -viewDirection * depthMul;
-	float viewSurfaceAngle = dot(depthAdjustedViewDirection, ReflectPlane.xyz);
+	float viewSurfaceAngle = dot(depthAdjustedViewDirection, ReflectPlane[eyeIndex].xyz);
 
-	float planeMul = (1 - ReflectPlane.w / viewSurfaceAngle);
+	float planeMul = (1 - ReflectPlane[eyeIndex].w / viewSurfaceAngle);
 	distanceMul = saturate(
 		planeMul * float4(length(depthAdjustedViewDirection).xx, abs(viewSurfaceAngle).xx) /
 		FogParam.z);
@@ -657,7 +756,12 @@ PS_OUTPUT main(PS_INPUT input)
 #		elif defined(SPECULAR) && (NUM_SPECULAR_LIGHTS != 0)
 	float4 depthControl = float4(0, 0, 1, 0);
 #		else
+	// #			if !defined(VR)
 	float4 depthControl = DepthControl * (distanceMul - 1) + 1;
+// #			else
+// 	float4 VRDepthControl = DepthControl.zwxw;  // VR appears to move values around
+// 	float4 depthControl = VRDepthControl * (distanceMul - 1) + 1;
+// #			endif  // VR
 #		endif
 
 #		if defined(WATER_CAUSTICS)
@@ -673,7 +777,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 finalColor = 0.0.xxx;
 
 	for (int lightIndex = 0; lightIndex < NUM_SPECULAR_LIGHTS; ++lightIndex) {
-		float3 lightVector = LightPos[lightIndex].xyz - (PosAdjust.xyz + input.WPosition.xyz);
+		float3 lightVector = LightPos[lightIndex].xyz - (PosAdjust[eyeIndex].xyz + input.WPosition.xyz, eyeIndex);
 		float3 lightDirection = normalize(normalize(lightVector) - viewDirection);
 		float lightFade = saturate(length(lightVector) / LightPos[lightIndex].w);
 		float lightColorMul = (1 - lightFade * lightFade);
@@ -687,18 +791,17 @@ PS_OUTPUT main(PS_INPUT input)
 	isSpecular = true;
 #		else
 
-	float3 specularColor = GetWaterSpecularColor(input, normal, viewDirection, distanceFactor, depthControl.y);
+	float3 specularColor = GetWaterSpecularColor(input, normal, viewDirection, distanceFactor, depthControl.y, eyeIndex);
 #			if defined(WATER_CAUSTICS)
-	float3 diffuseColor = GetWaterDiffuseColor(input, normal, viewDirection, distanceMul, depthControl.y, fresnel, caustics);
+	float3 diffuseColor = GetWaterDiffuseColor(input, normal, viewDirection, distanceMul, depthControl.y, fresnel, caustics, eyeIndex);
 
 #			else
-	float3 diffuseColor = GetWaterDiffuseColor(input, normal, viewDirection, distanceMul, depthControl.y, fresnel);
+	float3 diffuseColor = GetWaterDiffuseColor(input, normal, viewDirection, distanceMul, depthControl.y, fresnel, eyeIndex);
 #			endif
 
 	float3 specularLighting = 0;
 
 #			if defined(LIGHT_LIMIT_FIX)
-	uint eyeIndex = 0;
 	uint lightCount = 0;
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WPosition.xyz, 1)).xyz;
@@ -744,7 +847,7 @@ PS_OUTPUT main(PS_INPUT input)
 #			endif
 #		endif
 
-	psout.Lighting = saturate(float4(finalColor * PosAdjust.w, isSpecular));
+	psout.Lighting = saturate(float4(finalColor * PosAdjust[eyeIndex].w, isSpecular));
 #		if defined(WATER_BLENDING)
 #			if defined(DEPTH)
 	if (perPassWaterBlending[0].EnableWaterBlending) {
