@@ -78,7 +78,7 @@ private:
 };
 
 template <typename T>
-D3D11_BUFFER_DESC StructuredBufferDesc()
+D3D11_BUFFER_DESC StructuredBufferDesc(UINT a_count = 1)
 {
 	D3D11_BUFFER_DESC desc{};
 	ZeroMemory(&desc, sizeof(desc));
@@ -87,7 +87,7 @@ D3D11_BUFFER_DESC StructuredBufferDesc()
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	desc.StructureByteStride = sizeof(T);
-	desc.ByteWidth = sizeof(T);
+	desc.ByteWidth = sizeof(T) * a_count;
 	return desc;
 }
 
