@@ -740,7 +740,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
 	float depthMul = length(float3((screenUV * 2 - 1) * depth / ProjData.xy, depth));
-	
+
 	float3 depthAdjustedViewDirection = -viewDirection * depthMul;
 	float viewSurfaceAngle = dot(depthAdjustedViewDirection, ReflectPlane[eyeIndex].xyz);
 
