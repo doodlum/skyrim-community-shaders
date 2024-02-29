@@ -27,7 +27,7 @@ jobs:
           # make sure the parent commit is grabbed as well, because
           # that's what will get formatted (i.e. the most recent commit)
           fetch-depth: 2
-      # format the latest commit
+      # retrieve comma-separated list of modified files
       - name: Retrieve changed files
         id: changed-files
         uses: tj-actions/changed-files@v42.0.5
@@ -38,6 +38,7 @@ jobs:
             **/*.hlsl
             **/*.hlsli
           separator: ","
+        # process modified files list before passing to clang-format-lint-action
       - name: Process changed files list
         id: process-list
         run: |
@@ -45,6 +46,7 @@ jobs:
           CHANGED_FILES="${CHANGED_FILES// /\\ }"
           CHANGED_FILES=$(echo "$CHANGED_FILES" | tr ',' ' ')
           echo "::set-output name=changed_files::${CHANGED_FILES}"
+      # format the latest commit
       - name: Format changed files
         if: steps.changed-files.outputs.any_changed == 'true'
         uses: DoozyX/clang-format-lint-action@v0.17
