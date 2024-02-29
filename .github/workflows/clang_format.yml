@@ -42,7 +42,9 @@ jobs:
           CHANGED_FILES="${CHANGED_FILES// /\\ }"
           CHANGED_FILES=$(echo "$CHANGED_FILES" | tr ',' ' ')
           echo "::set-output name=changed_files::${CHANGED_FILES}"
-      - uses: DoozyX/clang-format-lint-action@v0.17
+      - name: Format changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: "."
           exclude: "extern include"
