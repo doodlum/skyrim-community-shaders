@@ -32,6 +32,9 @@ jobs:
           files: |
             src/Features/*.cpp
             src/Features/*.h
+            **/*.hlsl
+            **/*.hlsli
+          separator: ","
       - uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: "."
