@@ -67,6 +67,16 @@ struct TerrainOcclusion : public Feature
 	};
 	std::unique_ptr<Buffer> aoGenBuffer = nullptr;
 
+	struct ShadowTracingCB
+	{
+		float2 LightUVDir;   // direction on which light descends, from one pixel to next via dda
+		float2 LightDeltaZ;  // per LightUVDir, upper penumbra and lower, should be negative
+		float HeightBias;
+		uint StartUorV;
+		float2 PxSize;
+	};
+	std::unique_ptr<ConstantBuffer> shadowTracingCB = nullptr;
+
 	struct PerPass
 	{
 		Settings::EffectSettings effect;
@@ -85,7 +95,10 @@ struct TerrainOcclusion : public Feature
 
 	std::unique_ptr<Texture2D> texHeightMap = nullptr;
 	std::unique_ptr<Texture2D> texOcclusion = nullptr;
-	std::unique_ptr<Texture2D> texHeightCone = nullptr;
+	std::unique_ptr<Texture2D> texNormalisedHeight = nullptr;
+	std::unique_ptr<Texture2D> texShadowHeight = nullptr;
+
+	bool IsHeightMapReady();
 
 	virtual void SetupResources() override;
 	void CompileComputeShaders();
@@ -96,7 +109,6 @@ struct TerrainOcclusion : public Feature
 
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
 	void LoadHeightmap();
-	void LoadPrecomputedTex();
 	void Precompute();
 	void ModifyLighting();
 

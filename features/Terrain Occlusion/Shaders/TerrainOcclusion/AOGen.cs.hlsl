@@ -15,7 +15,7 @@ struct AOGenBuffer
 };
 
 RWTexture2D<float> RWTexOcclusion : register(u0);
-RWTexture2D<float2> RWTexHeightCone : register(u1);
+RWTexture2D<float> RWTexNormalisedHeight : register(u1);
 
 StructuredBuffer<AOGenBuffer> aoGen : register(t0);
 Texture2D<float> TexHeightmap : register(t1);
@@ -105,13 +105,11 @@ float3 ReconstructNormal(float2 uv, float2 texelSize)
 			}
 			float h = n + clamp((-1 + 2 * side) * acos(horizon_cos) - n, -HALF_PI, HALF_PI);
 			visibility += saturate(proj_normal_len * (cos_n + 2 * h * sin(n) - cos(2 * h - n)) * .25);
-			cos_cone = max(horizon_cos, cos_cone);
 		}
 	}
 	visibility /= aoGen[0].sliceCount;
 
 	float norm_z = (pos.z - aoGen[0].zRange.x) / (aoGen[0].zRange.y - aoGen[0].zRange.x);
-	float cot_cone = cos_cone * rsqrt(1 - cos_cone * cos_cone);
 	RWTexOcclusion[tid] = visibility;
-	RWTexHeightCone[tid] = float2(norm_z, cot_cone);
+	RWTexNormalisedHeight[tid] = norm_z;
 }
