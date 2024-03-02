@@ -1512,7 +1512,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	if (perPassTerraOcc[0].EnableTerrainShadow || perPassTerraOcc[0].EnableTerrainAO)
 		terraOccUV = GetTerrainOcclusionUV(input.WorldPosition.xy + CameraPosAdjust[0].xy);
 	if (perPassTerraOcc[0].EnableTerrainShadow) {
-		float terrainShadow = GetTerrainSoftShadow(terraOccUV, normalizedDirLightDirectionWS, input.WorldPosition.z + CameraPosAdjust[0].z, SampColorSampler);
+		float terrainShadow = GetTerrainSoftShadow(terraOccUV, length(input.WorldPosition), input.WorldPosition.z + CameraPosAdjust[0].z, SampColorSampler);
 		dirLightColor *= terrainShadow;
 	}
 #	endif

@@ -19,7 +19,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	EnableTerrainAO,
 	HeightBias,
 	ShadowSofteningRadiusAngle,
-	ShadowAnglePower,
 	AOAmbientMix,
 	AODiffuseMix,
 	AOPower,
@@ -55,9 +54,15 @@ void TerrainOcclusion::DrawSettings()
 		// ImGui::SliderAngle("Softening", &settings.Effect.ShadowSofteningRadiusAngle, .1f, 10.f, "%.2f deg", ImGuiSliderFlags_AlwaysClamp);
 		// if (auto _tt = Util::HoverTooltipWrapper())
 		// 	ImGui::Text("Controls the solid angle of sunlight, making terrain shadows softer.");
-		ImGui::SliderFloat("Angle Exaggeration", &settings.Effect.ShadowAnglePower, 1, 8, "%.1f");
-		if (auto _tt = Util::HoverTooltipWrapper())
-			ImGui::Text("Arbitarily lowers the vanilla sunlight angle that is rather high even at sunrise/sunset, making terrain shadows longer.");
+
+		ImGui::SliderFloat2("Fade Distance", &settings.Effect.ShadowFadeDistance.x, 0, 10000.f, "%.0f units");
+		if (auto _tt = Util::HoverTooltipWrapper()) {
+			ImGui::Text("Because near shadow is handled by vanilla shadow maps");
+			if (auto settingCollection = RE::INIPrefSettingCollection::GetSingleton()) {
+				auto gameShadowDist = settingCollection->GetSetting("fShadowDistance:Display")->GetFloat();
+				ImGui::Text("Your fShadowDistance setting: %f", gameShadowDist);
+			}
+		}
 	}
 
 	ImGui::SeparatorText("AO");
@@ -72,8 +77,7 @@ void TerrainOcclusion::DrawSettings()
 		ImGui::SliderFloat("Power", &settings.Effect.AOPower, 0.2f, 5, "%.2f");
 		ImGui::SliderFloat("Fadeout Height", &settings.Effect.AOFadeOutHeight, 500, 5000, "%.0f units");
 		if (auto _tt = Util::HoverTooltipWrapper())
-			ImGui::Text(
-				"On the ground AO is the most prominent. Up to a certain height it will gradually fade out.");
+			ImGui::Text("On the ground AO is the most prominent. Up to a certain height it will gradually fade out.");
 
 		if (ImGui::TreeNodeEx("Precomputation", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::SliderFloat("Distance", &settings.AoGen.AoDistance, 1.f / 32, 32, "%.2f cells");
@@ -464,8 +468,6 @@ void TerrainOcclusion::UpdateShadow()
 		float3 dirLightDir = { direction.x, direction.y, direction.z };
 		if (dirLightDir.z > 0)
 			dirLightDir = -dirLightDir;
-		dirLightDir.z = -pow(-dirLightDir.z, settings.Effect.ShadowAnglePower);
-		dirLightDir.Normalize();
 
 		// in UV
 		float3 invScale = cachedHeightmap->pos1 - cachedHeightmap->pos0;

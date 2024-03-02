@@ -6,7 +6,7 @@ struct PerPassTerraOcc
 	float HeightBias;
 
 	float ShadowSofteningRadiusAngle;
-	float ShadowAnglePower;
+	float2 ShadowFadeDistance;
 
 	float AOAmbientMix;
 	float AODiffuseMix;
@@ -22,7 +22,7 @@ struct PerPassTerraOcc
 StructuredBuffer<PerPassTerraOcc> perPassTerraOcc : register(t25);
 Texture2D<float> TexTerraOcc : register(t26);
 Texture2D<float> TexNormalisedHeight : register(t27);
-Texture2D<float> TexShadowHeight : register(t28);
+Texture2D<float2> TexShadowHeight : register(t28);
 
 float2 GetTerrainOcclusionUV(float2 xy)
 {
@@ -44,10 +44,13 @@ float2 GetTerrainZ(float2 norm_z)
 	return float2(GetTerrainZ(norm_z.x), GetTerrainZ(norm_z.y));
 }
 
-float GetTerrainSoftShadow(float2 uv, float3 dirLightDirectionWS, float startZ, SamplerState samp)
+float GetTerrainSoftShadow(float2 uv, float distance, float startZ, SamplerState samp)
 {
+	if (distance < perPassTerraOcc[0].ShadowFadeDistance.x)
+		return 1;
+	float fadeFactor = saturate((distance - perPassTerraOcc[0].ShadowFadeDistance.x) / (perPassTerraOcc[0].ShadowFadeDistance.y - perPassTerraOcc[0].ShadowFadeDistance.x));
+
 	float2 shadowHeight = GetTerrainZ(TexShadowHeight.SampleLevel(samp, uv, 0));
-	shadowHeight.y = min(shadowHeight.y, shadowHeight.x + perPassTerraOcc[0].HeightBias);
-	float shadowFraction = (startZ - shadowHeight.y) / (shadowHeight.x - shadowHeight.y);
-	return saturate(shadowFraction);
+	float shadowFraction = saturate((startZ - shadowHeight.y) / (shadowHeight.x - shadowHeight.y));
+	return lerp(1, shadowFraction, fadeFactor);
 }
