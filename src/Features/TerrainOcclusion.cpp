@@ -496,7 +496,7 @@ void TerrainOcclusion::UpdateShadow()
 		float upperAngle = std::max(0.f, dirLightAngle - settings.Effect.ShadowSofteningRadiusAngle);
 		float lowerAngle = std::min(RE::NI_HALF_PI - 1e-2f, dirLightAngle + settings.Effect.ShadowSofteningRadiusAngle);
 
-		cachedDirLightDZRange = dirLightDir.z / invScale.z * stepMult * lenUV * float2{ std::tan(upperAngle), std::tan(lowerAngle) };
+		cachedDirLightDZRange = -(lenUV / invScale.z * stepMult) * float2{ std::tan(upperAngle), std::tan(lowerAngle) };
 	}
 
 	shadowUpdateCBData = {
