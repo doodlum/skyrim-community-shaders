@@ -26,6 +26,7 @@ struct PerPassTerraOcc
 StructuredBuffer<PerPassTerraOcc> perPassTerraOcc : register(t25);
 Texture2D<float> TexTerraOcc : register(t26);
 Texture2D<float> TexNormalisedHeight : register(t27);
+Texture2D<float> TexShadowHeight : register(t28);
 
 float2 GetTerrainOcclusionUV(float2 xy)
 {
@@ -42,7 +43,14 @@ float GetTerrainZ(float norm_z)
 	return lerp(perPassTerraOcc[0].zRange.x, perPassTerraOcc[0].zRange.y, norm_z);
 }
 
+float2 GetTerrainZ(float2 norm_z)
+{
+	return float2(GetTerrainZ(norm_z.x), GetTerrainZ(norm_z.y));
+}
+
 float GetTerrainSoftShadow(float2 uv, float3 dirLightDirectionWS, float startZ, SamplerState samp)
 {
-	return 1;
+	float2 shadowHeight = GetTerrainZ(TexShadowHeight.SampleLevel(samp, uv, 0));
+	float shadowFraction = (startZ - shadowHeight.y - perPassTerraOcc[0].ShadowBias) / (shadowHeight.x - shadowHeight.y);
+	return saturate(shadowFraction);
 }

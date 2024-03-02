@@ -16,6 +16,8 @@ struct TerrainOcclusion : public Feature
 	inline std::string_view GetShaderDefineName() override { return "TERRA_OCC"; }
 	inline bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
+	uint shadowUpdateIdx = 0;
+
 	struct Settings
 	{
 		struct AOGenSettings
@@ -67,15 +69,17 @@ struct TerrainOcclusion : public Feature
 	};
 	std::unique_ptr<Buffer> aoGenBuffer = nullptr;
 
-	struct ShadowTracingCB
+	struct ShadowUpdateCB
 	{
-		float2 LightUVDir;   // direction on which light descends, from one pixel to next via dda
+		float2 LightPxDir;   // direction on which light descends, from one pixel to next via dda
 		float2 LightDeltaZ;  // per LightUVDir, upper penumbra and lower, should be negative
-		float HeightBias;
-		uint StartUorV;
+		uint StartPxCoord;
 		float2 PxSize;
-	};
-	std::unique_ptr<ConstantBuffer> shadowTracingCB = nullptr;
+
+		float pad;
+	} shadowUpdateCBData;
+	static_assert(sizeof(ShadowUpdateCB) % 16 == 0);
+	std::unique_ptr<ConstantBuffer> shadowUpdateCB = nullptr;
 
 	struct PerPass
 	{
@@ -92,6 +96,7 @@ struct TerrainOcclusion : public Feature
 	std::unique_ptr<Buffer> perPass = nullptr;
 
 	winrt::com_ptr<ID3D11ComputeShader> occlusionProgram = nullptr;
+	winrt::com_ptr<ID3D11ComputeShader> shadowUpdateProgram = nullptr;
 
 	std::unique_ptr<Texture2D> texHeightMap = nullptr;
 	std::unique_ptr<Texture2D> texOcclusion = nullptr;
@@ -110,6 +115,7 @@ struct TerrainOcclusion : public Feature
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
 	void LoadHeightmap();
 	void Precompute();
+	void UpdateShadow();
 	void ModifyLighting();
 
 	virtual void Load(json& o_json) override;

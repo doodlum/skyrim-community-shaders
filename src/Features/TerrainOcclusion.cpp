@@ -32,21 +32,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	AoGen,
 	Effect)
 
-class FrameChecker
-{
-private:
-	uint32_t last_frame = UINT32_MAX;
-
-public:
-	inline bool isNewFrame(uint32_t frame)
-	{
-		bool retval = last_frame != frame;
-		last_frame = frame;
-		return retval;
-	}
-	inline bool isNewFrame() { return isNewFrame(RE::BSGraphics::State::GetSingleton()->uiFrameCount); }
-};
-
 void TerrainOcclusion::Load(json& o_json)
 {
 	if (o_json[GetName()].is_object())
@@ -128,6 +113,16 @@ void TerrainOcclusion::DrawSettings()
 		ImGui::Separator();
 
 		if (texOcclusion) {
+			ImGui::BulletText("shadowUpdateCBData");
+			ImGui::Indent();
+			{
+				ImGui::Text(fmt::format("LightPxDir: ({}, {})", shadowUpdateCBData.LightPxDir.x, shadowUpdateCBData.LightPxDir.y).c_str());
+				ImGui::Text(fmt::format("LightDeltaZ: ({}, {})", shadowUpdateCBData.LightDeltaZ.x, shadowUpdateCBData.LightDeltaZ.y).c_str());
+				ImGui::Text(fmt::format("StartPxCoord: {}", shadowUpdateCBData.StartPxCoord).c_str());
+				ImGui::Text(fmt::format("PxSize: ({}, {})", shadowUpdateCBData.PxSize.x, shadowUpdateCBData.PxSize.y).c_str());
+			}
+			ImGui::Unindent();
+
 			ImGui::BulletText("texOcclusion");
 			ImGui::Image(texOcclusion->srv.get(), { texOcclusion->desc.Width * .1f, texOcclusion->desc.Height * .1f });
 			ImGui::BulletText("texNormalisedHeight");
@@ -224,7 +219,7 @@ void TerrainOcclusion::SetupResources()
 
 	logger::debug("Creating constant buffers...");
 	{
-		shadowTracingCB = std::make_unique<ConstantBuffer>(ConstantBufferDesc<ShadowTracingCB>());
+		shadowUpdateCB = std::make_unique<ConstantBuffer>(ConstantBufferDesc<ShadowUpdateCB>());
 	}
 
 	// logger::debug("Creating samplers...");
@@ -247,18 +242,26 @@ void TerrainOcclusion::CompileComputeShaders()
 {
 	logger::debug("Compiling shaders...");
 	{
-		auto occlusion_program_ptr = reinterpret_cast<ID3D11ComputeShader*>(Util::CompileShader(L"Data\\Shaders\\TerrainOcclusion\\AOGen.cs.hlsl", { {} }, "cs_5_0"));
-		if (occlusion_program_ptr)
-			occlusionProgram.attach(occlusion_program_ptr);
+		auto program_ptr = reinterpret_cast<ID3D11ComputeShader*>(Util::CompileShader(L"Data\\Shaders\\TerrainOcclusion\\AOGen.cs.hlsl", { {} }, "cs_5_0"));
+		if (program_ptr)
+			occlusionProgram.attach(program_ptr);
+
+		program_ptr = reinterpret_cast<ID3D11ComputeShader*>(Util::CompileShader(L"Data\\Shaders\\TerrainOcclusion\\ShadowUpdate.cs.hlsl", { {} }, "cs_5_0"));
+		if (program_ptr)
+			shadowUpdateProgram.attach(program_ptr);
 	}
 }
 
 void TerrainOcclusion::Draw(const RE::BSShader* shader, const uint32_t)
 {
-	LoadHeightmap();
-
-	if (needPrecompute)
-		Precompute();
+	static Util::FrameChecker frame_checker;
+	if (frame_checker.isNewFrame()) {
+		LoadHeightmap();
+		if (needPrecompute)
+			Precompute();
+		if (settings.Effect.EnableTerrainShadow)
+			UpdateShadow();
+	}
 
 	switch (shader->shaderType.get()) {
 	case RE::BSShader::Type::Lighting:
@@ -282,10 +285,6 @@ bool TerrainOcclusion::IsHeightMapReady()
 
 void TerrainOcclusion::LoadHeightmap()
 {
-	static FrameChecker frame_checker;
-	if (!frame_checker.isNewFrame())
-		return;
-
 	auto tes = RE::TES::GetSingleton();
 	if (!tes)
 		return;
@@ -341,6 +340,7 @@ void TerrainOcclusion::LoadHeightmap()
 		cachedHeightmap = &heightmaps[worldspace_name];
 	}
 
+	shadowUpdateIdx = 0;
 	needPrecompute = true;
 }
 
@@ -449,6 +449,110 @@ void TerrainOcclusion::Precompute()
 	needPrecompute = false;
 }
 
+void TerrainOcclusion::UpdateShadow()
+{
+	if (!IsHeightMapReady())
+		return;
+
+	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
+	auto sunLight = skyrim_cast<RE::NiDirectionalLight*>(accumulator->GetRuntimeData().activeShadowSceneNode->GetRuntimeData().sunLight->light.get());
+	if (!sunLight)
+		return;
+
+	/* ---- UPDATE CB ---- */
+	uint width = texNormalisedHeight->desc.Width;
+	uint height = texNormalisedHeight->desc.Height;
+
+	// only update direction at the start of each cycle
+	static float2 cachedDirLightPxDir;
+	static float2 cachedDirLightDZRange;
+	static uint edgePxCoord;
+	static int signDir;
+	static uint maxUpdates;
+	if (shadowUpdateIdx == 0) {
+		auto direction = sunLight->GetWorldDirection();
+		float3 dirLightDir = { direction.x, direction.y, direction.z };
+		if (dirLightDir.z > 0)
+			dirLightDir = -dirLightDir;
+		dirLightDir.z = -pow(-dirLightDir.z, settings.Effect.ShadowAnglePower);
+		dirLightDir.Normalize();
+
+		// in UV
+		float3 invScale = cachedHeightmap->pos1 - cachedHeightmap->pos0;
+		invScale.z = cachedHeightmap->zRange.y - cachedHeightmap->zRange.x;
+		float3 dirLightPxDir = dirLightDir / invScale;
+		dirLightPxDir.x *= width;
+		dirLightPxDir.y *= height;
+
+		float stepMult;
+		if (abs(dirLightPxDir.x) >= abs(dirLightPxDir.y)) {
+			stepMult = 1.f / abs(dirLightPxDir.x);
+			edgePxCoord = dirLightPxDir.x > 0 ? 0 : (width - 1);
+			signDir = dirLightPxDir.x > 0 ? 1 : -1;
+			maxUpdates = ((width - 1) >> 10) + 1;
+		} else {
+			stepMult = 1.f / abs(dirLightPxDir.y);
+			edgePxCoord = dirLightPxDir.y > 0 ? 0 : height - 1;
+			signDir = dirLightPxDir.y > 0 ? 1 : -1;
+			maxUpdates = ((height - 1) >> 10) + 1;
+		}
+		dirLightPxDir *= stepMult;
+
+		cachedDirLightPxDir = { dirLightPxDir.x, dirLightPxDir.y };
+
+		// soft shadow angles
+		float lenUV = float2{ dirLightDir.x, dirLightDir.y }.Length();
+		float dirLightAngle = atan2(-dirLightDir.z, lenUV);
+		float upperAngle = std::max(0.f, dirLightAngle - settings.Effect.ShadowSofteningRadiusAngle);
+		float lowerAngle = std::min(RE::NI_HALF_PI - 1e-2f, dirLightAngle + settings.Effect.ShadowSofteningRadiusAngle);
+
+		cachedDirLightDZRange = dirLightDir.z / invScale.z * stepMult * lenUV * float2{ std::tan(upperAngle), std::tan(lowerAngle) };
+	}
+
+	shadowUpdateCBData = {
+		.LightPxDir = cachedDirLightPxDir,
+		.LightDeltaZ = cachedDirLightDZRange,
+		.StartPxCoord = edgePxCoord + signDir * shadowUpdateIdx * 1024u,
+		.PxSize = { 1.f / texNormalisedHeight->desc.Width, 1.f / texNormalisedHeight->desc.Height }
+	};
+	shadowUpdateCB->Update(shadowUpdateCBData);
+
+	shadowUpdateIdx = (shadowUpdateIdx + 1) % maxUpdates;
+
+	/* ---- BACKUP ---- */
+	struct ShaderState
+	{
+		ID3D11ShaderResourceView* srvs[1] = { nullptr };
+		ID3D11ComputeShader* shader = nullptr;
+		ID3D11UnorderedAccessView* uavs[1] = { nullptr };
+		ID3D11Buffer* buffer = nullptr;
+		ID3D11ClassInstance* instance = nullptr;
+		UINT numInstances;
+	} old, newer;
+	context->CSGetShaderResources(0, ARRAYSIZE(old.srvs), old.srvs);
+	context->CSGetShader(&old.shader, &old.instance, &old.numInstances);
+	context->CSGetUnorderedAccessViews(0, ARRAYSIZE(old.uavs), old.uavs);
+	context->CSGetConstantBuffers(0, 1, &old.buffer);
+
+	/* ---- DISPATCH ---- */
+	newer.srvs[0] = texNormalisedHeight->srv.get();
+	newer.uavs[0] = texShadowHeight->uav.get();
+	newer.buffer = shadowUpdateCB->CB();
+
+	context->CSSetShaderResources(0, ARRAYSIZE(newer.srvs), newer.srvs);
+	context->CSSetUnorderedAccessViews(0, ARRAYSIZE(newer.uavs), newer.uavs, nullptr);
+	context->CSSetConstantBuffers(0, 1, &newer.buffer);
+	context->CSSetShader(shadowUpdateProgram.get(), nullptr, 0);
+	context->Dispatch(abs(cachedDirLightPxDir.x) >= abs(cachedDirLightPxDir.y) ? height : width, 1, 1);
+
+	/* ---- RESTORE ---- */
+	context->CSSetShaderResources(0, ARRAYSIZE(old.srvs), old.srvs);
+	context->CSSetShader(old.shader, &old.instance, old.numInstances);
+	context->CSSetUnorderedAccessViews(0, ARRAYSIZE(old.uavs), old.uavs, nullptr);
+	context->CSSetConstantBuffers(0, 1, &old.buffer);
+}
+
 void TerrainOcclusion::Reset()
 {
 	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
@@ -486,11 +590,13 @@ void TerrainOcclusion::ModifyLighting()
 {
 	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
 
-	ID3D11ShaderResourceView* srvs[3] = { nullptr };
+	ID3D11ShaderResourceView* srvs[4] = { nullptr };
 	srvs[0] = perPass->srv.get();
 	if (texOcclusion)
 		srvs[1] = texOcclusion->srv.get();
 	if (texNormalisedHeight)
 		srvs[2] = texNormalisedHeight->srv.get();
+	if (texShadowHeight)
+		srvs[3] = texShadowHeight->srv.get();
 	context->PSSetShaderResources(25, ARRAYSIZE(srvs), srvs);
 }
