@@ -32,12 +32,10 @@ struct TerrainOcclusion : public Feature
 			uint EnableTerrainShadow = true;
 			uint EnableTerrainAO = true;
 
-			float ShadowBias = -100.f;  // in game unit
-			float ShadowSofteningRadiusAngle = 2.f * RE::NI_PI / 180.f;
-			float ShadowMinStep = .75f;
-			// float ShadowMaxDistance = 15;
+			float HeightBias = -1000.f;  // in game unit
+
+			float ShadowSofteningRadiusAngle = 1.f * RE::NI_PI / 180.f;
 			float ShadowAnglePower = 1.f;
-			uint ShadowSamples = 10;
 
 			float AOAmbientMix = 1.f;
 			float AODiffuseMix = 0.f;
@@ -89,9 +87,6 @@ struct TerrainOcclusion : public Feature
 		float3 invScale;
 		float3 offset;
 		float2 zRange;
-
-		float ShadowSofteningDiameterRcp;
-		float AoDistance;
 	};
 	std::unique_ptr<Buffer> perPass = nullptr;
 

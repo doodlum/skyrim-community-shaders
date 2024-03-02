@@ -29,15 +29,15 @@ float GetInterpolatedHeight(float2 pxCoord, bool isVertical)
 		return heightA;
 }
 
-float GetInterpolatedHeightRW(float2 pxCoord, bool isVertical)
+float2 GetInterpolatedHeightRW(float2 pxCoord, bool isVertical)
 {
 	uint2 dims;
 	RWTexShadowHeights.GetDimensions(dims.x, dims.y);
 
 	int2 lerpPxCoordA = int2(pxCoord - .5 * float2(isVertical, !isVertical));
 	int2 lerpPxCoordB = int2(pxCoord + .5 * float2(isVertical, !isVertical));
-	float heightA = RWTexShadowHeights[lerpPxCoordA];
-	float heightB = RWTexShadowHeights[lerpPxCoordB];
+	float2 heightA = RWTexShadowHeights[lerpPxCoordA];
+	float2 heightB = RWTexShadowHeights[lerpPxCoordB];
 
 	bool inBoundA = all(lerpPxCoordA > 0);
 	bool inBoundB = all(lerpPxCoordB < dims);
