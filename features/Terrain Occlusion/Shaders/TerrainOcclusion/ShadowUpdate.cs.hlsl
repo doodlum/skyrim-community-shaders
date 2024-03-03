@@ -68,7 +68,10 @@ groupshared float2 g_shadowHeight[1024];
 	float2 threadUV = rawThreadUV - floor(rawThreadUV);  // wraparound
 	float2 threadPxCoord = threadUV * dims;
 
+	float2 pastHeights;
 	if (isValid) {
+		pastHeights = RWTexShadowHeights[uint2(threadPxCoord)];
+
 		// bifilter
 		float2 heights = GetInterpolatedHeight(threadPxCoord, isVertical).xx;
 
@@ -94,7 +97,7 @@ groupshared float2 g_shadowHeight[1024];
 
 	// save
 	if (isValid) {
-		RWTexShadowHeights[uint2(threadPxCoord)] = g_shadowHeight[gtid];
+		RWTexShadowHeights[uint2(threadPxCoord)] = lerp(pastHeights, g_shadowHeight[gtid], .2f);
 		// RWTexShadowHeights[uint2(threadPxCoord)] = gtid / 1024.f;
 		// RWTexShadowHeights[uint2(gtid, gid)] = threadUV;
 	}
