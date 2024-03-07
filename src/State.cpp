@@ -176,7 +176,7 @@ void State::Setup()
 	for (auto* feature : Feature::GetFeatureList())
 		if (feature->loaded)
 			feature->SetupResources();
-	//Bindings::GetSingleton()->SetupResources();
+	Bindings::GetSingleton()->SetupResources();
 }
 
 void State::Load(bool a_test)
@@ -296,6 +296,7 @@ void State::Save(bool a_test)
 
 void State::PostPostLoad()
 {
+	Bindings::Hooks::Install();
 	upscalerLoaded = GetModuleHandle(L"Data\\SKSE\\Plugins\\SkyrimUpscaler.dll");
 	if (upscalerLoaded)
 		logger::info("Skyrim Upscaler detected");
