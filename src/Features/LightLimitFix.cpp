@@ -249,7 +249,7 @@ void LightLimitFix::Reset()
 
 	static uint fc = 0;
 	if (++fc == 100) {
-		logger::debug("CheckParticleLights: {} x {} nanoseconds", benchTimer[0].avgTime(), benchTimer[0].count);
+		logger::debug("GetParticleLightConfigs: {} x {} nanoseconds", benchTimer[0].avgTime(), benchTimer[0].count);
 		logger::debug("AddParticleLight: {} x {} nanoseconds", benchTimer[1].avgTime(), benchTimer[1].count);
 		benchTimer[0] = benchTimer[1] = {};
 		fc = 0;
@@ -462,26 +462,21 @@ struct VertexPosition
 
 std::string ExtractTextureStem(std::string_view a_path)
 {
-	std::string textureName = a_path.data();
+	if (a_path.size() < 1)
+		return {};
 
-	{
-		if (textureName.size() < 1)
-			return {};
+	auto lastSeparatorPos = a_path.find_last_of("\\/");
+	if (lastSeparatorPos == std::string::npos)
+		return {};
 
-		auto lastSeparatorPos = textureName.find_last_of("\\/");
-		if (lastSeparatorPos == std::string::npos)
-			return {};
+	a_path = a_path.substr(lastSeparatorPos + 1);
+	a_path.remove_suffix(4);  // Remove ".dds"
 
-		textureName = textureName.substr(lastSeparatorPos + 1);
-		if (textureName.size() < 4)
-			return {};
-
-		textureName.erase(textureName.length() - 4);  // Remove ".dds"
 #pragma warning(push)
 #pragma warning(disable: 4244)
-		std::transform(textureName.begin(), textureName.end(), textureName.begin(), ::tolower);
+	auto textureNameView = a_path | std::views::transform(::tolower);
+	std::string textureName = { textureNameView.begin(), textureNameView.end() };
 #pragma warning(pop)
-	}
 
 	return textureName;
 }
@@ -516,7 +511,7 @@ std::optional<LightLimitFix::ConfigPair> LightLimitFix::GetConfigs(RE::BSEffectS
 	return std::make_pair(config, gradientConfig);
 }
 
-std::optional<LightLimitFix::ConfigPair> LightLimitFix::CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t)
+std::optional<LightLimitFix::ConfigPair> LightLimitFix::GetParticleLightConfigs(RE::BSRenderPass* a_pass)
 {
 	static ankerl::unordered_dense::map<RE::BSEffectShaderMaterial*, std::optional<ConfigPair>> cachedQuery{};
 
@@ -531,6 +526,7 @@ std::optional<LightLimitFix::ConfigPair> LightLimitFix::CheckParticleLights(RE::
 						auto itConfigs = cachedQuery.find(material);
 						if (itConfigs == cachedQuery.end()) {
 							retval = GetConfigs(material);
+							material->IncRef();
 							cachedQuery.insert({ material, retval });
 						} else
 							retval = itConfigs->second;
@@ -544,6 +540,16 @@ std::optional<LightLimitFix::ConfigPair> LightLimitFix::CheckParticleLights(RE::
 	};
 
 	return benchTimer[0].run<std::optional<ConfigPair>>(std::bind(func, a_pass));
+}
+
+bool LightLimitFix::CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t)
+{
+	auto configs = GetParticleLightConfigs(a_pass);
+	if (configs.has_value()) {
+		AddParticleLight(a_pass, configs.value());
+		return !(settings.EnableParticleLightsCulling && configs->first->cull);
+	}
+	return true;
 }
 
 void LightLimitFix::AddParticleLight(RE::BSRenderPass* a_pass, LightLimitFix::ConfigPair a_config)
@@ -580,29 +586,33 @@ void LightLimitFix::AddParticleLight(RE::BSRenderPass* a_pass, LightLimitFix::Co
 				uint32_t vertexSize = rendererData->vertexDesc.GetSize();
 				if (rendererData->vertexDesc.HasFlag(RE::BSGraphics::Vertex::Flags::VF_COLORS)) {
 					uint32_t offset = rendererData->vertexDesc.GetAttributeOffset(RE::BSGraphics::Vertex::Attribute::VA_COLOR);
-					RE::NiColorA vertexColor{};
+
+					uint8_t maxAlpha = 0u;
+					VertexColor* vertexColor = nullptr;
 					for (int v = 0; v < triShape->GetTrishapeRuntimeData().vertexCount; v++) {
 						if (VertexColor* vertex = reinterpret_cast<VertexColor*>(&rendererData->rawVertexData[vertexSize * v + offset])) {
-							RE::NiColorA niColor{ (float)vertex->data[0] / 255.0f, (float)vertex->data[1] / 255.0f, (float)vertex->data[2] / 255.0f, (float)vertex->data[3] / 255.0f };
-							if (niColor.alpha > vertexColor.alpha)
-								vertexColor = niColor;
+							if (vertex->data[3] > maxAlpha) {
+								maxAlpha = vertex->data[3];
+								vertexColor = vertex;
+							}
 						}
 					}
-					color.red *= vertexColor.red;
-					color.green *= vertexColor.green;
-					color.blue *= vertexColor.blue;
+					color.red *= vertexColor->data[0] / 255.f;
+					color.green *= vertexColor->data[1] / 255.f;
+					color.blue *= vertexColor->data[2] / 255.f;
 					if (shaderProperty->flags.any(RE::BSShaderProperty::EShaderPropertyFlag::kVertexAlpha)) {
-						color.alpha *= vertexColor.alpha;
+						color.alpha *= vertexColor->data[3] / 255.f;
 					}
 				}
 
 				uint32_t offset = rendererData->vertexDesc.GetAttributeOffset(RE::BSGraphics::Vertex::Attribute::VA_POSITION);
 				for (int v = 0; v < triShape->GetTrishapeRuntimeData().vertexCount; v++) {
 					if (VertexPosition* vertex = reinterpret_cast<VertexPosition*>(&rendererData->rawVertexData[vertexSize * v + offset])) {
-						RE::NiPoint3 position{ (float)vertex->data[0] / 255.0f, (float)vertex->data[1] / 255.0f, (float)vertex->data[2] / 255.0f };
+						RE::NiPoint3 position{ (float)vertex->data[0], (float)vertex->data[1], (float)vertex->data[2] };
 						radius = std::max(radius, position.Length());
 					}
 				}
+				radius /= 255.f;
 			}
 		}
 
