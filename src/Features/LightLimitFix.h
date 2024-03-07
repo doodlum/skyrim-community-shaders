@@ -3,6 +3,7 @@
 #include <d3d11.h>
 
 #include "Buffer.h"
+#include "Util.h"
 #include <shared_mutex>
 
 #include "Feature.h"
@@ -177,7 +178,10 @@ public:
 
 	Settings settings;
 
-	bool CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t a_technique);
+	using ConfigPair = std::pair<ParticleLights::Config*, ParticleLights::GradientConfig*>;
+	std::optional<ConfigPair> GetConfigs(RE::BSEffectShaderMaterial* a_mat);
+	std::optional<ConfigPair> CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t a_technique);
+	void AddParticleLight(RE::BSRenderPass* a_pass, ConfigPair a_config);
 
 	void BSLightingShader_SetupGeometry_Before(RE::BSRenderPass* a_pass);
 
@@ -198,7 +202,7 @@ public:
 	float CalculateLuminance(CachedParticleLight& light, RE::NiPoint3& point);
 	void AddParticleLightLuminance(RE::NiPoint3& targetPosition, int& numHits, float& lightLevel);
 
-	unsigned long long benchTimer = 0u;
+	Util::CountedTimer benchTimer[2];
 
 	struct Hooks
 	{
@@ -233,12 +237,15 @@ public:
 		{
 			static void thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 			{
-				auto startTime = std::chrono::system_clock::now();
-				if (!GetSingleton()->CheckParticleLights(Pass, Technique))
+				bool doFunc = true;
+				auto configs = GetSingleton()->CheckParticleLights(Pass, Technique);
+				if (configs.has_value()) {
+					GetSingleton()->AddParticleLight(Pass, configs.value());
+					doFunc = !(GetSingleton()->settings.EnableParticleLightsCulling && configs->first->cull);
+				}
+
+				if (doFunc)
 					func(Pass, Technique, AlphaTest, RenderFlags);
-				auto endTime = std::chrono::system_clock::now();
-				if (auto shaderProperty = netimmerse_cast<RE::BSEffectShaderProperty*>(Pass->shaderProperty))
-					GetSingleton()->benchTimer += std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
@@ -247,12 +254,15 @@ public:
 		{
 			static void thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 			{
-				auto startTime = std::chrono::system_clock::now();
-				if (!GetSingleton()->CheckParticleLights(Pass, Technique))
+				bool doFunc = true;
+				auto configs = GetSingleton()->CheckParticleLights(Pass, Technique);
+				if (configs.has_value()) {
+					GetSingleton()->AddParticleLight(Pass, configs.value());
+					doFunc = !(GetSingleton()->settings.EnableParticleLightsCulling && configs->first->cull);
+				}
+
+				if (doFunc)
 					func(Pass, Technique, AlphaTest, RenderFlags);
-				auto endTime = std::chrono::system_clock::now();
-				if (auto shaderProperty = netimmerse_cast<RE::BSEffectShaderProperty*>(Pass->shaderProperty))
-					GetSingleton()->benchTimer += std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
@@ -261,12 +271,15 @@ public:
 		{
 			static void thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 			{
-				auto startTime = std::chrono::system_clock::now();
-				if (!GetSingleton()->CheckParticleLights(Pass, Technique))
+				bool doFunc = true;
+				auto configs = GetSingleton()->CheckParticleLights(Pass, Technique);
+				if (configs.has_value()) {
+					GetSingleton()->AddParticleLight(Pass, configs.value());
+					doFunc = !(GetSingleton()->settings.EnableParticleLightsCulling && configs->first->cull);
+				}
+
+				if (doFunc)
 					func(Pass, Technique, AlphaTest, RenderFlags);
-				auto endTime = std::chrono::system_clock::now();
-				if (auto shaderProperty = netimmerse_cast<RE::BSEffectShaderProperty*>(Pass->shaderProperty))
-					GetSingleton()->benchTimer += std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};

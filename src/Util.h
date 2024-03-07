@@ -65,6 +65,19 @@ namespace Util
 		}
 		inline bool isNewFrame() { return isNewFrame(RE::BSGraphics::State::GetSingleton()->uiFrameCount); }
 	};
+
+	// for simple benchmarking
+	struct CountedTimer
+	{
+		unsigned long long count = 0u;
+		unsigned long long timer = 0u;
+		inline float avgTime() const { return timer / (float)count; }
+		inline void add(unsigned long long t)
+		{
+			timer += t;
+			count++;
+		}
+	};
 }
 
 namespace nlohmann
