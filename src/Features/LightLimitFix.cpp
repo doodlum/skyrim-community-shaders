@@ -246,6 +246,13 @@ void LightLimitFix::Reset()
 	particleLights.clear();
 	std::swap(particleLights, queuedParticleLights);
 	boundViews = false;
+
+	static uint fc = 0;
+	if (++fc == 100) {
+		logger::debug("{} nanoseconds", benchTimer * 1e-2f);
+		benchTimer = 0;
+		fc = 0;
+	}
 }
 
 void LightLimitFix::Load(json& o_json)

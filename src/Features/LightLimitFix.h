@@ -198,6 +198,8 @@ public:
 	float CalculateLuminance(CachedParticleLight& light, RE::NiPoint3& point);
 	void AddParticleLightLuminance(RE::NiPoint3& targetPosition, int& numHits, float& lightLevel);
 
+	unsigned long long benchTimer = 0u;
+
 	struct Hooks
 	{
 		struct ValidLight1
@@ -231,8 +233,12 @@ public:
 		{
 			static void thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 			{
+				auto startTime = std::chrono::system_clock::now();
 				if (!GetSingleton()->CheckParticleLights(Pass, Technique))
 					func(Pass, Technique, AlphaTest, RenderFlags);
+				auto endTime = std::chrono::system_clock::now();
+				if (auto shaderProperty = netimmerse_cast<RE::BSEffectShaderProperty*>(Pass->shaderProperty))
+					GetSingleton()->benchTimer += std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
@@ -241,8 +247,12 @@ public:
 		{
 			static void thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 			{
+				auto startTime = std::chrono::system_clock::now();
 				if (!GetSingleton()->CheckParticleLights(Pass, Technique))
 					func(Pass, Technique, AlphaTest, RenderFlags);
+				auto endTime = std::chrono::system_clock::now();
+				if (auto shaderProperty = netimmerse_cast<RE::BSEffectShaderProperty*>(Pass->shaderProperty))
+					GetSingleton()->benchTimer += std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
@@ -251,8 +261,12 @@ public:
 		{
 			static void thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 			{
+				auto startTime = std::chrono::system_clock::now();
 				if (!GetSingleton()->CheckParticleLights(Pass, Technique))
 					func(Pass, Technique, AlphaTest, RenderFlags);
+				auto endTime = std::chrono::system_clock::now();
+				if (auto shaderProperty = netimmerse_cast<RE::BSEffectShaderProperty*>(Pass->shaderProperty))
+					GetSingleton()->benchTimer += std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
 			}
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
