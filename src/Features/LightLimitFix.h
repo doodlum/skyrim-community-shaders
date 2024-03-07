@@ -203,8 +203,6 @@ public:
 	float CalculateLuminance(CachedParticleLight& light, RE::NiPoint3& point);
 	void AddParticleLightLuminance(RE::NiPoint3& targetPosition, int& numHits, float& lightLevel);
 
-	Util::CountedTimer benchTimer[2];
-
 	struct Hooks
 	{
 		struct ValidLight1
