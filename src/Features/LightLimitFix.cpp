@@ -518,7 +518,7 @@ std::optional<LightLimitFix::ConfigPair> LightLimitFix::GetConfigs(RE::BSEffectS
 
 std::optional<LightLimitFix::ConfigPair> LightLimitFix::CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t)
 {
-	static ankerl::unordered_dense::map<RE::BSEffectShaderMaterial*, std::optional<LightLimitFix::ConfigPair>> cachedQuery{};
+	static ankerl::unordered_dense::map<RE::BSEffectShaderMaterial*, std::optional<ConfigPair>> cachedQuery{};
 
 	static auto func = [&](RE::BSRenderPass* a_pass) -> std::optional<ConfigPair> {
 		// see https://www.nexusmods.com/skyrimspecialedition/articles/1391
@@ -543,13 +543,7 @@ std::optional<LightLimitFix::ConfigPair> LightLimitFix::CheckParticleLights(RE::
 		return std::nullopt;
 	};
 
-	auto startTime = std::chrono::system_clock::now();
-	auto retval = func(a_pass);
-	auto endTime = std::chrono::system_clock::now();
-
-	benchTimer[0].add(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count());
-
-	return retval;
+	return benchTimer[0].run<std::optional<ConfigPair>>(std::bind(func, a_pass));
 }
 
 void LightLimitFix::AddParticleLight(RE::BSRenderPass* a_pass, LightLimitFix::ConfigPair a_config)
@@ -626,11 +620,7 @@ void LightLimitFix::AddParticleLight(RE::BSRenderPass* a_pass, LightLimitFix::Co
 		queuedParticleLights.insert({ a_pass->geometry, { color, radius, *config } });
 	};
 
-	auto startTime = std::chrono::system_clock::now();
-	func(a_pass, a_config);
-	auto endTime = std::chrono::system_clock::now();
-
-	benchTimer[1].add(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count());
+	benchTimer[1].run<void>(std::bind(func, a_pass, a_config));
 }
 
 enum class GrassShaderTechniques
