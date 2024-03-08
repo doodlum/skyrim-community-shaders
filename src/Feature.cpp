@@ -119,12 +119,13 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 	};
 
 	static std::vector<Feature*> featuresVR = {
-		DynamicCubemaps::GetSingleton(),
 		GrassLighting::GetSingleton(),
 		GrassCollision::GetSingleton(),
+		ScreenSpaceShadows::GetSingleton(),
 		ExtendedMaterials::GetSingleton(),
 		WetnessEffects::GetSingleton(),
 		LightLimitFix::GetSingleton(),
+		DynamicCubemaps::GetSingleton(),
 		TerrainBlending::GetSingleton(),
 		WaterCaustics::GetSingleton(),
 		SubsurfaceScattering::GetSingleton()

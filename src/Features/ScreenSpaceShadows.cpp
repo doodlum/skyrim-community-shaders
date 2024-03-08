@@ -5,6 +5,9 @@
 
 using RE::RENDER_TARGETS;
 
+#define DEFINE_VALUE(a_state, a_value) \
+	auto& a_value = !REL::Module::IsVR() ? a_state->GetRuntimeData().a_value : a_state->GetVRRuntimeData().a_value;
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	ScreenSpaceShadows::Settings,
 	MaxSamples,
@@ -87,6 +90,19 @@ void ScreenSpaceShadows::DrawSettings()
 		}
 
 		ImGui::TreePop();
+	}
+
+	ImGui::Text(std::format("data.InvDirLightDirectionVS[0] {:.2f}, {:.2f}, {:.2f}", data.InvDirLightDirectionVS[0].m128_f32[0], data.InvDirLightDirectionVS[0].m128_f32[1], data.InvDirLightDirectionVS[0].m128_f32[2]).c_str());
+	ImGui::Text(std::format("data.InvDirLightDirectionVS[1] {:.2f}, {:.2f}, {:.2f}", data.InvDirLightDirectionVS[1].m128_f32[0], data.InvDirLightDirectionVS[1].m128_f32[1], data.InvDirLightDirectionVS[1].m128_f32[2]).c_str());
+
+	if (screenSpaceShadowsTexture != nullptr) {
+		ImGui::Text("screenSpaceShadowsTexture");
+		ImGui::Image(screenSpaceShadowsTexture->srv.get(), { screenSpaceShadowsTexture->desc.Width / 10.f, screenSpaceShadowsTexture->desc.Height / 10.f });
+	}
+
+	if (screenSpaceShadowsTextureTemp != nullptr) {
+		ImGui::Text("screenSpaceShadowsTextureTemp");
+		ImGui::Image(screenSpaceShadowsTextureTemp->srv.get(), { screenSpaceShadowsTextureTemp->desc.Width / 10.f, screenSpaceShadowsTextureTemp->desc.Height / 10.f });
 	}
 }
 
@@ -256,7 +272,9 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 
 		bool enableSSS = true;
 
-		if (shadowState->GetRuntimeData().cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
+		DEFINE_VALUE(shadowState, cubeMapRenderTarget)
+
+		if (cubeMapRenderTarget == RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
 			enableSSS = false;
 
 		} else if (!renderedScreenCamera && settings.Enabled) {
@@ -288,19 +306,11 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				float resolutionY = screenSpaceShadowsTexture->desc.Height * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
 
 				{
-					RaymarchCB data{};
-
 					data.BufferDim.x = (float)screenSpaceShadowsTexture->desc.Width;
 					data.BufferDim.y = (float)screenSpaceShadowsTexture->desc.Height;
 
 					data.RcpBufferDim.x = 1.0f / data.BufferDim.x;
 					data.RcpBufferDim.y = 1.0f / data.BufferDim.y;
-					if (REL::Module::IsVR())
-						data.ProjMatrix = shadowState->GetVRRuntimeData().cameraData.getEye().projMat;
-					else
-						data.ProjMatrix = shadowState->GetRuntimeData().cameraData.getEye().projMat;
-
-					data.InvProjMatrix = XMMatrixInverse(nullptr, data.ProjMatrix);
 
 					data.DynamicRes.x = viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
 					data.DynamicRes.y = viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
@@ -308,17 +318,30 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 					data.DynamicRes.z = 1.0f / data.DynamicRes.x;
 					data.DynamicRes.w = 1.0f / data.DynamicRes.y;
 
-					auto& direction = dirLight->GetWorldDirection();
-					DirectX::XMFLOAT3 position{};
-					position.x = -direction.x;
-					position.y = -direction.y;
-					position.z = -direction.z;
-					auto viewMatrix = shadowState->GetRuntimeData().cameraData.getEye().viewMat;
-					if (REL::Module::IsVR())
-						viewMatrix = shadowState->GetVRRuntimeData().cameraData.getEye().viewMat;
+					for (int eyeIndex = 0; eyeIndex < (!REL::Module::IsVR() ? 1 : 2); eyeIndex++) {
+						if (REL::Module::IsVR())
+							data.ProjMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).projMat;
+						else
+							data.ProjMatrix[eyeIndex] = shadowState->GetRuntimeData().cameraData.getEye().projMat;
 
-					auto invDirLightDirectionWS = XMLoadFloat3(&position);
-					data.InvDirLightDirectionVS = XMVector3TransformCoord(invDirLightDirectionWS, viewMatrix);
+						data.InvProjMatrix[eyeIndex] = XMMatrixInverse(nullptr, data.ProjMatrix[eyeIndex]);
+
+						auto& direction = dirLight->GetWorldDirection();
+						DirectX::XMFLOAT3 position{};
+						position.x = -direction.x;
+						position.y = -direction.y;
+						position.z = -direction.z;
+
+						if (!REL::Module::IsVR())
+							data.ViewMatrix[eyeIndex] = shadowState->GetRuntimeData().cameraData.getEye().viewMat;
+						else
+							data.ViewMatrix[eyeIndex] = shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).viewMat;
+
+						data.InvViewMatrix[eyeIndex] = XMMatrixInverse(nullptr, data.ViewMatrix[eyeIndex]);
+
+						auto invDirLightDirectionWS = XMLoadFloat3(&position);
+						data.InvDirLightDirectionVS[eyeIndex] = XMVector3TransformCoord(invDirLightDirectionWS, data.ViewMatrix[eyeIndex]);
+					}
 
 					data.ShadowDistance = 10000.0f;
 
@@ -337,6 +360,9 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				ID3D11ShaderResourceView* view = depth.depthSRV;
 				context->CSSetShaderResources(0, 1, &view);
 
+				ID3D11ShaderResourceView* stencilView = depth.stencilSRV;
+				context->CSSetShaderResources(89, 1, &stencilView);
+
 				ID3D11UnorderedAccessView* uav = screenSpaceShadowsTexture->uav.get();
 				context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
@@ -344,6 +370,8 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				context->CSSetShader(shader, nullptr, 0);
 
 				context->Dispatch((uint32_t)std::ceil(resolutionX / 32.0f), (uint32_t)std::ceil(resolutionY / 32.0f), 1);
+				stencilView = nullptr;
+				context->CSSetShaderResources(89, 1, &stencilView);
 
 				// Filter
 				{
@@ -408,9 +436,9 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				old.uav->Release();
 		}
 
-		PerPass data{};
-		data.EnableSSS = enableSSS && settings.Enabled;
-		perPass->Update(data);
+		PerPass data2{};
+		data2.EnableSSS = enableSSS && settings.Enabled;
+		perPass->Update(data2);
 
 		if (renderedScreenCamera) {
 			auto shadowMask = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGET_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
@@ -420,9 +448,9 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 			context->PSSetShaderResources(20, ARRAYSIZE(views), views);
 		}
 	} else {
-		PerPass data{};
-		data.EnableSSS = false;
-		perPass->Update(data);
+		PerPass data2{};
+		data2.EnableSSS = false;
+		perPass->Update(data2);
 	}
 
 	ID3D11Buffer* buffers[1]{};

@@ -1503,10 +1503,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		dirLightColor *= shadowColor.xxx;
 
 #	if defined(SCREEN_SPACE_SHADOWS)
-	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition.xyz);
+	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition.xyz, eyeIndex);
 	dirLightSShadow = lerp(dirLightSShadow, 1.0, !frontFace * 0.2);
 	dirLightColor *= dirLightSShadow;
-#	endif  // SCREEN_SPACE_SHADOWS
+#endif  // SCREEN_SPACE_SHADOWS
 
 #	if defined(CPM_AVAILABLE) && (defined(SKINNED) || !defined(MODELSPACENORMALS))
 	float3 dirLightDirectionTS = mul(DirLightDirection, tbn).xyz;
