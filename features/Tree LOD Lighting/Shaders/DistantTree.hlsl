@@ -261,7 +261,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 nsDirLightColor = dirLightColor;
 
 #		if defined(SCREEN_SPACE_SHADOWS)
-	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition, 0);
+	float dirLightSShadow = PrepassScreenSpaceShadows(input.WorldPosition);
 #		endif
 
 	float3 diffuseColor = 0;

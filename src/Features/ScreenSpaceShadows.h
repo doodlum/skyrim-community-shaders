@@ -40,21 +40,19 @@ struct ScreenSpaceShadows : Feature
 
 	struct alignas(16) RaymarchCB
 	{
-		DirectX::XMFLOAT2 BufferDim;
-		DirectX::XMFLOAT2 RcpBufferDim;
-		DirectX::XMMATRIX ProjMatrix[2];
-		DirectX::XMMATRIX InvProjMatrix[2];
-		DirectX::XMMATRIX ViewMatrix[2];
-		DirectX::XMMATRIX InvViewMatrix[2];
-		DirectX::XMFLOAT4 DynamicRes;
-		DirectX::XMVECTOR InvDirLightDirectionVS[2];
+		float2 BufferDim;
+		float2 RcpBufferDim;
+		float4x4 ProjMatrix[2];
+		float4x4 InvProjMatrix[2];
+		float4 CameraData;
+		float4 DynamicRes;
+		float4 InvDirLightDirectionVS;
 		float ShadowDistance = 10000;
 		Settings Settings;
+		uint32_t pad[1];
 	};
 
 	Settings settings;
-
-	RaymarchCB data{};
 
 	ConstantBuffer* perPass = nullptr;
 

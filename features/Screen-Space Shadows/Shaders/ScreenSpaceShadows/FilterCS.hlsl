@@ -74,34 +74,34 @@ static const float2 BlurOffsets[cKernelSize] = {
 #	error "Must define an axis!"
 #endif
 
-	float2 TexCoord = (DTid.xy + 0.5) * RcpBufferDim * DynamicRes.zw * 2;
+	float2 texCoord = (DTid.xy + 0.5) * RcpBufferDim * DynamicRes.zw;
 
 #ifdef VR
-	uint eyeIndex = (TexCoord.x >= 1.0) ? 1 : 0;
+	uint eyeIndex = (texCoord.x >= 0.5) ? 1 : 0;
 #else
-    uint eyeIndex = 0;
+	uint eyeIndex = 0;
 #endif  // VR
 
-	float startDepth = GetDepth(TexCoord);
+	float startDepth = GetDepth(texCoord * 2);
 	if (startDepth >= 1)
 		return;
-	
-	float WeightSum = 0.114725602f;
-	float color1 = OcclusionTexture.SampleLevel(LinearSampler, TexCoord, 0).r * WeightSum;
 
-    float depth1 = InverseProjectUVZ(TexCoord, startDepth, eyeIndex).z;
+	float WeightSum = 0.114725602f;
+	float color1 = OcclusionTexture.SampleLevel(LinearSampler, texCoord * 2, 0).r * WeightSum;
+
+	float depth1 = InverseProjectUVZ(texCoord * 2, startDepth, eyeIndex).z;
 
 	float depthDrop = depth1 * BlurDropoff;
 
 	[unroll] for (int i = 0; i < cKernelSize; i++)
 	{
 #if defined(HORIZONTAL)
-		float2 uv = TexCoord + (BlurOffsets[i] * OffsetMask * RcpBufferDim) * BlurRadius;
+		float2 uv = texCoord + (BlurOffsets[i] * OffsetMask * RcpBufferDim) * BlurRadius;
 #elif defined(VERTICAL)
-		float2 uv = TexCoord + (BlurOffsets[i] * OffsetMask * RcpBufferDim / 2) * BlurRadius;
+		float2 uv = texCoord + (BlurOffsets[i] * OffsetMask * RcpBufferDim / 2) * BlurRadius;
 #endif
-		float4 color2 = OcclusionTexture.SampleLevel(LinearSampler, uv, 0).r;
-		float depth2 = InverseProjectUV(uv, eyeIndex).z;
+		float4 color2 = OcclusionTexture.SampleLevel(LinearSampler, uv * 2, 0).r;
+		float depth2 = InverseProjectUV(uv * 2, eyeIndex);
 
 		// Depth-awareness
 		float awareness = saturate(depthDrop - abs(depth1 - depth2));
