@@ -53,7 +53,7 @@ void ScreenSpaceShadows::DrawSettings()
 	}
 
 	if (ImGui::TreeNodeEx("Near Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::SliderFloat("Near Distance", &settings.NearDistance, 0, 128);
+		ImGui::SliderFloat("Near Distance", &settings.NearDistance, 0.25f, 128);
 		if (auto _tt = Util::HoverTooltipWrapper()) {
 			ImGui::Text("Near Shadow Distance.");
 		}
@@ -339,6 +339,12 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				ID3D11ShaderResourceView* view = depth.depthSRV;
 				context->CSSetShaderResources(0, 1, &view);
 
+				ID3D11ShaderResourceView* stencilView = nullptr;
+				if (REL::Module::IsVR()) {
+					stencilView = depth.stencilSRV;
+					context->CSSetShaderResources(89, 1, &stencilView);
+				}
+
 				ID3D11UnorderedAccessView* uav = screenSpaceShadowsTexture->uav.get();
 				context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
@@ -346,6 +352,11 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 				context->CSSetShader(shader, nullptr, 0);
 
 				context->Dispatch((uint32_t)std::ceil(resolutionX / 32.0f), (uint32_t)std::ceil(resolutionY / 32.0f), 1);
+
+				if (REL::Module::IsVR()) {
+					stencilView = nullptr;
+					context->CSSetShaderResources(89, 1, &stencilView);
+				}
 
 				// Filter
 				{

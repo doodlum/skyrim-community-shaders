@@ -81,12 +81,7 @@ float InverseProjectUV(float2 uv, uint a_eyeIndex)
 #endif
 
 	float2 texCoord = (DTid.xy + 0.5) * RcpBufferDim;
-
-#ifdef VR
-	uint eyeIndex = (texCoord.x >= 0.5) ? 1 : 0;
-#else
-	uint eyeIndex = 0;
-#endif  // VR
+	uint eyeIndex = GetEyeIndexFromTexCoord(texCoord);
 
 	float startDepth = GetDepth(texCoord * 2 * DynamicRes.zw);
 	if (startDepth >= 1)

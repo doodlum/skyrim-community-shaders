@@ -19,7 +19,7 @@ struct ScreenSpaceShadows : Feature
 
 	struct Settings
 	{
-		uint32_t MaxSamples = 24;
+		uint32_t MaxSamples = !REL::Module::IsVR() ? 24u : 12u;
 		float FarDistanceScale = 0.025f;
 		float FarThicknessScale = 0.025f;
 		float FarHardness = 8.0f;
