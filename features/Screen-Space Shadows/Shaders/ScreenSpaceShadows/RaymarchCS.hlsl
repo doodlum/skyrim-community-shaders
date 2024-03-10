@@ -20,7 +20,10 @@ float GetStencil(float2 uv, uint a_eyeIndex)
 }
 #endif  // VR
 
-bool IsSaturated(float value) { return value == saturate(value); }
+bool IsSaturated(float value)
+{
+	return value == saturate(value);
+}
 bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
 
 // https://www.shadertoy.com/view/Xt23zV
