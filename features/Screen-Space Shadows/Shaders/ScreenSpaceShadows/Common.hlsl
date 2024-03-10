@@ -34,24 +34,6 @@ float GetDepth(float2 uv)
 	return DepthTexture.SampleLevel(LinearSampler, uv * DynamicRes.xy, 0).r;
 }
 
-// Get a raw depth from the depth buffer. [0,1] in uv space
-float GetDepth(float2 uv, uint a_eyeIndex)
-{
-	uv = ConvertToStereoUV(uv, a_eyeIndex);
-	return GetDepth(uv);
-}
-
-float GetScreenDepth(float depth)
-{
-	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
-}
-
-float GetScreenDepth(float2 uv, uint a_eyeIndex)
-{
-	float depth = GetDepth(uv, a_eyeIndex);
-	return GetScreenDepth(depth);
-}
-
 // Inverse project UV + raw depth into the view space.
 float3 InverseProjectUVZ(float2 uv, float z, uint a_eyeIndex)
 {
@@ -59,12 +41,6 @@ float3 InverseProjectUVZ(float2 uv, float z, uint a_eyeIndex)
 	float4 cp = float4(uv * 2 - 1, z, 1);
 	float4 vp = mul(InvProjMatrix[a_eyeIndex], cp);
 	return vp.xyz / vp.w;
-}
-
-float InverseProjectUV(float2 uv, uint a_eyeIndex)
-{
-	float depth = GetDepth(uv, a_eyeIndex);
-	return InverseProjectUVZ(uv, depth, a_eyeIndex).z;
 }
 
 float2 ViewToUV(float3 position, bool is_position, uint a_eyeIndex)

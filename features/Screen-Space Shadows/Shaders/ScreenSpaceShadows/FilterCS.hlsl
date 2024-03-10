@@ -63,6 +63,12 @@ static const float2 BlurOffsets[cKernelSize] = {
 	float2(6.0f, 6.0f)
 };
 
+float InverseProjectUV(float2 uv, uint a_eyeIndex)
+{
+	float depth = GetDepth(uv);
+	return InverseProjectUVZ(uv, depth, a_eyeIndex).z;
+}
+
 [numthreads(32, 32, 1)] void main(uint3 DTid
 								  : SV_DispatchThreadID) {
 
@@ -74,7 +80,7 @@ static const float2 BlurOffsets[cKernelSize] = {
 #	error "Must define an axis!"
 #endif
 
-	float2 texCoord = (DTid.xy + 0.5) * RcpBufferDim * DynamicRes.zw;
+	float2 texCoord = (DTid.xy + 0.5) * RcpBufferDim;
 
 #ifdef VR
 	uint eyeIndex = (texCoord.x >= 0.5) ? 1 : 0;
@@ -82,7 +88,7 @@ static const float2 BlurOffsets[cKernelSize] = {
 	uint eyeIndex = 0;
 #endif  // VR
 
-	float startDepth = GetDepth(texCoord * 2);
+	float startDepth = GetDepth(texCoord * 2 * DynamicRes.zw);
 	if (startDepth >= 1)
 		return;
 

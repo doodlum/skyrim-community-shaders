@@ -19,10 +19,23 @@ float InterleavedGradientNoise(float2 uv)
 	return frac(magic.z * frac(dot(uv, magic.xy)));
 }
 
-float ScreenSpaceShadowsUV(float2 texcoord, uint eyeIndex)
+float GetScreenDepth(float depth)
 {
+	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
+}
+
+float GetScreenDepth(float2 uv, uint a_eyeIndex)
+{
+	uv = ConvertToStereoUV(uv, a_eyeIndex);
+	float depth = GetDepth(uv);
+	return GetScreenDepth(depth);
+}
+
+float ScreenSpaceShadowsUV(float2 stereoTexCoord, uint eyeIndex)
+{
+	float2 texcoord = ConvertFromStereoUV(stereoTexCoord, eyeIndex);
 	// Ignore the sky
-	float startDepth = GetDepth(texcoord, eyeIndex);
+	float startDepth = GetDepth(stereoTexCoord);
 	if (startDepth >= 1)
 		return 1;
 
@@ -46,7 +59,7 @@ float ScreenSpaceShadowsUV(float2 texcoord, uint eyeIndex)
 	float3 rayStep = InvDirLightDirectionVS.xyz * stepLength;
 
 	// Offset starting position with interleaved gradient noise
-	float offset = InterleavedGradientNoise(texcoord * BufferDim);
+	float offset = InterleavedGradientNoise(stereoTexCoord * BufferDim);
 	rayPos += rayStep * offset;
 
 	float thickness = lerp(NearThickness, rayPos.z * FarThicknessScale, blendFactorFar);
@@ -97,7 +110,6 @@ float ScreenSpaceShadowsUV(float2 texcoord, uint eyeIndex)
 
 #ifdef VR
 	uint eyeIndex = (texCoord.x >= 0.5) ? 1 : 0;
-	texCoord = ConvertFromStereoUV(texCoord, eyeIndex);
 #else
 	uint eyeIndex = 0;
 #endif  // VR

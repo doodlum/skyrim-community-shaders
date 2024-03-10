@@ -20,15 +20,10 @@ float PrepassScreenSpaceShadows(float3 positionWS, uint eyeIndex = 0)
 #else
 	if (EnableSSS && !FrameParams.z) {
 		float2 texCoord = ViewToUV(WorldToView(positionWS, true, eyeIndex), true, eyeIndex);
-		float2 coords = SSGetDynamicResolutionAdjustedScreenPosition(texCoord) / 2;
-
-#	ifdef VR
-		// X coordinate is further shifted because VR uav is split between left and right eye.
-		// So X in [0, .5] is the left eye and [.5, 1] is the right eye
-		coords.x = (coords.x + (eyeIndex * .5)) / 2;
-#	endif
-
-		float shadow = TexOcclusionSampler.SampleLevel(LinearSampler, coords, 0);
+		texCoord = ConvertToStereoUV(texCoord, eyeIndex);
+		texCoord = SSGetDynamicResolutionAdjustedScreenPosition(texCoord);
+		texCoord /= 2;
+		float shadow = TexOcclusionSampler.SampleLevel(LinearSampler, texCoord, 0);
 		return shadow;
 	}
 	return 1;
