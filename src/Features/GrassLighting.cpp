@@ -137,6 +137,11 @@ void GrassLighting::RestoreDefaultSettings()
 	settings = {};
 }
 
+bool GrassLighting::HasShaderDefine(RE::BSShader::Type shaderType)
+{
+	return shaderType == RE::BSShader::Type::Grass;
+}
+
 void GrassLighting::SetupResources()
 {
 	perFrame = new ConstantBuffer(ConstantBufferDesc<PerFrame>());
