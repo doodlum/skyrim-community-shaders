@@ -10,9 +10,9 @@ struct PerPassWetnessEffects
 	float MaxPuddleWetness;
 	float MaxShoreWetness;
 	uint ShoreRange;
-    float MaxPointLightSpecular;
-    float MaxDALCSpecular;
-    float MaxAmbientSpecular;
+	float MaxPointLightSpecular;
+	float MaxDALCSpecular;
+	float MaxAmbientSpecular;
 	float PuddleRadius;
 	float PuddleMaxAngle;
 	float PuddleMinWetness;
