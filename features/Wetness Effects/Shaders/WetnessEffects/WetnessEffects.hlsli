@@ -225,7 +225,6 @@ float4 GetRainDrops(float3 worldPos, float t, float3 normal)
 	return float4(rippleNormal, wetness);
 }
 
-
 float3 GetWetnessAmbientSpecular(float2 uv, float3 N, float3 VN, float3 V, float roughness)
 {
 	float3 R = reflect(-V, N);
@@ -237,7 +236,7 @@ float3 GetWetnessAmbientSpecular(float2 uv, float3 N, float3 VN, float3 V, float
 #else
 	float3 specularIrradiance = sRGB2Lin(mul(perPassWetnessEffects[0].DirectionalAmbientWS, float4(R, 1.0))) * noise(R * lerp(10.0, 1.0, roughness * roughness));
 #endif
-	
+
 	float2 specularBRDF = EnvBRDFApproxWater(0.02, roughness, NoV);
 
 	// Horizon specular occlusion
