@@ -386,9 +386,9 @@ cbuffer cb13 : register(b13)
 #	if defined(SIMPLE) || defined(UNDERWATER) || defined(LOD) || defined(SPECULAR)
 #		if defined(FLOWMAP)
 #			if defined(WATER_CAUSTICS)
-float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float offset, float2 viewOffset, out float3 caustics)
+float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float offset, float2 viewOffset, out float3 caustics, uint a_eyeIndex)
 #			else
-float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float offset)
+float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float offset, uint a_eyeIndex)
 #			endif
 {
 	float4 flowmapColor = FlowMapTex.Sample(FlowMapSampler, input.TexCoord2.zw + uvShift);
@@ -417,9 +417,9 @@ float3 GetFlowmapNormal(PS_INPUT input, float2 uvShift, float multiplier, float 
 #		endif
 
 #		if defined(WATER_CAUSTICS)
-float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFactor, float3 viewDirection, float depth, inout float3 caustics)
+float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFactor, float3 viewDirection, float depth, inout float3 caustics, uint a_eyeIndex)
 #		else
-float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFactor, float3 viewDirection, float depth)
+float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFactor, float3 viewDirection, float depth, uint a_eyeIndex)
 #		endif
 {
 	float3 normalScalesRcp = rcp(input.NormalsScale.xyz);
@@ -444,21 +444,21 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 
 #			if defined(WATER_CAUSTICS)
 	float3 flowmapCaustics0;
-	float3 flowmapNormal0 = GetFlowmapNormal(input, uvShift.xx, 9.92, 0, viewOffset, flowmapCaustics0);
+	float3 flowmapNormal0 = GetFlowmapNormal(input, uvShift.xx, 9.92, 0, viewOffset, flowmapCaustics0, a_eyeIndex);
 	float3 flowmapCaustics1;
-	float3 flowmapNormal1 = GetFlowmapNormal(input, float2(0, uvShift), 10.64, 0.27, viewOffset, flowmapCaustics1);
+	float3 flowmapNormal1 = GetFlowmapNormal(input, float2(0, uvShift), 10.64, 0.27, viewOffset, flowmapCaustics1, a_eyeIndex);
 	float3 flowmapCaustics2;
-	float3 flowmapNormal2 = GetFlowmapNormal(input, 0.0.xx, 8, 0, viewOffset, flowmapCaustics2);
+	float3 flowmapNormal2 = GetFlowmapNormal(input, 0.0.xx, 8, 0, viewOffset, flowmapCaustics2, a_eyeIndex);
 	float3 flowmapCaustics3;
-	float3 flowmapNormal3 = GetFlowmapNormal(input, float2(uvShift, 0), 8.48, 0.62, viewOffset, flowmapCaustics3);
+	float3 flowmapNormal3 = GetFlowmapNormal(input, float2(uvShift, 0), 8.48, 0.62, viewOffset, flowmapCaustics3, a_eyeIndex);
 
 	float3 flowmapCausticsWeighted = normalMul.y * (normalMul.x * flowmapCaustics2 + (1.0 - normalMul.x) * flowmapCaustics3) + (1.0 - normalMul.y) * (normalMul.x * flowmapCaustics1 + (1.0 - normalMul.x) * flowmapCaustics0);
 	caustics = flowmapCausticsWeighted;
 #			else
-	float3 flowmapNormal0 = GetFlowmapNormal(input, uvShift.xx, 9.92, 0);
-	float3 flowmapNormal1 = GetFlowmapNormal(input, float2(0, uvShift), 10.64, 0.27);
+	float3 flowmapNormal0 = GetFlowmapNormal(input, uvShift.xx, 9.92, 0, a_eyeIndex);
+	float3 flowmapNormal1 = GetFlowmapNormal(input, float2(0, uvShift), 10.64, 0.27, a_eyeIndex);
 	float3 flowmapNormal2 = GetFlowmapNormal(input, 0.0.xx, 8, 0);
-	float3 flowmapNormal3 = GetFlowmapNormal(input, float2(uvShift, 0), 8.48, 0.62);
+	float3 flowmapNormal3 = GetFlowmapNormal(input, float2(uvShift, 0), 8.48, 0.62, a_eyeIndex);
 #			endif
 
 	float2 flowmapNormalWeighted =
@@ -568,6 +568,7 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 #		if !defined(LOD) && NUM_SPECULAR_LIGHTS == 0
 		if (shaderDescriptors[0].PixelShaderDescriptor & _Cubemap) {
 			float2 ssrReflectionUv = GetDynamicResolutionAdjustedScreenPosition((DynamicResolutionParams2.xy * input.HPosition.xy) * SSRParams.zw + SSRParams2.x * normal.xy);
+			ssrReflectionUv = ConvertToStereoUV(ssrReflectionUv, a_eyeIndex);
 			float4 ssrReflectionColor1 = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUv);
 			float4 ssrReflectionColor2 = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUv);
 			float4 ssrReflectionColor = lerp(ssrReflectionColor2, ssrReflectionColor1, SSRParams.y);
@@ -584,8 +585,9 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 }
 
 #		if defined(DEPTH)
-float GetScreenDepthWater(float2 screenPosition)
+float GetScreenDepthWater(float2 screenPosition, uint a_eyeIndex = 0)
 {
+	screenPosition = ConvertToStereoSP(screenPosition, a_eyeIndex, lightingData[0].BufferDim);  // this is where it's breaking right now the value is so low that you can see through water
 	float depth = DepthTex.Load(float3(screenPosition, 0)).x;
 	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
 }
@@ -628,12 +630,12 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 
 	float2 refractionUvRaw =
 		float2(refractionNormal.x, refractionNormal.w - refractionNormal.y) / refractionNormal.ww;
-	refractionUvRaw = ConvertToStereoUV(refractionUvRaw, a_eyeIndex);
 
 #			if defined(DEPTH) && !defined(VERTEX_ALPHA_DEPTH)
-	float depth = GetScreenDepthWater(DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy));
-	float refractionDepth =
-		GetScreenDepthWater(DynamicResolutionParams1.xy * (refractionUvRaw / VPOSOffset.xy));
+	float2 screenPosition = DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy);
+	float depth = GetScreenDepthWater(screenPosition, a_eyeIndex);
+	float2 refractionScreenPosition = DynamicResolutionParams1.xy * (refractionUvRaw / VPOSOffset.xy);
+	float refractionDepth = GetScreenDepthWater(refractionScreenPosition, a_eyeIndex);
 	float refractionDepthMul = length(
 		float3((refractionDepth * ((VPOSOffset.zw + refractionUvRaw) * 2 - 1)) /
 				   ProjData.xy,
@@ -733,8 +735,9 @@ PS_OUTPUT main(PS_INPUT input)
 #			else
 	distanceMul = 0;
 
-	depth = GetScreenDepthWater(
-		DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy));
+	float2 screenPosition = DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy);
+
+	depth = GetScreenDepthWater(screenPosition);
 	float2 depthOffset =
 		DynamicResolutionParams2.xy * input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WPosition.xyz, 1)).xyz;
@@ -768,9 +771,9 @@ PS_OUTPUT main(PS_INPUT input)
 
 #		if defined(WATER_CAUSTICS)
 	float3 caustics = 0.0;
-	float3 normal = GetWaterNormal(input, distanceFactor, depthControl.z, viewDirection, depth, caustics);
+	float3 normal = GetWaterNormal(input, distanceFactor, depthControl.z, viewDirection, depth, caustics, eyeIndex);
 #		else
-	float3 normal = GetWaterNormal(input, distanceFactor, depthControl.z, viewDirection, depth);
+	float3 normal = GetWaterNormal(input, distanceFactor, depthControl.z, viewDirection, depth, eyeIndex);
 #		endif
 
 	float fresnel = GetFresnelValue(normal, viewDirection);
@@ -853,10 +856,11 @@ PS_OUTPUT main(PS_INPUT input)
 #		if defined(WATER_BLENDING)
 #			if defined(DEPTH)
 	if (perPassWaterBlending[0].EnableWaterBlending) {
+		float2 screenPosition = DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy);
 #				if defined(VERTEX_ALPHA_DEPTH) && defined(VC)
 		float blendFactor = 1 - smoothstep(0.0, 0.025 * perPassWaterBlending[0].WaterBlendRange, input.TexCoord3.z);
 		if (blendFactor > 0.0) {
-			float4 background = RefractionTex.Load(float3(DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy), 0));
+			float4 background = RefractionTex.Load(float3(screenPosition, 0));
 			psout.Lighting.xyz = lerp(psout.Lighting.xyz, background.xyz, blendFactor);
 			psout.Lighting.w = lerp(psout.Lighting.w, background.w, blendFactor);
 		}
@@ -864,7 +868,7 @@ PS_OUTPUT main(PS_INPUT input)
 		float blendFactor = 1 - smoothstep(0.0, 0.025 * perPassWaterBlending[0].WaterBlendRange, distanceMul.z);
 
 		if (blendFactor > 0.0) {
-			float4 background = RefractionTex.Load(float3(DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy), 0));
+			float4 background = RefractionTex.Load(float3(screenPosition, 0));
 			psout.Lighting.xyz = lerp(psout.Lighting.xyz, background.xyz, blendFactor);
 			psout.Lighting.w = lerp(psout.Lighting.w, background.w, blendFactor);
 		}
