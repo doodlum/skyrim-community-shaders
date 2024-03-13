@@ -1880,38 +1880,45 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float envMask = (EnvmapData.y * (envMaskColor - glossiness) + glossiness) * (EnvmapData.x * MaterialData.x);
 	float viewNormalAngle = dot(worldSpaceNormal.xyz, viewDirection);
 	float3 envSamplingPoint = (viewNormalAngle * 2) * modelNormal.xyz - viewDirection;
-	float3 envColorBase = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint).xyz;
+	float4 envColorBase = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint);
 	float3 envColor = envColorBase * envMask;
 #		if defined(DYNAMIC_CUBEMAPS)
 #			if defined(EYE)
 	bool dynamicCubemap = true;
-	envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 / 9.0, 0.25, true) * envMask;
+	envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 / 9.0, 0.25, diffuseColor, viewPosition.z) * envMask;
 #			else
+	float3 F0 = 0.0;
+	float envRoughness = 1.0;
+
 	uint2 envSize;
 	TexEnvSampler.GetDimensions(envSize.x, envSize.y);
-	bool dynamicCubemap = envMask != 0 && envSize.x == 1;
-	if (dynamicCubemap) {
-#				if defined(CPM_AVAILABLE) && defined(ENVMAP)
-		float3 F0 = lerp(envColorBase, 1.0, envColorBase.x == 0.0 && envColorBase.y == 0.0 && envColorBase.z == 0.0);
 
-		envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, lerp(1.0 / 9.0, 1.0 - complexMaterialColor.y, complexMaterial), lerp(F0, complexSpecular, complexMaterial), complexMaterial) * envMask;
-#				else
-		float3 F0 = lerp(envColorBase, 1.0, envColorBase.x == 0.0 && envColorBase.y == 0.0 && envColorBase.z == 0.0);
-		envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 / 9.0, F0, 0.0) * envMask;
+	bool dynamicCubemap = false;
+	[flatten] if (envMask != 0 && envSize.x == 1)
+	{
+		dynamicCubemap = true;
+		F0 = 1.0;
+		envRoughness = 1.0 / 9.0;
+	} else if (envColorBase.a < (1.0 - (4.0 / 255.0))){
+		dynamicCubemap = true;
+		F0 = (sRGB2Lin(envColorBase * 2.5)) + baseColor.xyz;
+		envRoughness = envColorBase.a;
+	}
+
+	if (dynamicCubemap) 
+	{
+#				if defined(CPM_AVAILABLE)
+		envRoughness = lerp(envRoughness, 1.0 - complexMaterialColor.y, (float)complexMaterial);
+		F0 = lerp(F0, sRGB2Lin(complexSpecular), (float)complexMaterial);
 #				endif
+
+		envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, envRoughness, F0, diffuseColor, viewPosition.z) * envMask;
+
 		if (shaderDescriptors[0].PixelShaderDescriptor & _DefShadow && shaderDescriptors[0].PixelShaderDescriptor & _ShadowDir) {
 			float upAngle = saturate(dot(float3(0, 0, 1), normalizedDirLightDirectionWS.xyz));
-			envColor *= lerp(1.0, shadowColor.x, saturate(upAngle) * 0.2);
+			envColor *= lerp(1.0, shadowColor.x, saturate(upAngle) / 3.0);
 		}
 	}
-#				if !defined(VR)
-// else if (envMask > 0.0 && !FrameParams.z && FrameParams.y) {
-// 	float4 ssrBlurred = ssrTexture.SampleLevel(SampColorSampler, screenUV, 0);
-// 	float4 ssrRaw = ssrRawTexture.SampleLevel(SampColorSampler, screenUV, 0);
-// 	float4 ssrTexture = lerp(ssrRaw, ssrBlurred, 1.0 - saturate(envMask));
-// 	envColor = lerp(envColor, ssrTexture.rgb * envColor * 10, ssrTexture.a);
-// }
-#				endif
 #			endif
 #		endif
 #	endif  // defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
@@ -2020,7 +2027,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif  // defined (SPECULAR) || defined(SPARKLE)
 
 #	if defined(ENVMAP) && defined(TESTCUBEMAP)
-	color.xyz = specularTexture.SampleLevel(SampEnvSampler, envSamplingPoint, 0).xyz;
+	color.xyz = specularTexture.SampleLevel(SampEnvSampler, envSamplingPoint, 1).xyz;
 #	endif
 
 #	if defined(LANDSCAPE) && !defined(LOD_LAND_BLEND)
