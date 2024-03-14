@@ -37,7 +37,7 @@ void DynamicCubemaps::DrawSettings()
 		if (ImGui::TreeNodeEx("Dynamic Cubemap Creator", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Text("You must enable creator mode by adding the shader define CREATOR");
 			ImGui::Checkbox("Enable Creator", &enableCreator);
-			if (enableCreator){
+			if (enableCreator) {
 				ImGui::ColorEdit3("Color", (float*)&cubemapColor);
 				ImGui::SliderFloat("Roughness", &cubemapColor.w, 0.0f, 1.0f, "%.2f");
 				if (ImGui::Button("Export")) {
@@ -401,7 +401,7 @@ void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 			auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 			auto context = renderer->GetRuntimeData().context;
 
-			if (enableCreator){
+			if (enableCreator) {
 				CreatorSettingsCB data{};
 				data.Enabled = true;
 				data.CubemapColor = cubemapColor;

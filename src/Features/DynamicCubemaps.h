@@ -73,7 +73,7 @@ public:
 	// Editor window
 
 	bool enableCreator = false;
-	float4 cubemapColor{1.0f, 1.0f, 1.0f, 0.0f};
+	float4 cubemapColor{ 1.0f, 1.0f, 1.0f, 0.0f };
 
 	struct alignas(16) CreatorSettingsCB
 	{

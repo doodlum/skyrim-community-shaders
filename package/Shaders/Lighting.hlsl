@@ -1894,7 +1894,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	{
 		dynamicCubemap = true;
 		envColorBase = TexEnvSampler.SampleLevel(SampEnvSampler, float3(1.0, 0.0, 0.0), 0);
-		if (envColorBase.a < 1.0){
+		if (envColorBase.a < 1.0) {
 			F0 = sRGB2Lin(envColorBase.rgb) + sRGB2Lin(baseColor.rgb);
 			envRoughness = envColorBase.a;
 		} else {
@@ -1903,21 +1903,19 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 	}
 
-#	if defined(CREATOR)
-	if (perFrameCreator[0].Enabled)
-	{
+#			if defined(CREATOR)
+	if (perFrameCreator[0].Enabled) {
 		dynamicCubemap = true;
 		F0 = sRGB2Lin(perFrameCreator[0].CubemapColor.rgb) + sRGB2Lin(baseColor.xyz);
 		envRoughness = perFrameCreator[0].CubemapColor.a;
 	}
-#	endif
+#			endif
 
-	if (dynamicCubemap) 
-	{
-#				if defined(CPM_AVAILABLE)
+	if (dynamicCubemap) {
+#			if defined(CPM_AVAILABLE)
 		envRoughness = lerp(envRoughness, 1.0 - complexMaterialColor.y, (float)complexMaterial);
 		F0 = lerp(F0, sRGB2Lin(complexSpecular), (float)complexMaterial);
-#				endif
+#			endif
 
 		envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, envRoughness, F0, diffuseColor, viewPosition.z) * envMask;
 
@@ -2018,7 +2016,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 #	if defined(DYNAMIC_CUBEMAPS)
-#		if defined(EYE) 
+#		if defined(EYE)
 	color.xyz += GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 / 9.0, viewPosition.z) * input.Color.xyz * envMask;
 #		elif defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX)
 	color.xyz += 0.25 * GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, (2.0 - saturate(envMask)) / 9.0, viewPosition.z) * (1.0 - ((float)dynamicCubemap * saturate(envMask))) * input.Color.xyz;
@@ -2030,7 +2028,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 #	if defined(EYE)
-	color.xyz *= saturate(normalize(input.EyeNormal2.xyz).y); // Occlusion
+	color.xyz *= saturate(normalize(input.EyeNormal2.xyz).y);  // Occlusion
 #	endif
 
 #	if defined(WATER_CAUSTICS)
@@ -2143,7 +2141,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		psout.ScreenSpaceNormals.w *= blendFactor;
 	}
 #	endif  // WATER_BLENDING
-
 
 #	if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
 #		if defined(DYNAMIC_CUBEMAPS)
