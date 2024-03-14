@@ -1897,13 +1897,24 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	[flatten] if (envMask != 0 && envSize.x == 1)
 	{
 		dynamicCubemap = true;
-		F0 = 1.0;
-		envRoughness = 1.0 / 9.0;
-	} else if (envColorBase.a < (1.0 - (4.0 / 255.0))){
-		dynamicCubemap = true;
-		F0 = (sRGB2Lin(envColorBase) * 5.0) + sRGB2Lin(baseColor.xyz);
-		envRoughness = envColorBase.a;
+		envColorBase = TexEnvSampler.SampleLevel(SampEnvSampler, float3(1.0, 0.0, 0.0), 0);
+		if (envColorBase.a < 1.0){
+			F0 = sRGB2Lin(envColorBase.rgb) + sRGB2Lin(baseColor.rgb);
+			envRoughness = envColorBase.a;
+		} else {
+			F0 = 1.0;
+			envRoughness = 1.0 / 9.0;
+		}
 	}
+
+#	if defined(CREATOR)
+	if (perFrameCreator[0].Enabled)
+	{
+		dynamicCubemap = true;
+		F0 = sRGB2Lin(perFrameCreator[0].CubemapColor.rgb) + sRGB2Lin(baseColor.xyz);
+		envRoughness = perFrameCreator[0].CubemapColor.a;
+	}
+#	endif
 
 	if (dynamicCubemap) 
 	{
@@ -2009,6 +2020,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(WETNESS_EFFECTS)
 	color.xyz += wetnessSpecular * wetnessGlossinessSpecular;
+#	endif
+
+#	if defined(DYNAMIC_CUBEMAPS) && !defined(EYE)
+#		if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX)
+	color.xyz += GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, (2.0 - saturate(envMask)) / 9.0, viewPosition.z) * (1.0 - ((float)dynamicCubemap * saturate(envMask))) * input.Color.xyz;
+#		else
+	color.xyz += GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 2.0 / 9.0, viewPosition.z) * input.Color.xyz;
+#		endif
 #	endif
 
 #	if defined(WATER_CAUSTICS)
