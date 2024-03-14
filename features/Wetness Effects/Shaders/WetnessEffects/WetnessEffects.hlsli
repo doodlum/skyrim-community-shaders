@@ -32,6 +32,7 @@ struct PerPassWetnessEffects
 	float RaindropGridSizeRcp;
 	float RaindropIntervalRcp;
 	float RaindropChance;
+    float SplashesLifetime;
 	float SplashesStrength;
 	float SplashesMinRadius;
 	float SplashesMaxRadius;
@@ -165,53 +166,64 @@ float4 GetRainDrops(float3 worldPos, float t, float3 normal)
 	float3 rippleNormal = float3(0, 0, 1);
 	float wetness = 0;
 
-	if (perPassWetnessEffects[0].EnableSplashes || perPassWetnessEffects[0].EnableRipples)
-		for (int i = -1; i <= 1; i++)
-			for (int j = -1; j <= 1; j++) {
-				int2 gridCurr = grid + int2(i, j);
-				float tOffset = float(iqint3(gridCurr)) * uintToFloat;
+    if (perPassWetnessEffects[0].EnableSplashes || perPassWetnessEffects[0].EnableRipples)
+        for (int i = -1; i <= 1; i++)
+            for (int j = -1; j <= 1; j++) {
+                int2 gridCurr = grid + int2(i, j);
+                float tOffset = float(iqint3(gridCurr)) * uintToFloat;
 
-				float residual = t * perPassWetnessEffects[0].RaindropIntervalRcp + tOffset + worldPos.z * 0.001;
-				uint timestep = residual;
-				residual = residual - timestep;
+				// splashes
+                if (perPassWetnessEffects[0].EnableSplashes)
+                {
+                    float residual = t * perPassWetnessEffects[0].RaindropIntervalRcp / perPassWetnessEffects[0].SplashesLifetime + tOffset + worldPos.z * 0.001;
+                    uint timestep = residual;
+                    residual = residual - timestep;
 
-				uint3 hash = pcg3d(uint3(gridCurr, timestep));
-				float3 floatHash = float3(hash) * uintToFloat;
+                    uint3 hash = pcg3d(uint3(gridCurr, timestep));
+                    float3 floatHash = float3(hash) * uintToFloat;
 
-				if (floatHash.z < (perPassWetnessEffects[0].RaindropChance)) {
-					float2 vec2Centre = int2(i, j) + floatHash.xy - gridUV;
-					float distSqr = dot(vec2Centre, vec2Centre);
-
-					// splashes
-					if (perPassWetnessEffects[0].EnableSplashes) {
-						float drop_radius = lerp(perPassWetnessEffects[0].SplashesMinRadius, perPassWetnessEffects[0].SplashesMaxRadius,
+                    if (floatHash.z < (perPassWetnessEffects[0].RaindropChance)) {
+                        float2 vec2Centre = int2(i, j) + floatHash.xy - gridUV;
+                        float distSqr = dot(vec2Centre, vec2Centre);
+                        float drop_radius = lerp(perPassWetnessEffects[0].SplashesMinRadius, perPassWetnessEffects[0].SplashesMaxRadius,
 							float(iqint3(hash.yz)) * uintToFloat);
-						if (distSqr < drop_radius * drop_radius)
-							wetness = max(wetness, RainFade(residual));
-					}
+                        if (distSqr < drop_radius * drop_radius)
+                            wetness = max(wetness, RainFade(residual));
+                    }
+                }
 
-					// ripples
-					if (perPassWetnessEffects[0].EnableRipples) {
-						float rippleT = residual * perPassWetnessEffects[0].RippleLifetimeRcp;
-						if (rippleT < 1.) {
-							float ripple_r = lerp(0., perPassWetnessEffects[0].RippleRadius, rippleT);
-							float ripple_inner_radius = ripple_r - perPassWetnessEffects[0].RippleBreadth;
+				// ripples
+                if (perPassWetnessEffects[0].EnableRipples) {
+                    float residual = t * perPassWetnessEffects[0].RaindropIntervalRcp + tOffset + worldPos.z * 0.001;
+                    uint timestep = residual;
+                    residual = residual - timestep;
 
-							float band_lerp = (sqrt(distSqr) - ripple_inner_radius) * rippleBreadthRcp;
-							if (band_lerp > 0. && band_lerp < 1.) {
-								float deriv = (band_lerp < .5 ? SmoothstepDeriv(band_lerp * 2.) : -SmoothstepDeriv(2. - band_lerp * 2.)) *
+                    uint3 hash = pcg3d(uint3(gridCurr, timestep));
+                    float3 floatHash = float3(hash) * uintToFloat;
+
+                    if (floatHash.z < (perPassWetnessEffects[0].RaindropChance)) {
+                        float2 vec2Centre = int2(i, j) + floatHash.xy - gridUV;
+                        float distSqr = dot(vec2Centre, vec2Centre);
+                        float rippleT = residual * perPassWetnessEffects[0].RippleLifetimeRcp;
+                        if (rippleT < 1.) {
+                            float ripple_r = lerp(0., perPassWetnessEffects[0].RippleRadius, rippleT);
+                            float ripple_inner_radius = ripple_r - perPassWetnessEffects[0].RippleBreadth;
+
+                            float band_lerp = (sqrt(distSqr) - ripple_inner_radius) * rippleBreadthRcp;
+                            if (band_lerp > 0. && band_lerp < 1.) {
+                                float deriv = (band_lerp < .5 ? SmoothstepDeriv(band_lerp * 2.) : -SmoothstepDeriv(2. - band_lerp * 2.)) *
 								              lerp(perPassWetnessEffects[0].RippleStrength, 0, rippleT * rippleT);
 
-								float3 grad = float3(normalize(vec2Centre), -deriv);
-								float3 bitangent = float3(-grad.y, grad.x, 0);
-								float3 normal = normalize(cross(grad, bitangent));
+                                float3 grad = float3(normalize(vec2Centre), -deriv);
+                                float3 bitangent = float3(-grad.y, grad.x, 0);
+                                float3 normal = normalize(cross(grad, bitangent));
 
-								rippleNormal = ReorientNormal(normal, rippleNormal);
-							}
-						}
-					}
-				}
-			}
+                                rippleNormal = ReorientNormal(normal, rippleNormal);
+                            }
+                        }
+                    }
+                }				
+            }
 
 	if (perPassWetnessEffects[0].EnableChaoticRipples) {
 		float3 turbulenceNormal = noise(float3(worldPos.xy * perPassWetnessEffects[0].ChaoticRippleScaleRcp, t * perPassWetnessEffects[0].ChaoticRippleSpeed));
