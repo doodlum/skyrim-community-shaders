@@ -1901,7 +1901,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		envRoughness = 1.0 / 9.0;
 	} else if (envColorBase.a < (1.0 - (4.0 / 255.0))){
 		dynamicCubemap = true;
-		F0 = (sRGB2Lin(envColorBase * 2.5)) + baseColor.xyz;
+		F0 = (sRGB2Lin(envColorBase) * 5.0) + sRGB2Lin(baseColor.xyz);
 		envRoughness = envColorBase.a;
 	}
 
