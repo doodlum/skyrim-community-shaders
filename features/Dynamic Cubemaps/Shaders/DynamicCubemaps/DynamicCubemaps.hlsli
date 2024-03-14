@@ -55,23 +55,23 @@ float3 GetDynamicCubemap(float2 uv, float3 N, float3 VN, float3 V, float roughne
 
 float3 GetDynamicCubemapFresnel(float2 uv, float3 N, float3 VN, float3 V, float roughness, float distance)
 {
-	float3 R = reflect(-V, N);
 	float NoV = saturate(dot(N, V));
-
-	float level = roughness * 9.0;
-
-	float3 specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level);
-	specularIrradiance = sRGB2Lin(specularIrradiance);;
-
-	specularIrradiance = specularIrradiance * (1.0 - saturate(distance / 1000.0));
-
 	float2 specularBRDF = EnvBRDFApprox(roughness, NoV);
+	if (specularBRDF.y > 0.001){
+		float level = roughness * 9.0;
+		float3 R = reflect(-V, N);
 
-	// Horizon specular occlusion
-	// https://marmosetco.tumblr.com/post/81245981087
-	float horizon = min(1.0 + dot(R, VN), 1.0);
-	specularIrradiance *= horizon * horizon;
+		float3 specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level);
+		specularIrradiance = sRGB2Lin(specularIrradiance);
+		specularIrradiance = specularIrradiance * (1.0 - saturate(distance / 1000.0));
 
-	return specularIrradiance * specularBRDF.y;
+		// Horizon specular occlusion
+		// https://marmosetco.tumblr.com/post/81245981087
+		float horizon = min(1.0 + dot(R, VN), 1.0);
+		specularIrradiance *= horizon * horizon;
+
+		return specularIrradiance * specularBRDF.y;
+	}
+	return 0.0;
 }
 #endif
