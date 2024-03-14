@@ -1781,7 +1781,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float3 nsLightColor = lightColor;
 		float3 normalizedLightDirection = normalize(lightDirection);
 
-		[branch] if (!FrameParams.z && FrameParams.y && (light.firstPersonShadow || perPassLLF[0].EnableContactShadows) && shadowComponent != 0.0)
+		[branch] if (perPassLLF[0].EnableGlobalLights && !FrameParams.z && FrameParams.y && (light.firstPersonShadow || perPassLLF[0].EnableContactShadows) && shadowComponent != 0.0)
 		{
 			float3 normalizedLightDirectionVS = normalize(light.positionVS[eyeIndex].xyz - viewPosition.xyz);
 			float contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, light.radius, light.firstPersonShadow, eyeIndex);
