@@ -1883,10 +1883,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float4 envColorBase = TexEnvSampler.Sample(SampEnvSampler, envSamplingPoint);
 	float3 envColor = envColorBase * envMask;
 #		if defined(DYNAMIC_CUBEMAPS)
-#			if defined(EYE)
-	bool dynamicCubemap = true;
-	envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 / 9.0, 0.25, diffuseColor, viewPosition.z) * envMask;
-#			else
 	float3 F0 = 0.0;
 	float envRoughness = 1.0;
 
@@ -1930,7 +1926,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			envColor *= lerp(1.0, shadowColor.x, saturate(upAngle) / 3.0);
 		}
 	}
-#			endif
 #		endif
 #	endif  // defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
 
@@ -2022,12 +2017,20 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz += wetnessSpecular * wetnessGlossinessSpecular;
 #	endif
 
-#	if defined(DYNAMIC_CUBEMAPS) && !defined(EYE)
-#		if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX)
-	color.xyz += GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, (2.0 - saturate(envMask)) / 9.0, viewPosition.z) * (1.0 - ((float)dynamicCubemap * saturate(envMask))) * input.Color.xyz;
+#	if defined(DYNAMIC_CUBEMAPS)
+#		if defined(EYE) 
+	color.xyz += GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 1.0 / 9.0, viewPosition.z) * input.Color.xyz * envMask;
+#		elif defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX)
+	color.xyz += 0.25 * GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, (2.0 - saturate(envMask)) / 9.0, viewPosition.z) * (1.0 - ((float)dynamicCubemap * saturate(envMask))) * input.Color.xyz;
+#		elif defined(HAIR)
+	color.xyz += 0.25 * GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 2.0 / 9.0, viewPosition.z);
 #		else
-	color.xyz += GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 2.0 / 9.0, viewPosition.z) * input.Color.xyz;
+	color.xyz += 0.25 * GetDynamicCubemapFresnel(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, 2.0 / 9.0, viewPosition.z) * input.Color.xyz;
 #		endif
+#	endif
+
+#	if defined(EYE)
+	color.xyz *= saturate(normalize(input.EyeNormal2.xyz).y); // Occlusion
 #	endif
 
 #	if defined(WATER_CAUSTICS)
@@ -2141,7 +2144,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 #	endif  // WATER_BLENDING
 
-	psout.ScreenSpaceNormals.w = 0.0;
 
 #	if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
 #		if defined(DYNAMIC_CUBEMAPS)
@@ -2199,12 +2201,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(SNOW)
 	psout.SnowParameters.w = blendFactorTerrain;
 #		endif
-#	endif
-
-#	if defined(EYE)
-	float eyeCurve = saturate(normalize(input.EyeNormal2.xyz).y);  // Occlusion
-	float eyeCenter = pow(eyeCurve, 150);                          // Iris
-	psout.Albedo.xyz *= eyeCurve + eyeCenter;
 #	endif
 
 #	if defined(OUTLINE)
