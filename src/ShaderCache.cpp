@@ -1031,10 +1031,6 @@ namespace SIE
 
 			const std::wstring path = GetShaderPath(shader.fxpFilename);
 
-			// Set timestamp based on file timestamp
-			auto shaderSourceTime = std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(path));
-			cache.InsertModifiedShaderMap(std::string(shader.fxpFilename), shaderSourceTime);
-
 			std::string strPath;
 			std::transform(path.begin(), path.end(), std::back_inserter(strPath), [](wchar_t c) {
 				return (char)c;
@@ -1524,9 +1520,14 @@ namespace SIE
 
 	bool ShaderCache::ShaderModifiedSince(std::string a_type, system_clock::time_point a_current)
 	{
+		if (a_type.empty() || magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value()) // type is invalid
+			return false;  
+		std::filesystem::path filePath{ SIE::SShaderCache::GetShaderPath(a_type) };
 		std::lock_guard lockGuard(modifiedMapMutex);
-		return !a_type.empty() && magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value()  // type is valid
-		       && !modifiedShaderMap.empty() && modifiedShaderMap.contains(a_type)                                             // map has Type
+		if (std::filesystem::exists(filePath) &&
+			(modifiedShaderMap.empty() || !modifiedShaderMap.contains(a_type)))  // insert timestamp when first seen; rely on filewatcher for subsequent changes
+			modifiedShaderMap.insert_or_assign(a_type, std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filePath)));
+		return !modifiedShaderMap.empty() && modifiedShaderMap.contains(a_type)                                             // map has Type
 		       && modifiedShaderMap.at(a_type) > a_current;                                                                    //modification time is older than a_current
 	}
 
