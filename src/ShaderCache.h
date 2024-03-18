@@ -332,6 +332,20 @@ namespace SIE
 	class UpdateListener : public efsw::FileWatchListener
 	{
 	public:
+		void processQueue();
 		void handleFileAction(efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string) override;
+
+	private:
+		struct fileAction
+		{
+			efsw::WatchID watchID;
+			std::string dir;
+			std::string filename;
+			efsw::Action action;
+			std::string oldFilename;
+		};
+		std::mutex actionMutex;
+		std::vector<fileAction> queue{}; 
+		size_t lastQueueSize = queue.size();
 	};
 }
