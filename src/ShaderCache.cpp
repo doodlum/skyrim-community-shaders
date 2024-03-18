@@ -1317,19 +1317,24 @@ namespace SIE
 
 	void ShaderCache::Clear()
 	{
-		for (auto& shaders : vertexShaders) {
-			for (auto& [id, shader] : shaders) {
-				shader->shader->Release();
+		std::lock_guard lockGuardV(vertexShadersMutex);
+		{
+			for (auto& shaders : vertexShaders) {
+				for (auto& [id, shader] : shaders) {
+					shader->shader->Release();
+				}
+				shaders.clear();
 			}
-			shaders.clear();
 		}
-		for (auto& shaders : pixelShaders) {
-			for (auto& [id, shader] : shaders) {
-				shader->shader->Release();
+		std::lock_guard lockGuardP(pixelShadersMutex);
+		{
+			for (auto& shaders : pixelShaders) {
+				for (auto& [id, shader] : shaders) {
+					shader->shader->Release();
+				}
+				shaders.clear();
 			}
-			shaders.clear();
 		}
-
 		compilationSet.Clear();
 		std::unique_lock lock{ mapMutex };
 		shaderMap.clear();
@@ -1368,6 +1373,7 @@ namespace SIE
 	ID3DBlob* ShaderCache::GetCompletedShader(const std::string a_key)
 	{
 		std::string type = SIE::SShaderCache::GetTypeFromShaderString(a_key);
+		UpdateShaderModifiedTime(a_key);
 		std::scoped_lock lock{ mapMutex };
 		if (!shaderMap.empty() && shaderMap.contains(a_key)) {
 			if (ShaderModifiedSince(type, shaderMap.at(a_key).compileTime)) {
@@ -1520,17 +1526,30 @@ namespace SIE
 		logger::debug("ShaderCache watching for changes in {}", pathStr);
 	}
 
-	bool ShaderCache::ShaderModifiedSince(std::string a_type, system_clock::time_point a_current)
+	bool ShaderCache::UpdateShaderModifiedTime(std::string a_type)
 	{
-		if (a_type.empty() || magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value())  // type is invalid
+		if (a_type.empty() || !magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value())  // type is invalid
 			return false;
 		std::filesystem::path filePath{ SIE::SShaderCache::GetShaderPath(a_type) };
 		std::lock_guard lockGuard(modifiedMapMutex);
-		if (std::filesystem::exists(filePath) &&
-			(modifiedShaderMap.empty() || !modifiedShaderMap.contains(a_type)))  // insert timestamp when first seen; rely on filewatcher for subsequent changes
-			modifiedShaderMap.insert_or_assign(a_type, std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filePath)));
+		if (std::filesystem::exists(filePath)) {
+			auto fileTime = std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filePath));
+			if (!modifiedShaderMap.contains(a_type) ||   modifiedShaderMap.at(a_type) != fileTime)
+			{  // insert if new or timestamp changed
+				modifiedShaderMap.insert_or_assign(a_type, fileTime);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool ShaderCache::ShaderModifiedSince(std::string a_type, system_clock::time_point a_current)
+	{
+		if (a_type.empty() || !magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value())  // type is invalid
+			return false;
+		std::lock_guard lockGuard(modifiedMapMutex);
 		return !modifiedShaderMap.empty() && modifiedShaderMap.contains(a_type)  // map has Type
-		       && modifiedShaderMap.at(a_type) > a_current;                      //modification time is older than a_current
+		       && modifiedShaderMap.at(a_type) > a_current;                      //modification time is newer than a_current
 	}
 
 	RE::BSGraphics::VertexShader* ShaderCache::MakeAndAddVertexShader(const RE::BSShader& shader,

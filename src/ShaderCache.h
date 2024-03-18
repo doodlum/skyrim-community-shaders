@@ -137,6 +137,12 @@ namespace SIE
 		void ValidateDiskCache();
 		void WriteDiskCacheInfo();
 		void StartFileWatcher();
+
+		/** @brief Update the RE::BSShader::Type timestamp based on timestamp.
+		@param  a_type Case insensitive string for the type of shader. E.g., Lighting
+		@return True if the shader for the type (i.e., Lighting.hlsl) timestamp was updated
+		*/
+		bool UpdateShaderModifiedTime(std::string a_type);
 		/** @brief Whether the ShaderFile for RE::BSShader::Type has been modified since the timestamp.
 		@param  a_type Case insensitive string for the type of shader. E.g., Lighting
 		@param  a_current The current time in system_clock::time_point.
