@@ -987,7 +987,7 @@ namespace SIE
 			if (!shaderBlob && useDiskCache && std::filesystem::exists(diskPath)) {
 				shaderBlob = nullptr;
 				// check build time of cache
-				auto diskCacheTime = std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(diskPath));
+				auto diskCacheTime = cache.UseFileWatcher() ? std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(diskPath)) : system_clock::now();
 				if (cache.ShaderModifiedSince(shader.fxpFilename, diskCacheTime)) {
 					logger::debug("Diskcached shader {} older than {}", SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true), std::format("{:%Y%m%d%H%M}", diskCacheTime));
 				} else if (FAILED(D3DReadFileToBlob(diskPath.c_str(), &shaderBlob))) {
@@ -1312,7 +1312,7 @@ namespace SIE
 	ShaderCache::~ShaderCache()
 	{
 		Clear();
-		fileWatcher->removeWatch(watchID);
+		StopFileWatcher();
 	}
 
 	void ShaderCache::Clear()
@@ -1510,33 +1510,66 @@ namespace SIE
 		compilationPool.push_task(&ShaderCache::ManageCompilationSet, this, ssource.get_token());
 	}
 
+	bool ShaderCache::UseFileWatcher() const
+	{
+		return useFileWatcher;
+	}
+
+	void ShaderCache::SetFileWatcher(bool value)
+	{
+		auto oldValue = useFileWatcher;
+		useFileWatcher = value;
+		if (useFileWatcher && !oldValue)
+			StartFileWatcher();
+		else if (!useFileWatcher && oldValue)
+			StopFileWatcher();
+	}
+
 	void ShaderCache::StartFileWatcher()
 	{
-		fileWatcher = new efsw::FileWatcher();
-		listener = new UpdateListener();
-		// Add a folder to watch, and get the efsw::WatchID
-		// Reporting the files and directories changes to the instance of the listener
-		watchID = fileWatcher->addWatch("Data\\Shaders", listener, true);
-		// Start watching asynchronously the directories
-		fileWatcher->watch();
-		std::string pathStr = "";
-		for (auto path : fileWatcher->directories()) {
-			pathStr += std::format("{}; ", path);
+		logger::info("Starting FileWatcher");
+		if (!fileWatcher) {
+			fileWatcher = new efsw::FileWatcher();
+			listener = new UpdateListener();
+			// Add a folder to watch, and get the efsw::WatchID
+			// Reporting the files and directories changes to the instance of the listener
+			watchID = fileWatcher->addWatch("Data\\Shaders", listener, true);
+			// Start watching asynchronously the directories
+			fileWatcher->watch();
+			std::string pathStr = "";
+			for (auto path : fileWatcher->directories()) {
+				pathStr += std::format("{}; ", path);
+			}
+			logger::debug("ShaderCache watching for changes in {}", pathStr);
+			compilationPool.push_task(&SIE::UpdateListener::processQueue, listener);
+		} else {
+			logger::debug("ShaderCache already enabled");
 		}
-		logger::debug("ShaderCache watching for changes in {}", pathStr);
-		compilationPool.push_task(&SIE::UpdateListener::processQueue, listener);
+	}
+
+	void ShaderCache::StopFileWatcher()
+	{
+		logger::info("Stopping FileWatcher");
+		if (fileWatcher) {
+			fileWatcher->removeWatch(watchID);
+			fileWatcher = nullptr;
+		}
+		if (listener) {
+			listener = nullptr;
+		}
 	}
 
 	bool ShaderCache::UpdateShaderModifiedTime(std::string a_type)
 	{
+		if (!UseFileWatcher())
+			return false;
 		if (a_type.empty() || !magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value())  // type is invalid
 			return false;
 		std::filesystem::path filePath{ SIE::SShaderCache::GetShaderPath(a_type) };
 		std::lock_guard lockGuard(modifiedMapMutex);
 		if (std::filesystem::exists(filePath)) {
 			auto fileTime = std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(filePath));
-			if (!modifiedShaderMap.contains(a_type) ||   modifiedShaderMap.at(a_type) != fileTime)
-			{  // insert if new or timestamp changed
+			if (!modifiedShaderMap.contains(a_type) || modifiedShaderMap.at(a_type) != fileTime) {  // insert if new or timestamp changed
 				modifiedShaderMap.insert_or_assign(a_type, fileTime);
 				return true;
 			}
@@ -1546,6 +1579,8 @@ namespace SIE
 
 	bool ShaderCache::ShaderModifiedSince(std::string a_type, system_clock::time_point a_current)
 	{
+		if (!UseFileWatcher())
+			return false;
 		if (a_type.empty() || !magic_enum::enum_cast<RE::BSShader::Type>(a_type, magic_enum::case_insensitive).has_value())  // type is invalid
 			return false;
 		std::lock_guard lockGuard(modifiedMapMutex);
@@ -1845,7 +1880,7 @@ namespace SIE
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 		std::unique_lock lock(actionMutex, std::defer_lock);
 		auto& cache = SIE::ShaderCache::Instance();
-		while (true) {
+		while (cache.UseFileWatcher()) {
 			lock.lock();
 			if (!queue.empty() && queue.size() == lastQueueSize) {
 				bool clearCache = false;
@@ -1892,6 +1927,7 @@ namespace SIE
 			lock.unlock();
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
+		queue.clear();
 	}
 
 	void UpdateListener::handleFileAction(efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename)

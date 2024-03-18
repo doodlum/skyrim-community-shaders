@@ -136,7 +136,11 @@ namespace SIE
 		void DeleteDiskCache();
 		void ValidateDiskCache();
 		void WriteDiskCacheInfo();
+		bool UseFileWatcher() const;
+		void SetFileWatcher(bool value);
+
 		void StartFileWatcher();
+		void StopFileWatcher();
 
 		/** @brief Update the RE::BSShader::Type timestamp based on timestamp.
 		@param  a_type Case insensitive string for the type of shader. E.g., Lighting
@@ -312,6 +316,7 @@ namespace SIE
 		bool isAsync = true;
 		bool isDump = false;
 		bool hideError = false;
+		bool useFileWatcher = false;
 
 		std::stop_source ssource;
 		std::mutex vertexShadersMutex;
@@ -323,9 +328,9 @@ namespace SIE
 		std::mutex modifiedMapMutex;
 
 		// efsw file watcher
-		efsw::FileWatcher* fileWatcher;
+		efsw::FileWatcher* fileWatcher = nullptr;
 		efsw::WatchID watchID;
-		UpdateListener* listener;
+		UpdateListener* listener = nullptr;
 	};
 
 	// Inherits from the abstract listener class, and implements the the file action handler
@@ -345,7 +350,7 @@ namespace SIE
 			std::string oldFilename;
 		};
 		std::mutex actionMutex;
-		std::vector<fileAction> queue{}; 
+		std::vector<fileAction> queue{};
 		size_t lastQueueSize = queue.size();
 	};
 }
