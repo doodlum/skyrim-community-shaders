@@ -568,7 +568,6 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 #		if !defined(LOD) && NUM_SPECULAR_LIGHTS == 0
 		if (shaderDescriptors[0].PixelShaderDescriptor & _Cubemap) {
 			float2 ssrReflectionUv = GetDynamicResolutionAdjustedScreenPosition((DynamicResolutionParams2.xy * input.HPosition.xy) * SSRParams.zw + SSRParams2.x * normal.xy);
-			ssrReflectionUv = ConvertToStereoUV(ssrReflectionUv, a_eyeIndex);
 			float4 ssrReflectionColor1 = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUv);
 			float4 ssrReflectionColor2 = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUv);
 			float4 ssrReflectionColor = lerp(ssrReflectionColor2, ssrReflectionColor1, SSRParams.y);
@@ -585,9 +584,8 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 }
 
 #		if defined(DEPTH)
-float GetScreenDepthWater(float2 screenPosition, uint a_eyeIndex = 0)
+float GetScreenDepthWater(float2 screenPosition)
 {
-	screenPosition = ConvertToStereoSP(screenPosition, a_eyeIndex, lightingData[0].BufferDim);  // this is where it's breaking right now the value is so low that you can see through water
 	float depth = DepthTex.Load(float3(screenPosition, 0)).x;
 	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
 }
@@ -630,12 +628,13 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 
 	float2 refractionUvRaw =
 		float2(refractionNormal.x, refractionNormal.w - refractionNormal.y) / refractionNormal.ww;
+	refractionUvRaw = ConvertToStereoUV(refractionUvRaw, a_eyeIndex);  // need to convert here for VR due to refractionNormal values
 
 #			if defined(DEPTH) && !defined(VERTEX_ALPHA_DEPTH)
 	float2 screenPosition = DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy);
-	float depth = GetScreenDepthWater(screenPosition, a_eyeIndex);
+	float depth = GetScreenDepthWater(screenPosition);
 	float2 refractionScreenPosition = DynamicResolutionParams1.xy * (refractionUvRaw / VPOSOffset.xy);
-	float refractionDepth = GetScreenDepthWater(refractionScreenPosition, a_eyeIndex);
+	float refractionDepth = GetScreenDepthWater(refractionScreenPosition);
 	float refractionDepthMul = length(
 		float3((refractionDepth * ((VPOSOffset.zw + refractionUvRaw) * 2 - 1)) /
 				   ProjData.xy,
@@ -649,8 +648,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 
 	if (refractionPlaneMul < 0) {
 		refractionUvRaw =
-			DynamicResolutionParams2.xy * input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;
-		//refractionUvRaw = ConvertToStereoUV(refractionUvRaw, a_eyeIndex);
+			DynamicResolutionParams2.xy * input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;  // This value is already stereo converted for VR
 	}
 #			endif
 
