@@ -35,8 +35,11 @@ void ParticleLights::GetConfigs()
 			data.colorMult.red = (float)ini.GetDoubleValue("Light", "ColorMultRed", 1.0);
 			data.colorMult.green = (float)ini.GetDoubleValue("Light", "ColorMultGreen", 1.0);
 			data.colorMult.blue = (float)ini.GetDoubleValue("Light", "ColorMultBlue", 1.0);
+      data.brightnessMult = (float)ini.GetDoubleValue("Light", "BrightnessMult", 1.0);
 			data.radiusMult = (float)ini.GetDoubleValue("Light", "RadiusMult", 1.0);
-			data.saturationMult = (float)ini.GetDoubleValue("Light", "SaturationMult", 1.0);
+      data.billboardBrightnessMult = (float)ini.GetDoubleValue("Light", "BillboardBrightnessMult", 1.0);
+      data.billboardRadiusMult = (float)ini.GetDoubleValue("Light", "BillboardRadiusMult", 1.0);
+      data.saturationMult = (float)ini.GetDoubleValue("Light", "SaturationMult", 1.0);
 			data.flicker = ini.GetBoolValue("Light", "Flicker", false);
 			data.flickerSpeed = (float)ini.GetDoubleValue("Light", "FlickerSpeed", 1.0);
 			data.flickerIntensity = (float)ini.GetDoubleValue("Light", "FlickerIntensity", 0.0);
