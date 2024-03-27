@@ -878,7 +878,7 @@ void LightLimitFix::UpdateLights()
 					color.x = particleLight.second.color.red * particleData->GetParticlesRuntimeData().color[p].red;
 					color.y = particleLight.second.color.green * particleData->GetParticlesRuntimeData().color[p].green;
 					color.z = particleLight.second.color.blue * particleData->GetParticlesRuntimeData().color[p].blue;
-					clusteredLight.color += Saturation(color, settings.ParticleLightsSaturation) * alpha * settings.ParticleBrightness;
+					clusteredLight.color += Saturation(color, settings.ParticleLightsSaturation) * alpha * settings.ParticleBrightness * particleLight.second.config.brightnessMult;
 
 					clusteredLight.radius += radius * settings.ParticleRadius * particleLight.second.config.radiusMult;
 					clusteredLight.positionWS[0].data.x += positionWS.x;
@@ -898,8 +898,8 @@ void LightLimitFix::UpdateLights()
 
 				light.color = Saturation(light.color, settings.ParticleLightsSaturation);
 
-				light.color *= particleLight.second.color.alpha * settings.BillboardBrightness;
-				light.radius = particleLight.first->worldBound.radius * settings.BillboardRadius * particleLight.second.config.radiusMult;
+				light.color *= particleLight.second.color.alpha * settings.BillboardBrightness * particleLight.second.config.billboardBrightnessMult;
+				light.radius = particleLight.first->worldBound.radius * settings.BillboardRadius * particleLight.second.config.billboardRadiusMult;
 
 				auto position = particleLight.first->world.translate;
 
