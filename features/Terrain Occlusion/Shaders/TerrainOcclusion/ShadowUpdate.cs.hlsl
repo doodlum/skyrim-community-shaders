@@ -51,7 +51,9 @@ float2 GetInterpolatedHeightRW(float2 pxCoord, bool isVertical)
 
 groupshared float2 g_shadowHeight[1024];
 
-[numthreads(1024, 1, 1)] void main(const uint gtid : SV_GroupThreadID, const uint gid : SV_GroupID) {
+[numthreads(1024, 1, 1)] void main(const uint gtid
+								   : SV_GroupThreadID, const uint gid
+								   : SV_GroupID) {
 	uint2 dims;
 	TexHeight.GetDimensions(dims.x, dims.y);
 

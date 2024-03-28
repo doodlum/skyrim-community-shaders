@@ -63,7 +63,8 @@ float3 ReconstructNormal(float2 uv, float2 texelSize)
 	return viewNormal;
 }
 
-[numthreads(32, 32, 1)] void main(const uint2 tid : SV_DispatchThreadID) {
+[numthreads(32, 32, 1)] void main(const uint2 tid
+								  : SV_DispatchThreadID) {
 	uint2 dims;
 	TexHeightmap.GetDimensions(dims.x, dims.y);
 	float2 texelSize = rcp(dims);
