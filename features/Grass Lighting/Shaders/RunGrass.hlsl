@@ -360,6 +360,10 @@ float3x3 CalculateTBN(float3 N, float3 p, float2 uv)
 #		include "CloudShadows/CloudShadows.hlsli"
 #	endif
 
+#	if defined(TERRA_OCC)
+#		include "TerrainOcclusion/TerrainOcclusion.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -448,6 +452,16 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 #		endif
 
+#		if defined(TERRA_OCC)
+	float2 terraOccUV;
+	if (perPassTerraOcc[0].EnableTerrainShadow || perPassTerraOcc[0].EnableTerrainAO)
+		terraOccUV = GetTerrainOcclusionUV(input.WorldPosition.xy + CameraPosAdjust[0].xy);
+	if (perPassTerraOcc[0].EnableTerrainShadow) {
+		float terrainShadow = GetTerrainSoftShadow(terraOccUV, length(input.WorldPosition), input.WorldPosition.z + CameraPosAdjust[0].z, SampColorSampler);
+		dirLightColor *= terrainShadow;
+	}
+#		endif
+
 	dirLightColor *= shadowColor.x;
 
 #		if defined(SCREEN_SPACE_SHADOWS)
@@ -531,10 +545,28 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 
 	float3 directionalAmbientColor = mul(DirectionalAmbient, float4(worldNormal.xyz, 1));
+
 #		if defined(CLOUD_SHADOWS)
 	if (perPassCloudShadow[0].EnableCloudShadows && !lightingData[0].Reflections)
 		directionalAmbientColor *= lerp(1.0, cloudShadowMult, perPassCloudShadow[0].AbsorptionAmbient);
 #		endif
+
+#		if defined(TERRA_OCC)
+	if (perPassTerraOcc[0].EnableTerrainAO) {
+		float terrainHeight = GetTerrainZ(TexNormalisedHeight.SampleLevel(SampColorSampler, terraOccUV, 0).x);
+		float terrainAoMult = TexTerraOcc.SampleLevel(SampColorSampler, terraOccUV, 0).x;
+
+		// power
+		terrainAoMult = pow(terrainAoMult, perPassTerraOcc[0].AOPower);
+		// height fadeout
+		float fadeOut = saturate((input.WorldPosition.z + CameraPosAdjust[0].z - terrainHeight) * perPassTerraOcc[0].AOFadeOutHeightRcp);
+		terrainAoMult = lerp(terrainAoMult, 1, fadeOut);
+		// mix
+		directionalAmbientColor *= lerp(1, terrainAoMult, perPassTerraOcc[0].AOAmbientMix);
+		diffuseColor *= lerp(1, terrainAoMult, perPassTerraOcc[0].AODiffuseMix);
+	}
+#		endif
+
 	lightsDiffuseColor += directionalAmbientColor;
 
 	diffuseColor += lightsDiffuseColor;
