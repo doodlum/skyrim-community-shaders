@@ -160,7 +160,7 @@ void SubsurfaceScattering::DrawSSSWrapper(bool)
 	if (!SIE::ShaderCache::Instance().IsEnabled())
 		return;
 
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 	ID3D11ShaderResourceView* srvs[8];
 	context->PSGetShaderResources(0, 8, srvs);
@@ -244,7 +244,7 @@ void SubsurfaceScattering::DrawSSS()
 	}
 
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 	{
 		ID3D11Buffer* buffer[1] = { blurCB->CB() };
@@ -452,7 +452,7 @@ void SubsurfaceScattering::OverrideFirstPersonRenderTargets()
 	renderTargets[2] = normalsMode;
 
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 	{
 		auto& target = renderer->GetRuntimeData().renderTargets[renderTargets[2]];
@@ -507,7 +507,7 @@ void SubsurfaceScattering::BSLightingShader_SetupSkin(RE::BSRenderPass* a_pass)
 			perPassData.IsBeastRace = isBeastRace;
 
 			auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-			auto context = renderer->GetRuntimeData().context;
+			auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			DX::ThrowIfFailed(context->Map(perPass->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
@@ -521,7 +521,7 @@ void SubsurfaceScattering::BSLightingShader_SetupSkin(RE::BSRenderPass* a_pass)
 void SubsurfaceScattering::Bind()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 	ID3D11ShaderResourceView* view = perPass->srv.get();
 	context->PSSetShaderResources(36, 1, &view);
 	validMaterial = true;

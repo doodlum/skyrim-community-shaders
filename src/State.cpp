@@ -21,7 +21,7 @@ void State::Draw()
 				ModifyShaderLookup(*currentShader, currentVertexDescriptor, currentPixelDescriptor);
 				UpdateSharedData(currentShader, currentPixelDescriptor);
 
-				auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+				auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 				static RE::BSGraphics::VertexShader* vertexShader = nullptr;
 				static RE::BSGraphics::PixelShader* pixelShader = nullptr;
@@ -30,8 +30,8 @@ void State::Draw()
 				pixelShader = shaderCache.GetPixelShader(*currentShader, currentPixelDescriptor);
 
 				if (vertexShader && pixelShader) {
-					context->VSSetShader(vertexShader->shader, NULL, NULL);
-					context->PSSetShader(pixelShader->shader, NULL, NULL);
+					context->VSSetShader(reinterpret_cast<ID3D11VertexShader*>(vertexShader->shader), NULL, NULL);
+					context->PSSetShader(reinterpret_cast<ID3D11PixelShader*>(pixelShader->shader), NULL, NULL);
 				}
 
 				if (vertexShader && pixelShader) {
@@ -50,7 +50,7 @@ void State::Draw()
 void State::DrawDeferred()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 	ID3D11ShaderResourceView* srvs[8];
 	context->PSGetShaderResources(0, 8, srvs);
@@ -106,7 +106,7 @@ void State::DrawDeferred()
 void State::DrawPreProcess()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 	ID3D11ShaderResourceView* srvs[8];
 	context->PSGetShaderResources(0, 8, srvs);
@@ -427,7 +427,7 @@ void State::SetupResources()
 void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescriptor, uint& a_pixelDescriptor)
 {
 	if (a_shader.shaderType.get() == RE::BSShader::Type::Lighting || a_shader.shaderType.get() == RE::BSShader::Type::Water || a_shader.shaderType.get() == RE::BSShader::Type::Effect) {
-		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+		auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 		if (a_vertexDescriptor != lastVertexDescriptor || a_pixelDescriptor != lastPixelDescriptor) {
 			PerShader data{};
@@ -568,7 +568,7 @@ void State::UpdateSharedData(const RE::BSShader* a_shader, const uint32_t)
 
 		lightingData.Timer = timer;
 
-		auto context = renderer->GetRuntimeData().context;
+		auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 		if (updateBuffer) {
 			D3D11_MAPPED_SUBRESOURCE mapped;

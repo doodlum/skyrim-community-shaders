@@ -195,7 +195,7 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 	if (!loaded)
 		return;
 
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 	auto dirLight = skyrim_cast<RE::NiDirectionalLight*>(accumulator->GetRuntimeData().activeShadowSceneNode->GetRuntimeData().sunLight->light.get());
@@ -211,7 +211,7 @@ void ScreenSpaceShadows::ModifyLighting(const RE::BSShader*, const uint32_t)
 			{
 				logger::debug("Creating screenSpaceShadowsTexture");
 
-				auto device = renderer->GetRuntimeData().forwarder;
+				auto device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
 
 				D3D11_SAMPLER_DESC samplerDesc = {};
 				samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;

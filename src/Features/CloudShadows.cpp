@@ -74,7 +74,7 @@ void CloudShadows::CheckResourcesSide(int side)
 	if (!frame_checker[side].isNewFrame())
 		return;
 
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 	float black[4] = { 0, 0, 0, 0 };
 	context->ClearRenderTargetView(cubemapCloudOccRTVs[side], black);
@@ -106,8 +106,8 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 	auto tech_enum = static_cast<SkyShaderTechniques>(descriptor);
 	if (tech_enum == SkyShaderTechniques::Clouds || tech_enum == SkyShaderTechniques::CloudsLerp || tech_enum == SkyShaderTechniques::CloudsFade) {
 		auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-		auto context = renderer->GetRuntimeData().context;
-		auto device = renderer->GetRuntimeData().forwarder;
+		auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
+		auto device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
 
 		{
 			ID3D11ShaderResourceView* srv = nullptr;
@@ -165,7 +165,7 @@ void CloudShadows::ModifySky(const RE::BSShader*, const uint32_t descriptor)
 
 void CloudShadows::ModifyLighting()
 {
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
@@ -191,7 +191,7 @@ void CloudShadows::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 	static Util::FrameChecker frame_checker;
 	if (frame_checker.isNewFrame()) {
 		// update settings buffer
-		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+		auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 		PerPass perPassData{};
 
@@ -237,7 +237,7 @@ void CloudShadows::Save(json& o_json)
 void CloudShadows::SetupResources()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto device = renderer->GetRuntimeData().forwarder;
+	auto device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
 
 	{
 		auto reflections = renderer->GetRendererData().cubemapRenderTargets[RE::RENDER_TARGET_CUBEMAP::kREFLECTIONS];
@@ -290,7 +290,7 @@ void CloudShadows::RestoreDefaultSettings()
 void CloudShadows::Hooks::BSBatchRenderer__RenderPassImmediately::thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)
 {
 	auto feat = GetSingleton();
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 	func(Pass, Technique, AlphaTest, RenderFlags);
 

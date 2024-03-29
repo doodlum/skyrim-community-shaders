@@ -227,7 +227,7 @@ void GrassCollision::UpdateCollisions()
 		collisions->CreateSRV(srvDesc);
 	}
 
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 	D3D11_MAPPED_SUBRESOURCE mapped;
 	DX::ThrowIfFailed(context->Map(collisions->resource.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
 	size_t bytes = sizeof(CollisionSData) * colllisionCount;
@@ -273,7 +273,7 @@ void GrassCollision::ModifyGrass(const RE::BSShader*, const uint32_t)
 	}
 
 	if (settings.EnableGrassCollision) {
-		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+		auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 		ID3D11ShaderResourceView* views[1]{};
 		views[0] = collisions->srv.get();

@@ -113,7 +113,7 @@ void DistantTreeLighting::ModifyDistantTree(const RE::BSShader*, const uint32_t 
 
 		perPass->Update(perPassData);
 
-		auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+		auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 		ID3D11Buffer* buffers[2];
 		context->VSGetConstantBuffers(2, 1, buffers);  // buffers[0]

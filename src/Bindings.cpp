@@ -89,7 +89,7 @@ struct BlendStates
 void Bindings::SetDirtyStates(bool)
 {
 	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 	GET_INSTANCE_MEMBER(depthStencilStencilMode, state)
 	GET_INSTANCE_MEMBER(depthStencilDepthMode, state)
 	GET_INSTANCE_MEMBER(alphaBlendAlphaToCoverage, state)
@@ -261,7 +261,7 @@ void Bindings::Reset()
 	//SetOverwriteTerrainMode(false);
 	//SetOverwriteTerrainMaskingMode(TerrainMaskMode::kNone);
 
-	//auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	//auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 	//FLOAT clear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	//context->ClearRenderTargetView(terrainBlendingMask->rtv.get(), clear);
 }

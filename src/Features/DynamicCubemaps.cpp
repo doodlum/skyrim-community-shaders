@@ -45,8 +45,8 @@ void DynamicCubemaps::DrawSettings()
 				ImGui::SliderFloat("Roughness", &cubemapColor.w, 0.0f, 1.0f, "%.2f");
 				if (ImGui::Button("Export")) {
 					auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-					auto device = renderer->GetRuntimeData().forwarder;
-					auto context = renderer->GetRuntimeData().context;
+					auto device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
+					auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 					D3D11_TEXTURE2D_DESC texDesc{};
 					texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -222,7 +222,7 @@ void DynamicCubemaps::UpdateCubemapCapture()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 	auto& depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
 	auto& snowSwap = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kSNOW_SWAP];
@@ -297,7 +297,7 @@ void DynamicCubemaps::DrawDeferred()
 void DynamicCubemaps::UpdateCubemap()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto context = renderer->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 	//if (!REL::Module::IsVR()) {
 	//	auto imageSpaceManager = RE::ImageSpaceManager::GetSingleton();
@@ -404,7 +404,7 @@ void DynamicCubemaps::Draw(const RE::BSShader* shader, const uint32_t)
 			renderedScreenCamera = true;
 
 			auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-			auto context = renderer->GetRuntimeData().context;
+			auto context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 
 			if (enableCreator) {
 				CreatorSettingsCB data{};
@@ -434,7 +434,7 @@ void DynamicCubemaps::SetupResources()
 	GetComputeShaderSpecularIrradiance();
 
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-	auto device = renderer->GetRuntimeData().forwarder;
+	auto device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
 
 	{
 		D3D11_SAMPLER_DESC samplerDesc = {};

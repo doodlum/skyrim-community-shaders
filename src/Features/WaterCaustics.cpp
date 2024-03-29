@@ -8,14 +8,14 @@ void WaterCaustics::DrawSettings()
 
 void WaterCaustics::Draw(const RE::BSShader*, const uint32_t)
 {
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 	context->PSSetShaderResources(70, 1, &causticsView);
 }
 
 void WaterCaustics::SetupResources()
 {
-	auto device = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().forwarder;
-	auto context = RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context;
+	auto device =reinterpret_cast<ID3D11Device*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().forwarder);
+	auto context = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
 
 	DirectX::CreateDDSTextureFromFile(device, context, L"Data\\Shaders\\WaterCaustics\\watercaustics.dds", nullptr, &causticsView);
 }
