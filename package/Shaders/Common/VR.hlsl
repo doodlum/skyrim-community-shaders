@@ -56,23 +56,3 @@ float2 ConvertToStereoSP(float2 screenPosition, uint a_eyeIndex, float2 a_resolu
 	screenPosition.x /= a_resolution.x;
 	return ConvertToStereoUV(screenPosition, a_eyeIndex) * a_resolution;
 }
-
-/**
-Calculates the depthMultiplier as used in water.hlsl
-
-VR appears to require use of CameraProjInverse and does not use projData
-@param a_uv uv coords to convert
-@param a_depth The calculated depth
-@param a_eyeIndex The eyeIndex; 0 is left, 1 is right
-@returns depthMultiplier
-*/
-float calculateDepthMultfromUV(float2 a_uv, float a_depth, uint a_eyeIndex = 0)
-{
-	float4 temp;
-	temp.xy = (a_uv * 2 - 1);
-	temp.z = a_depth;
-	temp.w = 1;
-	temp = mul(CameraProjInverse[a_eyeIndex], temp.xyzw);
-	temp.xyz /= temp.w;
-	return length(temp);
-}
