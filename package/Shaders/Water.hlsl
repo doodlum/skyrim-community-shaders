@@ -877,20 +877,14 @@ PS_OUTPUT main(PS_INPUT input)
 		float2 screenPosition = DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy);
 #				if defined(VERTEX_ALPHA_DEPTH) && defined(VC)
 		float blendFactor = 1 - smoothstep(0.0, 0.025 * perPassWaterBlending[0].WaterBlendRange, input.TexCoord3.z);
-		if (blendFactor > 0.0) {
-			float4 background = RefractionTex.Load(float3(screenPosition, 0));
-			psout.Lighting.xyz = lerp(psout.Lighting.xyz, background.xyz, blendFactor);
-			psout.Lighting.w = lerp(psout.Lighting.w, background.w, blendFactor);
-		}
 #				else
 		float blendFactor = 1 - smoothstep(0.0, 0.025 * perPassWaterBlending[0].WaterBlendRange, distanceMul.z);
-
+#				endif  // defined(VERTEX_ALPHA_DEPTH) && defined(VC)
 		if (blendFactor > 0.0) {
 			float4 background = RefractionTex.Load(float3(screenPosition, 0));
 			psout.Lighting.xyz = lerp(psout.Lighting.xyz, background.xyz, blendFactor);
 			psout.Lighting.w = lerp(psout.Lighting.w, background.w, blendFactor);
 		}
-#				endif
 	}
 #			endif
 #		endif
