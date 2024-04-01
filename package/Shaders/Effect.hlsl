@@ -538,9 +538,8 @@ PS_OUTPUT main(PS_INPUT input)
 #	elif defined(PROJECTED_UV) && defined(NORMALS)
 	float2 noiseTexCoord = 0.00333333341 * input.TexCoord0.xy;
 	float noise = TexNoiseSampler.Sample(SampNoiseSampler, noiseTexCoord).x * 0.2 + 0.4;
-	if (dot(input.TBN0, input.TBN1) - noise < 0)
-	{
-        discard;
+	if (dot(input.TBN0, input.TBN1) - noise < 0) {
+		discard;
 	}
 #	endif
 
@@ -623,30 +622,31 @@ PS_OUTPUT main(PS_INPUT input)
 #	if defined(BLOOD)
 	alpha = baseColor.y;
 	float deltaY = saturate(baseColor.y - AlphaTestRef.x);
-	float bloodMul = baseColor.z;	
-#	if defined(VC)
+	float bloodMul = baseColor.z;
+#		if defined(VC)
 	bloodMul *= input.Color.w;
-#	endif
+#		endif
 	if (deltaY < AlphaTestRef.y) {
 		bloodMul *= (deltaY / AlphaTestRef.y);
 	}
 	baseColor.xyz = saturate(float3(2, 1, 1) - bloodMul.xxx) * (-bloodMul * AlphaTestRef.z + 1);
 #	endif
 
-    alpha *= PropertyColor.w;
-	
+	alpha *= PropertyColor.w;
+
 	float baseColorScale = BaseColorScale.x;
 
 #	if defined(MEMBRANE)
 	baseColor.xyz = (PropertyColor.xyz + baseColor.xyz) * alpha + membraneColor.xyz * membraneColor.w;
-	alpha += membraneColor.w;	
+	alpha += membraneColor.w;
 	baseColorScale = MembraneVars.z;
 #	endif
 
 	if (shaderDescriptors[0].PixelShaderDescriptor & _GrayscaleToAlpha)
 		alpha = TexGrayscaleSampler.Sample(SampGrayscaleSampler, float2(baseTexColor.w, alpha)).w;
 
-	[branch] if (shaderDescriptors[0].PixelShaderDescriptor & _GrayscaleToColor) {	
+	[branch] if (shaderDescriptors[0].PixelShaderDescriptor & _GrayscaleToColor)
+	{
 		float2 grayscaleToColorUv = float2(baseTexColor.y, baseColorMul.x);
 #	if defined(MEMBRANE)
 		grayscaleToColorUv.y = PropertyColor.x;
