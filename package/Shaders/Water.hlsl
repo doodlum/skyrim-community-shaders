@@ -116,10 +116,10 @@ cbuffer PerGeometry : register(b2)
 };
 
 #	ifdef VR
-cbuffer cb13 : register(b13)
+cbuffer VRValues : register(b13)
 {
 	float AlphaThreshold : packoffset(c0);
-	float cb13 : packoffset(c0.y);
+	float StereoEnabled : packoffset(c0.y);
 	float2 EyeOffsetScale : packoffset(c0.z);
 	float4 EyeClipEdge[2] : packoffset(c1);
 }
@@ -136,7 +136,7 @@ VS_OUTPUT main(VS_INPUT input)
 #	if !defined(VR)
 	uint eyeIndex = 0;
 #	else   // VR
-	uint eyeIndex = cb13 * (input.InstanceID.x & 1);
+	uint eyeIndex = StereoEnabled * (input.InstanceID.x & 1);
 #	endif  // VR
 
 	vsout.NormalsScale = NormalsScale;
@@ -246,16 +246,16 @@ VS_OUTPUT main(VS_INPUT input)
 	float4 r0;
 	float4 projSpacePosition = vsout.HPosition;
 	r0.xyzw = 0;
-	if (0 < cb13) {
+	if (0 < StereoEnabled) {
 		r0.yz = dot(projSpacePosition, EyeClipEdge[eyeIndex]);  // projSpacePosition is clipPos
 	} else {
 		r0.yz = float2(1, 1);
 	}
 
-	r0.w = 2 + -cb13;
+	r0.w = 2 + -StereoEnabled;
 	r0.x = dot(EyeOffsetScale, M_IdentityMatrix[eyeIndex].xy);
 	r0.xw = r0.xw * projSpacePosition.wx;
-	r0.x = cb13 * r0.x;
+	r0.x = StereoEnabled * r0.x;
 
 	vsout.HPosition.x = r0.w * 0.5 + r0.x;
 	vsout.HPosition.yzw = projSpacePosition.yzw;
@@ -364,10 +364,10 @@ cbuffer PerGeometry : register(b2)
 }
 
 #	ifdef VR
-cbuffer cb13 : register(b13)
+cbuffer VRValues : register(b13)
 {
 	float AlphaThreshold : packoffset(c0);
-	float cb13 : packoffset(c0.y);
+	float StereoEnabled : packoffset(c0.y);
 	float2 EyeOffsetScale : packoffset(c0.z);
 	float4 EyeClipEdge[2] : packoffset(c1);
 }
@@ -717,7 +717,7 @@ PS_OUTPUT main(PS_INPUT input)
 	stereoUV.xy = input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;
 	stereoUV.x = DynamicResolutionParams2.x * stereoUV.x;
 	stereoUV.x = (stereoUV.x >= 0.5);
-	uint eyeIndex = (uint)(((int)((uint)cb13)) * (int)stereoUV.x);
+	uint eyeIndex = (uint)(((int)((uint)StereoEnabled)) * (int)stereoUV.x);
 #	endif
 
 #	if defined(SIMPLE) || defined(UNDERWATER) || defined(LOD) || defined(SPECULAR)
