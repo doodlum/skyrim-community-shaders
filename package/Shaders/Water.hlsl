@@ -587,7 +587,11 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 float GetScreenDepthWater(float2 screenPosition)
 {
 	float depth = DepthTex.Load(float3(screenPosition, 0)).x;
+#			if !defined(VR)
 	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
+#			else   // VR appears to use hard coded values
+	return depth * 1.01 + -0.01;
+#			endif  // VR
 }
 #		endif
 
@@ -635,10 +639,11 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float depth = GetScreenDepthWater(screenPosition);
 	float2 refractionScreenPosition = DynamicResolutionParams1.xy * (refractionUvRaw / VPOSOffset.xy);
 	float refractionDepth = GetScreenDepthWater(refractionScreenPosition);
-	float refractionDepthMul = length(
-		float3((refractionDepth * ((VPOSOffset.zw + refractionUvRaw) * 2 - 1)) /
-				   ProjData.xy,
-			refractionDepth));
+#				if !defined(VR)
+	float refractionDepthMul = length(float3((((VPOSOffset.zw + refractionUvRaw) * 2 - 1)) * refractionDepth / ProjData.xy, refractionDepth));
+#				else
+	float refractionDepthMul = calculateDepthMultfromUV(ConvertFromStereoUV(VPOSOffset.zw + refractionUvRaw, a_eyeIndex, 1), refractionDepth, a_eyeIndex);
+#				endif  //VR
 
 	float3 refractionDepthAdjustedViewDirection = -viewDirection * refractionDepthMul;
 	float refractionViewSurfaceAngle = dot(refractionDepthAdjustedViewDirection, ReflectPlane[a_eyeIndex].xyz);
@@ -738,8 +743,11 @@ PS_OUTPUT main(PS_INPUT input)
 	depth = GetScreenDepthWater(screenPosition);
 	float2 depthOffset =
 		DynamicResolutionParams2.xy * input.HPosition.xy * VPOSOffset.xy + VPOSOffset.zw;
+#				if !defined(VR)
 	float depthMul = length(float3((depthOffset * 2 - 1) * depth / ProjData.xy, depth));
-
+#				else
+	float depthMul = calculateDepthMultfromUV(ConvertFromStereoUV(depthOffset, eyeIndex, 1), depth, eyeIndex);
+#				endif  //VR
 	float3 depthAdjustedViewDirection = -viewDirection * depthMul;
 	float viewSurfaceAngle = dot(depthAdjustedViewDirection, ReflectPlane[eyeIndex].xyz);
 
@@ -757,12 +765,7 @@ PS_OUTPUT main(PS_INPUT input)
 #		elif defined(SPECULAR) && (NUM_SPECULAR_LIGHTS != 0)
 	float4 depthControl = float4(0, 0, 1, 0);
 #		else
-	// #			if !defined(VR)
 	float4 depthControl = DepthControl * (distanceMul - 1) + 1;
-// #			else
-// 	float4 VRDepthControl = DepthControl.zwxw;  // VR appears to move values around
-// 	float4 depthControl = VRDepthControl * (distanceMul - 1) + 1;
-// #			endif  // VR
 #		endif
 
 #		if defined(WATER_CAUSTICS)
