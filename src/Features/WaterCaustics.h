@@ -20,7 +20,7 @@ public:
 	{
 		Settings settings;
 	};
-	
+
 	Settings settings;
 
 	std::unique_ptr<Buffer> perPass = nullptr;
