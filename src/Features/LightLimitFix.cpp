@@ -1007,7 +1007,7 @@ bool LightLimitFix::HasShaderDefine(RE::BSShader::Type shaderType)
 		return true;
 	case RE::BSShader::Type::Effect:
 	case RE::BSShader::Type::Water:
-		return !REL::Module::IsVR();
+		return true;
 	default:
 		return false;
 	}
