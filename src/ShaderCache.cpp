@@ -1921,7 +1921,7 @@ namespace SIE
 					switch (fAction.action) {
 					case efsw::Actions::Add:
 						logger::debug("Detected Added path {}", filePath.string());
-						UpdateCache(filePath, cache, clearCache, fileDone);						
+						UpdateCache(filePath, cache, clearCache, fileDone);
 						break;
 					case efsw::Actions::Delete:
 						logger::debug("Detected Deleted path {}", filePath.string());
