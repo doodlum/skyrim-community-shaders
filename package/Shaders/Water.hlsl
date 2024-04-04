@@ -371,6 +371,18 @@ cbuffer VRValues : register(b13)
 	float2 EyeOffsetScale : packoffset(c0.z);
 	float4 EyeClipEdge[2] : packoffset(c1);
 }
+
+float GetStencil(float2 uv)
+{
+	return DepthTex.Load(int3(uv * lightingData[0].BufferDim * DynamicResolutionParams1.xy, 0)).g;
+}
+
+float GetStencil(float2 uv, uint a_eyeIndex)
+{
+	uv = ConvertToStereoUV(uv, a_eyeIndex);
+	return GetStencil(uv);
+}
+
 /**
 Calculates the depthMultiplier as used in water.hlsl
 
@@ -569,7 +581,12 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			float3 cubemapUV = reflect(viewDirection, WaterParams.y * normal + float3(0, 0, 1 - WaterParams.y));
 #		if defined(DYNAMIC_CUBEMAPS)
 			dynamicCubemap = specularTexture.SampleLevel(CubeMapSampler, cubemapUV, 0);
-			reflectionColor = lerp(dynamicCubemap.xyz, CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz, saturate(length(input.WPosition.xyz) * 0.0001));
+			reflectionColor =
+#			if defined(VR)  // use stencil to ignore player character
+				GetStencil(cubemapUV) == 0 ? CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz :
+#			endif
+											 lerp(dynamicCubemap.xyz, CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz, saturate(length(input.WPosition.xyz) * 0.0001));
+			;
 #		else
 			reflectionColor = CubeMapTex.SampleLevel(CubeMapSampler, cubemapUV, 0).xyz;
 #		endif
