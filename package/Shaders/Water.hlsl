@@ -603,14 +603,14 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 }
 
 #		if defined(DEPTH)
-float GetScreenDepthWater(float2 screenPosition)
+float GetScreenDepthWater(float2 screenPosition, uint a_useVR = 0)
 {
 	float depth = DepthTex.Load(float3(screenPosition, 0)).x;
-#			if !defined(VR)
-	return (CameraData.w / (-depth * CameraData.z + CameraData.x));
-#			else   // VR appears to use hard coded values
-	return depth * 1.01 + -0.01;
-#			endif  // VR
+	return
+#			if defined(VR)  // VR appears to use hard coded values
+		a_useVR ? depth * 1.01 + -0.01 :
+#			endif
+				  (CameraData.w / (-depth * CameraData.z + CameraData.x));
 }
 #		endif
 
@@ -765,7 +765,8 @@ PS_OUTPUT main(PS_INPUT input)
 #				if !defined(VR)
 	float depthMul = length(float3((depthOffset * 2 - 1) * depth / ProjData.xy, depth));
 #				else
-	float depthMul = calculateDepthMultfromUV(ConvertFromStereoUV(depthOffset, eyeIndex, 1), depth, eyeIndex);
+	float VRDepth = GetScreenDepthWater(screenPosition, 1);  // VR uses special hardcoded depth for this calculation
+	float depthMul = calculateDepthMultfromUV(ConvertFromStereoUV(depthOffset, eyeIndex, 1), VRDepth, eyeIndex);
 #				endif  //VR
 	float3 depthAdjustedViewDirection = -viewDirection * depthMul;
 	float viewSurfaceAngle = dot(depthAdjustedViewDirection, ReflectPlane[eyeIndex].xyz);
