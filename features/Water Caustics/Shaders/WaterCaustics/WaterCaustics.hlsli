@@ -65,7 +65,7 @@ float3 SampleCaustics(float2 uv, float split)
 	return float3(r, g, b);
 }
 
-float3 ComputeWaterCaustics(float3 waterHeight, float3 worldPosition, float3 worldSpaceNormal)
+float3 ComputeWaterCaustics(float waterHeight, float3 worldPosition, float3 worldSpaceNormal)
 {
 	float causticsDistToWater = waterHeight - worldPosition.z;
 	float shoreFactorCaustics = saturate(causticsDistToWater / 64.0);
