@@ -1,4 +1,5 @@
 
+#include "Common/DeferredShared.hlsl"
 #include "Common/GBuffer.hlsl"
 
 Texture2D<half3> SpecularTexture : register(t0);
@@ -13,23 +14,6 @@ RWTexture2D<half4> MainRW : register(u0);
 RWTexture2D<half4> NormalTAAMaskSpecularMaskRW : register(u1);
 
 SamplerState LinearSampler : register(s0);
-
-cbuffer PerFrame : register(b0)
-{
-	float4 DirLightDirectionVS[2];
-	float4 DirLightColor;
-	float4 CameraData;
-	float2 BufferDim;
-	float2 RcpBufferDim;
-	float4x4 ViewMatrix[2];
-	float4x4 ProjMatrix[2];
-	float4x4 ViewProjMatrix[2];
-	float4x4 InvViewMatrix[2];
-	float4x4 InvProjMatrix[2];
-	row_major float3x4 DirectionalAmbient;
-	uint FrameCount;
-	uint pad0[3];
-};
 
 // #	define DEBUG
 

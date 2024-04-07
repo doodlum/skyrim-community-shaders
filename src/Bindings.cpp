@@ -201,6 +201,11 @@ void Bindings::UpdateConstantBuffer()
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 
 	if (REL::Module::IsVR()) {
+		auto posAdjust = shadowState->GetVRRuntimeData().posAdjust.getEye(0);
+		data.CamPosAdjust[0] = { posAdjust.x, posAdjust.y, posAdjust.z, 0 };
+		posAdjust = shadowState->GetVRRuntimeData().posAdjust.getEye(1);
+		data.CamPosAdjust[1] = { posAdjust.x, posAdjust.y, posAdjust.z, 0 };
+
 		data.ViewMatrix[0] = shadowState->GetVRRuntimeData().cameraData.getEye(0).viewMat;
 		data.ViewMatrix[1] = shadowState->GetVRRuntimeData().cameraData.getEye(1).viewMat;
 		data.ProjMatrix[0] = shadowState->GetVRRuntimeData().cameraData.getEye(0).projMat;
@@ -210,13 +215,18 @@ void Bindings::UpdateConstantBuffer()
 		data.InvViewMatrix[0] = shadowState->GetVRRuntimeData().cameraData.getEye(0).viewMat.Invert();
 		data.InvViewMatrix[1] = shadowState->GetVRRuntimeData().cameraData.getEye(1).viewMat.Invert();
 		data.InvProjMatrix[0] = shadowState->GetVRRuntimeData().cameraData.getEye(0).projMat.Invert();
-		data.InvProjMatrix[0] = shadowState->GetVRRuntimeData().cameraData.getEye(1).projMat.Invert();
+		data.InvProjMatrix[1] = shadowState->GetVRRuntimeData().cameraData.getEye(1).projMat.Invert();
+		data.InvViewProjMatrix[0] = data.InvViewMatrix[0] * data.InvProjMatrix[0];
+		data.InvViewProjMatrix[1] = data.InvViewMatrix[1] * data.InvProjMatrix[1];
 	} else {
+		auto posAdjust = shadowState->GetRuntimeData().posAdjust.getEye(0);
+		data.CamPosAdjust[0] = { posAdjust.x, posAdjust.y, posAdjust.z, 0 };
 		data.ViewMatrix[0] = shadowState->GetRuntimeData().cameraData.getEye(0).viewMat;
 		data.ProjMatrix[0] = shadowState->GetRuntimeData().cameraData.getEye(0).projMat;
 		data.ViewProjMatrix[0] = shadowState->GetRuntimeData().cameraData.getEye(0).viewProjMat;
 		data.InvViewMatrix[0] = shadowState->GetRuntimeData().cameraData.getEye(0).viewMat.Invert();
 		data.InvProjMatrix[0] = shadowState->GetRuntimeData().cameraData.getEye(0).projMat.Invert();
+		data.InvViewProjMatrix[0] = data.InvViewMatrix[0] * data.InvProjMatrix[0];
 	}
 
 	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
