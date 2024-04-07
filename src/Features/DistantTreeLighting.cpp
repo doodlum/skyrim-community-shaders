@@ -155,3 +155,13 @@ void DistantTreeLighting::SetupResources()
 {
 	perPass = new ConstantBuffer(ConstantBufferDesc<PerPass>());
 }
+
+bool DistantTreeLighting::HasShaderDefine(RE::BSShader::Type shaderType)
+{
+	switch (shaderType) {
+	case RE::BSShader::Type::DistantTree:
+		return true;
+	default:
+		return false;
+	}
+}
