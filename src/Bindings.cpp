@@ -1,8 +1,8 @@
 #include "Bindings.h"
 #include "State.h"
 #include "Util.h"
-#include <ShaderCache.h>
 #include <Features/ScreenSpaceShadows.h>
+#include <ShaderCache.h>
 
 void Bindings::DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode a_mode)
 {
@@ -150,6 +150,40 @@ void Bindings::SetupResources()
 		samplerDesc.MinLOD = 0;
 		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 		DX::ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &linearSampler));
+	}
+
+	{
+		D3D11_TEXTURE2D_DESC texDesc;
+		auto mainTex = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMAIN];
+		mainTex.texture->GetDesc(&texDesc);
+
+		texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D = {
+				.MostDetailedMip = 0,
+				.MipLevels = 1 }
+		};
+		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D = { .MipSlice = 0 }
+		};
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+			.Texture2D = { .MipSlice = 0 }
+		};
+
+		{
+			giTexture = new Texture2D(texDesc);
+			giTexture->CreateSRV(srvDesc);
+			giTexture->CreateRTV(rtvDesc);
+			giTexture->CreateUAV(uavDesc);
+		}
 	}
 }
 
@@ -346,6 +380,8 @@ void Bindings::DeferredPasses()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto context = renderer->GetRuntimeData().context;
+	auto state = State::GetSingleton();
+	auto viewport = RE::BSGraphics::State::GetSingleton();
 
 	UpdateConstantBuffer();
 
@@ -354,19 +390,27 @@ void Bindings::DeferredPasses()
 		context->CSSetConstantBuffers(0, 1, &buffer);
 	}
 
+	{
+		FLOAT clr[4] = { 0., 0., 0., 1. };
+		context->ClearUnorderedAccessViewFloat(giTexture->uav.get(), clr);
+	}
+
 	if (ScreenSpaceShadows::GetSingleton()->loaded) {
 		ScreenSpaceShadows::GetSingleton()->DrawShadows();
 	}
 
-	{
-		auto specular = renderer->GetRuntimeData().renderTargets[SPECULAR];
-		auto albedo = renderer->GetRuntimeData().renderTargets[ALBEDO];
-		auto reflectance = renderer->GetRuntimeData().renderTargets[REFLECTANCE];
-		auto normalRoughness = renderer->GetRuntimeData().renderTargets[NORMALROUGHNESS];
-		auto depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
-		auto shadowMask = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGET::kSHADOW_MASK];
+	auto specular = renderer->GetRuntimeData().renderTargets[SPECULAR];
+	auto albedo = renderer->GetRuntimeData().renderTargets[ALBEDO];
+	auto reflectance = renderer->GetRuntimeData().renderTargets[REFLECTANCE];
+	auto normalRoughness = renderer->GetRuntimeData().renderTargets[NORMALROUGHNESS];
+	auto depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
+	auto shadowMask = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGET::kSHADOW_MASK];
 
-		ID3D11ShaderResourceView* srvs[7]{
+	auto main = renderer->GetRuntimeData().renderTargets[forwardRenderTargets[0]];
+	auto normals = renderer->GetRuntimeData().renderTargets[forwardRenderTargets[2]];
+
+	{
+		ID3D11ShaderResourceView* srvs[6]{
 			specular.SRV,
 			albedo.SRV,
 			reflectance.SRV,
@@ -375,21 +419,15 @@ void Bindings::DeferredPasses()
 			depth.depthSRV
 		};
 
-		context->CSSetShaderResources(0, 7, srvs);
-
-		auto main = renderer->GetRuntimeData().renderTargets[forwardRenderTargets[0]];
-		auto normals = renderer->GetRuntimeData().renderTargets[forwardRenderTargets[2]];
+		context->CSSetShaderResources(0, ARRAYSIZE(srvs), srvs);
 
 		ID3D11UnorderedAccessView* uavs[2]{ main.UAV, normals.UAV };
-		context->CSSetUnorderedAccessViews(0, 2, uavs, nullptr);
+		context->CSSetUnorderedAccessViews(0, ARRAYSIZE(uavs), uavs, nullptr);
 
 		context->CSSetSamplers(0, 1, &linearSampler);
 
-		auto shader = GetComputeDeferredComposite();
+		auto shader = GetComputeDirectionalShadow();
 		context->CSSetShader(shader, nullptr, 0);
-
-		auto state = State::GetSingleton();
-		auto viewport = RE::BSGraphics::State::GetSingleton();
 
 		float resolutionX = state->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
 		float resolutionY = state->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
@@ -398,16 +436,45 @@ void Bindings::DeferredPasses()
 		uint32_t dispatchY = (uint32_t)std::ceil(resolutionY / 32.0f);
 
 		context->Dispatch(dispatchX, dispatchY, 1);
-
-		shader = GetComputeDeferredComposite();
-		context->CSSetShader(shader, nullptr, 0);
 	}
 
-	ID3D11ShaderResourceView* views[7]{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-	context->CSSetShaderResources(0, 7, views);
+	// features that require full diffuse lighting should be put here
+
+	{
+		ID3D11ShaderResourceView* srvs[7]{
+			specular.SRV,
+			albedo.SRV,
+			reflectance.SRV,
+			normalRoughness.SRV,
+			shadowMask.SRV,
+			depth.depthSRV,
+			giTexture->srv.get(),
+		};
+
+		context->CSSetShaderResources(0, ARRAYSIZE(srvs), srvs);
+
+		ID3D11UnorderedAccessView* uavs[2]{ main.UAV, normals.UAV };
+		context->CSSetUnorderedAccessViews(0, ARRAYSIZE(uavs), uavs, nullptr);
+
+		context->CSSetSamplers(0, 1, &linearSampler);
+
+		auto shader = GetComputeDeferredComposite();
+		context->CSSetShader(shader, nullptr, 0);
+
+		float resolutionX = state->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
+		float resolutionY = state->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+
+		uint32_t dispatchX = (uint32_t)std::ceil(resolutionX / 32.0f);
+		uint32_t dispatchY = (uint32_t)std::ceil(resolutionY / 32.0f);
+
+		context->Dispatch(dispatchX, dispatchY, 1);
+	}
+
+	ID3D11ShaderResourceView* views[8]{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	context->CSSetShaderResources(0, ARRAYSIZE(views), views);
 
 	ID3D11UnorderedAccessView* uavs[2]{ nullptr, nullptr };
-	context->CSSetUnorderedAccessViews(0, 2, uavs, nullptr);
+	context->CSSetUnorderedAccessViews(0, ARRAYSIZE(uavs), uavs, nullptr);
 
 	ID3D11Buffer* buffer = nullptr;
 	context->CSSetConstantBuffers(0, 1, &buffer);
@@ -474,13 +541,26 @@ void Bindings::ClearShaderCache()
 		deferredCompositeCS->Release();
 		deferredCompositeCS = nullptr;
 	}
+	if (directionalShadowCS) {
+		directionalShadowCS->Release();
+		directionalShadowCS = nullptr;
+	}
 }
 
 ID3D11ComputeShader* Bindings::GetComputeDeferredComposite()
 {
 	if (!deferredCompositeCS) {
 		logger::debug("Compiling DeferredCompositeCS");
-		deferredCompositeCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DeferredCompositeCS.hlsl", {}, "cs_5_0");
+		deferredCompositeCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DeferredCompositeCS.hlsl", {}, "cs_5_0", "MainCompositePass");
 	}
 	return deferredCompositeCS;
+}
+
+ID3D11ComputeShader* Bindings::GetComputeDirectionalShadow()
+{
+	if (!directionalShadowCS) {
+		logger::debug("Compiling DirectionalShadowCS");
+		directionalShadowCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\DeferredCompositeCS.hlsl", {}, "cs_5_0", "DirectionalShadowPass");
+	}
+	return directionalShadowCS;
 }

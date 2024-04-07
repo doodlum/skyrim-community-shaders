@@ -37,10 +37,12 @@ public:
 	ID3D11BlendState* forwardBlendStates[4];
 	RE::RENDER_TARGET forwardRenderTargets[4];
 
+	ID3D11ComputeShader* directionalShadowCS = nullptr;
 	ID3D11ComputeShader* deferredCompositeCS = nullptr;
 
 	void ClearShaderCache();
 	ID3D11ComputeShader* GetComputeDeferredComposite();
+	ID3D11ComputeShader* GetComputeDirectionalShadow();
 
 	bool inWorld = false;
 	bool deferredPass = false;
@@ -65,6 +67,8 @@ public:
 	ConstantBuffer* deferredCB = nullptr;
 
 	ID3D11SamplerState* linearSampler = nullptr;
+
+	Texture2D* giTexture = nullptr;  // RGB - GI/IL, A - AO
 
 	void UpdateConstantBuffer();
 
