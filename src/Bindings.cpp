@@ -2,6 +2,7 @@
 #include "State.h"
 #include "Util.h"
 #include <Features/ScreenSpaceShadows.h>
+#include <Features/TerrainOcclusion.h>
 #include <ShaderCache.h>
 
 void Bindings::DepthStencilStateSetDepthMode(RE::BSGraphics::DepthStencilDepthMode a_mode)
@@ -407,6 +408,10 @@ void Bindings::DeferredPasses()
 
 	if (ScreenSpaceShadows::GetSingleton()->loaded) {
 		ScreenSpaceShadows::GetSingleton()->DrawShadows();
+	}
+
+	if (TerrainOcclusion::GetSingleton()->loaded) {
+		TerrainOcclusion::GetSingleton()->DrawTerrainOcclusion();
 	}
 
 	auto specular = renderer->GetRuntimeData().renderTargets[SPECULAR];
