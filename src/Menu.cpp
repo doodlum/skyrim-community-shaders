@@ -437,7 +437,7 @@ void Menu::DrawSettings()
 
 			ImGui::TableNextColumn();
 			if (ImGui::BeginListBox("##FeatureList", { -FLT_MIN, -FLT_MIN })) {
-				ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f)); // Selected feature header color
+				ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));  // Selected feature header color
 				for (size_t i = 0; i < sortedList.size(); i++)
 					if (sortedList[i]->loaded) {
 						if (ImGui::Selectable(fmt::format(" {} ", sortedList[i]->GetName()).c_str(), selectedFeature == i, ImGuiSelectableFlags_SpanAllColumns))
