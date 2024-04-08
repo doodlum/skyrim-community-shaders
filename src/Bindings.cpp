@@ -1,6 +1,7 @@
 #include "Bindings.h"
 #include "State.h"
 #include "Util.h"
+#include <Features/ScreenSpaceGI.h>
 #include <Features/ScreenSpaceShadows.h>
 #include <Features/TerrainOcclusion.h>
 #include <ShaderCache.h>
@@ -454,6 +455,9 @@ void Bindings::DeferredPasses()
 	}
 
 	// features that require full diffuse lighting should be put here
+	if (ScreenSpaceGI::GetSingleton()->loaded) {
+		ScreenSpaceGI::GetSingleton()->DrawSSGI(giTexture);
+	}
 
 	{
 		ID3D11ShaderResourceView* srvs[7]{
