@@ -1,6 +1,7 @@
 #include "Bindings.h"
 #include "State.h"
 #include "Util.h"
+#include <Features/CloudShadows.h>
 #include <Features/ScreenSpaceGI.h>
 #include <Features/ScreenSpaceShadows.h>
 #include <Features/TerrainOcclusion.h>
@@ -413,6 +414,10 @@ void Bindings::DeferredPasses()
 
 	if (TerrainOcclusion::GetSingleton()->loaded) {
 		TerrainOcclusion::GetSingleton()->DrawTerrainOcclusion();
+	}
+
+	if (CloudShadows::GetSingleton()->loaded) {
+		CloudShadows::GetSingleton()->DrawShadows();
 	}
 
 	auto specular = renderer->GetRuntimeData().renderTargets[SPECULAR];
