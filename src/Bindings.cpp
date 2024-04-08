@@ -1,6 +1,7 @@
 #include "Bindings.h"
 #include "State.h"
 #include "Util.h"
+#include <Features/CloudShadows.h>
 #include <Features/ScreenSpaceShadows.h>
 #include <ShaderCache.h>
 
@@ -407,6 +408,10 @@ void Bindings::DeferredPasses()
 
 	if (ScreenSpaceShadows::GetSingleton()->loaded) {
 		ScreenSpaceShadows::GetSingleton()->DrawShadows();
+	}
+
+	if (CloudShadows::GetSingleton()->loaded) {
+		CloudShadows::GetSingleton()->DrawShadows();
 	}
 
 	auto specular = renderer->GetRuntimeData().renderTargets[SPECULAR];
