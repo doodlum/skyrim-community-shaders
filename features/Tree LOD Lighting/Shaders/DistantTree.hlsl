@@ -116,7 +116,7 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.Position = VRout.VRPosition;
 	vsout.ClipDistance.x = VRout.ClipDistance;
 	vsout.CullDistance.x = VRout.CullDistance;
-#	endif  // !VR
+#	endif  // VR
 	return vsout;
 }
 #endif

@@ -88,7 +88,7 @@ uint GetEyeIndexPS(float4 position, float4 offset = 0.0.xxxx)
 #endif  //PSHADER
 
 /**
-Gets the eyeIndex for Computer Shaders
+Gets the eyeIndex for Compute Shaders
 @param texCoord Texcoord on the screen [0,1]
 @returns eyeIndex (0 left, 1 right)
 */
