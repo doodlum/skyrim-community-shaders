@@ -293,10 +293,6 @@ namespace FrameAnnotations
 
 	void OnPostPostLoad()
 	{
-		if (REL::Module::IsVR()) {
-			return;
-		}
-
 		stl::write_vfunc<0x6, BSShader_SetupGeometry<RE::BSShader::Type::Lighting>>(
 			RE::VTABLE_BSLightingShader[0]);
 		stl::write_vfunc<0x6, BSShader_SetupGeometry<RE::BSShader::Type::Effect>>(
@@ -908,14 +904,10 @@ namespace FrameAnnotations
 
 	void OnDataLoaded()
 	{
-		if (REL::Module::IsVR()) {
-			return;
-		}
-
 		auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 
 		for (size_t renderTargetIndex = 0;
-			 renderTargetIndex < RE::RENDER_TARGETS::kTOTAL; ++renderTargetIndex) {
+			 renderTargetIndex < (!REL::Module::IsVR() ? RE::RENDER_TARGETS::kTOTAL : RE::RENDER_TARGETS::kVRTOTAL); ++renderTargetIndex) {
 			const auto renderTargetName = magic_enum::enum_name(
 				static_cast<RE::RENDER_TARGETS::RENDER_TARGET>(renderTargetIndex));
 			if (auto texture = renderer->GetRuntimeData().renderTargets[renderTargetIndex].texture) {
@@ -936,7 +928,7 @@ namespace FrameAnnotations
 		}
 
 		for (size_t renderTargetIndex = 0;
-			 renderTargetIndex < RE::RENDER_TARGETS_DEPTHSTENCIL::kTOTAL;
+			 renderTargetIndex < (!REL::Module::IsVR() ? RE::RENDER_TARGETS_DEPTHSTENCIL::kTOTAL : RE::RENDER_TARGETS_DEPTHSTENCIL::kVRTOTAL);
 			 ++renderTargetIndex) {
 			const auto renderTargetName = magic_enum::enum_name(
 				static_cast<RE::RENDER_TARGETS_DEPTHSTENCIL::RENDER_TARGET_DEPTHSTENCIL>(
