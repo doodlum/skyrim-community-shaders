@@ -4,6 +4,7 @@
 #include "Common/LightingData.hlsl"
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
+#include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"
 
 #define EFFECT
