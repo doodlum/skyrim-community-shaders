@@ -462,9 +462,9 @@ struct PS_OUTPUT
 #	include "Common/LightingData.hlsl"
 #	include "Common/GBuffer.hlsli"
 
-cbuffer AlphaTestRefBuffer : register(b11)
+cbuffer AlphaTestRefCB : register(b11)
 {
-	float AlphaTestRef1 : packoffset(c0);
+	float AlphaTestRefRS : packoffset(c0);
 }
 
 cbuffer PerTechnique : register(b0)
@@ -676,7 +676,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 lightColor = lerp(baseColor.xyz, propertyColor * baseColor.xyz, lightingInfluence.xxx);
 
 #	if !defined(MOTIONVECTORS_NORMALS)
-	if (alpha * fogMul.w - AlphaTestRef1 < 0) {
+	if (alpha * fogMul.w - AlphaTestRefRS < 0) {
 		discard;
 	}
 #	endif
