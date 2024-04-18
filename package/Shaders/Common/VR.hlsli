@@ -1,3 +1,5 @@
+#ifndef __VR_DEPENDENCY_HLSL__
+#define __VR_DEPENDENCY_HLSL__
 #ifdef VR
 cbuffer VRValues : register(b13)
 {
@@ -155,3 +157,4 @@ VR_OUTPUT GetVRVSOutput(float4 clipPos, uint a_eyeIndex = 0)
 	return vsout;
 }
 #endif
+#endif  //__VR_DEPENDENCY_HLSL__
