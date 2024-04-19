@@ -1,9 +1,16 @@
+// FAST DENOISING WITH SELF-STABILIZING RECURRENT BLURS
+// 	https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
+
+#include "../Common/FastMath.hlsli"
 #include "../Common/GBuffer.hlsli"
 #include "../Common/VR.hlsli"
 #include "common.hlsli"
 
-Texture2D<lpfloat4> srcGI : register(t0);
+Texture2D<lpfloat4> srcGI : register(t0);              // maybe half-res
 Texture2D<unorm float> srcAccumFrames : register(t1);  // maybe half-res
+Texture2D<half> srcDepth : register(t2);
+Texture2D<half4> srcNormal : register(t3);
+
 RWTexture2D<lpfloat4> outGI : register(u0);
 
 // samples = 8, min distance = 0.5, average samples on radius = 2
@@ -19,21 +26,42 @@ static const float3 g_Poisson8[8] = {
 };
 
 [numthreads(8, 8, 1)] void main(const uint2 dtid : SV_DispatchThreadID) {
-	const float radius = BlurRadius / (srcAccumFrames[dtid] * 255);
+	float radius = BlurRadius;
+#ifdef TEMPORAL_DENOISER
+	radius /= (srcAccumFrames[dtid] * 255);
+#endif
 	const uint numSamples = 8;
 
 	const float2 uv = (dtid + .5) * RcpFrameDim;
 	uint eyeIndex = GET_EYE_IDX(uv);
+	const float2 screenPos = ConvertToStereoUV(uv, eyeIndex);
 
-	lpfloat4 sum = 0;
-	float4 wsum = 0;
-	[unroll] for (uint i = 0; i < numSamples; i++)
-	{
+	float depth = READ_DEPTH(srcDepth, dtid);
+	float3 pos = ScreenToViewPosition(screenPos, depth, eyeIndex);
+	float3 normal = DecodeNormal(FULLRES_LOAD(srcNormal, dtid, uv, samplerLinearClamp).xy);
+
+	lpfloat4 sum = srcGI[dtid];
+	float4 wsum = 1;
+	for (uint i = 0; i < numSamples; i++) {
 		float w = g_Poisson8[i].z;
 
 		float2 pxOffset = radius * g_Poisson8[i].xy;
 		float2 uvOffset = pxOffset * RcpFrameDim;
 		float2 uvSample = uv + uvOffset;
+
+		if (eyeIndex != GET_EYE_IDX(uvSample))
+			continue;
+
+		const float2 screenPosSample = ConvertToStereoUV(uvSample, eyeIndex);
+		float depthSample = srcDepth.SampleLevel(samplerLinearClamp, uvSample, 0);
+		float3 posSample = ScreenToViewPosition(screenPosSample, depthSample, eyeIndex);
+
+		float3 normalSample = DecodeNormal(srcNormal.SampleLevel(samplerLinearClamp, uvSample, 0).xy);
+
+		// geometry weight
+		w *= saturate(1 - abs(dot(normal, posSample - pos)) * DistanceNormalisation);
+		// normal weight
+		w *= 1 - saturate(acosFast4(saturate(dot(normalSample, normal))) / fsl_HALF_PI * 2);
 
 		lpfloat4 gi = srcGI.SampleLevel(samplerLinearClamp, uvSample * res_scale, 0);
 
@@ -41,5 +69,5 @@ static const float3 g_Poisson8[8] = {
 		wsum += w;
 	}
 
-	outGI[dtid] = sum / (wsum + 1e-6);
+	outGI[dtid] = sum / wsum;
 }

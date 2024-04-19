@@ -71,6 +71,8 @@ struct ScreenSpaceGI : Feature
 		float NormalDisocclusion = .8f;
 		uint MaxAccumFrames = 16;
 		float BlurRadius = 4.f;
+		uint BlurPasses = 1;
+		float DistanceNormalisation = .05f;
 	} settings;
 
 	struct alignas(16) SSGICB
@@ -108,8 +110,9 @@ struct ScreenSpaceGI : Feature
 		uint MaxAccumFrames;  //
 
 		float BlurRadius;
+		float DistanceNormalisation;
 
-		float pad[3];
+		float pad[2];
 	};
 	eastl::unique_ptr<ConstantBuffer> ssgiCB;
 
