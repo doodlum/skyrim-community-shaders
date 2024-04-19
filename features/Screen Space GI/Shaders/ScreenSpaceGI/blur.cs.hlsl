@@ -2,7 +2,8 @@
 #include "../Common/VR.hlsli"
 #include "common.hlsli"
 
-Texture2D<lpfloat4> srcGI : register(s0);
+Texture2D<lpfloat4> srcGI : register(t0);
+Texture2D<uint> srcAccumFrames : register(t1);  // maybe half-res
 RWTexture2D<lpfloat4> outGI : register(u0);
 
 // samples = 8, min distance = 0.5, average samples on radius = 2
@@ -18,7 +19,7 @@ static const float3 g_Poisson8[8] = {
 };
 
 [numthreads(8, 8, 1)] void main(const uint2 dtid : SV_DispatchThreadID) {
-	const float radius = 2;
+	const float radius = BlurRadius / srcAccumFrames[dtid];
 	const uint numSamples = 8;
 
 	const float2 uv = (dtid + .5) * RcpFrameDim;
@@ -34,10 +35,7 @@ static const float3 g_Poisson8[8] = {
 		float2 uvOffset = pxOffset * RcpFrameDim;
 		float2 uvSample = uv + uvOffset;
 
-		if (eyeIndex != GET_EYE_IDX(uvSample))
-			return;
-
-		lpfloat4 gi = srcGI.SampleLevel(samplerLinearClamp, uv * res_scale, 0);
+		lpfloat4 gi = srcGI.SampleLevel(samplerLinearClamp, uvSample * res_scale, 0);
 
 		sum += gi * w;
 		wsum += w;

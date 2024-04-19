@@ -196,7 +196,17 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::TextWrapped("At full resolution, you can try disabling denoisers and let TAA handle the noise.");
 
-	recompileFlag |= ImGui::Checkbox("Temporal Denoiser", &settings.EnableTemporalDenoiser);
+	if (ImGui::BeginTable("denoisers", 2)) {
+		ImGui::TableNextColumn();
+		recompileFlag |= ImGui::Checkbox("Temporal Denoiser", &settings.EnableTemporalDenoiser);
+
+		ImGui::TableNextColumn();
+		ImGui::Checkbox("Blur", &settings.EnableBlur);
+
+		ImGui::EndTable();
+	}
+
+	ImGui::Separator();
 
 	{
 		auto _ = DisableGuard(!settings.EnableTemporalDenoiser);
@@ -223,6 +233,13 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Text(
 				"If a pixel's normal deviates too much from the last frame, its radiance will not be carried to this frame.\n"
 				"Higher values are stricter.");
+	}
+
+	ImGui::Separator();
+
+	{
+		auto _ = DisableGuard(!settings.EnableBlur);
+		ImGui::SliderFloat("Blur Radius", &settings.BlurRadius, 0.f, 8.f, "%.1f px");
 	}
 
 	///////////////////////////////
@@ -542,6 +559,7 @@ void ScreenSpaceGI::UpdateSB()
 		data.DepthDisocclusion = settings.DepthDisocclusion;
 		data.NormalDisocclusion = settings.NormalDisocclusion;
 		data.MaxAccumFrames = settings.MaxAccumFrames;
+		data.BlurRadius = settings.BlurRadius;
 	}
 
 	ssgiCB->Update(data);
@@ -551,6 +569,10 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 {
 	if (!(settings.Enabled && ShadersOK()))
 		return;
+
+	static uint lastFrameGITexIdx = 0;
+	static Texture2D* giTex[2] = { texGI0.get(), texGI1.get() };
+	uint inputGITexIdx = lastFrameGITexIdx;
 
 	//////////////////////////////////////////////////////
 
@@ -611,7 +633,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 	{
 		resetViews();
 		srvs[0] = rts[deferred->forwardRenderTargets[0]].SRV;
-		srvs[1] = texGI0->srv.get();
+		srvs[1] = giTex[inputGITexIdx]->srv.get();
 		srvs[2] = texWorkingDepth->srv.get();
 		srvs[3] = rts[NORMALROUGHNESS].SRV;
 		srvs[4] = texPrevGeo->srv.get();
@@ -620,7 +642,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 
 		uavs[0] = texRadiance->uav.get();
 		uavs[1] = texAccumFrames->uav.get();
-		uavs[2] = texGI1->uav.get();
+		uavs[2] = giTex[!inputGITexIdx]->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -628,6 +650,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		context->Dispatch((targetRes[0] + 7u) >> 3, (targetRes[1] + 7u) >> 3, 1);
 
 		context->GenerateMips(texRadiance->srv.get());
+
+		inputGITexIdx = !inputGITexIdx;
 	}
 
 	// GI
@@ -638,9 +662,9 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		srvs[2] = texRadiance->srv.get();
 		srvs[3] = texHilbertLUT->srv.get();
 		srvs[4] = texAccumFrames->srv.get();
-		srvs[5] = texGI1->srv.get();
+		srvs[5] = giTex[inputGITexIdx]->srv.get();
 
-		uavs[0] = texGI0->uav.get();
+		uavs[0] = giTex[!inputGITexIdx]->uav.get();
 		uavs[1] = nullptr;
 		uavs[2] = texPrevGeo->uav.get();
 
@@ -648,26 +672,48 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 		context->CSSetShader(giCompute.get(), nullptr, 0);
 		context->Dispatch((targetRes[0] + 7u) >> 3, (targetRes[1] + 7u) >> 3, 1);
+
+		inputGITexIdx = !inputGITexIdx;
+		lastFrameGITexIdx = inputGITexIdx;
+	}
+
+	// blur
+	if (settings.EnableBlur) {
+		resetViews();
+		srvs[0] = giTex[inputGITexIdx]->srv.get();
+		srvs[1] = texAccumFrames->srv.get();
+
+		uavs[0] = giTex[!inputGITexIdx]->uav.get();
+
+		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+		context->CSSetShader(blurCompute.get(), nullptr, 0);
+		context->Dispatch((targetRes[0] + 7u) >> 3, (targetRes[1] + 7u) >> 3, 1);
+
+		inputGITexIdx = !inputGITexIdx;
+		lastFrameGITexIdx = inputGITexIdx;
 	}
 
 	// upsasmple
 	if (settings.HalfRes) {
 		resetViews();
 		srvs[0] = texWorkingDepth->srv.get();
-		srvs[1] = texGI0->srv.get();
+		srvs[1] = giTex[inputGITexIdx]->srv.get();
 
-		uavs[0] = texGI1->uav.get();
+		uavs[0] = giTex[!inputGITexIdx]->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 		context->CSSetShader(upsampleCompute.get(), nullptr, 0);
 		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+
+		inputGITexIdx = !inputGITexIdx;
 	}
 
 	// output
 	{
 		resetViews();
-		srvs[0] = settings.HalfRes ? texGI1->srv.get() : texGI0->srv.get();
+		srvs[0] = giTex[inputGITexIdx]->srv.get();
 		srvs[1] = rts[ALBEDO].SRV;
 
 		uavs[0] = outGI->uav.get();

@@ -81,6 +81,9 @@ cbuffer SSGICB : register(b1)
 	float DepthDisocclusion;
 	float NormalDisocclusion;
 	uint MaxAccumFrames;
+
+	float BlurRadius;
+	float3 pad;
 };
 
 SamplerState samplerPointClamp : register(s0);

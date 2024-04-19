@@ -66,9 +66,11 @@ struct ScreenSpaceGI : Feature
 		float GIStrength = 8.f;
 		// denoise
 		bool EnableTemporalDenoiser = true;
+		bool EnableBlur = true;
 		float DepthDisocclusion = 50.f;
 		float NormalDisocclusion = .8f;
 		uint MaxAccumFrames = 16;
+		float BlurRadius = 4.f;
 	} settings;
 
 	struct alignas(16) SSGICB
@@ -103,7 +105,11 @@ struct ScreenSpaceGI : Feature
 
 		float DepthDisocclusion;
 		float NormalDisocclusion;
-		uint MaxAccumFrames;
+		uint MaxAccumFrames;  //
+
+		float BlurRadius;
+
+		float pad[3];
 	};
 	eastl::unique_ptr<ConstantBuffer> ssgiCB;
 

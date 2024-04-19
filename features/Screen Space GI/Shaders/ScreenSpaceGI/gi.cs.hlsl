@@ -374,7 +374,7 @@ void CalculateGI(
 		lpfloat4 prevGIAO = srcPrevGI[dtid];
 		uint accumFrames = srcAccumFrames[dtid];
 
-		currGIAO = lerp(prevGIAO, currGIAO, fastRcpNR0(accumFrames));
+		currGIAO = lerp(prevGIAO, currGIAO, rcp(accumFrames));
 	}
 #endif
 
