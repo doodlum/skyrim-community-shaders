@@ -210,9 +210,7 @@ void ScreenSpaceGI::DrawSettings()
 
 	{
 		auto _ = DisableGuard(!settings.EnableTemporalDenoiser);
-		ImGui::Indent();
 		ImGui::SliderInt("Max Frame Accumulation", (int*)&settings.MaxAccumFrames, 1, 64, "%d", ImGuiSliderFlags_AlwaysClamp);
-		ImGui::Unindent();
 		if (auto _tt = Util::HoverTooltipWrapper())
 			ImGui::Text("How many past frames to accumulate results with. Higher values are less noisy but potentially cause ghosting.");
 	}
@@ -266,12 +264,12 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Image(texRadiance->srv.get(), { texRadiance->desc.Width * debugRescale, texRadiance->desc.Height * debugRescale });
 			ImGui::TreePop();
 		}
-		if (ImGui::TreeNode("texGI0")) {
-			ImGui::Image(texGI0->srv.get(), { texGI0->desc.Width * debugRescale, texGI0->desc.Height * debugRescale });
+		if (ImGui::TreeNode("texGI[0]")) {
+			ImGui::Image(texGI[0]->srv.get(), { texGI[0]->desc.Width * debugRescale, texGI[0]->desc.Height * debugRescale });
 			ImGui::TreePop();
 		}
-		if (ImGui::TreeNode("texGI1")) {
-			ImGui::Image(texGI1->srv.get(), { texGI1->desc.Width * debugRescale, texGI1->desc.Height * debugRescale });
+		if (ImGui::TreeNode("texGI[1]")) {
+			ImGui::Image(texGI[1]->srv.get(), { texGI[1]->desc.Width * debugRescale, texGI[1]->desc.Height * debugRescale });
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("texPrevGIAlbedo")) {
@@ -369,13 +367,13 @@ void ScreenSpaceGI::SetupResources()
 		texDesc.MipLevels = srvDesc.Texture2D.MipLevels = 1;
 		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		{
-			texGI0 = eastl::make_unique<Texture2D>(texDesc);
-			texGI0->CreateSRV(srvDesc);
-			texGI0->CreateUAV(uavDesc);
+			texGI[0] = eastl::make_unique<Texture2D>(texDesc);
+			texGI[0]->CreateSRV(srvDesc);
+			texGI[0]->CreateUAV(uavDesc);
 
-			texGI1 = eastl::make_unique<Texture2D>(texDesc);
-			texGI1->CreateSRV(srvDesc);
-			texGI1->CreateUAV(uavDesc);
+			texGI[1] = eastl::make_unique<Texture2D>(texDesc);
+			texGI[1]->CreateSRV(srvDesc);
+			texGI[1]->CreateUAV(uavDesc);
 		}
 
 		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R11G11B10_FLOAT;
@@ -385,11 +383,15 @@ void ScreenSpaceGI::SetupResources()
 			texPrevGIAlbedo->CreateUAV(uavDesc);
 		}
 
-		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R8_UINT;
+		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R8_UNORM;
 		{
-			texAccumFrames = eastl::make_unique<Texture2D>(texDesc);
-			texAccumFrames->CreateSRV(srvDesc);
-			texAccumFrames->CreateUAV(uavDesc);
+			texAccumFrames[0] = eastl::make_unique<Texture2D>(texDesc);
+			texAccumFrames[0]->CreateSRV(srvDesc);
+			texAccumFrames[0]->CreateUAV(uavDesc);
+
+			texAccumFrames[1] = eastl::make_unique<Texture2D>(texDesc);
+			texAccumFrames[1]->CreateSRV(srvDesc);
+			texAccumFrames[1]->CreateUAV(uavDesc);
 		}
 
 		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R11G11B10_FLOAT;
@@ -571,7 +573,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		return;
 
 	static uint lastFrameGITexIdx = 0;
-	static Texture2D* giTex[2] = { texGI0.get(), texGI1.get() };
+	static uint lastFrameAccumTexIdx = 0;
 	uint inputGITexIdx = lastFrameGITexIdx;
 
 	//////////////////////////////////////////////////////
@@ -599,7 +601,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 	uint halfRes[2] = { resolution[0] >> 1, resolution[1] >> 1 };
 	auto targetRes = settings.HalfRes ? halfRes : resolution;
 
-	std::array<ID3D11ShaderResourceView*, 7> srvs = { nullptr };
+	std::array<ID3D11ShaderResourceView*, 8> srvs = { nullptr };
 	std::array<ID3D11UnorderedAccessView*, 5> uavs = { nullptr };
 	std::array<ID3D11SamplerState*, 2> samplers = { pointClampSampler.get(), linearClampSampler.get() };
 	auto cb = ssgiCB->CB();
@@ -619,9 +621,9 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 
 	// prefilter depths
 	{
-		srvs[0] = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
+		srvs.at(0) = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
 		for (int i = 0; i < 5; ++i)
-			uavs[i] = uavWorkingDepth[i].get();
+			uavs.at(i) = uavWorkingDepth[i].get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -632,17 +634,18 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 	// fetch radiance and disocclusion
 	{
 		resetViews();
-		srvs[0] = rts[deferred->forwardRenderTargets[0]].SRV;
-		srvs[1] = giTex[inputGITexIdx]->srv.get();
-		srvs[2] = texWorkingDepth->srv.get();
-		srvs[3] = rts[NORMALROUGHNESS].SRV;
-		srvs[4] = texPrevGeo->srv.get();
-		srvs[5] = rts[RE::RENDER_TARGET::kMOTION_VECTOR].SRV;
-		srvs[6] = texPrevGIAlbedo->srv.get();
+		srvs.at(0) = rts[deferred->forwardRenderTargets[0]].SRV;
+		srvs.at(1) = texGI[inputGITexIdx]->srv.get();
+		srvs.at(2) = texWorkingDepth->srv.get();
+		srvs.at(3) = rts[NORMALROUGHNESS].SRV;
+		srvs.at(4) = texPrevGeo->srv.get();
+		srvs.at(5) = rts[RE::RENDER_TARGET::kMOTION_VECTOR].SRV;
+		srvs.at(6) = texPrevGIAlbedo->srv.get();
+		srvs.at(7) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
 
-		uavs[0] = texRadiance->uav.get();
-		uavs[1] = texAccumFrames->uav.get();
-		uavs[2] = giTex[!inputGITexIdx]->uav.get();
+		uavs.at(0) = texRadiance->uav.get();
+		uavs.at(1) = texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
+		uavs.at(2) = texGI[!inputGITexIdx]->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -652,21 +655,22 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		context->GenerateMips(texRadiance->srv.get());
 
 		inputGITexIdx = !inputGITexIdx;
+		lastFrameAccumTexIdx = !lastFrameAccumTexIdx;
 	}
 
 	// GI
 	{
 		resetViews();
-		srvs[0] = texWorkingDepth->srv.get();
-		srvs[1] = rts[NORMALROUGHNESS].SRV;
-		srvs[2] = texRadiance->srv.get();
-		srvs[3] = texHilbertLUT->srv.get();
-		srvs[4] = texAccumFrames->srv.get();
-		srvs[5] = giTex[inputGITexIdx]->srv.get();
+		srvs.at(0) = texWorkingDepth->srv.get();
+		srvs.at(1) = rts[NORMALROUGHNESS].SRV;
+		srvs.at(2) = texRadiance->srv.get();
+		srvs.at(3) = texHilbertLUT->srv.get();
+		srvs.at(4) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
+		srvs.at(5) = texGI[inputGITexIdx]->srv.get();
 
-		uavs[0] = giTex[!inputGITexIdx]->uav.get();
-		uavs[1] = nullptr;
-		uavs[2] = texPrevGeo->uav.get();
+		uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
+		uavs.at(1) = nullptr;
+		uavs.at(2) = texPrevGeo->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -680,10 +684,10 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 	// blur
 	if (settings.EnableBlur) {
 		resetViews();
-		srvs[0] = giTex[inputGITexIdx]->srv.get();
-		srvs[1] = texAccumFrames->srv.get();
+		srvs.at(0) = texGI[inputGITexIdx]->srv.get();
+		srvs.at(1) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
 
-		uavs[0] = giTex[!inputGITexIdx]->uav.get();
+		uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -697,10 +701,10 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 	// upsasmple
 	if (settings.HalfRes) {
 		resetViews();
-		srvs[0] = texWorkingDepth->srv.get();
-		srvs[1] = giTex[inputGITexIdx]->srv.get();
+		srvs.at(0) = texWorkingDepth->srv.get();
+		srvs.at(1) = texGI[inputGITexIdx]->srv.get();
 
-		uavs[0] = giTex[!inputGITexIdx]->uav.get();
+		uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -713,11 +717,11 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 	// output
 	{
 		resetViews();
-		srvs[0] = giTex[inputGITexIdx]->srv.get();
-		srvs[1] = rts[ALBEDO].SRV;
+		srvs.at(0) = texGI[inputGITexIdx]->srv.get();
+		srvs.at(1) = rts[ALBEDO].SRV;
 
-		uavs[0] = outGI->uav.get();
-		uavs[1] = texPrevGIAlbedo->uav.get();
+		uavs.at(0) = outGI->uav.get();
+		uavs.at(1) = texPrevGIAlbedo->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);

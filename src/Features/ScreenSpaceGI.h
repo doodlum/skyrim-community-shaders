@@ -118,9 +118,8 @@ struct ScreenSpaceGI : Feature
 	winrt::com_ptr<ID3D11UnorderedAccessView> uavWorkingDepth[5] = { nullptr };
 	eastl::unique_ptr<Texture2D> texPrevGeo = nullptr;
 	eastl::unique_ptr<Texture2D> texRadiance = nullptr;
-	eastl::unique_ptr<Texture2D> texAccumFrames = nullptr;
-	eastl::unique_ptr<Texture2D> texGI0 = { nullptr };
-	eastl::unique_ptr<Texture2D> texGI1 = nullptr;
+	eastl::unique_ptr<Texture2D> texAccumFrames[2] = { nullptr };
+	eastl::unique_ptr<Texture2D> texGI[2] = { nullptr };
 	eastl::unique_ptr<Texture2D> texPrevGIAlbedo = { nullptr };
 
 	winrt::com_ptr<ID3D11SamplerState> linearClampSampler = nullptr;

@@ -41,8 +41,8 @@ Texture2D<lpfloat> srcWorkingDepth : register(t0);
 Texture2D<lpfloat4> srcNormal : register(t1);
 Texture2D<lpfloat3> srcRadiance : register(t2);  // maybe half-res
 Texture2D<uint> srcHilbertLUT : register(t3);
-Texture2D<uint> srcAccumFrames : register(t4);  // maybe half-res
-Texture2D<lpfloat4> srcPrevGI : register(t5);   // maybe half-res
+Texture2D<unorm float> srcAccumFrames : register(t4);  // maybe half-res
+Texture2D<lpfloat4> srcPrevGI : register(t5);          // maybe half-res
 
 RWTexture2D<lpfloat4> outGI : register(u0);
 RWTexture2D<unorm float2> outBentNormal : register(u1);
@@ -372,7 +372,7 @@ void CalculateGI(
 #ifdef TEMPORAL_DENOISER
 	if (viewspaceZ < DepthFadeRange.y) {
 		lpfloat4 prevGIAO = srcPrevGI[dtid];
-		uint accumFrames = srcAccumFrames[dtid];
+		uint accumFrames = srcAccumFrames[dtid] * 255;
 
 		currGIAO = lerp(prevGIAO, currGIAO, rcp(accumFrames));
 	}

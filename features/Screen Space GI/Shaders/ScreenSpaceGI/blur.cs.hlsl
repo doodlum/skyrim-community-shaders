@@ -3,7 +3,7 @@
 #include "common.hlsli"
 
 Texture2D<lpfloat4> srcGI : register(t0);
-Texture2D<uint> srcAccumFrames : register(t1);  // maybe half-res
+Texture2D<unorm float> srcAccumFrames : register(t1);  // maybe half-res
 RWTexture2D<lpfloat4> outGI : register(u0);
 
 // samples = 8, min distance = 0.5, average samples on radius = 2
@@ -19,7 +19,7 @@ static const float3 g_Poisson8[8] = {
 };
 
 [numthreads(8, 8, 1)] void main(const uint2 dtid : SV_DispatchThreadID) {
-	const float radius = BlurRadius / srcAccumFrames[dtid];
+	const float radius = BlurRadius / (srcAccumFrames[dtid] * 255);
 	const uint numSamples = 8;
 
 	const float2 uv = (dtid + .5) * RcpFrameDim;

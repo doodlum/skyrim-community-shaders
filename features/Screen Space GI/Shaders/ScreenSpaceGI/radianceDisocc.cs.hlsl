@@ -9,9 +9,10 @@ Texture2D<half4> srcCurrNormal : register(t3);
 Texture2D<half3> srcPrevGeo : register(t4);  // maybe half-res
 Texture2D<float4> srcMotionVec : register(t5);
 Texture2D<half4> srcPrevGIAlbedo : register(t6);
+Texture2D<unorm float> srcAccumFrames : register(t7);
 
 RWTexture2D<float3> outRadianceDisocc : register(u0);
-RWTexture2D<uint> outAccumFrames : register(u1);
+RWTexture2D<unorm float> outAccumFrames : register(u1);
 RWTexture2D<float4> outRemappedPrevGI : register(u2);
 
 #if (defined(GI) && defined(GI_BOUNCE)) || defined(TEMPORAL_DENOISER)
@@ -26,7 +27,7 @@ RWTexture2D<float4> outRemappedPrevGI : register(u2);
 
 	float2 prev_uv = uv;
 #ifdef REPROJECTION
-	prev_uv += FULLRES_LOAD(srcMotionVec, pixCoord, uv, samplerLinearClamp);
+	prev_uv += FULLRES_LOAD(srcMotionVec, pixCoord, uv, samplerLinearClamp).xy;
 #endif
 	float2 prev_screen_pos = ConvertToStereoUV(prev_uv, eyeIndex);
 
@@ -36,7 +37,7 @@ RWTexture2D<float4> outRemappedPrevGI : register(u2);
 
 #ifdef REPROJECTION
 	if ((curr_depth <= DepthFadeRange.y) && !(any(prev_screen_pos < 0) || any(prev_screen_pos > 1))) {
-		float3 curr_normal = DecodeNormal(FULLRES_LOAD(srcCurrNormal, pixCoord, uv, samplerLinearClamp));
+		float3 curr_normal = DecodeNormal(FULLRES_LOAD(srcCurrNormal, pixCoord, uv, samplerLinearClamp).xy);
 		curr_normal = ViewToWorldVector(curr_normal, InvViewMatrix[eyeIndex]);
 		float3 curr_pos = ScreenToViewPosition(screen_pos, curr_depth, eyeIndex);
 		curr_pos = ViewToWorldPosition(curr_pos, InvViewMatrix[eyeIndex]);
@@ -73,7 +74,7 @@ RWTexture2D<float4> outRemappedPrevGI : register(u2);
 
 	half3 radiance = 0;
 #ifdef GI
-	radiance = FULLRES_LOAD(srcDiffuse, pixCoord, uv, samplerLinearClamp);
+	radiance = FULLRES_LOAD(srcDiffuse, pixCoord, uv, samplerLinearClamp).rgb;
 #	ifdef GI_BOUNCE
 	radiance += prev_gi_albedo.rgb * GIBounceFade;
 #	endif
@@ -83,10 +84,10 @@ RWTexture2D<float4> outRemappedPrevGI : register(u2);
 #ifdef TEMPORAL_DENOISER
 	uint accum_frames = 0;
 	[branch] if (valid_history)
-		accum_frames = outAccumFrames[pixCoord];
+		accum_frames = srcAccumFrames.SampleLevel(samplerLinearClamp, prev_uv * res_scale, 0) * 255;
 	accum_frames = min(accum_frames + 1, MaxAccumFrames);
 
-	outAccumFrames[pixCoord] = accum_frames;
+	outAccumFrames[pixCoord] = accum_frames / 255.0;
 	outRemappedPrevGI[pixCoord] = prev_gi;
 #endif
 }
