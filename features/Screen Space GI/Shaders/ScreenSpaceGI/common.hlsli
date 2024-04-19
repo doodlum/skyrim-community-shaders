@@ -79,9 +79,8 @@ cbuffer SSGICB : register(b1)
 	float GIStrength;
 
 	float DepthDisocclusion;
+	float NormalDisocclusion;
 	uint MaxAccumFrames;
-
-	float pad;
 };
 
 SamplerState samplerPointClamp : register(s0);

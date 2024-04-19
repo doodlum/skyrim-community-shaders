@@ -6,7 +6,7 @@ Texture2D<half4> srcDiffuse : register(t0);
 Texture2D<half4> srcPrevGI : register(t1);  // maybe half-res
 Texture2D<half> srcCurrDepth : register(t2);
 Texture2D<half4> srcCurrNormal : register(t3);
-Texture2D<half> srcPrevDepth : register(t4);  // maybe half-res
+Texture2D<half3> srcPrevGeo : register(t4);  // maybe half-res
 Texture2D<float4> srcMotionVec : register(t5);
 Texture2D<half4> srcPrevGIAlbedo : register(t6);
 
@@ -36,16 +36,23 @@ RWTexture2D<float4> outRemappedPrevGI : register(u2);
 
 #ifdef REPROJECTION
 	if ((curr_depth <= DepthFadeRange.y) && !(any(prev_screen_pos < 0) || any(prev_screen_pos > 1))) {
+		float3 curr_normal = DecodeNormal(FULLRES_LOAD(srcCurrNormal, pixCoord, uv, samplerLinearClamp));
+		curr_normal = ViewToWorldVector(curr_normal, InvViewMatrix[eyeIndex]);
 		float3 curr_pos = ScreenToViewPosition(screen_pos, curr_depth, eyeIndex);
 		curr_pos = ViewToWorldPosition(curr_pos, InvViewMatrix[eyeIndex]);
 
-		const float prev_depth = srcPrevDepth.SampleLevel(samplerPointClamp, prev_uv * res_scale, 0);
+		const half3 prev_geo = srcPrevGeo.SampleLevel(samplerPointClamp, prev_uv * res_scale, 0);
+		const float prev_depth = prev_geo.x;
+		const float3 prev_normal = DecodeNormal(prev_geo.yz);  // prev normal is already world
 		float3 prev_pos = ScreenToViewPosition(prev_screen_pos, prev_depth, eyeIndex);
 		prev_pos = ViewToWorldPosition(prev_pos, PrevInvViewMat[eyeIndex]);
 
 		float3 delta_pos = curr_pos - prev_pos;
+		float normal_prod = dot(curr_normal, prev_normal);
+
 		bool depth_pass = dot(delta_pos, delta_pos) < DepthDisocclusion * DepthDisocclusion;
-		valid_history = depth_pass;
+		bool normal_pass = normal_prod * normal_prod > NormalDisocclusion;
+		valid_history = depth_pass && normal_pass;
 	}
 #endif
 

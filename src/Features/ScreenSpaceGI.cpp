@@ -207,9 +207,7 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Text("How many past frames to accumulate results with. Higher values are less noisy but potentially cause ghosting.");
 	}
 
-	// ImGui::SliderInt("Passes", (int*)&settings.DenoisePasses, 0, 10);
-	// if (auto _tt = Util::HoverTooltipWrapper())
-	// 	ImGui::Text("How many denoising passes to go through. The more the blurrier.");
+	ImGui::Separator();
 
 	{
 		auto _ = DisableGuard(!settings.EnableTemporalDenoiser && !(settings.EnableGI || settings.EnableGIBounce));
@@ -219,6 +217,12 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Text(
 				"If a pixel has moved this far from the last frame, its radiance will not be carried to this frame.\n"
 				"Lower values are stricter.");
+
+		ImGui::SliderFloat("Normal Disocclusion", &settings.NormalDisocclusion, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text(
+				"If a pixel's normal deviates too much from the last frame, its radiance will not be carried to this frame.\n"
+				"Higher values are stricter.");
 	}
 
 	///////////////////////////////
@@ -237,8 +241,8 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Image(texWorkingDepth->srv.get(), { texWorkingDepth->desc.Width * debugRescale, texWorkingDepth->desc.Height * debugRescale });
 			ImGui::TreePop();
 		}
-		if (ImGui::TreeNode("texPrevDepth")) {
-			ImGui::Image(texPrevDepth->srv.get(), { texPrevDepth->desc.Width * debugRescale, texPrevDepth->desc.Height * debugRescale });
+		if (ImGui::TreeNode("texPrevGeo")) {
+			ImGui::Image(texPrevGeo->srv.get(), { texPrevGeo->desc.Width * debugRescale, texPrevGeo->desc.Height * debugRescale });
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("texRadiance")) {
@@ -371,11 +375,11 @@ void ScreenSpaceGI::SetupResources()
 			texAccumFrames->CreateUAV(uavDesc);
 		}
 
-		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R16_FLOAT;
+		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R11G11B10_FLOAT;
 		{
-			texPrevDepth = eastl::make_unique<Texture2D>(texDesc);
-			texPrevDepth->CreateSRV(srvDesc);
-			texPrevDepth->CreateUAV(uavDesc);
+			texPrevGeo = eastl::make_unique<Texture2D>(texDesc);
+			texPrevGeo->CreateSRV(srvDesc);
+			texPrevGeo->CreateUAV(uavDesc);
 		}
 	}
 
@@ -402,7 +406,7 @@ void ScreenSpaceGI::SetupResources()
 void ScreenSpaceGI::ClearShaderCache()
 {
 	static const std::vector<winrt::com_ptr<ID3D11ComputeShader>*> shaderPtrs = {
-		&hilbertLutCompute, &prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &upsampleCompute, &outputCompute
+		&hilbertLutCompute, &prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute, &outputCompute
 	};
 
 	for (auto shader : shaderPtrs)
@@ -429,6 +433,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 			{ &prefilterDepthsCompute, "prefilterDepths.cs.hlsl", {} },
 			{ &radianceDisoccCompute, "radianceDisocc.cs.hlsl", {} },
 			{ &giCompute, "gi.cs.hlsl", {} },
+			{ &blurCompute, "blur.cs.hlsl", {} },
 			{ &upsampleCompute, "upsample.cs.hlsl", {} },
 			{ &outputCompute, "output.cs.hlsl", {} }
 		};
@@ -461,7 +466,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return hilbertLutCompute && prefilterDepthsCompute && radianceDisoccCompute && giCompute && upsampleCompute && outputCompute;
+	return hilbertLutCompute && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute && outputCompute;
 }
 
 void ScreenSpaceGI::GenerateHilbertLUT()
@@ -535,6 +540,7 @@ void ScreenSpaceGI::UpdateSB()
 		data.GIStrength = settings.GIStrength;
 
 		data.DepthDisocclusion = settings.DepthDisocclusion;
+		data.NormalDisocclusion = settings.NormalDisocclusion;
 		data.MaxAccumFrames = settings.MaxAccumFrames;
 	}
 
@@ -608,7 +614,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		srvs[1] = texGI0->srv.get();
 		srvs[2] = texWorkingDepth->srv.get();
 		srvs[3] = rts[NORMALROUGHNESS].SRV;
-		srvs[4] = texPrevDepth->srv.get();
+		srvs[4] = texPrevGeo->srv.get();
 		srvs[5] = rts[RE::RENDER_TARGET::kMOTION_VECTOR].SRV;
 		srvs[6] = texPrevGIAlbedo->srv.get();
 
@@ -636,7 +642,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 
 		uavs[0] = texGI0->uav.get();
 		uavs[1] = nullptr;
-		uavs[2] = texPrevDepth->uav.get();
+		uavs[2] = texPrevGeo->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);

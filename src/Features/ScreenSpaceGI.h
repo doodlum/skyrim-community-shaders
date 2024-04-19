@@ -67,6 +67,7 @@ struct ScreenSpaceGI : Feature
 		// denoise
 		bool EnableTemporalDenoiser = true;
 		float DepthDisocclusion = 50.f;
+		float NormalDisocclusion = .8f;
 		uint MaxAccumFrames = 16;
 	} settings;
 
@@ -101,16 +102,15 @@ struct ScreenSpaceGI : Feature
 		float GIStrength;
 
 		float DepthDisocclusion;
+		float NormalDisocclusion;
 		uint MaxAccumFrames;
-
-		float pad[1];
 	};
 	eastl::unique_ptr<ConstantBuffer> ssgiCB;
 
 	eastl::unique_ptr<Texture2D> texHilbertLUT = nullptr;
 	eastl::unique_ptr<Texture2D> texWorkingDepth = nullptr;
 	winrt::com_ptr<ID3D11UnorderedAccessView> uavWorkingDepth[5] = { nullptr };
-	eastl::unique_ptr<Texture2D> texPrevDepth = nullptr;
+	eastl::unique_ptr<Texture2D> texPrevGeo = nullptr;
 	eastl::unique_ptr<Texture2D> texRadiance = nullptr;
 	eastl::unique_ptr<Texture2D> texAccumFrames = nullptr;
 	eastl::unique_ptr<Texture2D> texGI0 = { nullptr };
@@ -124,6 +124,7 @@ struct ScreenSpaceGI : Feature
 	winrt::com_ptr<ID3D11ComputeShader> prefilterDepthsCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> radianceDisoccCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> giCompute = nullptr;
+	winrt::com_ptr<ID3D11ComputeShader> blurCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> upsampleCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> outputCompute = nullptr;
 };
