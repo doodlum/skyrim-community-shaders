@@ -1,4 +1,4 @@
-#include "Common/Skinned.hlsl"
+#include "Common/Skinned.hlsli"
 
 #define EFFECT
 

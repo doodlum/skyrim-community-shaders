@@ -1,10 +1,10 @@
 #include "Common/Color.hlsl"
 #include "Common/FrameBuffer.hlsl"
 #include "Common/LightingData.hlsl"
-#include "Common/LodLandscape.hlsl"
+#include "Common/LodLandscape.hlsli"
 #include "Common/MotionBlur.hlsl"
 #include "Common/Permutation.hlsl"
-#include "Common/Skinned.hlsl"
+#include "Common/Skinned.hlsli"
 
 #define PI 3.1415927
 

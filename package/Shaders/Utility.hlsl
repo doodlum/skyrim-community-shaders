@@ -1,6 +1,6 @@
 #include "Common/FrameBuffer.hlsl"
-#include "Common/LodLandscape.hlsl"
-#include "Common/Skinned.hlsl"
+#include "Common/LodLandscape.hlsli"
+#include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"
 
 #if defined(RENDER_SHADOWMASK) || defined(RENDER_SHADOWMASKSPOT) || defined(RENDER_SHADOWMASKPB) || defined(RENDER_SHADOWMASKDPB)
