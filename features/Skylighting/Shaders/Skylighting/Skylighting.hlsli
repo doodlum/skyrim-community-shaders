@@ -39,11 +39,11 @@ void GetVL(
 	const static uint nSteps = 16;
 	const static float step = rcp(nSteps);
 
-	// https://s.campbellsci.com/documents/es/technical-papers/obs_light_absorption.pdf
-	// clear water: 0.003 cm^-1 * 1.428 cm/game unit
-	const static float scatterCoeff = 0.002 * 1.428;
-	const static float absorpCoeff = 0.0002 * 1.428;
-	const static float extinction = scatterCoeff + absorpCoeff;
+	// https://aslopubs.onlinelibrary.wiley.com/doi/pdf/10.4319/lo.2003.48.2.0843
+	const float3 hue = normalize(ShallowColor.xyz);
+	const float3 scatterCoeff = hue * 0.003 * 1.428;
+	const float3 absorpCoeff = hue * 0.001 * 1.428;
+	const float3 extinction = scatterCoeff + absorpCoeff;
 
 	float3 worldDir = normalize(worldPosition);
 	float phase = phaseHenyeyGreenstein(dot(SunDir.xyz, worldDir), 0.5);
@@ -52,8 +52,12 @@ void GetVL(
 	uint noiseIdx = dot(screenPosition, float2(1, lightingData[0].BufferDim.x)) + lightingData[0].Timer * 1000;
 	float noise = frac(0.5 + noiseIdx * 0.38196601125);
 
-	float3 endPointWS = worldPosition * depth / viewPosition.z;
-	float marchDist = abs(depth - viewPosition.z);
+	const float cutoffTransmittance = 1e-2;  // don't go deeper than this
+	const float cutoffDist = -log(cutoffTransmittance) / ((1 + distRatio) * extinction);
+
+	float deltaDepth = abs(depth - viewPosition.z);
+	float marchDist = min(deltaDepth, cutoffDist);
+	float3 endPointWS = worldPosition * (viewPosition.z + marchDist) / viewPosition.z;
 	float sunMarchDist = marchDist * distRatio;
 
 	PerGeometry sD = perShadow[0];
@@ -102,9 +106,7 @@ void GetVL(
 	}
 
 	scatter *= SunColor;
-	// since this transmittance factor is multiplied only with refracted diffuse,
-	// we multiply an additional sun transmittance
-	transmittance *= exp(-sunMarchDist * extinction);
+	transmittance = exp(-deltaDepth * (1 + distRatio) * extinction);
 }
 
 float3 GetShadow(float3 positionWS)
