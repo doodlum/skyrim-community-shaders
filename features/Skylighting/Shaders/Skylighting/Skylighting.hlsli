@@ -20,25 +20,58 @@ Texture2D<float> SkylightingTexture : register(t82);
 
 #if defined(WATER) || defined(EFFECT)
 
-float3 GetVL(float3 worldPosition, float3 viewPosition, float rawDepth, float depth, float2 screenPosition)
+// g controls how forward scattering the phase function is
+float phaseHenyeyGreenstein(float cosTheta, float g)
+{
+	static const float scale = .25 / 3.1415926535;
+	const float g2 = g * g;
+
+	float num = (1.0 - g2);
+	float denom = pow(abs(1.0 + g2 - 2.0 * g * cosTheta), 1.5);
+
+	return scale * num / denom;
+}
+
+void GetVL(
+	float3 worldPosition, float3 viewPosition, float rawDepth, float depth, float2 screenPosition,
+	out float3 scatter, out float3 transmittance)
 {
 	const static uint nSteps = 16;
 	const static float step = rcp(nSteps);
+
+	// https://s.campbellsci.com/documents/es/technical-papers/obs_light_absorption.pdf
+	// clear water: 0.003 cm^-1 * 1.428 cm/game unit
+	const static float scatterCoeff = 0.002 * 1.428;
+	const static float absorpCoeff = 0.0002 * 1.428;
+	const static float extinction = scatterCoeff + absorpCoeff;
+
+	float3 worldDir = normalize(worldPosition);
+	float phase = phaseHenyeyGreenstein(dot(SunDir.xyz, worldDir), 0.5);
+	float distRatio = abs(SunDir.z / worldPosition.z);
 
 	uint noiseIdx = dot(screenPosition, float2(1, lightingData[0].BufferDim.x)) + lightingData[0].Timer * 1000;
 	float noise = frac(0.5 + noiseIdx * 0.38196601125);
 
 	float3 endPointWS = worldPosition * depth / viewPosition.z;
-	
+	float marchDist = abs(depth - viewPosition.z);
+	float sunMarchDist = marchDist * distRatio;
+
 	PerGeometry sD = perShadow[0];
 	sD.EndSplitDistances.x = GetScreenDepth(sD.EndSplitDistances.x);
 	sD.EndSplitDistances.y = GetScreenDepth(sD.EndSplitDistances.y);
 	sD.EndSplitDistances.z = GetScreenDepth(sD.EndSplitDistances.z);
 	sD.EndSplitDistances.w = GetScreenDepth(sD.EndSplitDistances.w);
-	
-	float3 volumetric = 0.0;
-	for (int i = 0; i < nSteps; ++i) {
-		float3 samplePositionWS = lerp(worldPosition, endPointWS, (i + noise) * step);
+
+	scatter = 0;
+	transmittance = 1;
+	for (uint i = 0; i < nSteps; ++i) {
+		float t = saturate((i + noise) * step);
+
+		float sampleTransmittance = exp(-step * marchDist * extinction);
+		transmittance *= sampleTransmittance;
+
+		// scattering
+		float3 samplePositionWS = lerp(worldPosition, endPointWS, t);
 		float shadowMapDepth = length(samplePositionWS.xyz);
 
 		half cascadeIndex = 0;
@@ -61,13 +94,17 @@ float3 GetVL(float3 worldPosition, float3 viewPosition, float rawDepth, float de
 		half3 samplePositionLS = mul(transpose(lightProjectionMatrix), half4(samplePositionWS.xyz, 1)).xyz;
 		float sampleShadowDepth = TexShadowMapSampler.SampleLevel(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
 
-		if (sampleShadowDepth > samplePositionLS.z - shadowMapThreshold)
-			volumetric += 1;
+		if (sampleShadowDepth > samplePositionLS.z - shadowMapThreshold) {
+			float sunTransmittance = exp(-sunMarchDist * t * extinction);  // assuming water surface is always level
+			float inScatter = scatterCoeff * phase * sunTransmittance;
+			scatter += inScatter * (1 - sampleTransmittance) / extinction * transmittance;
+		}
 	}
 
-	volumetric /= 16.0;
-
-	return volumetric;
+	scatter *= SunColor;
+	// since this transmittance factor is multiplied only with refracted diffuse,
+	// we multiply an additional sun transmittance
+	transmittance *= exp(-sunMarchDist * extinction);
 }
 
 float3 GetShadow(float3 positionWS)
