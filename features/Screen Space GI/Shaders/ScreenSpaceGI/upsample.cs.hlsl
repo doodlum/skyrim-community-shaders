@@ -1,5 +1,4 @@
 // depth-aware upsampling: https://gist.github.com/pixelmager/a4364ea18305ed5ca707d89ddc5f8743
-// blue noise texture from http://momentsingraphics.de/BlueNoise.html
 
 #include "../Common/FastMath.hlsli"
 #include "common.hlsli"

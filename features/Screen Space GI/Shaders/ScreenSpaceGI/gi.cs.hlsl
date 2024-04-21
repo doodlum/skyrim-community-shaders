@@ -20,6 +20,9 @@
 // Screen Space Indirect Lighting with Visibility Bitmask
 //  https://arxiv.org/abs/2301.11376
 //
+// HBIL
+// 	https://github.com/Patapom/GodComplex/blob/master/Tests/TestHBIL/2018%20Mayaux%20-%20Horizon-Based%20Indirect%20Lighting%20(HBIL).pdf
+//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../Common/FastMath.hlsli"
@@ -53,7 +56,6 @@ lpfloat GetDepthFade(lpfloat depth)
 	return (lpfloat)saturate((depth - DepthFadeRange.x) * DepthFadeScaleConst);
 }
 
-// Engine-specific screen & temporal noise loader
 lpfloat2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)  // without TAA, temporalIndex is always 0
 {
 	float2 noise;
