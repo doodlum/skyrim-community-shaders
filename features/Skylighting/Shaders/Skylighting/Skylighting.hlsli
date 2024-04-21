@@ -20,16 +20,44 @@ Texture2D<float> SkylightingTexture : register(t82);
 
 #if defined(WATER) || defined(EFFECT)
 
-// g controls how forward scattering the phase function is
-float phaseHenyeyGreenstein(float cosTheta, float g)
+float3 GetShadow(float3 positionWS)
 {
-	static const float scale = .25 / 3.1415926535;
-	const float g2 = g * g;
+	PerGeometry sD = perShadow[0];
+	sD.EndSplitDistances.x = GetScreenDepth(sD.EndSplitDistances.x);
+	sD.EndSplitDistances.y = GetScreenDepth(sD.EndSplitDistances.y);
+	sD.EndSplitDistances.z = GetScreenDepth(sD.EndSplitDistances.z);
+	sD.EndSplitDistances.w = GetScreenDepth(sD.EndSplitDistances.w);
 
-	float num = (1.0 - g2);
-	float denom = pow(abs(1.0 + g2 - 2.0 * g * cosTheta), 1.5);
+	float shadowMapDepth = length(positionWS.xyz);
 
-	return scale * num / denom;
+	half cascadeIndex = 0;
+	half4x3 lightProjectionMatrix = sD.ShadowMapProj[0];
+	half shadowMapThreshold = sD.AlphaTestRef.y;
+
+	[flatten] if (2.5 < sD.EndSplitDistances.w && sD.EndSplitDistances.y < shadowMapDepth)
+	{
+		lightProjectionMatrix = sD.ShadowMapProj[2];
+		shadowMapThreshold = sD.AlphaTestRef.z;
+		cascadeIndex = 2;
+	}
+	else if (sD.EndSplitDistances.x < shadowMapDepth)
+	{
+		lightProjectionMatrix = sD.ShadowMapProj[1];
+		shadowMapThreshold = sD.AlphaTestRef.z;
+		cascadeIndex = 1;
+	}
+
+	half3 positionLS = mul(transpose(lightProjectionMatrix), half4(positionWS.xyz, 1)).xyz;
+	float deltaZ = positionLS.z - shadowMapThreshold;
+
+	float4 depths = TexShadowMapSampler.GatherRed(LinearSampler, half3(positionLS.xy, cascadeIndex), 0);
+
+	float shadow = (depths.x > deltaZ) +
+	               (depths.y > deltaZ) +
+	               (depths.z > deltaZ) +
+	               (depths.w > deltaZ);
+
+	return shadow *= 0.25;
 }
 
 void GetVL(
@@ -47,8 +75,8 @@ void GetVL(
 	const float3 extinction = scatterCoeff + absorpCoeff;
 
 	float3 worldDir = normalize(worldPosition);
-	float phase = phaseHenyeyGreenstein(dot(SunDir.xyz, worldDir), 0.5);
-	float distRatio = abs(SunDir.z / worldPosition.z);
+	float phase = .25 / 3.1415926535;
+	float distRatio = abs(SunDir.z / worldDir.z);
 
 	uint noiseIdx = dot(screenPosition, float2(1, lightingData[0].BufferDim.x)) + lightingData[0].Timer * 1000;
 	float noise = frac(0.5 + noiseIdx * 0.38196601125);
@@ -80,59 +108,46 @@ void GetVL(
 		transmittance *= sampleTransmittance;
 
 		// scattering
-		float3 samplePositionWS = lerp(worldPosition, endPointWS, t);
-		float shadowMapDepth = length(samplePositionWS.xyz);
-
-		half cascadeIndex = 0;
-		half4x3 lightProjectionMatrix = sD.ShadowMapProj[0];
-		half shadowMapThreshold = sD.AlphaTestRef.y;
-
-		[flatten] if (2.5 < sD.EndSplitDistances.w && sD.EndSplitDistances.y < shadowMapDepth)
+		float shadow = 0;
 		{
-			lightProjectionMatrix = sD.ShadowMapProj[2];
-			shadowMapThreshold = sD.AlphaTestRef.z;
-			cascadeIndex = 2;
-		}
-		else if (sD.EndSplitDistances.x < shadowMapDepth)
-		{
-			lightProjectionMatrix = sD.ShadowMapProj[1];
-			shadowMapThreshold = sD.AlphaTestRef.z;
-			cascadeIndex = 1;
+			float3 samplePositionWS = lerp(worldPosition, endPointWS, t);
+			float shadowMapDepth = length(samplePositionWS.xyz);
+
+			half cascadeIndex = 0;
+			half4x3 lightProjectionMatrix = sD.ShadowMapProj[0];
+			half shadowMapThreshold = sD.AlphaTestRef.y;
+
+			[flatten] if (2.5 < sD.EndSplitDistances.w && sD.EndSplitDistances.y < shadowMapDepth)
+			{
+				lightProjectionMatrix = sD.ShadowMapProj[2];
+				shadowMapThreshold = sD.AlphaTestRef.z;
+				cascadeIndex = 2;
+			}
+			else if (sD.EndSplitDistances.x < shadowMapDepth)
+			{
+				lightProjectionMatrix = sD.ShadowMapProj[1];
+				shadowMapThreshold = sD.AlphaTestRef.z;
+				cascadeIndex = 1;
+			}
+
+			half3 samplePositionLS = mul(transpose(lightProjectionMatrix), half4(samplePositionWS.xyz, 1)).xyz;
+			float deltaZ = samplePositionLS.z - shadowMapThreshold;
+
+			float4 depths = TexShadowMapSampler.GatherRed(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
+
+			shadow = (depths.x > deltaZ) +
+			         (depths.y > deltaZ) +
+			         (depths.z > deltaZ) +
+			         (depths.w > deltaZ);
+			shadow *= 0.25;
 		}
 
-		half3 samplePositionLS = mul(transpose(lightProjectionMatrix), half4(samplePositionWS.xyz, 1)).xyz;
-		float sampleShadowDepth = TexShadowMapSampler.SampleLevel(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
-
-		if (sampleShadowDepth > samplePositionLS.z - shadowMapThreshold) {
-			float sunTransmittance = exp(-sunMarchDist * t * extinction);  // assuming water surface is always level
-			float inScatter = scatterCoeff * phase * sunTransmittance;
-			scatter += inScatter * (1 - sampleTransmittance) / extinction * transmittance;
-		}
+		float sunTransmittance = exp(-sunMarchDist * t * extinction) * shadow;  // assuming water surface is always level
+		float inScatter = scatterCoeff * phase * sunTransmittance;
+		scatter += inScatter * (1 - sampleTransmittance) / extinction * transmittance;
 	}
 
 	scatter *= SunColor;
 	transmittance = exp(-deltaDepth * (1 + distRatio) * extinction);
-}
-
-float3 GetShadow(float3 positionWS)
-{
-	PerGeometry sD = perShadow[0];
-
-	half cascadeIndex = 0;
-	half4x3 lightProjectionMatrix = sD.ShadowMapProj[0];
-	half shadowMapThreshold = sD.AlphaTestRef.y;
-
-	lightProjectionMatrix = sD.ShadowMapProj[1];
-	shadowMapThreshold = sD.AlphaTestRef.z;
-	cascadeIndex = 1;
-
-	half3 positionLS = mul(transpose(lightProjectionMatrix), half4(positionWS.xyz, 1)).xyz;
-
-	float depth = TexShadowMapSampler.SampleLevel(LinearSampler, half3(positionLS.xy, cascadeIndex), 0);
-
-	if (depth > positionLS.z - shadowMapThreshold)
-		return 1;
-
-	return 0;
 }
 #endif

@@ -665,8 +665,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 		refractionColor *= lerp(1.0, caustics, refractionMul);
 #			endif
 
-	// return lerp(refractionColor * WaterParams.w, refractionDiffuseColor, refractionMul);
-	return refractionColor;
+	return lerp(refractionColor * WaterParams.w, refractionDiffuseColor, refractionMul);
 #		else
 	return lerp(ShallowColor.xyz, DeepColor.xyz, fresnel) * GetLdotN(normal);
 #		endif
@@ -797,7 +796,7 @@ PS_OUTPUT main(PS_INPUT input)
 		float2 screenPosition = DynamicResolutionParams1.xy * (DynamicResolutionParams2.xy * input.HPosition.xy);
 		GetVL(input.WPosition, viewPosition, DepthTex.Load(float3(screenPosition, 0)).x, depth, screenPosition, scatter, transmittance);
 	}
-	diffuseColor *= transmittance;
+	// diffuseColor *= transmittance;
 #			endif
 
 	float3 specularLighting = 0;
