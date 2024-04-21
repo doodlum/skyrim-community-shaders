@@ -869,10 +869,6 @@ PS_OUTPUT main(PS_INPUT input)
 #			endif
 #		endif
 
-	// #		ifdef SKYLIGHTING
-	// 	psout.Lighting.xyz = transmittance;
-	// #		endif
-
 #	endif
 
 #	if defined(STENCIL)
