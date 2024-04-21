@@ -39,10 +39,11 @@ void GetVL(
 	const static uint nSteps = 16;
 	const static float step = rcp(nSteps);
 
-	// https://aslopubs.onlinelibrary.wiley.com/doi/pdf/10.4319/lo.2003.48.2.0843
-	const float3 hue = normalize(ShallowColor.xyz);
-	const float3 scatterCoeff = hue * 0.003 * 1.428;
-	const float3 absorpCoeff = hue * 0.001 * 1.428;
+	// https://s.campbellsci.com/documents/es/technical-papers/obs_light_absorption.pdf
+	// clear water: 0.002 cm^-1 * 1.428 cm/game unit
+	float3 hue = normalize(rcp(ShallowColor));
+	const float3 scatterCoeff = hue * 0.002 * 4 * 1.428;
+	const float3 absorpCoeff = hue * 0.0002 * 4 * 1.428;
 	const float3 extinction = scatterCoeff + absorpCoeff;
 
 	float3 worldDir = normalize(worldPosition);
@@ -53,7 +54,11 @@ void GetVL(
 	float noise = frac(0.5 + noiseIdx * 0.38196601125);
 
 	const float cutoffTransmittance = 1e-2;  // don't go deeper than this
-	const float cutoffDist = -log(cutoffTransmittance) / ((1 + distRatio) * extinction);
+#	if defined(UNDERWATER)
+	const float cutoffDist = -log(cutoffTransmittance) / max(extinction.x, max(extinction.y, extinction.z));
+#	else
+	const float cutoffDist = -log(cutoffTransmittance) / ((1 + distRatio) * max(extinction.x, max(extinction.y, extinction.z)));
+#	endif
 
 	float deltaDepth = abs(depth - viewPosition.z);
 	float marchDist = min(deltaDepth, cutoffDist);
