@@ -95,12 +95,6 @@ namespace SIE
 			defines[lastIndex] = { nullptr, nullptr };
 		}
 
-		enum class DistantTreeShaderTechniques
-		{
-			DistantTreeBlock = 0,
-			Depth = 1,
-		};
-
 		static void GetDistantTreeShaderDefines(uint32_t descriptor, D3D_SHADER_MACRO* defines)
 		{
 			const auto technique = descriptor & 1;
