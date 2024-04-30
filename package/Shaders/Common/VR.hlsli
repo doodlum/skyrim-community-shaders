@@ -124,7 +124,7 @@ uint GetEyeIndexVS(uint instanceID = 0)
 
 /**
 Gets VR Output
-@param texCoord Texcoord on the screen [0,1]
+@param clipPos clipPosition. Typically the VSHADER position at SV_POSITION0
 @param a_eyeIndex The eyeIndex; 0 is left, 1 is right
 @returns VR_OUTPUT with VR values
 */
