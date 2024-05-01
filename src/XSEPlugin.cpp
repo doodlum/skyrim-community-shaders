@@ -1,5 +1,6 @@
 #include "Hooks.h"
 
+#include "FrameAnnotations.h"
 #include "Menu.h"
 #include "ShaderCache.h"
 #include "State.h"
@@ -92,6 +93,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 			if (errors.empty()) {
 				State::GetSingleton()->PostPostLoad();
 				Hooks::Install();
+				FrameAnnotations::OnPostPostLoad();
 
 				auto& shaderCache = SIE::ShaderCache::Instance();
 
@@ -115,6 +117,8 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 			}
 
 			if (errors.empty()) {
+				FrameAnnotations::OnDataLoaded();
+
 				auto& shaderCache = SIE::ShaderCache::Instance();
 				shaderCache.menuLoaded = true;
 				while (shaderCache.IsCompiling() && !shaderCache.backgroundCompilation) {
