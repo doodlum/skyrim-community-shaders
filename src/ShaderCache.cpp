@@ -1410,7 +1410,7 @@ namespace SIE
 		uint32_t descriptor)
 	{
 		auto state = State::GetSingleton();
-		if (!((ShaderCache::IsSupportedShader(shader) || state->IsDeveloperMode() && state->IsShaderEnabled(shader)) && ShaderCache::IsShaderSourceAvailable(shader))) {
+		if (!((ShaderCache::IsSupportedShader(shader) || state->IsDeveloperMode() && state->IsShaderEnabled(shader)) && ShaderCache::IsShaderSourceAvailable(shader) && state->enableVShaders)) {
 			return nullptr;
 		}
 
@@ -1444,7 +1444,7 @@ namespace SIE
 		uint32_t descriptor)
 	{
 		auto state = State::GetSingleton();
-		if (!((ShaderCache::IsSupportedShader(shader) || state->IsDeveloperMode() && state->IsShaderEnabled(shader)) && ShaderCache::IsShaderSourceAvailable(shader))) {
+		if (!((ShaderCache::IsSupportedShader(shader) || state->IsDeveloperMode() && state->IsShaderEnabled(shader)) && ShaderCache::IsShaderSourceAvailable(shader) && state->enablePShaders)) {
 			return nullptr;
 		}
 
