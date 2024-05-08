@@ -1,5 +1,7 @@
 #include "Hooks.h"
 
+#include <reshade/reshade.hpp>
+
 #include "Menu.h"
 #include "ShaderCache.h"
 #include "State.h"
@@ -9,6 +11,32 @@
 #include "Features/LightLimitFIx/ParticleLights.h"
 #include "Features/LightLimitFix.h"
 #define DLLEXPORT __declspec(dllexport)
+
+#include "Deferred.h"
+
+HMODULE m_hModule = nullptr;
+
+extern "C" __declspec(dllexport) const char* NAME = "ReShade Helper";
+extern "C" __declspec(dllexport) const char* DESCRIPTION = "";
+
+void OnInitEffectRuntimeCallback(reshade::api::effect_runtime* runtime)
+{
+	Deferred::GetSingleton()->_runtime = runtime;
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
+{
+	switch (fdwReason) {
+	case DLL_PROCESS_ATTACH:
+		m_hModule = hModule;
+		break;
+	case DLL_PROCESS_DETACH:
+		reshade::unregister_addon(hModule);
+		break;
+	}
+
+	return TRUE;
+}
 
 std::list<std::string> errors;
 
@@ -143,6 +171,9 @@ bool Load()
 		logger::info("ENB detected, disabling all hooks and features");
 		return true;
 	}
+	
+	reshade::register_addon(m_hModule);
+	reshade::register_event<reshade::addon_event::init_effect_runtime>(OnInitEffectRuntimeCallback);
 
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener("SKSE", MessageHandler);
