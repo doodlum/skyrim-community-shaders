@@ -30,8 +30,8 @@ jobs:
         uses: tj-actions/changed-files@v42.0.5
         with:
           files: |
-            src/Features/*.cpp
-            src/Features/*.h
+            src/**/*.{cpp,h}
+            include/**/*.{h,hpp}
             **/*.hlsl
             **/*.hlsli
           separator: ","
