@@ -608,7 +608,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float3 refractionColor = RefractionTex.Sample(RefractionSampler, refractionUV).xyz;
 	float3 refractionDiffuseColor = lerp(ShallowColor.xyz, DeepColor.xyz, distanceMul.y);
 
-	float vl = GetVL(input.WPosition.xyz, refractionWorldPosition.xyz, screenPosition) * (1.0 + saturate(dot(viewDirection, SunDir.xyz)));
+	float vl = GetVL(input.WPosition.xyz, refractionWorldPosition.xyz, screenPosition) * (1.0 + saturate(dot(viewDirection, SunDir.xyz))) * 4;
 
 #			if defined(UNDERWATER)
 	float refractionMul = 0;
