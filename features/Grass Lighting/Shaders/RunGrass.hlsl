@@ -288,6 +288,10 @@ float3x3 CalculateTBN(float3 N, float3 p, float2 uv)
 #		include "ScreenSpaceShadows/ScreenSpaceShadows.hlsli"
 #	endif
 
+#	if defined(TERRA_OCC)
+#		include "TerrainOcclusion/TerrainOcclusion.hlsli"
+#	endif
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -356,6 +360,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(SCREEN_SPACE_SHADOWS)
 	if (shadowColor.x > 0.0)
 		dirShadow = GetScreenSpaceShadow(screenUV, viewPosition, eyeIndex);
+#		endif
+
+#		if defined(TERRA_OCC)
+	float terrainShadow = 1;
+	float terrainAo = 1;
+	GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex], length(input.WorldPosition.xyz), SampBaseSampler, terrainShadow, terrainAo);
+	dirShadow = min(dirShadow, terrainShadow);
 #		endif
 
 	float3 diffuseColor = 0;

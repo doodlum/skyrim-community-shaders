@@ -14,7 +14,13 @@ struct TerrainOcclusion : public Feature
 	virtual inline std::string GetName() { return "Terrain Occlusion"; }
 	virtual inline std::string GetShortName() { return "TerrainOcclusion"; }
 	inline std::string_view GetShaderDefineName() override { return "TERRA_OCC"; }
-	inline bool HasShaderDefine(RE::BSShader::Type type) override { return type == RE::BSShader::Type::Lighting; };
+	inline bool HasShaderDefine(RE::BSShader::Type type) override
+	{
+		return type == RE::BSShader::Type::Lighting ||
+		       type == RE::BSShader::Type::DistantTree ||
+		       type == RE::BSShader::Type::Grass ||
+		       type == RE::BSShader::Type::Water;
+	};
 
 	uint shadowUpdateIdx = 0;
 

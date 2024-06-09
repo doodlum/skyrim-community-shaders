@@ -525,4 +525,17 @@ void TerrainOcclusion::Prepass()
 		Precompute();
 	if (settings.EnableTerrainShadow)
 		UpdateShadow();
+
+	{
+		auto context = State::GetSingleton()->context;
+
+		std::array<ID3D11ShaderResourceView*, 3> srvs = { nullptr };
+		if (texOcclusion)
+			srvs.at(0) = texOcclusion->srv.get();
+		if (texNormalisedHeight)
+			srvs.at(1) = texNormalisedHeight->srv.get();
+		if (texShadowHeight)
+			srvs.at(2) = texShadowHeight->srv.get();
+		context->PSSetShaderResources(40, (uint)srvs.size(), srvs.data());
+	}
 }

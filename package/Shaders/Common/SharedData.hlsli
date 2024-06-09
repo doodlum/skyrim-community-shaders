@@ -1,3 +1,6 @@
+#ifndef SHARED_DATA
+#define SHARED_DATA
+
 #include "Common/Constants.hlsli"
 #include "Common/VR.hlsli"
 
@@ -47,11 +50,32 @@ struct CubemapCreatorSettings
 	float2 pad1;
 };
 
+struct TerraOccSettings
+{
+	uint EnableTerrainShadow;
+	uint EnableTerrainAO;
+	float HeightBias;
+	float ShadowSofteningRadiusAngle;
+
+	float2 ZRange;
+	float2 ShadowFadeDistance;
+
+	float AOMix;
+	float3 Scale;
+
+	float AOPower;
+	float3 InvScale;
+
+	float AOFadeOutHeightRcp;
+	float3 Offset;
+};
+
 cbuffer FeatureData : register(b6)
 {
 	GrassLightingSettings grassLightingSettings;
 	CPMSettings extendedMaterialSettings;
 	CubemapCreatorSettings cubemapCreatorSettings;
+	TerraOccSettings terraOccSettings;
 };
 
 Texture2D<float4> TexDepthSampler : register(t20);
@@ -106,5 +130,7 @@ float InterleavedGradientNoise(float2 uv)
 	float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
 	return frac(magic.z * frac(dot(uv, magic.xy)));
 }
+
+#endif
 
 #endif
