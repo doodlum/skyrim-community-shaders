@@ -38,11 +38,13 @@ void TerrainOcclusion::Save(json& o_json)
 void TerrainOcclusion::DrawSettings()
 {
 	ImGui::Checkbox("Enable Terrain Shadow", (bool*)&settings.EnableTerrainShadow);
-	ImGui::Checkbox("Enable Terrain AO", (bool*)&settings.EnableTerrainAO);
+	// ImGui::Checkbox("Enable Terrain AO", (bool*)&settings.EnableTerrainAO);
 
 	ImGui::SliderFloat("Height Map Bias", &settings.HeightBias, -2000.f, 0.f, "%.0f units");
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Moving the height map down to compensate for its inaccuracy.");
 
-	ImGui::SeparatorText("Shadow");
+	// ImGui::SeparatorText("Shadow");
 	{
 		ImGui::SliderAngle("Softening", &settings.ShadowSofteningRadiusAngle, .1f, 10.f, "%.2f deg", ImGuiSliderFlags_AlwaysClamp);
 		if (auto _tt = Util::HoverTooltipWrapper())
@@ -58,24 +60,24 @@ void TerrainOcclusion::DrawSettings()
 		}
 	}
 
-	ImGui::SeparatorText("AO");
-	{
-		ImGui::SliderFloat("Mix", &settings.AOMix, 0, 1, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-		ImGui::SliderFloat("Power", &settings.AOPower, 0.2f, 5, "%.2f");
-		ImGui::SliderFloat("Fadeout Height", &settings.AOFadeOutHeight, 500, 5000, "%.0f units");
-		if (auto _tt = Util::HoverTooltipWrapper())
-			ImGui::Text("On the ground AO is the most prominent. Up to a certain height it will gradually fade out.");
+	// ImGui::SeparatorText("AO");
+	// {
+	// 	ImGui::SliderFloat("Mix", &settings.AOMix, 0, 1, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+	// 	ImGui::SliderFloat("Power", &settings.AOPower, 0.2f, 5, "%.2f");
+	// 	ImGui::SliderFloat("Fadeout Height", &settings.AOFadeOutHeight, 500, 5000, "%.0f units");
+	// 	if (auto _tt = Util::HoverTooltipWrapper())
+	// 		ImGui::Text("On the ground AO is the most prominent. Up to a certain height it will gradually fade out.");
 
-		if (ImGui::TreeNodeEx("Precomputation", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::SliderFloat("Distance", &settings.AoDistance, 1.f / 32, 32, "%.2f cells");
-			ImGui::InputScalar("Slices", ImGuiDataType_U32, &settings.SliceCount);
-			ImGui::InputScalar("Samples", ImGuiDataType_U32, &settings.SampleCount);
-			if (ImGui::Button("Force Regenerate AO", { -1, 0 }))
-				needPrecompute = true;
+	// 	if (ImGui::TreeNodeEx("Precomputation", ImGuiTreeNodeFlags_DefaultOpen)) {
+	// 		ImGui::SliderFloat("Distance", &settings.AoDistance, 1.f / 32, 32, "%.2f cells");
+	// 		ImGui::InputScalar("Slices", ImGuiDataType_U32, &settings.SliceCount);
+	// 		ImGui::InputScalar("Samples", ImGuiDataType_U32, &settings.SampleCount);
+	// 		if (ImGui::Button("Force Regenerate AO", { -1, 0 }))
+	// 			needPrecompute = true;
 
-			ImGui::TreePop();
-		}
-	}
+	// 		ImGui::TreePop();
+	// 	}
+	// }
 
 	if (ImGui::CollapsingHeader("Debug")) {
 		std::string curr_worldspace = "N/A";

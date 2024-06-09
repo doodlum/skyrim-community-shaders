@@ -34,13 +34,15 @@ void GetTerrainOcclusion(
 	if (any(terraOccUV < 0) && any(terraOccUV > 1))
 		return;
 
-	if (terraOccSettings.EnableTerrainShadow && (viewDistance > terraOccSettings.ShadowFadeDistance.x)) {
+	[flatten] if (terraOccSettings.EnableTerrainShadow && (viewDistance > terraOccSettings.ShadowFadeDistance.x))
+	{
 		float fadeFactor = saturate((viewDistance - terraOccSettings.ShadowFadeDistance.x) / (terraOccSettings.ShadowFadeDistance.y - terraOccSettings.ShadowFadeDistance.x));
 		float2 shadowHeight = GetTerrainZ(TexShadowHeight.SampleLevel(samp, terraOccUV, 0));
 		float shadowFraction = saturate((worldPos.z - shadowHeight.y) / (shadowHeight.x - shadowHeight.y));
 		terrainShadow = lerp(1, shadowFraction, fadeFactor);
 	}
-	if (terraOccSettings.EnableTerrainAO) {
+	[flatten] if (terraOccSettings.EnableTerrainAO)
+	{
 		float terrainHeight = GetTerrainZ(TexNormalisedHeight.SampleLevel(samp, terraOccUV, 0).x);
 		terrainAo = TexTerraOcc.SampleLevel(samp, terraOccUV, 0).x;
 

@@ -27,7 +27,7 @@ struct TerrainOcclusion : public Feature
 	struct Settings
 	{
 		uint EnableTerrainShadow = true;
-		uint EnableTerrainAO = true;
+		uint EnableTerrainAO = false;
 
 		float HeightBias = -1000.f;  // in game unit
 		float ShadowSofteningRadiusAngle = 1.f * RE::NI_PI / 180.f;
