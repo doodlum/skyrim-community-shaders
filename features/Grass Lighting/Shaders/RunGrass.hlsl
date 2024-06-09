@@ -343,8 +343,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		normal = normalize(mul(normalColor, CalculateTBN(normal, -input.WorldPosition.xyz, input.TexCoord.xy)));
 	}
 
-	if (!complex || OverrideComplexGrassSettings)
-		baseColor.xyz *= BasicGrassBrightness;
+	if (!complex || grassLightingSettings.OverrideComplexGrassSettings)
+		baseColor.xyz *= grassLightingSettings.BasicGrassBrightness;
 
 	float3 dirLightColor = DirLightColorShared.xyz;
 	dirLightColor *= shadowColor.x;
@@ -371,7 +371,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 sss = dirLightColor * saturate(-dirLightAngle) * lerp(dirShadow, 1.0, 0.5);
 
 	if (complex)
-		lightsSpecularColor += GetLightSpecularInput(DirLightDirection, viewDirection, normal, dirLightColor, Glossiness);
+		lightsSpecularColor += GetLightSpecularInput(DirLightDirection, viewDirection, normal, dirLightColor, grassLightingSettings.Glossiness);
 
 #		if defined(LIGHT_LIMIT_FIX)
 	uint clusterIndex = 0;
@@ -415,7 +415,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				lightsDiffuseColor += lightDiffuseColor * intensityMultiplier;
 
 				if (complex)
-					lightsSpecularColor += GetLightSpecularInput(normalizedLightDirection, viewDirection, normal, lightColor, Glossiness) * intensityMultiplier;
+					lightsSpecularColor += GetLightSpecularInput(normalizedLightDirection, viewDirection, normal, lightColor, grassLightingSettings.Glossiness) * intensityMultiplier;
 			}
 		}
 	}
@@ -424,10 +424,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	diffuseColor += lightsDiffuseColor;
 
 	diffuseColor *= albedo;
-	diffuseColor += max(0, sss * subsurfaceColor * SubsurfaceScatteringAmount);
+	diffuseColor += max(0, sss * subsurfaceColor * grassLightingSettings.SubsurfaceScatteringAmount);
 
 	specularColor += lightsSpecularColor;
-	specularColor *= specColor.w * SpecularStrength;
+	specularColor *= specColor.w * grassLightingSettings.SpecularStrength;
 
 #		if defined(LIGHT_LIMIT_FIX)
 	if (perPassLLF[0].EnableLightsVisualisation) {

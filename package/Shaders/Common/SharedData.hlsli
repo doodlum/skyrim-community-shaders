@@ -16,6 +16,17 @@ cbuffer SharedData : register(b5)
 	uint pad0b4[2];
 };
 
+struct GrassLightingSettings
+{
+	float Glossiness;
+	float SpecularStrength;
+	float SubsurfaceScatteringAmount;
+	bool OverrideComplexGrassSettings;
+
+	float BasicGrassBrightness;
+	float3 pad;
+};
+
 struct CPMSettings
 {
 	bool EnableComplexMaterial;
@@ -27,20 +38,20 @@ struct CPMSettings
 struct CubemapCreatorSettings
 {
 	uint Enabled;
+	float3 pad0;
+
 	float4 CubemapColor;
+
+	float scatterCoeffMult;
+	float absorpCoeffMult;
+	float2 pad1;
 };
 
 cbuffer FeatureData : register(b6)
 {
-	float Glossiness;
-	float SpecularStrength;
-	float SubsurfaceScatteringAmount;
-	bool OverrideComplexGrassSettings;
-	float BasicGrassBrightness;
+	GrassLightingSettings grassLightingSettings;
 	CPMSettings extendedMaterialSettings;
 	CubemapCreatorSettings cubemapCreatorSettings;
-	float scatterCoeffMult;
-	float absorpCoeffMult;
 };
 
 Texture2D<float4> TexDepthSampler : register(t20);
