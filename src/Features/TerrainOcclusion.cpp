@@ -457,12 +457,12 @@ void TerrainOcclusion::UpdateShadow()
 			stepMult = 1.f / abs(dirLightPxDir.x);
 			edgePxCoord = dirLightPxDir.x > 0 ? 0 : (width - 1);
 			signDir = dirLightPxDir.x > 0 ? 1 : -1;
-			maxUpdates = ((width - 1) >> 10) + 1;
+			maxUpdates = ((width - 1) >> 6) + 1;
 		} else {
 			stepMult = 1.f / abs(dirLightPxDir.y);
 			edgePxCoord = dirLightPxDir.y > 0 ? 0 : height - 1;
 			signDir = dirLightPxDir.y > 0 ? 1 : -1;
-			maxUpdates = ((height - 1) >> 10) + 1;
+			maxUpdates = ((height - 1) >> 6) + 1;
 		}
 		dirLightPxDir *= stepMult;
 
