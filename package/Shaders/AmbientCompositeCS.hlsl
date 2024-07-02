@@ -15,7 +15,9 @@ Texture2D<half4> SSGITexture : register(t3);
 #endif
 
 RWTexture2D<half3> MainRW : register(u0);
-RWTexture2D<half3> DiffuseAmbientRW : register(u2);
+#if defined(SSGI)
+RWTexture2D<half3> DiffuseAmbientRW : register(u1);
+#endif
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchID
 								: SV_DispatchThreadID) {

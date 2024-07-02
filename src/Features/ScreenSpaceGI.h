@@ -62,7 +62,7 @@ struct ScreenSpaceGI : Feature
 		float GIDistanceCompensation = 1.f;
 		float GICompensationMaxDist = 500;
 		// mix
-		float AOPower = 1.5f;
+		float AOPower = 1.f;
 		float GIStrength = 4.f;
 		// denoise
 		bool EnableTemporalDenoiser = true;
@@ -136,5 +136,4 @@ struct ScreenSpaceGI : Feature
 	winrt::com_ptr<ID3D11ComputeShader> giCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> blurCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> upsampleCompute = nullptr;
-	winrt::com_ptr<ID3D11ComputeShader> outputCompute = nullptr;
 };

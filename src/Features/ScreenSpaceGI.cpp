@@ -425,7 +425,7 @@ void ScreenSpaceGI::SetupResources()
 void ScreenSpaceGI::ClearShaderCache()
 {
 	static const std::vector<winrt::com_ptr<ID3D11ComputeShader>*> shaderPtrs = {
-		&hilbertLutCompute, &prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute, &outputCompute
+		&hilbertLutCompute, &prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute
 	};
 
 	for (auto shader : shaderPtrs)
@@ -453,8 +453,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 			{ &radianceDisoccCompute, "radianceDisocc.cs.hlsl", {} },
 			{ &giCompute, "gi.cs.hlsl", {} },
 			{ &blurCompute, "blur.cs.hlsl", {} },
-			{ &upsampleCompute, "upsample.cs.hlsl", {} },
-			{ &outputCompute, "output.cs.hlsl", {} }
+			{ &upsampleCompute, "upsample.cs.hlsl", {} }
 		};
 	for (auto& info : shaderInfos) {
 		if (REL::Module::IsVR())
@@ -485,7 +484,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return hilbertLutCompute && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute && outputCompute;
+	return hilbertLutCompute && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute;
 }
 
 void ScreenSpaceGI::GenerateHilbertLUT()
@@ -728,20 +727,6 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	}
 
 	outputGIIdx = inputGITexIdx;
-
-	// // output
-	// {
-	// 	resetViews();
-	// 	srvs.at(0) = texGI[inputGITexIdx]->srv.get();
-	// 	srvs.at(1) = rts[ALBEDO].SRV;
-
-	// 	uavs.at(0) = outGI->uav.get();
-
-	// 	context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
-	// 	context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-	// 	context->CSSetShader(outputCompute.get(), nullptr, 0);
-	// 	context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
-	// }
 
 	// cleanup
 	resetViews();

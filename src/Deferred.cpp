@@ -159,9 +159,15 @@ void Deferred::SetupResources()
 				.MostDetailedMip = 0,
 				.MipLevels = 1 }
 		};
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+			.Texture2D = { .MipSlice = 0 }
+		};
 
 		prevDiffuseAmbientTexture = new Texture2D(texDesc);
 		prevDiffuseAmbientTexture->CreateSRV(srvDesc);
+		prevDiffuseAmbientTexture->CreateUAV(uavDesc);
 	}
 }
 
@@ -677,9 +683,17 @@ void Deferred::ClearShaderCache()
 		ambientCompositeCS->Release();
 		ambientCompositeCS = nullptr;
 	}
+	if (ambientCompositeInteriorCS) {
+		ambientCompositeInteriorCS->Release();
+		ambientCompositeInteriorCS = nullptr;
+	}
 	if (mainCompositeCS) {
 		mainCompositeCS->Release();
 		mainCompositeCS = nullptr;
+	}
+	if (mainCompositeInteriorCS) {
+		mainCompositeInteriorCS->Release();
+		mainCompositeInteriorCS = nullptr;
 	}
 }
 
