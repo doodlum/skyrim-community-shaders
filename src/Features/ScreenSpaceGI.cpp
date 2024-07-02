@@ -55,10 +55,10 @@ public:
 	}
 };
 
-bool percentageSlider(const char* label, float* data, const char* format = "%.1f %%")
+bool percentageSlider(const char* label, float* data, float lb = 0.f, float ub = 100.f, const char* format = "%.1f %%")
 {
 	float percentageData = (*data) * 1e2f;
-	bool retval = ImGui::SliderFloat(label, &percentageData, 0.f, 100.f, format);
+	bool retval = ImGui::SliderFloat(label, &percentageData, lb, ub, format);
 	(*data) = percentageData * 1e-2f;
 	return retval;
 }
@@ -124,7 +124,7 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::Separator();
 
-	ImGui::SliderFloat("Effect radius", &settings.EffectRadius, 10.f, 300.0f, "%.1f game units");
+	ImGui::SliderFloat("Effect radius", &settings.EffectRadius, 10.f, 800.0f, "%.1f game units");
 	if (auto _tt = Util::HoverTooltipWrapper())
 		ImGui::Text("World (viewspace) effect radius. Depends on the scene & requirements");
 
@@ -150,7 +150,7 @@ void ScreenSpaceGI::DrawSettings()
 
 			ImGui::SliderFloat("Thickness", &settings.Thickness, 0.f, 500.0f, "%.1f game units");
 			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text("How thick the occluders are. 20 to 30 percent of effect radius is recommended.");
+				ImGui::Text("How thick the occluders are. Only affects AO.");
 		}
 	}
 
@@ -234,17 +234,17 @@ void ScreenSpaceGI::DrawSettings()
 		{
 			auto _ = DisableGuard(!settings.EnableTemporalDenoiser && !(settings.EnableGI || settings.EnableGIBounce));
 
-			ImGui::SliderFloat("Movement Disocclusion", &settings.DepthDisocclusion, 0.f, 100.f, "%.1f game units");
+			percentageSlider("Movement Disocclusion", &settings.DepthDisocclusion, 0.f, 30.f);
 			if (auto _tt = Util::HoverTooltipWrapper())
 				ImGui::Text(
-					"If a pixel has moved this far from the last frame, its radiance will not be carried to this frame.\n"
+					"If a pixel has moved too far from the last frame, its radiance will not be carried to this frame.\n"
 					"Lower values are stricter.");
 
-			ImGui::SliderFloat("Normal Disocclusion", &settings.NormalDisocclusion, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text(
-					"If a pixel's normal deviates too much from the last frame, its radiance will not be carried to this frame.\n"
-					"Higher values are stricter.");
+			// ImGui::SliderFloat("Normal Disocclusion", &settings.NormalDisocclusion, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+			// if (auto _tt = Util::HoverTooltipWrapper())
+			// 	ImGui::Text(
+			// 		"If a pixel's normal deviates too much from the last frame, its radiance will not be carried to this frame.\n"
+			// 		"Higher values are stricter.");
 
 			ImGui::Separator();
 		}
@@ -258,7 +258,7 @@ void ScreenSpaceGI::DrawSettings()
 				ImGui::Text("Blurring repeatedly for x times.");
 
 			if (showAdvanced) {
-				ImGui::SliderFloat("Geometry Weight", &settings.DistanceNormalisation, 0.f, .1f, "%.4f");
+				ImGui::SliderFloat("Geometry Weight", &settings.DistanceNormalisation, 0.f, 3.f, "%.2f");
 				if (auto _tt = Util::HoverTooltipWrapper())
 					ImGui::Text(
 						"Higher value makes the blur more sensitive to differences in geometry.");
@@ -270,6 +270,8 @@ void ScreenSpaceGI::DrawSettings()
 	ImGui::SeparatorText("Debug");
 
 	if (ImGui::TreeNode("Buffer Viewer")) {
+		auto deferred = Deferred::GetSingleton();
+
 		static float debugRescale = .3f;
 		ImGui::SliderFloat("View Resize", &debugRescale, 0.f, 1.f);
 
@@ -279,7 +281,8 @@ void ScreenSpaceGI::DrawSettings()
 		BUFFER_VIEWER_NODE(texRadiance, debugRescale)
 		BUFFER_VIEWER_NODE(texGI[0], debugRescale)
 		BUFFER_VIEWER_NODE(texGI[1], debugRescale)
-		BUFFER_VIEWER_NODE(texPrevGIAlbedo, debugRescale)
+
+		BUFFER_VIEWER_NODE(deferred->prevDiffuseAmbientTexture, debugRescale)
 
 		ImGui::TreePop();
 	}
@@ -378,13 +381,6 @@ void ScreenSpaceGI::SetupResources()
 			texGI[1] = eastl::make_unique<Texture2D>(texDesc);
 			texGI[1]->CreateSRV(srvDesc);
 			texGI[1]->CreateUAV(uavDesc);
-		}
-
-		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R11G11B10_FLOAT;
-		{
-			texPrevGIAlbedo = eastl::make_unique<Texture2D>(texDesc);
-			texPrevGIAlbedo->CreateSRV(srvDesc);
-			texPrevGIAlbedo->CreateUAV(uavDesc);
 		}
 
 		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R8_UNORM;
@@ -512,7 +508,7 @@ void ScreenSpaceGI::GenerateHilbertLUT()
 void ScreenSpaceGI::UpdateSB()
 {
 	auto viewport = RE::BSGraphics::State::GetSingleton();
-	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
+	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
 	float2 res = { (float)texRadiance->desc.Width, (float)texRadiance->desc.Height };
 	float2 dynres = res * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
@@ -525,7 +521,7 @@ void ScreenSpaceGI::UpdateSB()
 	SSGICB data;
 	{
 		for (int eyeIndex = 0; eyeIndex < (1 + REL::Module::IsVR()); ++eyeIndex) {
-			auto eye = (!REL::Module::IsVR()) ? shadowState->GetRuntimeData().cameraData.getEye(eyeIndex) : shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex);
+			auto eye = (!REL::Module::IsVR()) ? state->GetRuntimeData().cameraData.getEye(eyeIndex) : state->GetVRRuntimeData().cameraData.getEye(eyeIndex);
 
 			data.PrevInvViewMat[eyeIndex] = prevInvView[eyeIndex];
 			data.NDCToViewMul[eyeIndex] = { 2.0f / eye.projMat(0, 0), -2.0f / eye.projMat(1, 1) };
@@ -573,10 +569,16 @@ void ScreenSpaceGI::UpdateSB()
 	ssgiCB->Update(data);
 }
 
-void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
+void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 {
-	if (!(settings.Enabled && ShadersOK()))
+	auto& context = State::GetSingleton()->context;
+
+	if (!(settings.Enabled && ShadersOK())) {
+		FLOAT clr[4] = { 0., 0., 0., 1. };
+		context->ClearUnorderedAccessViewFloat(texGI[outputGIIdx]->uav.get(), clr);
+
 		return;
+	}
 
 	static uint lastFrameGITexIdx = 0;
 	static uint lastFrameAccumTexIdx = 0;
@@ -594,7 +596,6 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 
 	//////////////////////////////////////////////////////
 
-	auto& context = State::GetSingleton()->context;
 	auto viewport = RE::BSGraphics::State::GetSingleton();
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto rts = renderer->GetRuntimeData().renderTargets;
@@ -646,7 +647,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		srvs.at(3) = rts[NORMALROUGHNESS].SRV;
 		srvs.at(4) = texPrevGeo->srv.get();
 		srvs.at(5) = rts[RE::RENDER_TARGET::kMOTION_VECTOR].SRV;
-		srvs.at(6) = texPrevGIAlbedo->srv.get();
+		srvs.at(6) = srcPrevAmbient->srv.get();
 		srvs.at(7) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
 
 		uavs.at(0) = texRadiance->uav.get();
@@ -726,20 +727,21 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* outGI)
 		inputGITexIdx = !inputGITexIdx;
 	}
 
-	// output
-	{
-		resetViews();
-		srvs.at(0) = texGI[inputGITexIdx]->srv.get();
-		srvs.at(1) = rts[ALBEDO].SRV;
+	outputGIIdx = inputGITexIdx;
 
-		uavs.at(0) = outGI->uav.get();
-		uavs.at(1) = texPrevGIAlbedo->uav.get();
+	// // output
+	// {
+	// 	resetViews();
+	// 	srvs.at(0) = texGI[inputGITexIdx]->srv.get();
+	// 	srvs.at(1) = rts[ALBEDO].SRV;
 
-		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
-		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-		context->CSSetShader(outputCompute.get(), nullptr, 0);
-		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
-	}
+	// 	uavs.at(0) = outGI->uav.get();
+
+	// 	context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+	// 	context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+	// 	context->CSSetShader(outputCompute.get(), nullptr, 0);
+	// 	context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+	// }
 
 	// cleanup
 	resetViews();
