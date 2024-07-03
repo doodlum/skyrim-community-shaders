@@ -422,7 +422,6 @@ void Deferred::DeferredPasses()
 	if (skylighting->loaded)
 		skylighting->Compute();
 
-  
 	auto ssgi = ScreenSpaceGI::GetSingleton();
 
 	if (ssgi->loaded)
