@@ -10,12 +10,16 @@
 #include "Util.h"
 
 #include "Deferred.h"
-#include "Features/Skylighting.h"
+#include "Features/TerrainBlending.h"
 
 #include "VariableRateShading.h"
 
 void State::Draw()
 {
+	auto terrainBlending = TerrainBlending::GetSingleton();
+	if (terrainBlending->loaded)
+		terrainBlending->TerrainShaderHacks();
+
 	if (currentShader && updateShader) {
 		auto type = currentShader->shaderType.get();
 		if (type == RE::BSShader::Type::Utility) {
@@ -324,8 +328,10 @@ void State::SetupResources()
 
 	permutationCB = new ConstantBuffer(ConstantBufferDesc<PermutationCB>());
 	sharedDataCB = new ConstantBuffer(ConstantBufferDesc<SharedDataCB>());
-	auto [_, size] = GetFeatureBufferData();
+
+	auto [data, size] = GetFeatureBufferData();
 	featureDataCB = new ConstantBuffer(ConstantBufferDesc((uint32_t)size));
+	delete[] data;
 
 	// Grab main texture to get resolution
 	// VR cannot use viewport->screenWidth/Height as it's the desktop preview window's resolution and not HMD

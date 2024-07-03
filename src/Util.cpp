@@ -131,9 +131,9 @@ namespace Util
 				macros.push_back({ shaderDefines->at(i).first.c_str(), shaderDefines->at(i).second.c_str() });
 		}
 		if (!_stricmp(ProgramType, "ps_5_0"))
-			macros.push_back({ "PIXELSHADER", "" });
+			macros.push_back({ "PSHADER", "" });
 		else if (!_stricmp(ProgramType, "vs_5_0"))
-			macros.push_back({ "VERTEXSHADER", "" });
+			macros.push_back({ "VSHADER", "" });
 		else if (!_stricmp(ProgramType, "hs_5_0"))
 			macros.push_back({ "HULLSHADER", "" });
 		else if (!_stricmp(ProgramType, "ds_5_0"))
@@ -332,6 +332,20 @@ namespace Util
 			}
 		}
 		return cameraData;
+	}
+
+	DispatchCount GetScreenDispatchCount()
+	{
+		auto state = State::GetSingleton();
+		auto viewport = RE::BSGraphics::State::GetSingleton();
+
+		float resolutionX = state->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
+		float resolutionY = state->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+
+		uint dispatchX = (uint)std::ceil(resolutionX / 8.0f);
+		uint dispatchY = (uint)std::ceil(resolutionY / 8.0f);
+
+		return { dispatchX, dispatchY };
 	}
 
 	HoverTooltipWrapper::HoverTooltipWrapper()

@@ -11,6 +11,7 @@
 #include "Features/ScreenSpaceShadows.h"
 #include "Features/Skylighting.h"
 #include "Features/SubsurfaceScattering.h"
+#include "Features/TerrainBlending.h"
 #include "Features/TerrainOcclusion.h"
 #include "Features/WaterCaustics.h"
 #include "Features/WaterParallax.h"
@@ -116,7 +117,8 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		SubsurfaceScattering::GetSingleton(),
 		TerrainOcclusion::GetSingleton(),
 		ScreenSpaceGI::GetSingleton(),
-		Skylighting::GetSingleton()
+		Skylighting::GetSingleton(),
+		TerrainBlending::GetSingleton()
 	};
 
 	static std::vector<Feature*> featuresVR(features);

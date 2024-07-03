@@ -390,8 +390,6 @@ void Deferred::DeferredPasses()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto& context = State::GetSingleton()->context;
-	auto state = State::GetSingleton();
-	auto viewport = RE::BSGraphics::State::GetSingleton();
 
 	UpdateConstantBuffer();
 
@@ -424,10 +422,13 @@ void Deferred::DeferredPasses()
 	if (skylighting->loaded)
 		skylighting->Compute();
 
+  
 	auto ssgi = ScreenSpaceGI::GetSingleton();
 
 	if (ssgi->loaded)
 		ssgi->DrawSSGI(prevDiffuseAmbientTexture);
+
+	auto dispatchCount = Util::GetScreenDispatchCount();
 
 	// Ambient Composite
 	{
@@ -446,13 +447,7 @@ void Deferred::DeferredPasses()
 		auto shader = interior ? GetComputeAmbientCompositeInterior() : GetComputeAmbientComposite();
 		context->CSSetShader(shader, nullptr, 0);
 
-		float resolutionX = state->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-		float resolutionY = state->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
-
-		uint32_t dispatchX = (uint32_t)std::ceil(resolutionX / 8.0f);
-		uint32_t dispatchY = (uint32_t)std::ceil(resolutionY / 8.0f);
-
-		context->Dispatch(dispatchX, dispatchY, 1);
+		context->Dispatch(dispatchCount.x, dispatchCount.y, 1);
 	}
 
 	auto sss = SubsurfaceScattering::GetSingleton();
@@ -489,13 +484,7 @@ void Deferred::DeferredPasses()
 		auto shader = interior ? GetComputeMainCompositeInterior() : GetComputeMainComposite();
 		context->CSSetShader(shader, nullptr, 0);
 
-		float resolutionX = state->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-		float resolutionY = state->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
-
-		uint32_t dispatchX = (uint32_t)std::ceil(resolutionX / 8.0f);
-		uint32_t dispatchY = (uint32_t)std::ceil(resolutionY / 8.0f);
-
-		context->Dispatch(dispatchX, dispatchY, 1);
+		context->Dispatch(dispatchCount.x, dispatchCount.y, 1);
 	}
 
 	// Clear
