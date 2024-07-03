@@ -71,12 +71,12 @@ float HistoryRadiusScaling(float accumFrames)
 		float depthSample = srcDepth.SampleLevel(samplerLinearClamp, uvSample * srcScale, 0);
 		float3 posSample = ScreenToViewPosition(screenPosSample, depthSample, eyeIndex);
 
-		// float3 normalSample = DecodeNormal(srcNormal.SampleLevel(samplerLinearClamp, uvSample * srcScale, 0).xy);
+		float3 normalSample = DecodeNormal(srcNormal.SampleLevel(samplerLinearClamp, uvSample * srcScale, 0).xy);
 
 		// geometry weight
 		w *= saturate(1 - abs(dot(normal, posSample - pos)) * DistanceNormalisation);
 		// normal weight
-		// w *= 1 - saturate(acosFast4(saturate(dot(normalSample, normal))) / fsl_HALF_PI * 2);
+		w *= 1 - saturate(acosFast4(saturate(dot(normalSample, normal))) / fsl_HALF_PI * 2);
 
 		float4 gi = srcGI.SampleLevel(samplerLinearClamp, uvSample * outScale, 0);
 
