@@ -175,7 +175,7 @@ void TerrainBlending::TerrainShaderHacks()
 		} else {
 			auto dsv = terrainDepth.views[0];
 			context->OMSetRenderTargets(0, nullptr, dsv);
-			auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton(); 
+			auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 			context->VSSetShader((ID3D11VertexShader*)shadowState->GetRuntimeData().currentVertexShader->shader, NULL, NULL);
 		}
 		renderAltTerrain = !renderAltTerrain;

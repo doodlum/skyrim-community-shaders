@@ -393,9 +393,9 @@ VS_OUTPUT main(VS_INPUT input)
 
 typedef VS_OUTPUT PS_INPUT;
 
-#	if !defined(LANDSCAPE)
-#		undef TERRAIN_BLENDING
-#	endif
+#if !defined(LANDSCAPE)
+#	undef TERRAIN_BLENDING
+#endif
 
 #if defined(DEFERRED)
 struct PS_OUTPUT
@@ -986,7 +986,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.Position.z == depthSampled)
 		blendFactorTerrain = 1;
-		
+
 	clip(blendFactorTerrain);
 	blendFactorTerrain = saturate(blendFactorTerrain);
 
@@ -2044,7 +2044,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	psout.Depth = lerp(lerp(depthSampled, input.Position.z, blendFactorTerrain > screenNoise), input.Position.z, lodBlendMul2 > 0.0);
 #			else
 	psout.Depth = lerp(depthSampled, input.Position.z, blendFactorTerrain > screenNoise);
-#		endif
+#			endif
 
 #		endif
 
