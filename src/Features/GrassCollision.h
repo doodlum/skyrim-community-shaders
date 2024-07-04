@@ -46,7 +46,7 @@ struct GrassCollision : Feature
 	ConstantBuffer* perFrame = nullptr;
 	int eyeCount = !REL::Module::IsVR() ? 1 : 2;
 
-	virtual void SetupResources();
+	virtual void SetupResources() override;
 	virtual void Reset() override;
 
 	virtual void DrawSettings();

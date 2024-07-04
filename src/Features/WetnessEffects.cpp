@@ -344,10 +344,6 @@ WetnessEffects::PerFrame WetnessEffects::GetCommonBufferData()
 	return data;
 }
 
-void WetnessEffects::SetupResources()
-{
-}
-
 void WetnessEffects::Reset()
 {
 	requiresUpdate = true;

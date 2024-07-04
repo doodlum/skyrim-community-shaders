@@ -18,7 +18,7 @@ public:
 	virtual inline std::string_view GetShaderDefineName() { return "TERRAIN_BLENDING"; }
 	virtual inline bool HasShaderDefine(RE::BSShader::Type) { return true; }
 
-	virtual void SetupResources();
+	virtual void SetupResources() override;
 
 	virtual void DrawSettings();
 

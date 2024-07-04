@@ -18,7 +18,7 @@ struct Feature
 	 */
 	virtual bool SupportsVR() { return false; }
 
-	virtual void SetupResources() = 0;
+	virtual void SetupResources() {}
 	virtual void Reset() {}
 
 	virtual void DrawSettings() = 0;

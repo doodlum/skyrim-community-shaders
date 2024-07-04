@@ -94,7 +94,7 @@ public:
 	inline std::string_view GetShaderDefineName() override { return "DYNAMIC_CUBEMAPS"; }
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
-	virtual void SetupResources();
+	virtual void SetupResources() override;
 	virtual void Reset() override;
 
 	virtual void DrawSettings();

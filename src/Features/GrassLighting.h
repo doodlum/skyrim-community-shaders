@@ -25,8 +25,6 @@ struct GrassLighting : Feature
 
 	Settings settings;
 
-	virtual void SetupResources(){};
-
 	virtual void DrawSettings();
 
 	virtual void Load(json& o_json);

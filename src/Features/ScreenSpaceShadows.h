@@ -54,7 +54,7 @@ struct ScreenSpaceShadows : Feature
 
 	Texture2D* screenSpaceShadowsTexture = nullptr;
 
-	virtual void SetupResources();
+	virtual void SetupResources() override;
 
 	virtual void DrawSettings();
 

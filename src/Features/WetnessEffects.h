@@ -77,7 +77,6 @@ public:
 	uint32_t lastWeatherID = 0;
 	float previousWeatherTransitionPercentage = 0.0f;
 
-	virtual void SetupResources();
 	virtual void Reset() override;
 
 	virtual void DrawSettings();

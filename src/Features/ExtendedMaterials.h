@@ -28,8 +28,6 @@ struct ExtendedMaterials : Feature
 
 	Settings settings;
 
-	virtual void SetupResources(){};
-
 	virtual void DataLoaded() override;
 
 	virtual void DrawSettings();
