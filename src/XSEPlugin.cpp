@@ -148,6 +148,10 @@ bool Load()
 		return true;
 	}
 
+	if (REL::Module::IsVR()) {
+		REL::IDDatabase::get().IsVRAddressLibraryAtLeastVersion("0.138.0", true);
+	}
+
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener("SKSE", MessageHandler);
 
