@@ -31,9 +31,6 @@ public:
 	ID3D11ComputeShader* GetDepthBlendShader();
 	ID3D11ComputeShader* GetDepthFixShader();
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
 	virtual void RestoreDefaultSettings();
 	virtual void PostPostLoad() override;
 

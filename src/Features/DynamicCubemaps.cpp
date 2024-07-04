@@ -523,15 +523,6 @@ void DynamicCubemaps::Reset()
 		activeReflections = false;
 }
 
-void DynamicCubemaps::Load(json& o_json)
-{
-	Feature::Load(o_json);
-}
-
-void DynamicCubemaps::Save(json&)
-{
-}
-
 void DynamicCubemaps::RestoreDefaultSettings()
 {
 }

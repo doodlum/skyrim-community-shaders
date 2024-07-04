@@ -64,8 +64,8 @@ struct ScreenSpaceShadows : Feature
 
 	virtual void Prepass() override;
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
+	virtual void LoadSettings(json& o_json) override;
+	virtual void SaveSettings(json& o_json) override;
 
 	void DrawShadows();
 

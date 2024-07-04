@@ -26,8 +26,8 @@ struct ScreenSpaceGI : Feature
 	virtual void RestoreDefaultSettings() override;
 	virtual void DrawSettings() override;
 
-	virtual void Load(json& o_json) override;
-	virtual void Save(json& o_json) override;
+	virtual void LoadSettings(json& o_json) override;
+	virtual void SaveSettings(json& o_json) override;
 
 	virtual void SetupResources() override;
 	virtual void ClearShaderCache() override;

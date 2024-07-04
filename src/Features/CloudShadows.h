@@ -33,9 +33,6 @@ struct CloudShadows : Feature
 
 	virtual void Prepass() override;
 
-	virtual void Load(json& o_json) override;
-	virtual void Save(json& o_json) override;
-
 	virtual void RestoreDefaultSettings() override;
 
 	virtual inline void PostPostLoad() override { Hooks::Install(); }

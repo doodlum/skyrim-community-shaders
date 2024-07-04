@@ -15,15 +15,6 @@ void WaterParallax::SetupResources()
 {
 }
 
-void WaterParallax::Load(json& o_json)
-{
-	Feature::Load(o_json);
-}
-
-void WaterParallax::Save(json&)
-{
-}
-
 void WaterParallax::RestoreDefaultSettings()
 {
 }

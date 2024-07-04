@@ -25,9 +25,6 @@ public:
 
 	virtual void Prepass() override;
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
 	virtual void RestoreDefaultSettings();
 
 	bool SupportsVR() override { return true; };

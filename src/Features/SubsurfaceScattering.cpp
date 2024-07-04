@@ -305,17 +305,14 @@ void SubsurfaceScattering::RestoreDefaultSettings()
 	settings = {};
 }
 
-void SubsurfaceScattering::Load(json& o_json)
+void SubsurfaceScattering::LoadSettings(json& o_json)
 {
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
+	settings = o_json;
 }
 
-void SubsurfaceScattering::Save(json& o_json)
+void SubsurfaceScattering::SaveSettings(json& o_json)
 {
-	o_json[GetName()] = settings;
+	o_json = settings;
 }
 
 void SubsurfaceScattering::ClearShaderCache()

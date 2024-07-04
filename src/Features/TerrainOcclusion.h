@@ -119,8 +119,8 @@ struct TerrainOcclusion : public Feature
 	void Precompute();
 	void UpdateShadow();
 
-	virtual void Load(json& o_json) override;
-	virtual void Save(json&) override;
+	virtual void LoadSettings(json& o_json) override;
+	virtual void SaveSettings(json& o_json) override;
 
 	virtual inline void RestoreDefaultSettings() override { settings = {}; }
 	virtual void ClearShaderCache() override;

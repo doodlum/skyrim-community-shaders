@@ -53,8 +53,8 @@ struct GrassCollision : Feature
 	void UpdateCollisions(PerFrame& perFrame);
 	void Update();
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
+	virtual void LoadSettings(json& o_json) override;
+	virtual void SaveSettings(json& o_json) override;
 
 	virtual void RestoreDefaultSettings();
 

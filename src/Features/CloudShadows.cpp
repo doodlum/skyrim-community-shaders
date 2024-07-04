@@ -96,15 +96,6 @@ void CloudShadows::Prepass()
 	context->PSSetShaderResources(27, 1, &srv);
 }
 
-void CloudShadows::Load(json& o_json)
-{
-	Feature::Load(o_json);
-}
-
-void CloudShadows::Save(json&)
-{
-}
-
 void CloudShadows::SetupResources()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();

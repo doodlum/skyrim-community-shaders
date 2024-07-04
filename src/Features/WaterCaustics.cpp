@@ -23,15 +23,6 @@ void WaterCaustics::Prepass()
 	context->PSSetShaderResources(70, 1, &causticsView);
 }
 
-void WaterCaustics::Load(json& o_json)
-{
-	Feature::Load(o_json);
-}
-
-void WaterCaustics::Save(json&)
-{
-}
-
 void WaterCaustics::RestoreDefaultSettings()
 {
 }
