@@ -83,7 +83,7 @@ public:
 
 	void DrawSSS();
 
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
+	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);

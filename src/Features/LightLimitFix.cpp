@@ -557,10 +557,6 @@ bool LightLimitFix::AddParticleLight(RE::BSRenderPass* a_pass, LightLimitFix::Co
 	return true;
 }
 
-void LightLimitFix::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 void LightLimitFix::PostPostLoad()
 {
 	ParticleLights::GetSingleton()->GetConfigs();

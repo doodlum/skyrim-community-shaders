@@ -100,8 +100,6 @@ public:
 	virtual void DrawSettings();
 	virtual void DataLoaded() override;
 
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
-
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
 

@@ -245,10 +245,6 @@ void WetnessEffects::CalculateWetness(RE::TESWeather* weather, RE::Sky* sky, flo
 	weatherPuddleDepth = puddleDepthDelta > 0 ? std::min(weatherPuddleDepth + puddleDepthDelta, MAX_PUDDLE_DEPTH) : std::max(weatherPuddleDepth + puddleDepthDelta, 0.0f);
 }
 
-void WetnessEffects::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 WetnessEffects::PerFrame WetnessEffects::GetCommonBufferData()
 {
 	PerFrame data{};

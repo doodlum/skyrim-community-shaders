@@ -96,10 +96,6 @@ void CloudShadows::Prepass()
 	context->PSSetShaderResources(27, 1, &srv);
 }
 
-void CloudShadows::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 void CloudShadows::Load(json& o_json)
 {
 	Feature::Load(o_json);

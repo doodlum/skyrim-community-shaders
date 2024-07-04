@@ -136,7 +136,6 @@ public:
 	virtual void RestoreDefaultSettings();
 
 	virtual void DrawSettings();
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
 	virtual void PostPostLoad() override;
 	virtual void DataLoaded() override;

@@ -35,8 +35,6 @@ struct ScreenSpaceGI : Feature
 	void CompileComputeShaders();
 	bool ShadersOK();
 
-	virtual inline void Draw(const RE::BSShader*, const uint32_t) override{};
-
 	void DrawSSGI(Texture2D* srcPrevAmbient);
 	void UpdateSB();
 

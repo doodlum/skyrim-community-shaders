@@ -7,10 +7,6 @@ void TerrainBlending::DrawSettings()
 {
 }
 
-void TerrainBlending::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 ID3D11VertexShader* TerrainBlending::GetTerrainVertexShader()
 {
 	if (!terrainVertexShader) {

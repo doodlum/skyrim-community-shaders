@@ -414,10 +414,6 @@ void DynamicCubemaps::Prepass()
 {
 }
 
-void DynamicCubemaps::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 void DynamicCubemaps::SetupResources()
 {
 	GetComputeShaderUpdate();

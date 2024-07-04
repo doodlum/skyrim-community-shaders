@@ -35,8 +35,6 @@ struct ExtendedMaterials : Feature
 
 	virtual void DrawSettings();
 
-	virtual void Draw(const RE::BSShader*, const uint32_t){};
-
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
 

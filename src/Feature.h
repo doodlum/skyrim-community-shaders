@@ -22,7 +22,7 @@ struct Feature
 	virtual void Reset() = 0;
 
 	virtual void DrawSettings() = 0;
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) = 0;
+	virtual void Draw(const RE::BSShader*, const uint32_t) {}
 	virtual void DrawDeferred() {}
 	virtual void DrawPreProcess() {}
 	virtual void Prepass() {}

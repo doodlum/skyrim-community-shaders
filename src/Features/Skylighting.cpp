@@ -18,10 +18,6 @@ void Skylighting::DrawSettings()
 	ImGui::Checkbox("Render Trees", &settings.RenderTrees);
 }
 
-void Skylighting::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 void Skylighting::SetupResources()
 {
 	GetSkylightingCS();

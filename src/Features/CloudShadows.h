@@ -35,8 +35,6 @@ struct CloudShadows : Feature
 
 	virtual void Prepass() override;
 
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
-
 	virtual void Load(json& o_json) override;
 	virtual void Save(json& o_json) override;
 

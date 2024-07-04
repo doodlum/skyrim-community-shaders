@@ -23,8 +23,6 @@ public:
 
 	virtual void DrawSettings();
 
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
-
 	ID3D11VertexShader* GetTerrainVertexShader();
 	ID3D11VertexShader* GetTerrainOffsetVertexShader();
 

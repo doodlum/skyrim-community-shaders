@@ -63,8 +63,6 @@ struct ScreenSpaceShadows : Feature
 	ID3D11ComputeShader* GetComputeRaymarch();
 	ID3D11ComputeShader* GetComputeRaymarchRight();
 
-	virtual void Draw(const RE::BSShader*, const uint32_t){};
-
 	virtual void Prepass() override;
 
 	virtual void Load(json& o_json);
