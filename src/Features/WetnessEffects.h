@@ -15,7 +15,7 @@ public:
 
 	virtual inline std::string GetName() { return "Wetness Effects"; }
 	virtual inline std::string GetShortName() { return "WetnessEffects"; }
-	inline std::string_view GetShaderDefineName() override { return "WETNESS_EFFECTS"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "WETNESS_EFFECTS"; }
 
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
@@ -79,12 +79,12 @@ public:
 
 	virtual void Reset() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 	float CalculateWeatherTransitionPercentage(float skyCurrentWeatherPct, float beginFade, bool fadeIn);
 	void CalculateWetness(RE::TESWeather* weather, RE::Sky* sky, float seconds, float& wetness, float& puddleWetness);
 

@@ -15,12 +15,12 @@ public:
 
 	virtual inline std::string GetName() { return "Terrain Blending"; }
 	virtual inline std::string GetShortName() { return "TerrainBlending"; }
-	virtual inline std::string_view GetShaderDefineName() { return "TERRAIN_BLENDING"; }
-	virtual inline bool HasShaderDefine(RE::BSShader::Type) { return true; }
+	virtual inline std::string_view GetShaderDefineName() override { return "TERRAIN_BLENDING"; }
+	virtual inline bool HasShaderDefine(RE::BSShader::Type) override { return true; }
 
 	virtual void SetupResources() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	ID3D11VertexShader* GetTerrainVertexShader();
 	ID3D11VertexShader* GetTerrainOffsetVertexShader();
@@ -31,7 +31,7 @@ public:
 	ID3D11ComputeShader* GetDepthBlendShader();
 	ID3D11ComputeShader* GetDepthFixShader();
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 	virtual void PostPostLoad() override;
 
 	bool renderDepth = false;
@@ -67,7 +67,7 @@ public:
 	ID3D11ComputeShader* depthBlendShader = nullptr;
 	ID3D11ComputeShader* depthFixShader = nullptr;
 
-	virtual void ClearShaderCache();
+	virtual void ClearShaderCache() override;
 
 	struct Hooks
 	{

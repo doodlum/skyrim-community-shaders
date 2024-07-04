@@ -15,17 +15,17 @@ public:
 
 	virtual inline std::string GetName() { return "Water Caustics"; }
 	virtual inline std::string GetShortName() { return "WaterCaustics"; }
-	inline std::string_view GetShaderDefineName() override { return "WATER_CAUSTICS"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "WATER_CAUSTICS"; }
 
 	bool HasShaderDefine(RE::BSShader::Type shaderType) override;
 
 	virtual void SetupResources() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	virtual void Prepass() override;
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
 	bool SupportsVR() override { return true; };
 };

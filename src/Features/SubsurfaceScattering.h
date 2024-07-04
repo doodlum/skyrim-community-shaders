@@ -67,15 +67,15 @@ public:
 
 	virtual inline std::string GetName() { return "Subsurface Scattering"; }
 	virtual inline std::string GetShortName() { return "SubsurfaceScattering"; }
-	inline std::string_view GetShaderDefineName() override { return "SSS"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "SSS"; }
 
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual void SetupResources() override;
 	virtual void Reset() override;
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	float3 Gaussian(DiffusionProfile& a_profile, float variance, float r);
 	float3 Profile(DiffusionProfile& a_profile, float r);
@@ -88,7 +88,7 @@ public:
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
 
-	virtual void ClearShaderCache();
+	virtual void ClearShaderCache() override;
 	ID3D11ComputeShader* GetComputeShaderHorizontalBlur();
 	ID3D11ComputeShader* GetComputeShaderVerticalBlur();
 

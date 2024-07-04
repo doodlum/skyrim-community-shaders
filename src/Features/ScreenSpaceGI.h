@@ -15,8 +15,8 @@ struct ScreenSpaceGI : Feature
 
 	virtual inline std::string GetName() override { return "Screen Space GI"; }
 	virtual inline std::string GetShortName() override { return "ScreenSpaceGI"; }
-	inline std::string_view GetShaderDefineName() override { return "SSGI"; }
-	inline bool HasShaderDefine(RE::BSShader::Type t) override
+	virtual inline std::string_view GetShaderDefineName() override { return "SSGI"; }
+	virtual inline bool HasShaderDefine(RE::BSShader::Type t) override
 	{
 		return t == RE::BSShader::Type::Lighting ||
 		       t == RE::BSShader::Type::Grass ||

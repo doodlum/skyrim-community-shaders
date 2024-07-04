@@ -25,12 +25,12 @@ struct GrassLighting : Feature
 
 	Settings settings;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
 	bool SupportsVR() override { return true; };
 };

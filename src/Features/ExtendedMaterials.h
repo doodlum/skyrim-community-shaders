@@ -12,7 +12,7 @@ struct ExtendedMaterials : Feature
 
 	virtual inline std::string GetName() { return "Extended Materials"; }
 	virtual inline std::string GetShortName() { return "ExtendedMaterials"; }
-	inline std::string_view GetShaderDefineName() override { return "EXTENDED_MATERIALS"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "EXTENDED_MATERIALS"; }
 
 	bool HasShaderDefine(RE::BSShader::Type shaderType) override;
 
@@ -30,12 +30,12 @@ struct ExtendedMaterials : Feature
 
 	virtual void DataLoaded() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
 	bool SupportsVR() override { return true; };
 };

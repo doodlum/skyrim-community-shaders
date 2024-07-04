@@ -13,7 +13,7 @@ struct ScreenSpaceShadows : Feature
 
 	virtual inline std::string GetName() { return "Screen-Space Shadows"; }
 	virtual inline std::string GetShortName() { return "ScreenSpaceShadows"; }
-	inline std::string_view GetShaderDefineName() override { return "SCREEN_SPACE_SHADOWS"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "SCREEN_SPACE_SHADOWS"; }
 	bool HasShaderDefine(RE::BSShader::Type shaderType) override;
 
 	struct BendSettings
@@ -56,7 +56,7 @@ struct ScreenSpaceShadows : Feature
 
 	virtual void SetupResources() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	virtual void ClearShaderCache() override;
 	ID3D11ComputeShader* GetComputeRaymarch();
@@ -69,7 +69,7 @@ struct ScreenSpaceShadows : Feature
 
 	void DrawShadows();
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
 	bool SupportsVR() override { return true; };
 };

@@ -91,16 +91,16 @@ public:
 
 	virtual inline std::string GetName() { return "Dynamic Cubemaps"; }
 	virtual inline std::string GetShortName() { return "DynamicCubemaps"; }
-	inline std::string_view GetShaderDefineName() override { return "DYNAMIC_CUBEMAPS"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "DYNAMIC_CUBEMAPS"; }
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual void SetupResources() override;
 	virtual void Reset() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 	virtual void DataLoaded() override;
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
 	std::vector<std::string> iniVRCubeMapSettings{
 		{ "bAutoWaterSilhouetteReflections:Water" },  //IniSettings 0x1eaa018

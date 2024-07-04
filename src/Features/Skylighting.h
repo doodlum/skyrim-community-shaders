@@ -14,16 +14,16 @@ public:
 		return &singleton;
 	}
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 
 	virtual inline std::string GetName() { return "Skylighting"; }
 	virtual inline std::string GetShortName() { return "Skylighting"; }
-	inline std::string_view GetShaderDefineName() override { return "SKYLIGHTING"; }
-	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
+	virtual inline std::string_view GetShaderDefineName() override { return "SKYLIGHTING"; }
+	virtual bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual void SetupResources() override;
 
-	virtual void DrawSettings();
+	virtual void DrawSettings() override;
 
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
@@ -32,7 +32,7 @@ public:
 
 	virtual void Prepass() override;
 
-	virtual void RestoreDefaultSettings();
+	virtual void RestoreDefaultSettings() override;
 
 	ID3D11ComputeShader* GetSkylightingCS();
 	ID3D11ComputeShader* GetSkylightingShadowMapCS();
