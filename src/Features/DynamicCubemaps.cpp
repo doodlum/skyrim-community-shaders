@@ -410,10 +410,6 @@ void DynamicCubemaps::PostDeferred()
 	context->PSSetShaderResources(64, 2, views);
 }
 
-void DynamicCubemaps::Prepass()
-{
-}
-
 void DynamicCubemaps::SetupResources()
 {
 	GetComputeShaderUpdate();

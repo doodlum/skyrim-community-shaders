@@ -127,8 +127,6 @@ public:
 
 	void UpdateCubemapCapture();
 
-	virtual void Prepass() override;
-
 	void Inferrence(bool a_reflections);
 
 	void Irradiance(bool a_reflections);
