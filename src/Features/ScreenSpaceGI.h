@@ -29,7 +29,6 @@ struct ScreenSpaceGI : Feature
 	virtual void Load(json& o_json) override;
 	virtual void Save(json& o_json) override;
 
-	virtual inline void Reset() override{};
 	virtual void SetupResources() override;
 	virtual void ClearShaderCache() override;
 	void CompileComputeShaders();

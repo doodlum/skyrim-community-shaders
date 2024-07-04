@@ -128,7 +128,7 @@ public:
 	Matrix viewMatrixInverseCached[2]{};
 
 	virtual void SetupResources();
-	virtual void Reset();
+	virtual void Reset() override;
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);

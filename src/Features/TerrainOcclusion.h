@@ -114,8 +114,6 @@ struct TerrainOcclusion : public Feature
 
 	virtual void DrawSettings() override;
 
-	virtual inline void Reset() override{};
-
 	virtual void Prepass() override;
 	void LoadHeightmap();
 	void Precompute();

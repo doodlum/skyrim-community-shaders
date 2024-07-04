@@ -22,7 +22,6 @@ public:
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual void SetupResources();
-	virtual void Reset();
 
 	virtual void DrawSettings();
 

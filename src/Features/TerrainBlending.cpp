@@ -134,10 +134,6 @@ void TerrainBlending::SetupResources()
 	}
 }
 
-void TerrainBlending::Reset()
-{
-}
-
 void TerrainBlending::Load(json& o_json)
 {
 	Feature::Load(o_json);

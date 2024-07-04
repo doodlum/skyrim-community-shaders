@@ -19,7 +19,6 @@ public:
 	virtual inline bool HasShaderDefine(RE::BSShader::Type) { return true; }
 
 	virtual void SetupResources();
-	virtual void Reset();
 
 	virtual void DrawSettings();
 

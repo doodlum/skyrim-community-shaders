@@ -19,7 +19,7 @@ struct Feature
 	virtual bool SupportsVR() { return false; }
 
 	virtual void SetupResources() = 0;
-	virtual void Reset() = 0;
+	virtual void Reset() {}
 
 	virtual void DrawSettings() = 0;
 	virtual void Draw(const RE::BSShader*, const uint32_t) {}

@@ -47,7 +47,7 @@ struct GrassCollision : Feature
 	int eyeCount = !REL::Module::IsVR() ? 1 : 2;
 
 	virtual void SetupResources();
-	virtual void Reset();
+	virtual void Reset() override;
 
 	virtual void DrawSettings();
 	void UpdateCollisions(PerFrame& perFrame);

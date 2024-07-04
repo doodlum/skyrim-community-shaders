@@ -29,7 +29,6 @@ struct ExtendedMaterials : Feature
 	Settings settings;
 
 	virtual void SetupResources(){};
-	virtual inline void Reset() {}
 
 	virtual void DataLoaded() override;
 

@@ -97,10 +97,6 @@ void Skylighting::SetupResources()
 	}
 }
 
-void Skylighting::Reset()
-{
-}
-
 void Skylighting::Load(json& o_json)
 {
 	if (o_json[GetName()].is_object())

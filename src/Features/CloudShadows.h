@@ -26,8 +26,6 @@ struct CloudShadows : Feature
 
 	virtual void SetupResources() override;
 
-	virtual inline void Reset() override {}
-
 	virtual void DrawSettings() override;
 
 	void CheckResourcesSide(int side);

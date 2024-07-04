@@ -78,7 +78,7 @@ public:
 	float previousWeatherTransitionPercentage = 0.0f;
 
 	virtual void SetupResources();
-	virtual void Reset();
+	virtual void Reset() override;
 
 	virtual void DrawSettings();
 

@@ -28,7 +28,6 @@ struct GrassLighting : Feature
 	virtual void SetupResources(){};
 
 	virtual void DrawSettings();
-	virtual void Reset(){};
 
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
