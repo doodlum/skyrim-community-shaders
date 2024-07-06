@@ -77,13 +77,13 @@ void State::Reset()
 
 void State::Setup()
 {
-	if (initialized)
-		return;
 	SetupResources();
 	for (auto* feature : Feature::GetFeatureList())
 		if (feature->loaded)
 			feature->SetupResources();
 	Deferred::GetSingleton()->SetupResources();
+	if (initialized)
+		return;
 	VariableRateShading::GetSingleton()->Setup();
 	initialized = true;
 }
