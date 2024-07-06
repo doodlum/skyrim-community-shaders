@@ -100,14 +100,17 @@ Texture2D<half2> SkylightingTexture : register(t9);
 
 #if defined(DEBUG)
 
-	half2 texCoord = half2(dispatchID.xy) / BufferDim.xy;
+#	if defined(VR)
+	uv = ConvertFromStereoUV(uv, eyeIndex);
+	uv.x += (eyeIndex ? 0.1 : -0.1);
+#	endif  // VR
 
-	if (texCoord.x < 0.5 && texCoord.y < 0.5) {
+	if (uv.x < 0.5 && uv.y < 0.5) {
 		color = color;
-	} else if (texCoord.x < 0.5) {
+	} else if (uv.x < 0.5) {
 		color = albedo;
-	} else if (texCoord.y < 0.5) {
-		color = normalWS;
+	} else if (uv.y < 0.5) {
+		color = normalVS;
 	} else {
 		color = glossiness;
 	}
