@@ -218,7 +218,7 @@ void VariableRateShading::Setup()
 	}
 
 	{
-		for (uint i = 0; i < 114; i++) {
+		for (uint i = 0; i < static_cast<uint>(REL::Relocate(RE::RENDER_TARGET::kTOTAL, RE::RENDER_TARGET::k116, RE::RENDER_TARGET::kVRTOTAL)); i++) {
 			auto& target = renderer->GetRuntimeData().renderTargets[i];
 			if (target.texture) {
 				D3D11_TEXTURE2D_DESC texDesc{};
