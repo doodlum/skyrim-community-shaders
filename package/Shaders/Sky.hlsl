@@ -142,10 +142,12 @@ cbuffer PerGeometry : register(b2)
 	float2 PParams : packoffset(c0);
 };
 
+#	if !defined(VR)
 cbuffer AlphaTestRefCB : register(b11)
 {
 	float AlphaTestRefRS : packoffset(c0);
 }
+#	endif
 
 #	include "Common/FrameBuffer.hlsl"
 #	include "Common/MotionBlur.hlsl"
