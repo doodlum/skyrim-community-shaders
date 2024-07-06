@@ -611,7 +611,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float3 refractionDiffuseColor = lerp(ShallowColor.xyz, DeepColor.xyz, distanceMul.y);
 
 	if (!(PixelShaderDescriptor & _Interior)) {
-		float vl = GetVL(input.WPosition.xyz, refractionWorldPosition.xyz, screenPosition) * (dot(viewDirection, SunDir.xyz) * 0.5 + 0.5);
+		float vl = GetVL(input.WPosition.xyz, refractionWorldPosition.xyz, screenPosition) * (dot(viewDirection, SunDir.xyz) * 0.5 + 0.5, a_eyeIndex);
 
 		float3 refractionDiffuseColorSunlight = refractionDiffuseColor * vl * SunColor.xyz * SunDir.w;
 #			if defined(SKYLIGHTING)
@@ -781,7 +781,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 sunColor = GetSunColor(normal, viewDirection);
 
 	if (!(PixelShaderDescriptor & _Interior))
-		sunColor *= GetShadow(input.WPosition + normal * 32);
+		sunColor *= GetShadow(input.WPosition + normal * 32, eyeIndex);
 
 	float specularFraction = lerp(1, fresnel * depthControl.x, distanceFactor);
 	float3 finalColorPreFog = lerp(diffuseColor, specularColor, specularFraction) + sunColor * depthControl.w;

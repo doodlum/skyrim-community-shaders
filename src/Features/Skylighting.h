@@ -457,5 +457,5 @@ public:
 		}
 	};
 
-	bool SupportsVR() override { return false; };
+	bool SupportsVR() override { return true; };
 };

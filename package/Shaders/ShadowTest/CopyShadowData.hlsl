@@ -11,13 +11,9 @@ struct PerGeometry
 	float4 AlphaTestRef;
 	float4 ShadowLightParam;  // Falloff in x, ShadowDistance squared in z
 	float4x3 FocusShadowMapProj[4];
-#if !defined(VR)
-	float4x3 ShadowMapProj[1][3];
-	float4x4 CameraViewProjInverse[1];
-#else
+	// Since PerGeometry is passed between c++ and hlsl, can't have different defines due to strong typing
 	float4x3 ShadowMapProj[2][3];
 	float4x4 CameraViewProjInverse[2];
-#endif  // VR
 };
 
 cbuffer PerFrame : register(b0)
@@ -101,9 +97,14 @@ RWStructuredBuffer<PerGeometry> copiedData : register(u0);
 	perGeometry.AlphaTestRef = AlphaTestRef;
 	perGeometry.ShadowLightParam = ShadowLightParam;
 	perGeometry.FocusShadowMapProj = FocusShadowMapProj;
-	perGeometry.ShadowMapProj = ShadowMapProj;
+	perGeometry.ShadowMapProj[0] = ShadowMapProj[0];
 
-	perGeometry.CameraViewProjInverse = CameraViewProjInverse;
+	perGeometry.CameraViewProjInverse[0] = CameraViewProjInverse[0];
+#if defined(VR)
+	perGeometry.ShadowMapProj[1] = ShadowMapProj[1];
+
+	perGeometry.CameraViewProjInverse[1] = CameraViewProjInverse[1];
+#endif
 
 	perGeometry.VPOSOffset = VPOSOffset;
 	perGeometry.ShadowSampleParam = ShadowSampleParam;
