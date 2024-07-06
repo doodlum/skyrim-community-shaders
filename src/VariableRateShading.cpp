@@ -239,7 +239,7 @@ void VariableRateShading::SetupSingleEyeVRS(int eye, int width, int height)
 	int vrsWidth = width / NV_VARIABLE_PIXEL_SHADING_TILE_WIDTH;
 	int vrsHeight = height / NV_VARIABLE_PIXEL_SHADING_TILE_HEIGHT;
 
-	logger::info("Creating VRS pattern texture for eye");
+	logger::info("Creating VRS pattern texture for eye {} at {} x {}", eye, width, height);
 
 	D3D11_TEXTURE2D_DESC texDesc = {};
 	texDesc.Width = vrsWidth;
@@ -266,7 +266,7 @@ void VariableRateShading::SetupSingleEyeVRS(int eye, int width, int height)
 	uavDesc.Texture2D.MipSlice = 0;
 	DX::ThrowIfFailed(device->CreateUnorderedAccessView(singleEyeVRSTex[eye], &uavDesc, &singleEyeVRSUAV[eye]));
 
-	logger::info("Creating shading rate resource view for eye");
+	logger::info("Creating shading rate resource view for eye {}", eye);
 	NV_D3D11_SHADING_RATE_RESOURCE_VIEW_DESC vd = {};
 	vd.version = NV_D3D11_SHADING_RATE_RESOURCE_VIEW_DESC_VER;
 	vd.Format = texDesc.Format;
@@ -274,7 +274,7 @@ void VariableRateShading::SetupSingleEyeVRS(int eye, int width, int height)
 	vd.Texture2D.MipSlice = 0;
 	NvAPI_Status status = NvAPI_D3D11_CreateShadingRateResourceView(device, singleEyeVRSTex[eye], &vd, &singleEyeVRSView[eye]);
 	if (status != NVAPI_OK) {
-		logger::info("Failed to create VRS pattern view for eye");
+		logger::info("Failed to create VRS pattern view for eye {}", eye);
 		return;
 	}
 }
