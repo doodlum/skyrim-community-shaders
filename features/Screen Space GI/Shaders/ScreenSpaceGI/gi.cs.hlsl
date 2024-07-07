@@ -28,15 +28,11 @@
 #include "../Common/VR.hlsli"
 #include "common.hlsli"
 
-#if USE_HALF_FLOAT_PRECISION == 0
-#	define PI (3.1415926535897932384626433832795)
-#	define HALF_PI (1.5707963267948966192313216916398)
-#	define RCP_PI (0.31830988618)
-#else
-#	define PI (3.1415926535897932384626433832795)
-#	define HALF_PI (1.5707963267948966192313216916398)
-#	define RCP_PI (0.31830988618)
-#endif
+#define FP_Z (16.5)
+
+#define PI (3.1415926535897932384626433832795)
+#define HALF_PI (1.5707963267948966192313216916398)
+#define RCP_PI (0.31830988618)
 
 Texture2D<float> srcWorkingDepth : register(t0);
 Texture2D<float4> srcNormal : register(t1);
@@ -181,7 +177,7 @@ void CalculateGI(
 #endif
 
 				float SZ = srcWorkingDepth.SampleLevel(samplerPointClamp, sampleUV * srcScale, mipLevel);
-				[branch] if (SZ > DepthFadeRange.y) continue;
+				[branch] if (SZ > DepthFadeRange.y || SZ < FP_Z) continue;
 
 				float3 samplePos = ScreenToViewPosition(sampleScreenPos, SZ, eyeIndex);
 				float3 sampleDelta = samplePos - float3(pixCenterPos);
@@ -377,7 +373,7 @@ void CalculateGI(
 
 	float4 currGIAO = float4(0, 0, 0, 1);
 	float3 bentNormal = viewspaceNormal;
-	[branch] if (viewspaceZ < DepthFadeRange.y)
+	[branch] if (viewspaceZ > FP_Z && viewspaceZ < DepthFadeRange.y)
 		CalculateGI(
 			dtid, uv, viewspaceZ, viewspaceNormal,
 			currGIAO, bentNormal);
