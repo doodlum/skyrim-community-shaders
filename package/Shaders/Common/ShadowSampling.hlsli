@@ -159,7 +159,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float2 screenPosition, uint a_ey
 			if (shadow > 0.0) {
 				float terrainShadow = 1;
 				float terrainAo = 1;
-				GetTerrainOcclusion(samplePositionWS + CameraPosAdjust[0], length(samplePositionWS), LinearSampler, terrainShadow, terrainAo);
+				GetTerrainOcclusion(samplePositionWS + CameraPosAdjust[a_eyeIndex], length(samplePositionWS), LinearSampler, terrainShadow, terrainAo);
 				shadow *= terrainShadow;
 			}
 #	endif
