@@ -32,6 +32,7 @@ Texture2D<half2> SkylightingTexture : register(t9);
 								: SV_DispatchThreadID) {
 	half2 uv = half2(dispatchID.xy + 0.5) * BufferDim.zw;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
+	uv = ConvertFromStereoUV(uv, eyeIndex);
 
 	half3 normalGlossiness = NormalRoughnessTexture[dispatchID.xy];
 	half3 normalVS = DecodeNormal(normalGlossiness.xy);
@@ -101,7 +102,6 @@ Texture2D<half2> SkylightingTexture : register(t9);
 #if defined(DEBUG)
 
 #	if defined(VR)
-	uv = ConvertFromStereoUV(uv, eyeIndex);
 	uv.x += (eyeIndex ? 0.1 : -0.1);
 #	endif  // VR
 
