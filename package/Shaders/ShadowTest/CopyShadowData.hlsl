@@ -114,6 +114,10 @@ RWStructuredBuffer<PerGeometry> copiedData : register(u0);
 	perGeometry.ShadowMapProj[1] = ShadowMapProj[1];
 
 	perGeometry.CameraViewProjInverse[1] = CameraViewProjInverse[1];
+#else
+	perGeometry.ShadowMapProj[1] = ShadowMapProj[0];
+
+	perGeometry.CameraViewProjInverse[1] = CameraViewProjInverse[0];
 #endif
 
 	perGeometry.VPOSOffset = VPOSOffset;
