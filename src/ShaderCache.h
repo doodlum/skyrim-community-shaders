@@ -119,6 +119,7 @@ namespace SIE
 			       type == RE::BSShader::Type::DistantTree ||
 			       type == RE::BSShader::Type::Sky ||
 			       type == RE::BSShader::Type::Grass ||
+			       type == RE::BSShader::Type::Particle ||
 			       type == RE::BSShader::Type::Water ||
 			       type == RE::BSShader::Type::Effect ||
 			       type == RE::BSShader::Type::Utility;
