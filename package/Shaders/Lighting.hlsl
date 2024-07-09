@@ -1088,8 +1088,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		mipLevels[4] = GetMipLevel(uv, TexLandColor5Sampler);
 		mipLevels[5] = GetMipLevel(uv, TexLandColor6Sampler);
 		uv = GetParallaxCoords(input, viewPosition.z, uv, mipLevels, viewDirection, tbnTr, screenNoise, pixelOffset);
-		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f)
-			sh0 = GetTerrainHeight(input, uv, mipLevels);
+		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f){
+			float heights[6] = { 0, 0, 0, 0, 0, 0 };
+			sh0 = GetTerrainHeight(input, uv, mipLevels, heights);
+		}
 	}
 #		endif  // EMAT
 #	endif      // LANDSCAPE
