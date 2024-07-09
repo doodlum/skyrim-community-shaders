@@ -36,26 +36,32 @@ float GetMipLevel(float2 coords, Texture2D<float4> tex)
 
 float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], inout float pixelOffset[6])
 {
-	// weights[i] = pow(weights[i] / maxWeight, 1 + 2 * blendFactor) * (pow(pixelOffset[i] + 1 - maxOffset, 1 + blendFactor * 100) + 0.1); 
+	// weights[i] = pow(weights[i] / maxWeight, 1 + 2 * blendFactor) * (pow(pixelOffset[i] + 1 - maxOffset, 1 + blendFactor * 100) + 0.1);
 	if (input.LandBlendWeights1.x > 0.0)
 		pixelOffset[0] = TexColorSampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[0]).w;
-	else pixelOffset[0] = 0;
+	else
+		pixelOffset[0] = 0;
 	if (input.LandBlendWeights1.y > 0.0)
 		pixelOffset[1] = TexLandColor2Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[1]).w;
-	else pixelOffset[1] = 0;
+	else
+		pixelOffset[1] = 0;
 	if (input.LandBlendWeights1.z > 0.0)
 		pixelOffset[2] = TexLandColor3Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[2]).w;
-	else pixelOffset[2] = 0;
+	else
+		pixelOffset[2] = 0;
 	if (input.LandBlendWeights1.w > 0.0)
 		pixelOffset[3] = TexLandColor4Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[3]).w;
-	else pixelOffset[3] = 0;
+	else
+		pixelOffset[3] = 0;
 	if (input.LandBlendWeights2.x > 0.0)
 		pixelOffset[4] = TexLandColor5Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[4]).w;
-	else pixelOffset[4] = 0;
+	else
+		pixelOffset[4] = 0;
 	if (input.LandBlendWeights2.y > 0.0)
 		pixelOffset[5] = TexLandColor6Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[5]).w;
-	else pixelOffset[5] = 0;
-	float height = (pixelOffset[0]*input.LandBlendWeights1.x+pixelOffset[1]*input.LandBlendWeights1.y+pixelOffset[2]*input.LandBlendWeights1.z+pixelOffset[3]*input.LandBlendWeights1.w+pixelOffset[4]*input.LandBlendWeights2.x + pixelOffset[5]*input.LandBlendWeights2.y);
+	else
+		pixelOffset[5] = 0;
+	float height = (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y);
 	return height;
 }
 #endif
