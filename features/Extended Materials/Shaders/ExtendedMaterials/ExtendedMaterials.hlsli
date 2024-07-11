@@ -38,22 +38,28 @@ float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], out fl
 {
 	if (input.LandBlendWeights1.x > 0.0)
 		pixelOffset[0] = TexColorSampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[0]).w;
-	else pixelOffset[0] = 0;
+	else
+		pixelOffset[0] = 0;
 	if (input.LandBlendWeights1.y > 0.0)
 		pixelOffset[1] = TexLandColor2Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[1]).w;
-	else pixelOffset[1] = 0;
+	else
+		pixelOffset[1] = 0;
 	if (input.LandBlendWeights1.z > 0.0)
 		pixelOffset[2] = TexLandColor3Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[2]).w;
-	else pixelOffset[2] = 0;
+	else
+		pixelOffset[2] = 0;
 	if (input.LandBlendWeights1.w > 0.0)
 		pixelOffset[3] = TexLandColor4Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[3]).w;
-	else pixelOffset[3] = 0;
+	else
+		pixelOffset[3] = 0;
 	if (input.LandBlendWeights2.x > 0.0)
 		pixelOffset[4] = TexLandColor5Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[4]).w;
-	else pixelOffset[4] = 0;
+	else
+		pixelOffset[4] = 0;
 	if (input.LandBlendWeights2.y > 0.0)
 		pixelOffset[5] = TexLandColor6Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[5]).w;
-	else pixelOffset[5] = 0;
+	else
+		pixelOffset[5] = 0;
 	//float weights[6] = { input.LandBlendWeights1.x, input.LandBlendWeights1.y, input.LandBlendWeights1.z, input.LandBlendWeights1.w, input.LandBlendWeights2.x, input.LandBlendWeights2.y };
 	//float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
 	//float maxOffset = max(pixelOffset[0], max(pixelOffset[1], max(pixelOffset[2], max(pixelOffset[3], max(pixelOffset[4], pixelOffset[5])))));
@@ -67,7 +73,7 @@ float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], out fl
 	//float height = (weights[0]+weights[1]+weights[2]+weights[3]+weights[4]+weights[5])/total;
 	//return height;
 	return max(max(pixelOffset[0], max(pixelOffset[1], max(pixelOffset[2], max(pixelOffset[3], max(pixelOffset[4], pixelOffset[5]))))), (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y));
-	return  max(pixelOffset[0] * input.LandBlendWeights1.x, max(pixelOffset[1] * input.LandBlendWeights1.y, max(pixelOffset[2] * input.LandBlendWeights1.z, max(pixelOffset[3] * input.LandBlendWeights1.w, max(pixelOffset[4] * input.LandBlendWeights2.x,pixelOffset[5] * input.LandBlendWeights2.y)))));
+	return max(pixelOffset[0] * input.LandBlendWeights1.x, max(pixelOffset[1] * input.LandBlendWeights1.y, max(pixelOffset[2] * input.LandBlendWeights1.z, max(pixelOffset[3] * input.LandBlendWeights1.w, max(pixelOffset[4] * input.LandBlendWeights2.x, pixelOffset[5] * input.LandBlendWeights2.y)))));
 	return (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y);
 }
 #endif
@@ -167,7 +173,6 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 		{
 			parallaxAmount = (pt1.x * delta2 - pt2.x * delta1) / denominator;
 		}
-
 
 #if defined(LANDSCAPE)
 		float weights[6] = { input.LandBlendWeights1.x, input.LandBlendWeights1.y, input.LandBlendWeights1.z, input.LandBlendWeights1.w, input.LandBlendWeights2.x, input.LandBlendWeights2.y };
