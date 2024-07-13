@@ -1099,7 +1099,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f){
 
-			sh0 = GetTerrainHeight(input, uv, mipLevels, weights);
+			sh0 = GetTerrainHeight(input, uv, mipLevels, parallaxShadowQuality, weights);
 		}
 	}
 #		endif  // EMAT

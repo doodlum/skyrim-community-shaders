@@ -34,7 +34,7 @@ float GetMipLevel(float2 coords, Texture2D<float4> tex)
 
 #if defined(LANDSCAPE)
 
-float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], out float pixelOffset[6])
+float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], float blendFactor, out float pixelOffset[6])
 {
 	if (input.LandBlendWeights1.x > 0.0)
 		pixelOffset[0] = TexColorSampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[0]).w;
@@ -54,21 +54,18 @@ float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], out fl
 	if (input.LandBlendWeights2.y > 0.0)
 		pixelOffset[5] = TexLandColor6Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[5]).w;
 	else pixelOffset[5] = 0;
-	//float weights[6] = { input.LandBlendWeights1.x, input.LandBlendWeights1.y, input.LandBlendWeights1.z, input.LandBlendWeights1.w, input.LandBlendWeights2.x, input.LandBlendWeights2.y };
-	//float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
-	//float maxOffset = max(pixelOffset[0], max(pixelOffset[1], max(pixelOffset[2], max(pixelOffset[3], max(pixelOffset[4], pixelOffset[5])))));
-	//float blendFactor = saturate(1 - 0);
-	//float total = 0;
-	//for (int i = 0; i < 6; i++) {
-	//	weights[i] = pow(weights[i] / maxWeight, 1 + 2 * blendFactor) * (pow(pixelOffset[i] + 1 - maxOffset, blendFactor * 100) + 0.1);
-	//	total += weights[i];
-	//}
-	//
-	//float height = (weights[0]+weights[1]+weights[2]+weights[3]+weights[4]+weights[5])/total;
-	//return height;
-	return max(max(pixelOffset[0], max(pixelOffset[1], max(pixelOffset[2], max(pixelOffset[3], max(pixelOffset[4], pixelOffset[5]))))), (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y));
-	return  max(pixelOffset[0] * input.LandBlendWeights1.x, max(pixelOffset[1] * input.LandBlendWeights1.y, max(pixelOffset[2] * input.LandBlendWeights1.z, max(pixelOffset[3] * input.LandBlendWeights1.w, max(pixelOffset[4] * input.LandBlendWeights2.x,pixelOffset[5] * input.LandBlendWeights2.y)))));
-	return (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y);
+	if(!extendedMaterialSettings.EnableComplexMaterial)
+		return (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y);
+	float weights[6] = { input.LandBlendWeights1.x, input.LandBlendWeights1.y, input.LandBlendWeights1.z, input.LandBlendWeights1.w, input.LandBlendWeights2.x, input.LandBlendWeights2.y };
+	float total = 0;
+	for (int i = 0; i < 6; i++) {
+		pixelOffset[i] = pow(weights[i], 1+1 * blendFactor) * (pow(pixelOffset[i], blendFactor * 4));
+		total += pixelOffset[i];
+	}
+	for (int i = 0; i < 6; i++) {
+		pixelOffset[i] /= total;
+	}
+	return pow(total, 0.25);
 }
 #endif
 
@@ -82,6 +79,7 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 	viewDirTS.xy /= viewDirTS.z * 0.7 + 0.3;  // Fix for objects at extreme viewing angles
 
 	float nearBlendToFar = saturate(distance / 2048.0);
+	float blendFactor = saturate(1 - nearBlendToFar);
 
 	float maxHeight = 0.1;
 	float minHeight = maxHeight * 0.5;
@@ -110,10 +108,10 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 
 #if defined(LANDSCAPE)
 			float4 currHeight;
-			currHeight.x = GetTerrainHeight(input, currentOffset[0].xy, mipLevels, heights);
-			currHeight.y = GetTerrainHeight(input, currentOffset[0].zw, mipLevels, heights);
-			currHeight.z = GetTerrainHeight(input, currentOffset[1].xy, mipLevels, heights);
-			currHeight.w = GetTerrainHeight(input, currentOffset[1].zw, mipLevels, heights);
+			currHeight.x = GetTerrainHeight(input, currentOffset[0].xy, mipLevels, blendFactor, heights);
+			currHeight.y = GetTerrainHeight(input, currentOffset[0].zw, mipLevels, blendFactor, heights);
+			currHeight.z = GetTerrainHeight(input, currentOffset[1].xy, mipLevels, blendFactor, heights);
+			currHeight.w = GetTerrainHeight(input, currentOffset[1].zw, mipLevels, blendFactor, heights);
 #else
 			float4 currHeight;
 			currHeight.x = tex.SampleLevel(texSampler, currentOffset[0].xy, mipLevel)[channel];
@@ -168,22 +166,6 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 			parallaxAmount = (pt1.x * delta2 - pt2.x * delta1) / denominator;
 		}
 
-
-#if defined(LANDSCAPE)
-		float weights[6] = { input.LandBlendWeights1.x, input.LandBlendWeights1.y, input.LandBlendWeights1.z, input.LandBlendWeights1.w, input.LandBlendWeights2.x, input.LandBlendWeights2.y };
-		float maxOffset = max(heights[0], max(heights[1], max(heights[2], max(heights[3], max(heights[4], heights[5])))));
-		float maxWeight = max(weights[0], max(weights[1], max(weights[2], max(weights[3], max(weights[4], weights[5])))));
-		float blendFactor = saturate(1 - nearBlendToFar);
-		float total = 0;
-		for (int i = 0; i < 6; i++) {
-			heights[i] = pow(weights[i], 1 + 2 * blendFactor) * (pow(heights[i] + 0.5, blendFactor * 100) + 0.1);
-			total += heights[i];
-		}
-		for (int i = 0; i < 6; i++) {
-			heights[i] /= total;
-		}
-#endif
-
 		nearBlendToFar *= nearBlendToFar;
 
 		float offset = (1.0 - parallaxAmount) * -maxHeight + minHeight;
@@ -192,22 +174,7 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 	}
 
 #if defined(LANDSCAPE)
-	heights[0] = input.LandBlendWeights1.x;
-	heights[1] = input.LandBlendWeights1.y;
-	heights[2] = input.LandBlendWeights1.z;
-	heights[3] = input.LandBlendWeights1.w;
-	heights[4] = input.LandBlendWeights2.x;
-	heights[5] = input.LandBlendWeights2.y;
-	float maxOffset = max(heights[0], max(heights[1], max(heights[2], max(heights[3], max(heights[4], heights[5])))));
-	float total = 0;
-	float blendFactor = 0;
-	for (int i = 0; i < 6; i++) {
-		heights[i] = pow(heights[i] / maxOffset, 1) * (1 + 0.1);
-		total += heights[i];
-	}
-	for (int i = 0; i < 6; i++) {
-		heights[i] /= total;
-	}
+	GetTerrainHeight(input, coords, mipLevels, 0, heights);
 #endif
 
 	pixelOffset = 0.5;
@@ -241,10 +208,10 @@ float GetParallaxSoftShadowMultiplierTerrain(PS_INPUT input, float2 coords, floa
 		float4 multipliers = rcp((float4(4, 3, 2, 1) + noise));
 		float4 sh;
 		float heights[6] = { 0, 0, 0, 0, 0, 0 };
-		sh.x = GetTerrainHeight(input, coords + rayDir * multipliers.x, mipLevel, heights);
-		sh.y = GetTerrainHeight(input, coords + rayDir * multipliers.y, mipLevel, heights);
-		sh.z = GetTerrainHeight(input, coords + rayDir * multipliers.z, mipLevel, heights);
-		sh.w = GetTerrainHeight(input, coords + rayDir * multipliers.w, mipLevel, heights);
+		sh.x = GetTerrainHeight(input, coords + rayDir * multipliers.x, mipLevel, quality, heights);
+		sh.y = GetTerrainHeight(input, coords + rayDir * multipliers.y, mipLevel, quality, heights);
+		sh.z = GetTerrainHeight(input, coords + rayDir * multipliers.z, mipLevel, quality, heights);
+		sh.w = GetTerrainHeight(input, coords + rayDir * multipliers.w, mipLevel, quality, heights);
 		return 1.0 - saturate(dot(max(0, sh - sh0), 1.0) * 2.0) * quality;
 	}
 	return 1.0;
