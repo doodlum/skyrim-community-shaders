@@ -1089,7 +1089,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		mipLevels[5] = GetMipLevel(uv, TexLandColor6Sampler);
 		float weights[6];
 		uv = GetParallaxCoords(input, viewPosition.z, uv, mipLevels, viewDirection, tbnTr, screenNoise, pixelOffset, weights);
-		if(extendedMaterialSettings.EnableComplexMaterial){
+		if (extendedMaterialSettings.EnableComplexMaterial) {
 			input.LandBlendWeights1.x = weights[0];
 			input.LandBlendWeights1.y = weights[1];
 			input.LandBlendWeights1.z = weights[2];
@@ -1098,7 +1098,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			input.LandBlendWeights2.y = weights[5];
 		}
 		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f){
-
 			sh0 = GetTerrainHeight(input, uv, mipLevels, parallaxShadowQuality, weights);
 		}
 	}
