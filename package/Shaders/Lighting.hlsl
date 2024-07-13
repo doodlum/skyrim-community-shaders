@@ -1097,7 +1097,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			input.LandBlendWeights2.x = weights[4];
 			input.LandBlendWeights2.y = weights[5];
 		}
-		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f){
+		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f) {
 			sh0 = GetTerrainHeight(input, uv, mipLevels, parallaxShadowQuality, weights);
 		}
 	}

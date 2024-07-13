@@ -58,13 +58,14 @@ float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], float 
 		pixelOffset[4] = 0;
 	if (input.LandBlendWeights2.y > 0.0)
 		pixelOffset[5] = TexLandColor6Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[5]).w;
-	else pixelOffset[5] = 0;
-	if(!extendedMaterialSettings.EnableComplexMaterial)
+	else
+		pixelOffset[5] = 0;
+	if (!extendedMaterialSettings.EnableComplexMaterial)
 		return (pixelOffset[0] * input.LandBlendWeights1.x + pixelOffset[1] * input.LandBlendWeights1.y + pixelOffset[2] * input.LandBlendWeights1.z + pixelOffset[3] * input.LandBlendWeights1.w + pixelOffset[4] * input.LandBlendWeights2.x + pixelOffset[5] * input.LandBlendWeights2.y);
 	float weights[6] = { input.LandBlendWeights1.x, input.LandBlendWeights1.y, input.LandBlendWeights1.z, input.LandBlendWeights1.w, input.LandBlendWeights2.x, input.LandBlendWeights2.y };
 	float total = 0;
 	for (int i = 0; i < 6; i++) {
-		pixelOffset[i] = pow(weights[i], 1+1 * blendFactor) * (pow(pixelOffset[i], blendFactor * 4));
+		pixelOffset[i] = pow(weights[i], 1 + 1 * blendFactor) * (pow(pixelOffset[i], blendFactor * 4));
 		total += pixelOffset[i];
 	}
 	for (int i = 0; i < 6; i++) {
