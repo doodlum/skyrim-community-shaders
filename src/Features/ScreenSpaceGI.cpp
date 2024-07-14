@@ -122,7 +122,6 @@ void ScreenSpaceGI::DrawSettings()
 	{
 		auto _ = DisableGuard(!settings.EnableGI);
 		ImGui::SliderFloat("GI Strength", &settings.GIStrength, 0.f, 20.f, "%.2f");
-		// percentageSlider("GI Saturation", &settings.GISaturation);
 	}
 
 	ImGui::Separator();
@@ -177,17 +176,21 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Separator();
 		}
 
-		recompileFlag |= ImGui::Checkbox("GI Bounce", &settings.EnableGIBounce);
+		recompileFlag |= ImGui::Checkbox("Ambient Bounce", &settings.EnableGIBounce);
 		if (auto _tt = Util::HoverTooltipWrapper())
-			ImGui::Text("Simulates multiple light bounces. Better with denoiser on.");
+			ImGui::Text(
+				"Simulates multiple light bounces. Better with denoiser on.\n"
+				"Mandatory if you want ambient as part of the light source for GI calculation.");
 
 		{
 			auto __ = DisableGuard(!settings.EnableGIBounce);
 			ImGui::Indent();
-			percentageSlider("GI Bounce Strength", &settings.GIBounceFade);
+			percentageSlider("Ambient Bounce Strength", &settings.GIBounceFade);
 			ImGui::Unindent();
 			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text("How much of this frame's GI gets carried to the next frame.");
+				ImGui::Text(
+					"How much of this frame's ambient+GI get carried to the next frame as source.\n"
+					"If you have a very high GI strength, you may want to turn this down to prevent feedback loops that bleaches everything.");
 		}
 
 		if (showAdvanced) {

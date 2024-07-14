@@ -47,7 +47,7 @@ struct ScreenSpaceGI : Feature
 		bool HalfRes = true;
 		float DepthMIPSamplingOffset = 3.3f;
 		// visual
-		float EffectRadius = 500.f;
+		float EffectRadius = 400.f;
 		float EffectFalloffRange = .615f;
 		float ThinOccluderCompensation = 0.f;
 		float Thickness = 75.f;
@@ -61,7 +61,7 @@ struct ScreenSpaceGI : Feature
 		float GICompensationMaxDist = 500;
 		// mix
 		float AOPower = 1.f;
-		float GIStrength = 4.f;
+		float GIStrength = 6.f;
 		// denoise
 		bool EnableTemporalDenoiser = true;
 		bool EnableBlur = true;
