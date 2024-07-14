@@ -350,16 +350,21 @@ void CalculateGI(
 	const float2 srcScale = SrcFrameDim * RcpTexDim;
 	const float2 outScale = OutFrameDim * RcpTexDim;
 
-	float2 uv = (dtid + .5f) * RcpOutFrameDim;
+	uint2 pxCoord = dtid;
+	uint halfWidth = uint(OutFrameDim.x) >> 1;
+	bool useHistory = dtid.x >= halfWidth;
+	pxCoord.x = (pxCoord.x % halfWidth) * 2 + (dtid.y + FrameIndex + useHistory) % 2;
+
+	float2 uv = (pxCoord + .5f) * RcpOutFrameDim;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
-	float viewspaceZ = READ_DEPTH(srcWorkingDepth, dtid);
+	float viewspaceZ = READ_DEPTH(srcWorkingDepth, pxCoord);
 
-	float2 normalSample = FULLRES_LOAD(srcNormal, dtid, uv * srcScale, samplerLinearClamp).xy;
+	float2 normalSample = FULLRES_LOAD(srcNormal, pxCoord, uv * srcScale, samplerLinearClamp).xy;
 	float3 viewspaceNormal = DecodeNormal(normalSample);
 
 	half2 encodedWorldNormal = EncodeNormal(ViewToWorldVector(viewspaceNormal, CameraViewInverse[eyeIndex]));
-	outPrevGeo[dtid] = half3(viewspaceZ, encodedWorldNormal);
+	outPrevGeo[pxCoord] = half3(viewspaceZ, encodedWorldNormal);
 
 // Move center pixel slightly towards camera to avoid imprecision artifacts due to depth buffer imprecision; offset depends on depth texture format used
 #if USE_HALF_FLOAT_PRECISION == 1
@@ -370,25 +375,29 @@ void CalculateGI(
 
 	float4 currGIAO = float4(0, 0, 0, 1);
 	float3 bentNormal = viewspaceNormal;
-	[branch] if (viewspaceZ > FP_Z && viewspaceZ < DepthFadeRange.y)
+
+	[branch] if (!useHistory && viewspaceZ > FP_Z && viewspaceZ < DepthFadeRange.y)
 		CalculateGI(
-			dtid, uv, viewspaceZ, viewspaceNormal,
+			pxCoord, uv, viewspaceZ, viewspaceNormal,
 			currGIAO, bentNormal);
 
 #ifdef BENT_NORMAL
-	outBentNormal[dtid] = EncodeNormal(bentNormal);
+	outBentNormal[pxCoord] = EncodeNormal(bentNormal);
 #endif
 
 #ifdef TEMPORAL_DENOISER
 	if (viewspaceZ < DepthFadeRange.y) {
-		float4 prevGIAO = srcPrevGI[dtid];
-		uint accumFrames = srcAccumFrames[dtid] * 255;
-
-		currGIAO = lerp(prevGIAO, currGIAO, rcp(accumFrames));
+		float4 prevGIAO = srcPrevGI[pxCoord];
+		if (useHistory)
+			currGIAO = prevGIAO;
+		else {
+			uint accumFrames = srcAccumFrames[pxCoord] * 255;
+			currGIAO = lerp(prevGIAO, currGIAO, rcp(accumFrames));
+		}
 	}
 #endif
 
 	currGIAO = any(ISNAN(currGIAO)) ? float4(0, 0, 0, 1) : currGIAO;
 
-	outGI[dtid] = currGIAO;
+	outGI[pxCoord] = currGIAO;
 }
