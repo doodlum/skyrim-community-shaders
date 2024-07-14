@@ -33,8 +33,8 @@ float GetMipLevel(float2 coords, Texture2D<float4> tex)
 }
 
 #if defined(LANDSCAPE)
-#define HEIGHT_POWER 4.0
-#define INV_HEIGHT_POWER 0.25
+#	define HEIGHT_POWER 4.0
+#	define INV_HEIGHT_POWER 0.25
 
 float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], float blendFactor, out float pixelOffset[6])
 {
@@ -60,16 +60,19 @@ float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], float 
 		pixelOffset[4] = 0;
 	if (input.LandBlendWeights2.y > 0.0)
 		pixelOffset[5] = pow(input.LandBlendWeights2.y, 1 + 1 * blendFactor) * (pow(TexLandColor6Sampler.SampleLevel(SampTerrainParallaxSampler, coords, mipLevels[5]).w, blendFactor * HEIGHT_POWER));
-	else pixelOffset[5] = 0;
+	else
+		pixelOffset[5] = 0;
 	float total = 0;
-	[unroll] for (int i = 0; i < 6; i++) {
+	[unroll] for (int i = 0; i < 6; i++)
+	{
 		total += pixelOffset[i];
 	}
 	float invtotal = rcp(total);
-	[unroll] for (int i = 0; i < 6; i++) {
+	[unroll] for (int i = 0; i < 6; i++)
+	{
 		pixelOffset[i] *= invtotal;
 	}
-	return pow(total, INV_HEIGHT_POWER*rcp(blendFactor));
+	return pow(total, INV_HEIGHT_POWER * rcp(blendFactor));
 }
 #endif
 
@@ -84,7 +87,7 @@ float2 GetParallaxCoords(float distance, float2 coords, float mipLevel, float3 v
 
 	float nearBlendToFar = saturate(distance / 2048.0);
 #if defined(LANDSCAPE)
-	// When CPM flag is disabled, will use linear blending as before. 
+	// When CPM flag is disabled, will use linear blending as before.
 	float blendFactor = extendedMaterialSettings.EnableComplexMaterial ? saturate(1 - nearBlendToFar) : INV_HEIGHT_POWER;
 #endif
 
