@@ -29,12 +29,10 @@ struct ScreenSpaceGI : Feature
 	virtual inline void Draw(const RE::BSShader*, const uint32_t) override{};
 
 	void DrawSSGI(Texture2D* srcPrevAmbient);
-	void GenerateHilbertLUT();
 	void UpdateSB();
 
 	//////////////////////////////////////////////////////////////////////////////////
 
-	bool hilbertLutGenFlag = false;
 	bool recompileFlag = false;
 	uint outputGIIdx = 0;
 
@@ -119,7 +117,7 @@ struct ScreenSpaceGI : Feature
 	};
 	eastl::unique_ptr<ConstantBuffer> ssgiCB;
 
-	eastl::unique_ptr<Texture2D> texHilbertLUT = nullptr;
+	eastl::unique_ptr<Texture2D> texNoise = nullptr;
 	eastl::unique_ptr<Texture2D> texWorkingDepth = nullptr;
 	winrt::com_ptr<ID3D11UnorderedAccessView> uavWorkingDepth[5] = { nullptr };
 	eastl::unique_ptr<Texture2D> texPrevGeo = nullptr;
@@ -130,7 +128,6 @@ struct ScreenSpaceGI : Feature
 	winrt::com_ptr<ID3D11SamplerState> linearClampSampler = nullptr;
 	winrt::com_ptr<ID3D11SamplerState> pointClampSampler = nullptr;
 
-	winrt::com_ptr<ID3D11ComputeShader> hilbertLutCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> prefilterDepthsCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> radianceDisoccCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> giCompute = nullptr;

@@ -37,7 +37,7 @@
 Texture2D<float> srcWorkingDepth : register(t0);
 Texture2D<float4> srcNormal : register(t1);
 Texture2D<float3> srcRadiance : register(t2);  // maybe half-res
-Texture2D<uint> srcHilbertLUT : register(t3);
+Texture2D<unorm float2> srcNoise : register(t3);
 Texture2D<unorm float> srcAccumFrames : register(t4);  // maybe half-res
 Texture2D<float4> srcPrevGI : register(t5);            // maybe half-res
 
@@ -53,12 +53,9 @@ float GetDepthFade(float depth)
 // Engine-specific screen & temporal noise loader
 float2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)  // without TAA, temporalIndex is always 0
 {
-	float2 noise;
-	uint index = srcHilbertLUT.Load(uint3(pixCoord % 64, 0)).x;
-	index += 288 * (temporalIndex % 64);  // why 288? tried out a few and that's the best so far (with XE_HILBERT_LEVEL 6U) - but there's probably better :)
-	// R2 sequence - see http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
-	// https://www.shadertoy.com/view/mts3zN
-	return float2(frac(0.5 + index * float2(0.245122333753, 0.430159709002)));
+	// noise texture from https://github.com/electronicarts/fastnoise
+	uint2 noiseCoord = (pixCoord % 128) + uint2(0, (temporalIndex % 64) * 128);
+	return srcNoise.Load(uint3(noiseCoord, 0));
 }
 
 // HBIL pp.29

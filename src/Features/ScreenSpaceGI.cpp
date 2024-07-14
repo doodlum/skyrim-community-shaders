@@ -278,7 +278,7 @@ void ScreenSpaceGI::DrawSettings()
 		static float debugRescale = .3f;
 		ImGui::SliderFloat("View Resize", &debugRescale, 0.f, 1.f);
 
-		//BUFFER_VIEWER_NODE(texHilbertLUT, debugRescale)
+		BUFFER_VIEWER_NODE(texNoise, debugRescale)
 		BUFFER_VIEWER_NODE(texWorkingDepth, debugRescale)
 		BUFFER_VIEWER_NODE(texPrevGeo, debugRescale)
 		BUFFER_VIEWER_NODE(texRadiance, debugRescale)
@@ -341,12 +341,6 @@ void ScreenSpaceGI::SetupResources()
 			.Texture2D = { .MipSlice = 0 }
 		};
 
-		{
-			texHilbertLUT = eastl::make_unique<Texture2D>(texDesc);
-			texHilbertLUT->CreateSRV(srvDesc);
-			texHilbertLUT->CreateUAV(uavDesc);
-		}
-
 		auto mainTex = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMAIN];
 		mainTex.texture->GetDesc(&texDesc);
 		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R11G11B10_FLOAT;
@@ -405,6 +399,40 @@ void ScreenSpaceGI::SetupResources()
 		}
 	}
 
+	logger::debug("Loading noise texture...");
+	{
+		DirectX::ScratchImage image;
+		try {
+			std::filesystem::path path{ "Data\\Shaders\\ScreenSpaceGI\\fast_2uges.dds" };
+
+			DX::ThrowIfFailed(LoadFromDDSFile(path.c_str(), DirectX::DDS_FLAGS_NONE, nullptr, image));
+		} catch (const DX::com_exception& e) {
+			logger::error("{}", e.what());
+			return;
+		}
+
+		ID3D11Resource* pResource = nullptr;
+		try {
+			DX::ThrowIfFailed(CreateTexture(device,
+				image.GetImages(), image.GetImageCount(),
+				image.GetMetadata(), &pResource));
+		} catch (const DX::com_exception& e) {
+			logger::error("{}", e.what());
+			return;
+		}
+
+		texNoise = eastl::make_unique<Texture2D>(reinterpret_cast<ID3D11Texture2D*>(pResource));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {
+			.Format = texNoise->desc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D = {
+				.MostDetailedMip = 0,
+				.MipLevels = 1 }
+		};
+		texNoise->CreateSRV(srvDesc);
+	}
+
 	logger::debug("Creating samplers...");
 	{
 		D3D11_SAMPLER_DESC samplerDesc = {
@@ -428,7 +456,7 @@ void ScreenSpaceGI::SetupResources()
 void ScreenSpaceGI::ClearShaderCache()
 {
 	static const std::vector<winrt::com_ptr<ID3D11ComputeShader>*> shaderPtrs = {
-		&hilbertLutCompute, &prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute
+		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute
 	};
 
 	for (auto shader : shaderPtrs)
@@ -451,7 +479,6 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 	std::vector<ShaderCompileInfo>
 		shaderInfos = {
-			{ &hilbertLutCompute, "hilbert.cs.hlsl", {} },
 			{ &prefilterDepthsCompute, "prefilterDepths.cs.hlsl", {} },
 			{ &radianceDisoccCompute, "radianceDisocc.cs.hlsl", {} },
 			{ &giCompute, "gi.cs.hlsl", {} },
@@ -481,30 +508,12 @@ void ScreenSpaceGI::CompileComputeShaders()
 			info.programPtr->attach(rawPtr);
 	}
 
-	hilbertLutGenFlag = true;
 	recompileFlag = false;
 }
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return hilbertLutCompute && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute;
-}
-
-void ScreenSpaceGI::GenerateHilbertLUT()
-{
-	auto& context = State::GetSingleton()->context;
-
-	ID3D11UnorderedAccessView* uav = texHilbertLUT->uav.get();
-	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-	context->CSSetShader(hilbertLutCompute.get(), nullptr, 0);
-
-	context->Dispatch(2, 2, 1);
-
-	uav = nullptr;
-	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-	context->CSSetShader(nullptr, nullptr, 0);
-
-	hilbertLutGenFlag = false;
+	return prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute;
 }
 
 void ScreenSpaceGI::UpdateSB()
@@ -590,9 +599,6 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	if (recompileFlag)
 		ClearShaderCache();
 
-	if (hilbertLutGenFlag)
-		GenerateHilbertLUT();
-
 	UpdateSB();
 
 	//////////////////////////////////////////////////////
@@ -672,7 +678,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		srvs.at(0) = texWorkingDepth->srv.get();
 		srvs.at(1) = rts[NORMALROUGHNESS].SRV;
 		srvs.at(2) = texRadiance->srv.get();
-		srvs.at(3) = texHilbertLUT->srv.get();
+		srvs.at(3) = texNoise->srv.get();
 		srvs.at(4) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
 		srvs.at(5) = texGI[inputGITexIdx]->srv.get();
 
