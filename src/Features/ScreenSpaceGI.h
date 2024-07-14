@@ -42,9 +42,9 @@ struct ScreenSpaceGI : Feature
 		bool UseBitmask = true;
 		bool EnableGI = true;
 		// performance/quality
-		uint NumSlices = 2;
-		uint NumSteps = 5;
-		bool HalfRes = true;
+		uint NumSlices = 1;
+		uint NumSteps = 4;
+		bool HalfRate = true;
 		float DepthMIPSamplingOffset = 3.3f;
 		// visual
 		float EffectRadius = 400.f;
@@ -132,5 +132,4 @@ struct ScreenSpaceGI : Feature
 	winrt::com_ptr<ID3D11ComputeShader> radianceDisoccCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> giCompute = nullptr;
 	winrt::com_ptr<ID3D11ComputeShader> blurCompute = nullptr;
-	winrt::com_ptr<ID3D11ComputeShader> upsampleCompute = nullptr;
 };

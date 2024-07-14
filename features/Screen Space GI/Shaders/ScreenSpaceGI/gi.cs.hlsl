@@ -54,6 +54,7 @@ float GetDepthFade(float depth)
 float2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)  // without TAA, temporalIndex is always 0
 {
 	// noise texture from https://github.com/electronicarts/fastnoise
+	// 128x128x64
 	uint2 noiseCoord = (pixCoord % 128) + uint2(0, (temporalIndex % 64) * 128);
 	return srcNoise.Load(uint3(noiseCoord, 0));
 }
@@ -169,9 +170,6 @@ void CalculateGI(
 
 				float sampleOffsetLength = length(sampleOffset);
 				float mipLevel = clamp(log2(sampleOffsetLength) - DepthMIPSamplingOffset, 0, 5);
-#ifdef HALF_RES
-				mipLevel = max(mipLevel, 1);
-#endif
 
 				float SZ = srcWorkingDepth.SampleLevel(samplerPointClamp, sampleUV * srcScale, mipLevel);
 				[branch] if (SZ > DepthFadeRange.y || SZ < FP_Z) continue;
@@ -351,16 +349,18 @@ void CalculateGI(
 	const float2 outScale = OutFrameDim * RcpTexDim;
 
 	uint2 pxCoord = dtid;
-	uint halfWidth = uint(OutFrameDim.x) >> 1;
-	bool useHistory = dtid.x >= halfWidth;
+#if defined(HALF_RATE)
+	const uint halfWidth = uint(OutFrameDim.x) >> 1;
+	const bool useHistory = dtid.x >= halfWidth;
 	pxCoord.x = (pxCoord.x % halfWidth) * 2 + (dtid.y + FrameIndex + useHistory) % 2;
+#endif
 
 	float2 uv = (pxCoord + .5f) * RcpOutFrameDim;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
-	float viewspaceZ = READ_DEPTH(srcWorkingDepth, pxCoord);
+	float viewspaceZ = srcWorkingDepth[pxCoord];
 
-	float2 normalSample = FULLRES_LOAD(srcNormal, pxCoord, uv * srcScale, samplerLinearClamp).xy;
+	float2 normalSample = srcNormal[pxCoord].xy;
 	float3 viewspaceNormal = DecodeNormal(normalSample);
 
 	half2 encodedWorldNormal = EncodeNormal(ViewToWorldVector(viewspaceNormal, CameraViewInverse[eyeIndex]));
@@ -376,7 +376,11 @@ void CalculateGI(
 	float4 currGIAO = float4(0, 0, 0, 1);
 	float3 bentNormal = viewspaceNormal;
 
-	[branch] if (!useHistory && viewspaceZ > FP_Z && viewspaceZ < DepthFadeRange.y)
+	bool needGI = viewspaceZ > FP_Z && viewspaceZ < DepthFadeRange.y;
+#if defined(HALF_RATE)
+	needGI = needGI && !useHistory;
+#endif
+	[branch] if (needGI)
 		CalculateGI(
 			pxCoord, uv, viewspaceZ, viewspaceNormal,
 			currGIAO, bentNormal);
@@ -387,13 +391,14 @@ void CalculateGI(
 
 #ifdef TEMPORAL_DENOISER
 	if (viewspaceZ < DepthFadeRange.y) {
+		float lerpFactor = 0;
+#	if defined(HALF_RATE)
+		if (!useHistory)
+#	endif
+			lerpFactor = rcp(srcAccumFrames[pxCoord] * 255);
+
 		float4 prevGIAO = srcPrevGI[pxCoord];
-		if (useHistory)
-			currGIAO = prevGIAO;
-		else {
-			uint accumFrames = srcAccumFrames[pxCoord] * 255;
-			currGIAO = lerp(prevGIAO, currGIAO, rcp(accumFrames));
-		}
+		currGIAO = lerp(prevGIAO, currGIAO, lerpFactor);
 	}
 #endif
 

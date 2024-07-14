@@ -104,7 +104,7 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::SliderInt("Steps Per Slice", (int*)&settings.NumSteps, 1, 20);
 	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("How many samples does it take in one direction. A greater value enhances the effects but is more expensive.");
+		ImGui::Text("How many samples does it take in one direction. A greater value enhances accuracy but is more expensive.");
 
 	if (showAdvanced) {
 		ImGui::SliderFloat("MIP Sampling Offset", &settings.DepthMIPSamplingOffset, 2.f, 6.f, "%.2f");
@@ -112,7 +112,9 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Text("Mainly performance (texture memory bandwidth) setting but as a side-effect reduces overshadowing by thin objects and increases temporal instability.");
 	}
 
-	recompileFlag |= ImGui::Checkbox("Half Resolution", &settings.HalfRes);
+	recompileFlag |= ImGui::Checkbox("Half Rate", &settings.HalfRate);
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Shading only half the pixels per frame. Cheaper but has more ghosting, and takes twice as long to converge.");
 
 	///////////////////////////////
 	ImGui::SeparatorText("Visual");
@@ -459,7 +461,7 @@ void ScreenSpaceGI::SetupResources()
 void ScreenSpaceGI::ClearShaderCache()
 {
 	static const std::vector<winrt::com_ptr<ID3D11ComputeShader>*> shaderPtrs = {
-		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute
+		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute
 	};
 
 	for (auto shader : shaderPtrs)
@@ -485,14 +487,13 @@ void ScreenSpaceGI::CompileComputeShaders()
 			{ &prefilterDepthsCompute, "prefilterDepths.cs.hlsl", {} },
 			{ &radianceDisoccCompute, "radianceDisocc.cs.hlsl", {} },
 			{ &giCompute, "gi.cs.hlsl", {} },
-			{ &blurCompute, "blur.cs.hlsl", {} },
-			{ &upsampleCompute, "upsample.cs.hlsl", {} }
+			{ &blurCompute, "blur.cs.hlsl", {} }
 		};
 	for (auto& info : shaderInfos) {
 		if (REL::Module::IsVR())
 			info.defines.push_back({ "VR", "" });
-		if (settings.HalfRes)
-			info.defines.push_back({ "HALF_RES", "" });
+		if (settings.HalfRate)
+			info.defines.push_back({ "HALF_RATE", "" });
 		if (settings.EnableTemporalDenoiser)
 			info.defines.push_back({ "TEMPORAL_DENOISER", "" });
 		if (settings.UseBitmask)
@@ -516,7 +517,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute;
+	return prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute;
 }
 
 void ScreenSpaceGI::UpdateSB()
@@ -526,8 +527,6 @@ void ScreenSpaceGI::UpdateSB()
 	float2 res = { (float)texRadiance->desc.Width, (float)texRadiance->desc.Height };
 	float2 dynres = res * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
 	dynres = { floor(dynres.x), floor(dynres.y) };
-	float2 halfres = dynres * 0.5;
-	halfres = { floor(halfres.x), floor(halfres.y) };
 
 	static float4x4 prevInvView[2] = {};
 
@@ -549,8 +548,8 @@ void ScreenSpaceGI::UpdateSB()
 		data.RcpTexDim = float2(1.0f) / res;
 		data.SrcFrameDim = dynres;
 		data.RcpSrcFrameDim = float2(1.0f) / dynres;
-		data.OutFrameDim = settings.HalfRes ? halfres : dynres;
-		data.RcpOutFrameDim = float2(1.0f) / (settings.HalfRes ? halfres : dynres);
+		data.OutFrameDim = dynres;
+		data.RcpOutFrameDim = float2(1.0f) / dynres;
 		data.FrameIndex = viewport->uiFrameCount;
 
 		data.NumSlices = settings.NumSlices;
@@ -615,8 +614,6 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		(uint)(State::GetSingleton()->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale),
 		(uint)(State::GetSingleton()->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale)
 	};
-	uint halfRes[2] = { resolution[0] >> 1, resolution[1] >> 1 };
-	auto targetRes = settings.HalfRes ? halfRes : resolution;
 
 	std::array<ID3D11ShaderResourceView*, 8> srvs = { nullptr };
 	std::array<ID3D11UnorderedAccessView*, 5> uavs = { nullptr };
@@ -667,7 +664,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 		context->CSSetShader(radianceDisoccCompute.get(), nullptr, 0);
-		context->Dispatch((targetRes[0] + 7u) >> 3, (targetRes[1] + 7u) >> 3, 1);
+		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
 
 		context->GenerateMips(texRadiance->srv.get());
 
@@ -692,7 +689,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 		context->CSSetShader(giCompute.get(), nullptr, 0);
-		context->Dispatch((targetRes[0] + 7u) >> 3, (targetRes[1] + 7u) >> 3, 1);
+		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
 
 		inputGITexIdx = !inputGITexIdx;
 		lastFrameGITexIdx = inputGITexIdx;
@@ -713,28 +710,12 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 			context->CSSetShader(blurCompute.get(), nullptr, 0);
-			context->Dispatch((targetRes[0] + 7u) >> 3, (targetRes[1] + 7u) >> 3, 1);
+			context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
 
 			inputGITexIdx = !inputGITexIdx;
 			lastFrameGITexIdx = inputGITexIdx;
 			lastFrameAccumTexIdx = !lastFrameAccumTexIdx;
 		}
-	}
-
-	// upsasmple
-	if (settings.HalfRes) {
-		resetViews();
-		srvs.at(0) = texWorkingDepth->srv.get();
-		srvs.at(1) = texGI[inputGITexIdx]->srv.get();
-
-		uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
-
-		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
-		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-		context->CSSetShader(upsampleCompute.get(), nullptr, 0);
-		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
-
-		inputGITexIdx = !inputGITexIdx;
 	}
 
 	outputGIIdx = inputGITexIdx;
