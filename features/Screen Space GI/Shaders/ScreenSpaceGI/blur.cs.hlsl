@@ -6,8 +6,8 @@
 #include "../Common/VR.hlsli"
 #include "common.hlsli"
 
-Texture2D<float4> srcGI : register(t0);                // maybe half-res
-Texture2D<unorm float> srcAccumFrames : register(t1);  // maybe half-res
+Texture2D<float4> srcGI : register(t0);
+Texture2D<unorm float> srcAccumFrames : register(t1);
 Texture2D<half> srcDepth : register(t2);
 Texture2D<half4> srcNormal : register(t3);
 

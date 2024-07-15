@@ -4,13 +4,13 @@
 #include "common.hlsli"
 
 Texture2D<half4> srcDiffuse : register(t0);
-Texture2D<half4> srcPrevGI : register(t1);  // maybe half-res
+Texture2D<half4> srcPrevGI : register(t1);
 Texture2D<half> srcCurrDepth : register(t2);
 Texture2D<half4> srcCurrNormal : register(t3);
-Texture2D<half3> srcPrevGeo : register(t4);  // maybe half-res
+Texture2D<half3> srcPrevGeo : register(t4);
 Texture2D<float4> srcMotionVec : register(t5);
 Texture2D<half4> srcPrevAmbient : register(t6);
-Texture2D<unorm float> srcAccumFrames : register(t7);  // maybe half-res
+Texture2D<unorm float> srcAccumFrames : register(t7);
 
 RWTexture2D<float3> outRadianceDisocc : register(u0);
 RWTexture2D<unorm float> outAccumFrames : register(u1);

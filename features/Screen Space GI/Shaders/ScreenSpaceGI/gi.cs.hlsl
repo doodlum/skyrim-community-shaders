@@ -36,10 +36,10 @@
 
 Texture2D<float> srcWorkingDepth : register(t0);
 Texture2D<float4> srcNormal : register(t1);
-Texture2D<float3> srcRadiance : register(t2);  // maybe half-res
+Texture2D<float3> srcRadiance : register(t2);
 Texture2D<unorm float2> srcNoise : register(t3);
-Texture2D<unorm float> srcAccumFrames : register(t4);  // maybe half-res
-Texture2D<float4> srcPrevGI : register(t5);            // maybe half-res
+Texture2D<unorm float> srcAccumFrames : register(t4);
+Texture2D<float4> srcPrevGI : register(t5);
 
 RWTexture2D<float4> outGI : register(u0);
 RWTexture2D<unorm float2> outBentNormal : register(u1);
