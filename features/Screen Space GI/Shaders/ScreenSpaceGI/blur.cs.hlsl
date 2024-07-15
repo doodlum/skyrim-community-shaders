@@ -54,9 +54,9 @@ float HistoryRadiusScaling(float accumFrames)
 
 	float4 sum = srcGI[dtid];
 #ifdef TEMPORAL_DENOISER
-	float4 fsum = accumFrames;
+	float fsum = accumFrames;
 #endif
-	float4 wsum = 1;
+	float wsum = 1;
 	for (uint i = 0; i < numSamples; i++) {
 		float w = g_Poisson8[i].z;
 

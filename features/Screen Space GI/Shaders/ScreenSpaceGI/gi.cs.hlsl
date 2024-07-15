@@ -229,7 +229,8 @@ void CalculateGI(
 
 #	ifdef BITMASK
 					if (frontBackMult > 0.f) {
-						float3 sampleRadiance = pow(srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb, 2.2) * frontBackMult * giBoost;
+						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb;
+						sampleRadiance = pow(max(0, sampleRadiance), 2.2) * frontBackMult * giBoost;
 
 						sampleRadiance *= countbits(maskedBitsGI & ~bitmaskGI) * 0.03125;  // 1/32
 						sampleRadiance *= dot(viewspaceNormal, sampleHorizonVec);
