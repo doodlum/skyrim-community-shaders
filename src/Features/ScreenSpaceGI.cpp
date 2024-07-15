@@ -517,7 +517,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute;
+	return texNoise && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute;
 }
 
 void ScreenSpaceGI::UpdateSB()
