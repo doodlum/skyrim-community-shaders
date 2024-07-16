@@ -42,12 +42,12 @@ struct ScreenSpaceGI : Feature
 		bool UseBitmask = true;
 		bool EnableGI = true;
 		// performance/quality
-		uint NumSlices = 1;
+		uint NumSlices = 2;
 		uint NumSteps = 4;
 		bool HalfRate = true;
 		float DepthMIPSamplingOffset = 3.3f;
 		// visual
-		float EffectRadius = 400.f;
+		float EffectRadius = 500.f;
 		float EffectFalloffRange = .615f;
 		float ThinOccluderCompensation = 0.f;
 		float Thickness = 75.f;
