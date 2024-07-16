@@ -22,7 +22,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../Common/Color.hlsli"
 #include "../Common/FastMath.hlsli"
 #include "../Common/FrameBuffer.hlsli"
 #include "../Common/GBuffer.hlsli"
@@ -230,8 +229,7 @@ void CalculateGI(
 
 #	ifdef BITMASK
 					if (frontBackMult > 0.f) {
-						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb;
-						sampleRadiance = sRGB2Lin(sampleRadiance) * frontBackMult * giBoost;
+						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb * frontBackMult * giBoost;
 
 						sampleRadiance *= countbits(maskedBitsGI & ~bitmaskGI) * 0.03125;  // 1/32
 						sampleRadiance *= dot(viewspaceNormal, sampleHorizonVec);
@@ -241,8 +239,7 @@ void CalculateGI(
 					}
 #	else
 					if (frontBackMult > 0.f) {
-						float3 newSampleRadiance = 0;
-						newSampleRadiance = pow(srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb, 2.2) * frontBackMult * giBoost;
+						float3 newSampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb * frontBackMult * giBoost;
 
 						float anglePrev = n + sideSign * HALF_PI - FastACos(horizonCos);  // float version is closest acos
 						float angleCurr = n + sideSign * HALF_PI - FastACos(shc);

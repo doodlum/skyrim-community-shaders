@@ -1,3 +1,4 @@
+#include "../Common/Color.hlsli"
 #include "../Common/FrameBuffer.hlsli"
 #include "../Common/GBuffer.hlsli"
 #include "../Common/VR.hlsli"
@@ -9,7 +10,7 @@ Texture2D<half> srcCurrDepth : register(t2);
 Texture2D<half4> srcCurrNormal : register(t3);
 Texture2D<half3> srcPrevGeo : register(t4);
 Texture2D<float4> srcMotionVec : register(t5);
-Texture2D<half4> srcPrevAmbient : register(t6);
+Texture2D<half3> srcPrevAmbient : register(t6);
 Texture2D<unorm float> srcAccumFrames : register(t7);
 
 RWTexture2D<float3> outRadianceDisocc : register(u0);
@@ -22,7 +23,7 @@ RWTexture2D<float4> outRemappedPrevGI : register(u2);
 
 void readHistory(
 	uint eyeIndex, float curr_depth, float3 curr_pos, int2 pixCoord, float bilinear_weight,
-	inout half4 prev_gi, inout half4 prev_gi_albedo, inout float accum_frames, inout float wsum)
+	inout half4 prev_gi, inout half3 prev_gi_albedo, inout float accum_frames, inout float wsum)
 {
 	const float2 srcScale = SrcFrameDim * RcpTexDim;
 
@@ -46,7 +47,7 @@ void readHistory(
 	// bool normal_pass = normal_prod * normal_prod > NormalDisocclusion;
 	if (depth_pass) {
 #if defined(GI) && defined(GI_BOUNCE)
-		prev_gi_albedo += srcPrevAmbient[pixCoord] * bilinear_weight;  // TODO better half res
+		prev_gi_albedo += sRGB2Lin(srcPrevAmbient[pixCoord]) * bilinear_weight;  // TODO better half res
 #endif
 #ifdef TEMPORAL_DENOISER
 		prev_gi += srcPrevGI[pixCoord] * bilinear_weight;
@@ -71,7 +72,7 @@ void readHistory(
 #endif
 	float2 prev_screen_pos = ConvertFromStereoUV(prev_uv, eyeIndex);
 
-	half4 prev_gi_albedo = 0;
+	half3 prev_gi_albedo = 0;
 	half4 prev_gi = 0;
 	float accum_frames = 0;
 	float wsum = 0;
@@ -127,7 +128,7 @@ void readHistory(
 
 	half3 radiance = 0;
 #ifdef GI
-	radiance = srcDiffuse[pixCoord].rgb;
+	radiance = sRGB2Lin(srcDiffuse[pixCoord].rgb);
 #	ifdef GI_BOUNCE
 	radiance += prev_gi_albedo.rgb * GIBounceFade;
 #	endif
