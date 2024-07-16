@@ -22,8 +22,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include "../Common/Color.hlsli"
 #include "../Common/FastMath.hlsli"
-#include "../Common/FrameBuffer.hlsl"
+#include "../Common/FrameBuffer.hlsli"
 #include "../Common/GBuffer.hlsli"
 #include "../Common/VR.hlsli"
 #include "common.hlsli"
@@ -230,7 +231,7 @@ void CalculateGI(
 #	ifdef BITMASK
 					if (frontBackMult > 0.f) {
 						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb;
-						sampleRadiance = pow(max(0, sampleRadiance), 2.2) * frontBackMult * giBoost;
+						sampleRadiance = sRGB2Lin(sampleRadiance) * frontBackMult * giBoost;
 
 						sampleRadiance *= countbits(maskedBitsGI & ~bitmaskGI) * 0.03125;  // 1/32
 						sampleRadiance *= dot(viewspaceNormal, sampleHorizonVec);
