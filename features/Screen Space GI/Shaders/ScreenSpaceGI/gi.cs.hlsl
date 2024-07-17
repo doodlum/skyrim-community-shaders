@@ -23,7 +23,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../Common/FastMath.hlsli"
-#include "../Common/FrameBuffer.hlsli"
+#include "../Common/FrameBuffer.hlsl"
 #include "../Common/GBuffer.hlsli"
 #include "../Common/VR.hlsli"
 #include "common.hlsli"

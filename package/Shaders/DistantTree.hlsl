@@ -1,5 +1,5 @@
 #include "Common/Constants.hlsli"
-#include "Common/FrameBuffer.hlsli"
+#include "Common/FrameBuffer.hlsl"
 #include "Common/GBuffer.hlsli"
 #include "Common/MotionBlur.hlsl"
 #include "Common/SharedData.hlsli"

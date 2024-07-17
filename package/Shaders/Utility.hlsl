@@ -1,5 +1,5 @@
 #include "Common/Constants.hlsli"
-#include "Common/FrameBuffer.hlsli"
+#include "Common/FrameBuffer.hlsl"
 #include "Common/LodLandscape.hlsli"
 #include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"

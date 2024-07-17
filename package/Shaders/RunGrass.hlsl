@@ -152,11 +152,11 @@ struct PS_OUTPUT
 
 #ifdef PSHADER
 
-#	include "Common/Color.hlsli"
-#	include "Common/FrameBuffer.hlsli"
+#	include "Common/Color.hlsl"
+#	include "Common/FrameBuffer.hlsl"
 #	include "Common/SharedData.hlsli"
 #	include "Common/MotionBlur.hlsl"
-#	include "Common/Permutation.hlsli"
+#	include "Common/Permutation.hlsl"
 
 SamplerState SampBaseSampler : register(s0);
 SamplerState SampShadowMaskSampler : register(s1);

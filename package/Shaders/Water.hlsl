@@ -1,6 +1,6 @@
-#include "Common/FrameBuffer.hlsli"
+#include "Common/FrameBuffer.hlsl"
 #include "Common/MotionBlur.hlsl"
-#include "Common/Permutation.hlsli"
+#include "Common/Permutation.hlsl"
 
 #define WATER
 

@@ -1,5 +1,5 @@
 #include "../Common/DeferredShared.hlsli"
-#include "../Common/FrameBuffer.hlsli"
+#include "../Common/FrameBuffer.hlsl"
 #include "../Common/GBuffer.hlsli"
 #include "../Common/VR.hlsli"
 
