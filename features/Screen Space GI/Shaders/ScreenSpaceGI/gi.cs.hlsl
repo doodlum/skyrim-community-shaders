@@ -326,7 +326,7 @@ void CalculateGI(
 
 	visibility *= rcpNumSlices;
 	visibility = lerp(saturate(visibility), 1, depthFade);
-	visibility = pow(visibility, AOPower);
+	visibility = pow(abs(visibility), (AOPower));
 
 #ifdef GI
 	radiance *= rcpNumSlices;
