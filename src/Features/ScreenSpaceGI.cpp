@@ -161,11 +161,15 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::SliderInt("Slices", (int*)&settings.NumSlices, 1, 10);
 	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("How many directions do the samples take. A greater value reduces noise but is more expensive.");
+		ImGui::Text(
+			"How many directions do the samples take.\n"
+			"Controls noise.");
 
 	ImGui::SliderInt("Steps Per Slice", (int*)&settings.NumSteps, 1, 20);
 	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("How many samples does it take in one direction. A greater value enhances accuracy but is more expensive.");
+		ImGui::Text(
+			"How many samples does it take in one direction.\n"
+			"Controls accuracy of lighting, and noise when effect radius is large.");
 
 	if (showAdvanced) {
 		ImGui::SliderFloat("MIP Sampling Offset", &settings.DepthMIPSamplingOffset, 2.f, 6.f, "%.2f");
@@ -318,14 +322,14 @@ void ScreenSpaceGI::DrawSettings()
 
 		{
 			auto _ = DisableGuard(!settings.EnableBlur);
-			ImGui::SliderFloat("Blur Radius", &settings.BlurRadius, 0.f, 8.f, "%.1f px");
+			ImGui::SliderFloat("Blur Radius", &settings.BlurRadius, 0.f, 30.f, "%.1f px");
 
 			ImGui::SliderInt("Blur Passes", (int*)&settings.BlurPasses, 1, 3, "%d", ImGuiSliderFlags_AlwaysClamp);
 			if (auto _tt = Util::HoverTooltipWrapper())
 				ImGui::Text("Blurring repeatedly for x times.");
 
 			if (showAdvanced) {
-				ImGui::SliderFloat("Geometry Weight", &settings.DistanceNormalisation, 0.f, 3.f, "%.2f");
+				ImGui::SliderFloat("Geometry Weight", &settings.DistanceNormalisation, 0.f, 5.f, "%.2f");
 				if (auto _tt = Util::HoverTooltipWrapper())
 					ImGui::Text(
 						"Higher value makes the blur more sensitive to differences in geometry.");

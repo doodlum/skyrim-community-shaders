@@ -26,11 +26,6 @@ static const float3 g_Poisson8[8] = {
 	float3(+0.1564120, -0.8198990, +0.8346850)
 };
 
-float HistoryRadiusScaling(float accumFrames)
-{
-	return lerp(1, 0.5, accumFrames / MaxAccumFrames);
-};
-
 [numthreads(8, 8, 1)] void main(const uint2 dtid
 								: SV_DispatchThreadID) {
 	const float2 frameScale = FrameDim * RcpTexDim;
@@ -38,8 +33,7 @@ float HistoryRadiusScaling(float accumFrames)
 	float radius = BlurRadius;
 #ifdef TEMPORAL_DENOISER
 	float accumFrames = srcAccumFrames[dtid];
-	radius *= HistoryRadiusScaling(accumFrames * 255);
-	radius = max(radius, 2);
+	radius = lerp(radius, 2, 1 / (1 + accumFrames * 255));
 #endif
 	const uint numSamples = 8;
 

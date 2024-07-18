@@ -127,7 +127,7 @@ void readHistory(
 
 	half3 radiance = 0;
 #ifdef GI
-	radiance = sRGB2Lin(srcDiffuse[pixCoord].rgb);
+	radiance = curr_depth < FP_Z ? 0 : sRGB2Lin(srcDiffuse[pixCoord].rgb);
 #	ifdef GI_BOUNCE
 	radiance += prev_gi_albedo.rgb * GIBounceFade;
 #	endif
