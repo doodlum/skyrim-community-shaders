@@ -47,7 +47,7 @@ void readHistory(
 	// bool normal_pass = normal_prod * normal_prod > NormalDisocclusion;
 	if (depth_pass) {
 #if defined(GI) && defined(GI_BOUNCE)
-		prev_gi_albedo += sRGB2Lin(srcPrevAmbient[pixCoord]) * bilinear_weight;  // TODO better half res
+		prev_gi_albedo += srcPrevAmbient[pixCoord] * bilinear_weight;  // TODO better half res
 #endif
 #ifdef TEMPORAL_DENOISER
 		prev_gi += srcPrevGI[pixCoord] * bilinear_weight;
@@ -77,6 +77,14 @@ void readHistory(
 	float wsum = 0;
 
 	const float curr_depth = srcCurrDepth[pixCoord];
+
+	if (curr_depth < FP_Z) {
+		outRadianceDisocc[pixCoord] = half3(0, 0, 0);
+		outAccumFrames[pixCoord] = 1.0 / 255.0;
+		outRemappedPrevGI[pixCoord] = half4(0, 0, 0, 1);
+		return;
+	}
+
 #ifdef REPROJECTION
 	if ((curr_depth <= DepthFadeRange.y) && !(any(prev_screen_pos < 0) || any(prev_screen_pos > 1))) {
 		// float3 curr_normal = DecodeNormal(srcCurrNormal[pixCoord];
@@ -127,7 +135,7 @@ void readHistory(
 
 	half3 radiance = 0;
 #ifdef GI
-	radiance = curr_depth < FP_Z ? 0 : sRGB2Lin(srcDiffuse[pixCoord].rgb);
+	radiance = sRGB2Lin(srcDiffuse[pixCoord].rgb * GIStrength);
 #	ifdef GI_BOUNCE
 	radiance += prev_gi_albedo.rgb * GIBounceFade;
 #	endif

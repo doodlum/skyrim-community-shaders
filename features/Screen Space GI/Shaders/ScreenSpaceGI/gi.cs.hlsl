@@ -327,7 +327,7 @@ void CalculateGI(
 #ifdef GI
 	radiance *= rcpNumSlices;
 	radiance = lerp(radiance, 0, depthFade);
-	radiance *= GIStrength;
+	// radiance *= GIStrength;
 #endif
 
 #ifdef BENT_NORMAL
