@@ -605,10 +605,8 @@ void ScreenSpaceGI::UpdateSB()
 
 		data.TexDim = res;
 		data.RcpTexDim = float2(1.0f) / res;
-		data.SrcFrameDim = dynres;
-		data.RcpSrcFrameDim = float2(1.0f) / dynres;
-		data.OutFrameDim = dynres;
-		data.RcpOutFrameDim = float2(1.0f) / dynres;
+		data.FrameDim = dynres;
+		data.RcpFrameDim = float2(1.0f) / dynres;
 		data.FrameIndex = viewport->uiFrameCount;
 
 		data.NumSlices = settings.NumSlices;

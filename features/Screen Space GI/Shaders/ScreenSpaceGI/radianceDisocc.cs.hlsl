@@ -25,9 +25,9 @@ void readHistory(
 	uint eyeIndex, float curr_depth, float3 curr_pos, int2 pixCoord, float bilinear_weight,
 	inout half4 prev_gi, inout half3 prev_gi_albedo, inout float accum_frames, inout float wsum)
 {
-	const float2 srcScale = SrcFrameDim * RcpTexDim;
+	const float2 frameScale = FrameDim * RcpTexDim;
 
-	const float2 uv = (pixCoord + .5) * RcpOutFrameDim;
+	const float2 uv = (pixCoord + .5) * RcpFrameDim;
 	const float2 screen_pos = ConvertFromStereoUV(uv, eyeIndex);
 	if (any(screen_pos < 0) || any(screen_pos > 1))
 		return;
@@ -59,10 +59,9 @@ void readHistory(
 
 [numthreads(8, 8, 1)] void main(const uint2 pixCoord
 								: SV_DispatchThreadID) {
-	const float2 srcScale = SrcFrameDim * RcpTexDim;
-	const float2 outScale = OutFrameDim * RcpTexDim;
+	const float2 frameScale = FrameDim * RcpTexDim;
 
-	const float2 uv = (pixCoord + .5) * RcpOutFrameDim;
+	const float2 uv = (pixCoord + .5) * RcpFrameDim;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 	const float2 screen_pos = ConvertFromStereoUV(uv, eyeIndex);
 
@@ -85,7 +84,7 @@ void readHistory(
 		float3 curr_pos = ScreenToViewPosition(screen_pos, curr_depth, eyeIndex);
 		curr_pos = ViewToWorldPosition(curr_pos, CameraViewInverse[eyeIndex]);
 
-		float2 prev_px_coord = prev_uv * OutFrameDim;
+		float2 prev_px_coord = prev_uv * FrameDim;
 		int2 prev_px_lu = floor(prev_px_coord - 0.5);
 		float2 bilinear_weights = prev_px_coord - 0.5 - prev_px_lu;
 		{

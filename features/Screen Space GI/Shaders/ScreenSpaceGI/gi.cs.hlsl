@@ -74,8 +74,7 @@ void CalculateGI(
 	uint2 dtid, float2 uv, float viewspaceZ, float3 viewspaceNormal,
 	out float4 o_currGIAO, out float3 o_bentNormal)
 {
-	const float2 srcScale = SrcFrameDim * RcpTexDim;
-	const float2 outScale = OutFrameDim * RcpTexDim;
+	const float2 frameScale = FrameDim * RcpTexDim;
 
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 	float2 normalizedScreenPos = ConvertFromStereoUV(uv, eyeIndex);
@@ -93,7 +92,7 @@ void CalculateGI(
 	// if the offset is under approx pixel size (pixelTooCloseThreshold), push it out to the minimum distance
 	const float pixelTooCloseThreshold = 1.3;
 	// approx viewspace pixel size at pixCoord; approximation of NDCToViewspace( uv.xy + ViewportSize.xy, pixCenterPos.z ).xy - pixCenterPos.xy;
-	const float2 pixelDirRBViewspaceSizeAtCenterZ = viewspaceZ.xx * (eyeIndex == 0 ? NDCToViewMul.xy : NDCToViewMul.zw) * RcpOutFrameDim;
+	const float2 pixelDirRBViewspaceSizeAtCenterZ = viewspaceZ.xx * (eyeIndex == 0 ? NDCToViewMul.xy : NDCToViewMul.zw) * RcpFrameDim;
 
 	float screenspaceRadius = EffectRadius / pixelDirRBViewspaceSizeAtCenterZ.x;
 	// this is the min distance to start sampling from to avoid sampling from the center pixel (no useful data obtained from sampling center pixel)
@@ -164,14 +163,14 @@ void CalculateGI(
 				float2 sampleOffset = s * omega;
 
 				float2 samplePxCoord = dtid + .5 + sampleOffset * sideSign;
-				float2 sampleUV = samplePxCoord * RcpOutFrameDim;
+				float2 sampleUV = samplePxCoord * RcpFrameDim;
 				float2 sampleScreenPos = ConvertFromStereoUV(sampleUV, eyeIndex);
 				[branch] if (any(sampleScreenPos > 1.0) || any(sampleScreenPos < 0.0)) break;
 
 				float sampleOffsetLength = length(sampleOffset);
 				float mipLevel = clamp(log2(sampleOffsetLength) - DepthMIPSamplingOffset, 0, 5);
 
-				float SZ = srcWorkingDepth.SampleLevel(samplerPointClamp, sampleUV * srcScale, mipLevel);
+				float SZ = srcWorkingDepth.SampleLevel(samplerPointClamp, sampleUV * frameScale, mipLevel);
 				[branch] if (SZ > DepthFadeRange.y || SZ < FP_Z) continue;
 
 				float3 samplePos = ScreenToViewPosition(sampleScreenPos, SZ, eyeIndex);
@@ -223,13 +222,13 @@ void CalculateGI(
 					// IL
 					float frontBackMult = 1.f;
 #	ifdef BACKFACE
-					if (dot(DecodeNormal(srcNormal.SampleLevel(samplerPointClamp, sampleUV * srcScale, 0).xy), sampleHorizonVec) > 0)  // backface
+					if (dot(DecodeNormal(srcNormal.SampleLevel(samplerPointClamp, sampleUV * frameScale, 0).xy), sampleHorizonVec) > 0)  // backface
 						frontBackMult = BackfaceStrength;
 #	endif
 
 #	ifdef BITMASK
 					if (frontBackMult > 0.f) {
-						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb * frontBackMult * giBoost;
+						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * frameScale, mipLevel).rgb * frontBackMult * giBoost;
 
 						sampleRadiance *= countbits(maskedBitsGI & ~bitmaskGI) * 0.03125;  // 1/32
 						sampleRadiance *= dot(viewspaceNormal, sampleHorizonVec);
@@ -239,7 +238,7 @@ void CalculateGI(
 					}
 #	else
 					if (frontBackMult > 0.f) {
-						float3 newSampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * outScale, mipLevel).rgb * frontBackMult * giBoost;
+						float3 newSampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * frameScale, mipLevel).rgb * frontBackMult * giBoost;
 
 						float anglePrev = n + sideSign * HALF_PI - FastACos(horizonCos);  // float version is closest acos
 						float angleCurr = n + sideSign * HALF_PI - FastACos(shc);
@@ -344,17 +343,16 @@ void CalculateGI(
 
 [numthreads(8, 8, 1)] void main(const uint2 dtid
 								: SV_DispatchThreadID) {
-	const float2 srcScale = SrcFrameDim * RcpTexDim;
-	const float2 outScale = OutFrameDim * RcpTexDim;
+	const float2 frameScale = FrameDim * RcpTexDim;
 
 	uint2 pxCoord = dtid;
 #if defined(HALF_RATE)
-	const uint halfWidth = uint(OutFrameDim.x) >> 1;
+	const uint halfWidth = uint(FrameDim.x) >> 1;
 	const bool useHistory = dtid.x >= halfWidth;
 	pxCoord.x = (pxCoord.x % halfWidth) * 2 + (dtid.y + FrameIndex + useHistory) % 2;
 #endif
 
-	float2 uv = (pxCoord + .5f) * RcpOutFrameDim;
+	float2 uv = (pxCoord + .5f) * RcpFrameDim;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
 	float viewspaceZ = srcWorkingDepth[pxCoord];
