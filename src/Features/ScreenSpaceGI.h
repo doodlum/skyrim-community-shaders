@@ -57,15 +57,14 @@ struct ScreenSpaceGI : Feature
 		float BackfaceStrength = 0.f;
 		bool EnableGIBounce = true;
 		float GIBounceFade = 1.f;
-		float GIDistanceCompensation = 1.f;
-		float GICompensationMaxDist = 400;
+		float GIDistanceCompensation = 0.f;
 		// mix
 		float AOPower = 1.f;
 		float GIStrength = 6.f;
 		// denoise
 		bool EnableTemporalDenoiser = true;
 		bool EnableBlur = true;
-		float DepthDisocclusion = .1f;
+		float DepthDisocclusion = .02f;
 		float NormalDisocclusion = .1f;
 		uint MaxAccumFrames = 16;
 		float BlurRadius = 15.f;

@@ -26,7 +26,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	EnableGIBounce,
 	GIBounceFade,
 	GIDistanceCompensation,
-	GICompensationMaxDist,
 	AOPower,
 	GIStrength,
 	DepthDisocclusion,
@@ -230,15 +229,13 @@ void ScreenSpaceGI::DrawSettings()
 		auto _ = DisableGuard(!settings.EnableGI);
 
 		if (showAdvanced) {
-			ImGui::SliderFloat("GI Distance Compensation", &settings.GIDistanceCompensation, 0.0f, 9.0f, "%.1f");
+			ImGui::SliderFloat("GI Distance Compensation", &settings.GIDistanceCompensation, -5.0f, 5.0f, "%.1f");
 			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text(
-					"Brighten up further radiance samples that are otherwise too weak. Creates a wider GI look.\n"
-					"If using bitmask, this value should be roughly inverse to thickness.");
+				ImGui::Text("Brighten/Dimming further radiance samples.");
 
-			ImGui::SliderFloat("GI Compensation Distance", &settings.GICompensationMaxDist, 10.0f, 500.0f, "%.1f game units");
-			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text("The distance of maximal compensation/brightening.");
+			// ImGui::SliderFloat("GI Compensation Distance", &settings.GICompensationMaxDist, 10.0f, 500.0f, "%.1f game units");
+			// if (auto _tt = Util::HoverTooltipWrapper())
+			// 	ImGui::Text("The distance of maximal compensation/brightening.");
 
 			ImGui::Separator();
 		}
@@ -255,9 +252,7 @@ void ScreenSpaceGI::DrawSettings()
 			percentageSlider("Ambient Bounce Strength", &settings.GIBounceFade);
 			ImGui::Unindent();
 			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text(
-					"How much of this frame's ambient+GI get carried to the next frame as source.\n"
-					"If you have a very high GI strength, you may want to turn this down to prevent feedback loops that bleaches everything.");
+				ImGui::Text("How much of this frame's ambient+GI get carried to the next frame as source.");
 		}
 
 		if (showAdvanced) {
@@ -305,17 +300,11 @@ void ScreenSpaceGI::DrawSettings()
 		{
 			auto _ = DisableGuard(!settings.EnableTemporalDenoiser && !(settings.EnableGI || settings.EnableGIBounce));
 
-			percentageSlider("Movement Disocclusion", &settings.DepthDisocclusion, 0.f, 30.f);
+			percentageSlider("Movement Disocclusion", &settings.DepthDisocclusion, 0.f, 10.f);
 			if (auto _tt = Util::HoverTooltipWrapper())
 				ImGui::Text(
 					"If a pixel has moved too far from the last frame, its radiance will not be carried to this frame.\n"
 					"Lower values are stricter.");
-
-			// ImGui::SliderFloat("Normal Disocclusion", &settings.NormalDisocclusion, 0.f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-			// if (auto _tt = Util::HoverTooltipWrapper())
-			// 	ImGui::Text(
-			// 		"If a pixel's normal deviates too much from the last frame, its radiance will not be carried to this frame.\n"
-			// 		"Higher values are stricter.");
 
 			ImGui::Separator();
 		}
@@ -627,7 +616,7 @@ void ScreenSpaceGI::UpdateSB()
 		data.BackfaceStrength = settings.BackfaceStrength;
 		data.GIBounceFade = settings.GIBounceFade;
 		data.GIDistanceCompensation = settings.GIDistanceCompensation;
-		data.GICompensationMaxDist = settings.GICompensationMaxDist;
+		data.GICompensationMaxDist = settings.EffectRadius;
 
 		data.AOPower = settings.AOPower;
 		data.GIStrength = settings.GIStrength;

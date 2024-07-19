@@ -380,11 +380,11 @@ void CalculateGI(
 				currGIAO, bentNormal);
 
 #ifdef TEMPORAL_DENOISER
-		float lerpFactor = 0;
+		float lerpFactor = rcp(srcAccumFrames[pxCoord] * 255);
 #	if defined(HALF_RATE)
-		if (!useHistory)
+		if (useHistory && lerpFactor != 1)
+			lerpFactor = 0;
 #	endif
-			lerpFactor = rcp(srcAccumFrames[pxCoord] * 255);
 
 		float4 prevGIAO = srcPrevGI[pxCoord];
 		currGIAO = lerp(prevGIAO, currGIAO, lerpFactor);
