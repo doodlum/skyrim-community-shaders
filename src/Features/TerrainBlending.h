@@ -20,8 +20,6 @@ public:
 
 	virtual void SetupResources() override;
 
-	virtual void DrawSettings() override;
-
 	ID3D11VertexShader* GetTerrainVertexShader();
 	ID3D11VertexShader* GetTerrainOffsetVertexShader();
 

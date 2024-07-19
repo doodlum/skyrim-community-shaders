@@ -3,10 +3,6 @@
 #include "State.h"
 #include "Util.h"
 
-void TerrainBlending::DrawSettings()
-{
-}
-
 ID3D11VertexShader* TerrainBlending::GetTerrainVertexShader()
 {
 	if (!terrainVertexShader) {

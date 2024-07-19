@@ -5,10 +5,6 @@
 #include "Deferred.h"
 #include "Util.h"
 
-void CloudShadows::DrawSettings()
-{
-}
-
 void CloudShadows::CheckResourcesSide(int side)
 {
 	static Util::FrameChecker frame_checker[6];

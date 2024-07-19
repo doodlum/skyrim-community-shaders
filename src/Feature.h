@@ -21,7 +21,7 @@ struct Feature
 	virtual void SetupResources() {}
 	virtual void Reset() {}
 
-	virtual void DrawSettings() = 0;
+	virtual void DrawSettings() {}
 	virtual void Draw(const RE::BSShader*, const uint32_t) {}
 	virtual void DrawDeferred() {}
 	virtual void DrawPreProcess() {}
