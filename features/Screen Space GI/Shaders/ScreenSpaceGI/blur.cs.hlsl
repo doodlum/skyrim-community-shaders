@@ -45,7 +45,9 @@ static const float3 g_Poisson8[8] = {
 	float3 pos = ScreenToViewPosition(screenPos, depth, eyeIndex);
 	float3 normal = DecodeNormal(srcNormal[dtid].xy);
 
-	float4 sum = srcGI[dtid];
+	float4 gi = srcGI[dtid];
+
+	float4 sum = gi;
 #ifdef TEMPORAL_DENOISER
 	float fsum = accumFrames;
 #endif
@@ -66,14 +68,14 @@ static const float3 g_Poisson8[8] = {
 
 		float3 normalSample = DecodeNormal(srcNormal.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0).xy);
 
+		float4 giSample = srcGI.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0);
+
 		// geometry weight
 		w *= saturate(1 - abs(dot(normal, posSample - pos)) * DistanceNormalisation);
 		// normal weight
 		w *= 1 - saturate(acosFast4(saturate(dot(normalSample, normal))) / fsl_HALF_PI * 2);
 
-		float4 gi = srcGI.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0);
-
-		sum += gi * w;
+		sum += giSample * w;
 #ifdef TEMPORAL_DENOISER
 		fsum += srcAccumFrames.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0) * w;
 #endif
