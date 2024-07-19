@@ -29,7 +29,6 @@ public:
 	ID3D11ComputeShader* GetDepthBlendShader();
 	ID3D11ComputeShader* GetDepthFixShader();
 
-	virtual void RestoreDefaultSettings() override;
 	virtual void PostPostLoad() override;
 
 	bool renderDepth = false;

@@ -130,10 +130,6 @@ void TerrainBlending::SetupResources()
 	}
 }
 
-void TerrainBlending::RestoreDefaultSettings()
-{
-}
-
 void TerrainBlending::PostPostLoad()
 {
 	Hooks::Install();

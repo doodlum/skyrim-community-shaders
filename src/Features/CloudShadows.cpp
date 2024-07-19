@@ -119,7 +119,3 @@ void CloudShadows::SetupResources()
 		}
 	}
 }
-
-void CloudShadows::RestoreDefaultSettings()
-{
-}

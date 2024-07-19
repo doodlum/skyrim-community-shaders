@@ -522,7 +522,3 @@ void DynamicCubemaps::Reset()
 	else
 		activeReflections = false;
 }
-
-void DynamicCubemaps::RestoreDefaultSettings()
-{
-}

@@ -36,7 +36,7 @@ struct Feature
 	virtual void SaveSettings(json&) {}
 	virtual void LoadSettings(json&) {}
 
-	virtual void RestoreDefaultSettings() = 0;
+	virtual void RestoreDefaultSettings() {}
 
 	virtual bool ValidateCache(CSimpleIniA& a_ini);
 	virtual void WriteDiskCacheInfo(CSimpleIniA& a_ini);

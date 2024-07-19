@@ -31,8 +31,6 @@ struct CloudShadows : Feature
 
 	virtual void Prepass() override;
 
-	virtual void RestoreDefaultSettings() override;
-
 	virtual inline void PostPostLoad() override { Hooks::Install(); }
 
 	struct Hooks
