@@ -233,10 +233,6 @@ void ScreenSpaceGI::DrawSettings()
 			if (auto _tt = Util::HoverTooltipWrapper())
 				ImGui::Text("Brighten/Dimming further radiance samples.");
 
-			// ImGui::SliderFloat("GI Compensation Distance", &settings.GICompensationMaxDist, 10.0f, 500.0f, "%.1f game units");
-			// if (auto _tt = Util::HoverTooltipWrapper())
-			// 	ImGui::Text("The distance of maximal compensation/brightening.");
-
 			ImGui::Separator();
 		}
 
