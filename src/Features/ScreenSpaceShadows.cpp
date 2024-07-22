@@ -90,8 +90,6 @@ void ScreenSpaceShadows::DrawShadows()
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto context = State::GetSingleton()->context;
 
-	auto viewport = RE::BSGraphics::State::GetSingleton();
-
 	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 	auto dirLight = skyrim_cast<RE::NiDirectionalLight*>(accumulator->GetRuntimeData().activeShadowSceneNode->GetRuntimeData().sunLight->light.get());
 
@@ -107,16 +105,15 @@ void ScreenSpaceShadows::DrawShadows()
 	lightProjection = DirectX::SimpleMath::Vector4::Transform(lightProjection, viewProjMat);
 	float lightProjectionF[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };
 
-	int viewportSize[2] = { (int)state->screenWidth, (int)state->screenHeight };
+	int viewportSize[2] = { (int)state->screenSize.x, (int)state->screenSize.y };
 
 	if (REL::Module::IsVR())
 		viewportSize[0] /= 2;
 
+	float2 size = Util::ConvertToDynamic({ (float)viewportSize[0], (float)viewportSize[1] });
+
 	int minRenderBounds[2] = { 0, 0 };
-	int maxRenderBounds[2] = {
-		(int)((float)viewportSize[0] * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale),
-		(int)((float)viewportSize[1] * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale)
-	};
+	int maxRenderBounds[2] = { (int)size.x, (int)size.y };
 
 	auto depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
 	context->CSSetShaderResources(0, 1, &depth.depthSRV);
@@ -277,18 +274,20 @@ void ScreenSpaceShadows::SetupResources()
 
 		D3D11_TEXTURE2D_DESC texDesc{};
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 
 		shadowMask.texture->GetDesc(&texDesc);
 		shadowMask.SRV->GetDesc(&srvDesc);
-		shadowMask.UAV->GetDesc(&uavDesc);
 
 		texDesc.Format = DXGI_FORMAT_R8_UNORM;
 		texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 
 		srvDesc.Format = texDesc.Format;
-		uavDesc.Format = texDesc.Format;
 
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+			.Texture2D = { .MipSlice = 0 }
+		};
 		screenSpaceShadowsTexture = new Texture2D(texDesc);
 		screenSpaceShadowsTexture->CreateSRV(srvDesc);
 		screenSpaceShadowsTexture->CreateUAV(uavDesc);

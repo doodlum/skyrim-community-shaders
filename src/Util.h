@@ -27,6 +27,7 @@ namespace Util
 	float4 TryGetWaterData(float offsetX, float offsetY);
 	void DumpSettingsOptions();
 	float4 GetCameraData();
+	bool GetTemporal();
 
 	inline RE::NiPoint3 GetAverageEyePosition()
 	{
@@ -52,6 +53,8 @@ namespace Util
 		}
 		return shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex);
 	}
+
+	float2 ConvertToDynamic(float2 size);
 
 	struct DispatchCount
 	{
@@ -96,7 +99,7 @@ namespace Util
 			last_frame = frame;
 			return retval;
 		}
-		inline bool isNewFrame() { return isNewFrame(RE::BSGraphics::State::GetSingleton()->uiFrameCount); }
+		inline bool isNewFrame() { return isNewFrame(RE::BSGraphics::State::GetSingleton()->frameCount); }
 	};
 
 	// for simple benchmarking

@@ -320,6 +320,7 @@ namespace Util
 			logger::info("Game Setting {} {}", set.first, set.second->GetName());
 		}
 	}
+
 	float4 GetCameraData()
 	{
 		float4 cameraData{};
@@ -334,18 +335,28 @@ namespace Util
 		return cameraData;
 	}
 
-	DispatchCount GetScreenDispatchCount()
+	float2 ConvertToDynamic(float2 size)
 	{
-		auto state = State::GetSingleton();
 		auto viewport = RE::BSGraphics::State::GetSingleton();
 
-		float resolutionX = state->screenWidth * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
-		float resolutionY = state->screenHeight * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+		return float2(
+			size.x * viewport->GetRuntimeData().dynamicResolutionWidthRatio,
+			size.y * viewport->GetRuntimeData().dynamicResolutionHeightRatio);
+	}
 
-		uint dispatchX = (uint)std::ceil(resolutionX / 8.0f);
-		uint dispatchY = (uint)std::ceil(resolutionY / 8.0f);
+	DispatchCount GetScreenDispatchCount()
+	{
+		float2 resolution = ConvertToDynamic(State::GetSingleton()->screenSize);
+		uint dispatchX = (uint)std::ceil(resolution.x / 8.0f);
+		uint dispatchY = (uint)std::ceil(resolution.y / 8.0f);
 
 		return { dispatchX, dispatchY };
+	}
+
+	bool GetTemporal()
+	{
+		auto imageSpaceManager = RE::ImageSpaceManager::GetSingleton();
+		return (!REL::Module::IsVR() ? imageSpaceManager->GetRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled : imageSpaceManager->GetVRRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled) || State::GetSingleton()->upscalerLoaded;
 	}
 
 	HoverTooltipWrapper::HoverTooltipWrapper()
