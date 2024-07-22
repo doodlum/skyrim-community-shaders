@@ -69,7 +69,7 @@ SamplerState samplerLinearClamp : register(s1);
 ///////////////////////////////////////////////////////////////////////////////
 
 // first person z
-#define FP_Z (16.5)
+#define FP_Z (18.0)
 
 #define ISNAN(x) (!(x < 0.f || x > 0.f || x == 0.f))
 
