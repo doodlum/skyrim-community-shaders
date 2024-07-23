@@ -13,25 +13,23 @@ struct Skylighting : Feature
 		return &singleton;
 	}
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 
-	virtual inline std::string GetName() { return "Skylighting"; }
-	virtual inline std::string GetShortName() { return "Skylighting"; }
-	inline std::string_view GetShaderDefineName() override { return "SKYLIGHTING"; }
-	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
+	virtual inline std::string GetName() override { return "Skylighting"; }
+	virtual inline std::string GetShortName() override { return "Skylighting"; }
+	virtual inline std::string_view GetShaderDefineName() override { return "SKYLIGHTING"; }
+	virtual bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual inline void RestoreDefaultSettings() override{};
 	virtual void DrawSettings() override;
 
-	virtual void Load(json& o_json) override;
-	virtual void Save(json& o_json) override;
+	virtual void LoadSettings(json& o_json) override;
+	virtual void SaveSettings(json& o_json) override;
 
 	virtual inline void Reset() override{};
 	virtual void SetupResources() override;
 	virtual void ClearShaderCache() override;
 	void CompileComputeShaders();
-
-	virtual inline void Draw(const RE::BSShader*, const uint32_t) override{};
 
 	virtual void Prepass() override;
 

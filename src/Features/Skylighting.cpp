@@ -11,17 +11,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	MinSpecularVisibility,
 	SpecularBrightness)
 
-void Skylighting::Load(json& o_json)
+void Skylighting::LoadSettings(json& o_json)
 {
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
+	settings = o_json;
 }
 
-void Skylighting::Save(json& o_json)
+void Skylighting::SaveSettings(json& o_json)
 {
-	o_json[GetName()] = settings;
+	o_json = settings;
 }
 
 void Skylighting::DrawSettings()
