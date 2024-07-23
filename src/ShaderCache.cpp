@@ -1169,7 +1169,6 @@ namespace SIE
 			auto diskPath = GetDiskPath(shader.fxpFilename, descriptor, shaderClass);
 
 			if (useDiskCache && std::filesystem::exists(diskPath)) {
-				shaderBlob = nullptr;
 				// check build time of cache
 				auto diskCacheTime = cache.UseFileWatcher() ? std::chrono::clock_cast<std::chrono::system_clock>(std::filesystem::last_write_time(diskPath)) : system_clock::now();
 				if (cache.ShaderModifiedSince(shader.fxpFilename, diskCacheTime)) {
