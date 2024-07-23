@@ -1547,7 +1547,7 @@ namespace SIE
 		return (bool)a_blob;
 	}
 
-	ID3DBlob* ShaderCache::GetCompletedShader(const std::string a_key)
+	ID3DBlob* ShaderCache::GetCompletedShader(const std::string& a_key)
 	{
 		std::string type = SIE::SShaderCache::GetTypeFromShaderString(a_key);
 		UpdateShaderModifiedTime(a_key);
@@ -1577,7 +1577,7 @@ namespace SIE
 		return GetCompletedShader(key);
 	}
 
-	ShaderCompilationTask::Status ShaderCache::GetShaderStatus(const std::string a_key)
+	ShaderCompilationTask::Status ShaderCache::GetShaderStatus(const std::string& a_key)
 	{
 		std::scoped_lock lock{ mapMutex };
 		if (!shaderMap.empty() && shaderMap.contains(a_key)) {
