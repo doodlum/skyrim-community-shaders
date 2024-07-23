@@ -196,7 +196,7 @@ namespace SIE
 		bool IsHideErrors();
 
 		void InsertModifiedShaderMap(std::string a_shader, std::chrono::time_point<std::chrono::system_clock> a_time);
-		std::chrono::time_point<std::chrono::system_clock> GetModifiedShaderMapTime(std::string a_shader);
+		std::chrono::time_point<std::chrono::system_clock> GetModifiedShaderMapTime(const std::string& a_shader);
 
 		int32_t compilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) - 1, 1);
 		int32_t backgroundCompilationThreadCount = std::max(static_cast<int32_t>(std::thread::hardware_concurrency()) / 2, 1);
