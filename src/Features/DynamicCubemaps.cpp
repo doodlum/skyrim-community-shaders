@@ -38,9 +38,6 @@ void DynamicCubemaps::DrawSettings()
 			}
 		}
 
-		ImGui::SliderFloat("scatterCoeff", (float*)&settings.scatterCoeffMult, 0.0, 1.0, "%.2f");
-		ImGui::SliderFloat("absorpCoeff", (float*)&settings.absorpCoeffMult, 0.0, 10.0, "%.2f");
-
 		if (ImGui::TreeNodeEx("Dynamic Cubemap Creator", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Text("You must enable creator mode by adding the shader define CREATOR");
 			ImGui::Checkbox("Enable Creator", (bool*)&settings.Enabled);
@@ -410,14 +407,6 @@ void DynamicCubemaps::PostDeferred()
 	context->PSSetShaderResources(64, 2, views);
 }
 
-void DynamicCubemaps::Prepass()
-{
-}
-
-void DynamicCubemaps::Draw(const RE::BSShader*, const uint32_t)
-{
-}
-
 void DynamicCubemaps::SetupResources()
 {
 	GetComputeShaderUpdate();
@@ -529,17 +518,4 @@ void DynamicCubemaps::Reset()
 		activeReflections = sky->mode.get() == RE::Sky::Mode::kFull;
 	else
 		activeReflections = false;
-}
-
-void DynamicCubemaps::Load(json& o_json)
-{
-	Feature::Load(o_json);
-}
-
-void DynamicCubemaps::Save(json&)
-{
-}
-
-void DynamicCubemaps::RestoreDefaultSettings()
-{
 }
