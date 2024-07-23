@@ -126,5 +126,5 @@ public:
 
 	void Irradiance(bool a_reflections);
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

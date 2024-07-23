@@ -71,5 +71,5 @@ struct ScreenSpaceShadows : Feature
 
 	virtual void RestoreDefaultSettings() override;
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

@@ -1,3 +1,4 @@
+
 #include "SubsurfaceScattering.h"
 
 #include "Deferred.h"
@@ -238,10 +239,6 @@ void SubsurfaceScattering::DrawSSS()
 
 	ID3D11ComputeShader* shader = nullptr;
 	context->CSSetShader(shader, nullptr, 0);
-}
-
-void SubsurfaceScattering::Draw(const RE::BSShader*, const uint32_t)
-{
 }
 
 void SubsurfaceScattering::SetupResources()

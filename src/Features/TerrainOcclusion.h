@@ -124,5 +124,5 @@ struct TerrainOcclusion : public Feature
 
 	virtual inline void RestoreDefaultSettings() override { settings = {}; }
 	virtual void ClearShaderCache() override;
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

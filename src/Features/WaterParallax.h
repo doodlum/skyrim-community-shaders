@@ -17,12 +17,5 @@ public:
 
 	bool HasShaderDefine(RE::BSShader::Type shaderType) override;
 
-	virtual void SetupResources() override;
-
-	virtual void DrawSettings() override;
-
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
-
-	virtual void RestoreDefaultSettings() override;
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

@@ -83,8 +83,6 @@ public:
 
 	void DrawSSS();
 
-	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
-
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
 
@@ -117,5 +115,5 @@ public:
 		}
 	};
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

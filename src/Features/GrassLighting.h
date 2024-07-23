@@ -32,5 +32,5 @@ struct GrassLighting : Feature
 
 	virtual void RestoreDefaultSettings() override;
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

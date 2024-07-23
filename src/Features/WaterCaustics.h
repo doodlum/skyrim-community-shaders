@@ -21,11 +21,7 @@ public:
 
 	virtual void SetupResources() override;
 
-	virtual void DrawSettings() override;
-
 	virtual void Prepass() override;
 
-	virtual void RestoreDefaultSettings() override;
-
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };

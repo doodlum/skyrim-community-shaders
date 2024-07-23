@@ -308,7 +308,7 @@ public:
 		}
 	};
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 };
 
 template <>

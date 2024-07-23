@@ -60,7 +60,7 @@ struct GrassCollision : Feature
 
 	virtual void PostPostLoad() override;
 
-	bool SupportsVR() override { return true; };
+	virtual bool SupportsVR() override { return true; };
 
 	struct Hooks
 	{
