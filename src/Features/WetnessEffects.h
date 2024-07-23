@@ -88,14 +88,5 @@ public:
 	float CalculateWeatherTransitionPercentage(float skyCurrentWeatherPct, float beginFade, bool fadeIn);
 	void CalculateWetness(RE::TESWeather* weather, RE::Sky* sky, float seconds, float& wetness, float& puddleWetness);
 
-	virtual inline void PostPostLoad() override { Hooks::Install(); }
-
-	struct Hooks
-	{
-		static void Install()
-		{
-		}
-	};
-
 	virtual bool SupportsVR() override { return true; };
 };
