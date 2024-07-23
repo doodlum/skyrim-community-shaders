@@ -966,12 +966,9 @@ void Menu::ProcessInputEvents(RE::InputEvent* const* a_events)
 		if (it->GetEventType() != RE::INPUT_EVENT_TYPE::kButton && it->GetEventType() != RE::INPUT_EVENT_TYPE::kChar)  // we do not care about non button or char events
 			continue;
 
-		if (it->GetEventType() == RE::INPUT_EVENT_TYPE::kButton)
-			addToEventQueue(KeyEvent(static_cast<RE::ButtonEvent*>(it)));
-		else if (it->GetEventType() == RE::INPUT_EVENT_TYPE::kChar)
-			addToEventQueue(KeyEvent(static_cast<CharEvent*>(it)));
-		else
-			throw std::runtime_error("Invalid key event type.");
+		auto event = it->GetEventType() == RE::INPUT_EVENT_TYPE::kButton ? KeyEvent(static_cast<RE::ButtonEvent*>(it)) : KeyEvent(static_cast<CharEvent*>(it));
+
+		addToEventQueue(event);
 	}
 }
 

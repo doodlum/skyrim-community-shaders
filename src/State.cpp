@@ -414,7 +414,7 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 			break;
 		case RE::BSShader::Type::Water:
 			{
-				bool flags = ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
+				auto flags = ~((uint32_t)SIE::ShaderCache::WaterShaderFlags::Reflections |
 							   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Cubemap |
 							   (uint32_t)SIE::ShaderCache::WaterShaderFlags::Interior);
 				a_vertexDescriptor &= flags;
@@ -423,7 +423,7 @@ void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescr
 			break;
 		case RE::BSShader::Type::Effect:
 			{
-				bool flags = ~((uint32_t)SIE::ShaderCache::EffectShaderFlags::GrayscaleToColor |
+				auto flags = ~((uint32_t)SIE::ShaderCache::EffectShaderFlags::GrayscaleToColor |
 							   (uint32_t)SIE::ShaderCache::EffectShaderFlags::GrayscaleToAlpha |
 							   (uint32_t)SIE::ShaderCache::EffectShaderFlags::IgnoreTexAlpha);
 				a_vertexDescriptor &= flags;
