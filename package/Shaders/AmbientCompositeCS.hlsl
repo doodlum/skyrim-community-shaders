@@ -46,10 +46,9 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 	half3 directionalAmbientColor = mul(DirectionalAmbient, half4(normalWS, 1.0));
 
-	half3 ambient = albedo * directionalAmbientColor;
+	half3 ambient = directionalAmbientColor;
 
 	diffuseColor = sRGB2Lin(diffuseColor);
-
 	ambient = sRGB2Lin(ambient);
 	albedo = sRGB2Lin(albedo);
 
@@ -78,7 +77,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 	visibility = min(visibility, ssgiDiffuse.a);
 
-	DiffuseAmbientRW[dispatchID.xy] = ambient + ssgiDiffuse.rgb;
+	DiffuseAmbientRW[dispatchID.xy] = albedo * ambient + ssgiDiffuse.rgb;
 
 #	if defined(INTERIOR)
 	diffuseColor *= ssgiDiffuse.a;
@@ -86,10 +85,11 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	diffuseColor += ssgiDiffuse.rgb;
 #endif
 
-	ambient = Lin2sRGB(ambient * visibility);
 	diffuseColor = Lin2sRGB(diffuseColor);
+	ambient = Lin2sRGB(ambient * visibility);
+	albedo = Lin2sRGB(albedo);
 
-	diffuseColor += ambient;
+	diffuseColor += ambient * albedo;
 
 	MainRW[dispatchID.xy] = diffuseColor;
 };
