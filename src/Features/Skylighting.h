@@ -76,7 +76,7 @@ struct Skylighting : Feature
 	// misc parameters
 	bool doOcclusion = true;
 	uint probeArrayDims[3] = { 128, 128, 64 };
-	float occlusionDistance = 8192.f;
+	float occlusionDistance = 10000.f;
 	bool renderTrees = false;
 	float boundSize = 1;
 

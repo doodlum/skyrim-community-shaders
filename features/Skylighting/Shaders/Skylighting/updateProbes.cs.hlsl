@@ -18,7 +18,7 @@ RWTexture3D<uint> outAccumFramesArray : register(u1);
 SamplerState samplerPointClamp : register(s0);
 
 #define ARRAY_DIM uint3(128, 128, 64)
-#define ARRAY_SIZE float3(8192, 8192, 8192 * 0.5)
+#define ARRAY_SIZE float3(10000, 10000, 10000 * 0.5)
 
 [numthreads(8, 8, 1)] void main(uint3 dtid
 								: SV_DispatchThreadID) {
