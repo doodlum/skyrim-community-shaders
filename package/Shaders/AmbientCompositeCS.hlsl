@@ -52,6 +52,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	ambient = sRGB2Lin(max(0, ambient));  // Fixes black blobs on the world map
 	albedo = sRGB2Lin(albedo);
 
+	half visibility = 1.0;
 #if defined(SKYLIGHTING)
 	float rawDepth = DepthTexture[dispatchID.xy];
 	float4 positionCS = float4(2 * float2(uv.x, -uv.y + 1) - 1, rawDepth, 1);
@@ -67,14 +68,14 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
 	skylightingDiffuse = applySkylightingFadeout(skylightingDiffuse, length(positionMS.xyz));
 
-	ambient *= skylightingDiffuse;
+	visibility = skylightingDiffuse;
 #endif
 
 #if defined(SSGI)
 	half4 ssgiDiffuse = SSGITexture[dispatchID.xy];
 	ssgiDiffuse.rgb *= albedo;
 
-	ambient *= ssgiDiffuse.a;
+	visibility = min(visibility, ssgiDiffuse.a);
 
 	DiffuseAmbientRW[dispatchID.xy] = ambient + ssgiDiffuse.rgb;
 
@@ -84,7 +85,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	diffuseColor += ssgiDiffuse.rgb;
 #endif
 
-	ambient = Lin2sRGB(ambient);
+	ambient = Lin2sRGB(ambient * visibility);
 	diffuseColor = Lin2sRGB(diffuseColor);
 
 	diffuseColor += ambient;
