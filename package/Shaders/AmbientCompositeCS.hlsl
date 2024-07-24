@@ -90,4 +90,5 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	diffuseColor += ambient;
 
 	MainRW[dispatchID.xy] = diffuseColor;
+	MainRW[dispatchID.xy] = skylightingDiffuse;
 };

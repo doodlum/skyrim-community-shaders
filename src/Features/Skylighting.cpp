@@ -1,7 +1,5 @@
 #include "Skylighting.h"
 
-#include "Skylighting/RNGSobol.h"
-
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Skylighting::Settings,
 	DirectionalDiffuse,
@@ -551,8 +549,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 			auto& precipitation = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPRECIPITATION_OCCLUSION_MAP];
 			RE::BSGraphics::DepthStencilData precipitationCopy = precipitation;
 
-			auto viewport = RE::BSGraphics::State::GetSingleton();
-
 			precipitation.depthSRV = GetSingleton()->texOcclusion->srv.get();
 			precipitation.texture = GetSingleton()->texOcclusion->resource.get();
 			precipitation.views[0] = GetSingleton()->texOcclusion->dsv.get();
@@ -571,16 +567,22 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 			float2 vPoint;
 			{
-				static RNGSobol rng;
-				static std::once_flag flag;
-				std::call_once(flag, [&]() { rng.setDim(2); });
+				constexpr float rcpRandMax = 1.f / RAND_MAX;
+				static int randSeed = std::rand();
+				static uint randFrameCount = 0;
 
-				if (viewport->frameCount % 10000 == 0)
-					rng.setSeed(std::rand());
+				// r2 sequence
+				vPoint = float2(randSeed * rcpRandMax) + (float)randFrameCount * float2(0.245122333753, 0.430159709002);
+				vPoint.x -= static_cast<unsigned long long>(vPoint.x);
+				vPoint.y -= static_cast<unsigned long long>(vPoint.y);
 
-				vPoint.x = (float)rng.generate01();
-				vPoint.y = (float)rng.generate01();
+				randFrameCount++;
+				if (randFrameCount == 9999) {
+					randFrameCount = 0;
+					randSeed = std::rand();
+				}
 
+				// disc transformation
 				vPoint.x = sqrt(vPoint.x * sin(GetSingleton()->settings.MaxZenith));
 				vPoint.y *= 6.28318530718;
 
