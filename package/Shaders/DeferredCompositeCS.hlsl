@@ -35,7 +35,6 @@ cbuffer SkylightingCB : register(b1)
 };
 
 Texture3D<sh2> SkylightingProbeArray : register(t9);
-Texture3D<uint> SkylightingAccumFramesArray : register(t10);
 #endif
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchID
@@ -94,12 +93,11 @@ Texture3D<uint> SkylightingAccumFramesArray : register(t10);
 		float3 positionMS = positionWS;
 #		endif
 
-		sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, SkylightingAccumFramesArray, positionWS.xyz, normalWS);
+		sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionWS.xyz, normalWS);
 		sh2 specularLobe = fauxSpecularLobeSH(normalWS, -V, roughness);
 
 		half skylightingSpecular = saturate(shFuncProductIntegral(skylighting, specularLobe));
 		skylightingSpecular = lerp(skylightingSettings.MixParams.z, 1, saturate(skylightingSpecular * skylightingSettings.MixParams.w));
-		skylightingSpecular = applySkylightingFadeout(skylightingSpecular, length(positionWS.xyz));
 
 		half3 specularIrradiance = 1;
 

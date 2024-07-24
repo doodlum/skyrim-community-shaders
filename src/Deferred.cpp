@@ -434,12 +434,11 @@ void Deferred::DeferredPasses()
 			ID3D11Buffer* buffer = skylighting->loaded ? skylighting->skylightingCB->CB() : nullptr;
 			context->CSSetConstantBuffers(1, 1, &buffer);
 
-			ID3D11ShaderResourceView* srvs[6]{
+			ID3D11ShaderResourceView* srvs[5]{
 				albedo.SRV,
 				normalRoughness.SRV,
 				skylighting->loaded ? depth.depthSRV : nullptr,
 				skylighting->loaded ? skylighting->texProbeArray->srv.get() : nullptr,
-				skylighting->loaded ? skylighting->texAccumFramesArray->srv.get() : nullptr,
 				ssgi->loaded ? ssgi->texGI[ssgi->outputGIIdx]->srv.get() : nullptr,
 			};
 
@@ -473,7 +472,7 @@ void Deferred::DeferredPasses()
 		ID3D11Buffer* buffer = skylighting->loaded ? skylighting->skylightingCB->CB() : nullptr;
 		context->CSSetConstantBuffers(1, 1, &buffer);
 
-		ID3D11ShaderResourceView* srvs[11]{
+		ID3D11ShaderResourceView* srvs[10]{
 			specular.SRV,
 			albedo.SRV,
 			normalRoughness.SRV,
@@ -483,8 +482,7 @@ void Deferred::DeferredPasses()
 			dynamicCubemaps->loaded ? reflectance.SRV : nullptr,
 			dynamicCubemaps->loaded ? dynamicCubemaps->envTexture->srv.get() : nullptr,
 			dynamicCubemaps->loaded ? dynamicCubemaps->envReflectionsTexture->srv.get() : nullptr,
-			dynamicCubemaps->loaded && skylighting->loaded ? skylighting->texProbeArray->srv.get() : nullptr,
-			dynamicCubemaps->loaded && skylighting->loaded ? skylighting->texAccumFramesArray->srv.get() : nullptr,
+			dynamicCubemaps->loaded && skylighting->loaded ? skylighting->texProbeArray->srv.get() : nullptr
 		};
 
 		if (dynamicCubemaps->loaded)
