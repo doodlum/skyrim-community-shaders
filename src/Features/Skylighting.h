@@ -78,7 +78,7 @@ struct Skylighting : Feature
 	uint probeArrayDims[3] = { 128, 128, 64 };
 	float occlusionDistance = 8192.f;
 	bool renderTrees = false;
-	float boundSize = 128;
+	float boundSize = 1;
 
 	// cached variables
 	bool inOcclusion = false;
