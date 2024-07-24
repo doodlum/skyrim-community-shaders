@@ -20,7 +20,7 @@ struct Skylighting : Feature
 	virtual inline std::string_view GetShaderDefineName() override { return "SKYLIGHTING"; }
 	virtual bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
-	virtual inline void RestoreDefaultSettings() override{};
+	virtual void RestoreDefaultSettings() override;
 	virtual void DrawSettings() override;
 
 	virtual void LoadSettings(json& o_json) override;

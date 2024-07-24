@@ -19,6 +19,11 @@ void Skylighting::SaveSettings(json& o_json)
 	o_json = settings;
 }
 
+void Skylighting::RestoreDefaultSettings()
+{
+	settings = {};
+}
+
 void Skylighting::DrawSettings()
 {
 	ImGui::Checkbox("Directional Diffuse", &settings.DirectionalDiffuse);
