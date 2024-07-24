@@ -19,10 +19,11 @@ cbuffer SkylightingCB : register(b1)
 
 Texture2D<unorm float> DepthTexture : register(t2);
 Texture3D<sh2> SkylightingProbeArray : register(t3);
+Texture3D<uint> SkylightingAccumFramesArray : register(t4);
 #endif
 
 #if defined(SSGI)
-Texture2D<half4> SSGITexture : register(t4);
+Texture2D<half4> SSGITexture : register(t5);
 #endif
 
 RWTexture2D<half3> MainRW : register(u0);
@@ -49,7 +50,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 	diffuseColor = sRGB2Lin(diffuseColor);
 
-	ambient = sRGB2Lin(max(0, ambient));  // Fixes black blobs on the world map
+	ambient = sRGB2Lin(ambient);
 	albedo = sRGB2Lin(albedo);
 
 	half visibility = 1.0;
@@ -63,7 +64,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 		positionMS.xyz += CameraPosAdjust[1] - CameraPosAdjust[0];
 #	endif
 
-	sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMS.xyz, normalWS);
+	sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, SkylightingAccumFramesArray, positionMS.xyz, normalWS);
 	half skylightingDiffuse = shHallucinateZH3Irradiance(skylighting, skylightingSettings.DirectionalDiffuse ? normalWS : float3(0, 0, 1));
 	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
 	skylightingDiffuse = applySkylightingFadeout(skylightingDiffuse, length(positionMS.xyz));

@@ -99,7 +99,7 @@ void Skylighting::SetupResources()
 		texProbeArray->CreateSRV(srvDesc);
 		texProbeArray->CreateUAV(uavDesc);
 
-		texDesc.Format = srvDesc.Format = uavDesc.Format = DXGI_FORMAT_R16_UINT;
+		texDesc.Format = srvDesc.Format = uavDesc.Format = DXGI_FORMAT_R8_UINT;
 
 		texAccumFramesArray = new Texture3D(texDesc);
 		texAccumFramesArray->CreateSRV(srvDesc);
@@ -197,39 +197,41 @@ void Skylighting::Prepass()
 		prevCellID = cellID;
 	}
 
-	std::array<ID3D11ShaderResourceView*, 1> srvs = { texOcclusion->srv.get() };
-	std::array<ID3D11UnorderedAccessView*, 2> uavs = { texProbeArray->uav.get(), texAccumFramesArray->uav.get() };
-	std::array<ID3D11SamplerState*, 1> samplers = { pointClampSampler.get() };
-	auto cb = skylightingCB->CB();
-
-	// update probe array
 	{
-		context->CSSetConstantBuffers(1, 1, &cb);
-		context->CSSetSamplers(0, (uint)samplers.size(), samplers.data());
-		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
-		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-		context->CSSetShader(probeUpdateCompute.get(), nullptr, 0);
-		context->Dispatch((probeArrayDims[0] + 7u) >> 3, (probeArrayDims[1] + 7u) >> 3, probeArrayDims[2]);
-	}
+		std::array<ID3D11ShaderResourceView*, 1> srvs = { texOcclusion->srv.get() };
+		std::array<ID3D11UnorderedAccessView*, 2> uavs = { texProbeArray->uav.get(), texAccumFramesArray->uav.get() };
+		std::array<ID3D11SamplerState*, 1> samplers = { pointClampSampler.get() };
+		auto cb = skylightingCB->CB();
 
-	// reset
-	{
-		srvs.fill(nullptr);
-		uavs.fill(nullptr);
-		samplers.fill(nullptr);
-		cb = nullptr;
+		// update probe array
+		{
+			context->CSSetConstantBuffers(1, 1, &cb);
+			context->CSSetSamplers(0, (uint)samplers.size(), samplers.data());
+			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+			context->CSSetShader(probeUpdateCompute.get(), nullptr, 0);
+			context->Dispatch((probeArrayDims[0] + 7u) >> 3, (probeArrayDims[1] + 7u) >> 3, probeArrayDims[2]);
+		}
 
-		context->CSSetConstantBuffers(1, 1, &cb);
-		context->CSSetSamplers(0, (uint)samplers.size(), samplers.data());
-		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
-		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-		context->CSSetShader(nullptr, nullptr, 0);
+		// reset
+		{
+			srvs.fill(nullptr);
+			uavs.fill(nullptr);
+			samplers.fill(nullptr);
+			cb = nullptr;
+
+			context->CSSetConstantBuffers(1, 1, &cb);
+			context->CSSetSamplers(0, (uint)samplers.size(), samplers.data());
+			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+			context->CSSetShader(nullptr, nullptr, 0);
+		}
 	}
 
 	// set PS shader resource
 	{
-		ID3D11ShaderResourceView* srv = texProbeArray->srv.get();
-		context->PSSetShaderResources(29, 1, &srv);
+		ID3D11ShaderResourceView* srvs[2] = { texProbeArray->srv.get(), texAccumFramesArray->srv.get() };
+		context->PSSetShaderResources(29, ARRAYSIZE(srvs), srvs);
 	}
 }
 
@@ -552,7 +554,7 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 			std::chrono::time_point<std::chrono::system_clock> currentTimer = std::chrono::system_clock::now();
 			auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTimer - singleton->lastUpdateTimer).count();
 
-			if (timePassed >= (1000.0f / 30.0f)) {
+			if (timePassed >= (1000.0f / 60.0f)) {
 				singleton->lastUpdateTimer = currentTimer;
 
 				auto renderer = RE::BSGraphics::Renderer::GetSingleton();

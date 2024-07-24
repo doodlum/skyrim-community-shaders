@@ -1502,7 +1502,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 positionMSSkylight = input.WorldPosition.xyz;
 #		endif
 
-	sh2 skylightingSH = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal);
+	sh2 skylightingSH = sampleSkylighting(skylightingSettings, SkylightingProbeArray, SkylightingAccumFramesArray, positionMSSkylight, worldSpaceNormal);
+
 #	endif
 
 #	if defined(WETNESS_EFFECTS)
@@ -1778,7 +1779,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float skylightingDiffuse = shHallucinateZH3Irradiance(skylightingSH, worldSpaceNormal);
 	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
 	skylightingDiffuse = applySkylightingFadeout(skylightingDiffuse, viewPosition.z);
+	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
 	directionalAmbientColor *= skylightingDiffuse;
+	directionalAmbientColor = Lin2sRGB(directionalAmbientColor);
 #	endif
 
 #	if !(defined(DEFERRED) && defined(SSGI))
