@@ -1777,7 +1777,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(SKYLIGHTING)
 	float skylightingDiffuse = shHallucinateZH3Irradiance(skylightingSH, worldSpaceNormal);
 	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
+	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
 	directionalAmbientColor *= skylightingDiffuse;
+	directionalAmbientColor = Lin2sRGB(directionalAmbientColor);
 #	endif
 
 #	if !(defined(DEFERRED) && defined(SSGI))
