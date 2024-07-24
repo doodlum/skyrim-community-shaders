@@ -76,15 +76,16 @@ struct Skylighting : Feature
 	// misc parameters
 	bool doOcclusion = true;
 	uint probeArrayDims[3] = { 128, 128, 64 };
-	float occlusionDistance = 8192.f;
+	float occlusionDistance = 10000.f;
 	bool renderTrees = false;
-	float boundSize = 128;
+	float boundSize = 1;
 
 	// cached variables
 	bool inOcclusion = false;
-	RE::NiPoint3 eyePosition{};
 	REX::W32::XMFLOAT4X4 OcclusionTransform;
 	float4 OcclusionDir;
+
+	std::chrono::time_point<std::chrono::system_clock> lastUpdateTimer = std::chrono::system_clock::now();
 
 	//////////////////////////////////////////////////////////////////////////////////
 

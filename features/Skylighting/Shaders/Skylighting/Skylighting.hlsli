@@ -25,13 +25,14 @@ struct SkylightingSettings
 
 #	ifdef PSHADER
 Texture3D<sh2> SkylightingProbeArray : register(t29);
+Texture3D<uint> SkylightingAccumFramesArray : register(t30);
 #	endif
 
 const static uint3 SL_ARRAY_DIM = uint3(128, 128, 64);
-const static float3 SL_ARRAY_SIZE = float3(8192, 8192, 8192 * 0.5);
+const static float3 SL_ARRAY_SIZE = float3(10000, 10000, 10000 * 0.5);
 const static float3 SL_CELL_SIZE = SL_ARRAY_SIZE / SL_ARRAY_DIM;
 
-sh2 sampleSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, float3 positionMS, float3 normalWS)
+sh2 sampleSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, Texture3D<uint> accumFramesArray, float3 positionMS, float3 normalWS)
 {
 	float3 positionMSAdjusted = positionMS - params.PosOffset;
 	float3 uvw = positionMSAdjusted / SL_ARRAY_SIZE + .5;
@@ -44,6 +45,7 @@ sh2 sampleSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, flo
 	float3 trilinearPos = cellVxCoord - 0.5 - cell000;
 
 	sh2 sum = 0;
+	float confidenceSum = 0;
 	float wsum = 0;
 	for (int i = 0; i < 2; i++)
 		for (int j = 0; j < 2; j++)
@@ -70,14 +72,17 @@ sh2 sampleSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, flo
 
 				sum = shAdd(sum, probe);
 				wsum += w;
+
+				confidenceSum += float(accumFramesArray[cellTexID]) * w;
 			}
 
-	sh2 result = shScale(sum, rcp(wsum + 1e-10));
+	wsum = rcp(wsum + 1e-10);
+	confidenceSum *= wsum * rcp(255);
 
-	return result;
+	return lerp(float4(1, 0, 1, 0), shScale(sum, wsum), confidenceSum);
 }
 
-float getVLSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, float3 startPosWS, float3 endPosWS, float2 screenPosition)
+float getVLSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, Texture3D<uint> accumFramesArray, float3 startPosWS, float3 endPosWS, float2 screenPosition)
 {
 	const static uint nSteps = 16;
 	const static float step = 1.0 / float(nSteps);
@@ -96,7 +101,7 @@ float getVLSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, fl
 		{
 			float3 samplePositionWS = startPosWS + worldDir * t;
 
-			sh2 skylighting = sampleSkylighting(params, probeArray, samplePositionWS, float3(0, 0, 1));
+			sh2 skylighting = sampleSkylighting(params, probeArray, accumFramesArray, samplePositionWS, float3(0, 0, 1));
 
 			shadow += lerp(params.MixParams.x, 1, saturate(shUnproject(skylighting, worldDirNormalised) * params.MixParams.y));
 		}

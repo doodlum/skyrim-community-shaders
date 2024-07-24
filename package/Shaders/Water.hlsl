@@ -633,7 +633,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 		float3 skylightPosOffset = 0;
 #				endif
 		float3 refractionDiffuseColorSkylight =
-			getVLSkylighting(skylightingSettings, SkylightingProbeArray, input.WPosition.xyz + skylightPosOffset, refractionWorldPosition.xyz + skylightPosOffset, screenPosition);
+			getVLSkylighting(skylightingSettings, SkylightingProbeArray, SkylightingAccumFramesArray, input.WPosition.xyz + skylightPosOffset, refractionWorldPosition.xyz + skylightPosOffset, screenPosition);
 		refractionDiffuseColorSkylight = refractionDiffuseColor * lerp(refractionDiffuseColorSkylight, 1.0, 0.25);
 		refractionDiffuseColor = refractionDiffuseColorSkylight;
 #			endif
