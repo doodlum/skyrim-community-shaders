@@ -15,6 +15,84 @@
 
 #include "VariableRateShading.h"
 
+namespace PNState
+{
+	template <typename ResultType>
+	bool Read(const json& config, ResultType& result)
+	{
+		if constexpr (std::is_same_v<ResultType, std::array<float, 3>> || std::is_same_v<ResultType, RE::NiColor>) {
+			if (config.is_array() && config.size() == 3 &&
+				config[0].is_number_float() && config[1].is_number_float() &&
+				config[2].is_number_float()) {
+				result[0] = config[0];
+				result[1] = config[1];
+				result[2] = config[2];
+				return true;
+			}
+		}
+		if constexpr (std::is_same_v<ResultType, float>) {
+			if (config.is_number_float()) {
+				result = config;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void ReadPBRRecordConfigs(const std::string& rootPath, std::function<void(const std::string&, const json&)> recordReader)
+	{
+		if (std::filesystem::exists(rootPath)) {
+			auto configs = clib_util::distribution::get_configs(rootPath, "", ".json");
+
+			if (configs.empty()) {
+				logger::warn("[TruePBR] no .json files were found within the {} folder, aborting...", rootPath);
+				return;
+			}
+
+			logger::info("[TruePBR] {} matching jsons found", configs.size());
+
+			for (auto& path : configs) {
+				logger::info("[TruePBR] loading json : {}", path);
+
+				std::ifstream fileStream(path);
+				if (!fileStream.is_open()) {
+					logger::error("[TruePBR] failed to read {}", path);
+					continue;
+				}
+
+				json config;
+				try {
+					fileStream >> config;
+				} catch (const nlohmann::json::parse_error& e) {
+					logger::error("[TruePBR] failed to parse {} : {}", path, e.what());
+					continue;
+				}
+
+				const auto editorId = std::filesystem::path(path).stem().string();
+				recordReader(editorId, config);
+			}
+		}
+	}
+
+	void SavePBRRecordConfig(const std::string& rootPath, const std::string& editorId, const json& config)
+	{
+		std::filesystem::create_directory(rootPath);
+
+		const std::string outputPath = std::format("{}\\{}.json", rootPath, editorId);
+		std::ofstream fileStream(outputPath);
+		if (!fileStream.is_open()) {
+			logger::error("[TruePBR] failed to write {}", outputPath);
+			return;
+		}
+		try {
+			fileStream << std::setw(4) << config;
+		} catch (const nlohmann::json::type_error& e) {
+			logger::error("[TruePBR] failed to serialize {} : {}", outputPath, e.what());
+			return;
+		}
+	}
+}
+
 void State::Draw()
 {
 	const auto& shaderCache = SIE::ShaderCache::Instance();
@@ -86,6 +164,10 @@ void State::Reset()
 
 void State::Setup()
 {
+	SetupTextureSetData();
+	SetupMaterialObjectData();
+	SetupLightingTemplateData();
+	SetupWeatherData();
 	SetupResources();
 	for (auto* feature : Feature::GetFeatureList())
 		if (feature->loaded)
@@ -191,6 +273,24 @@ void State::Load(ConfigMode a_configMode)
 		}
 	}
 
+	if (settings["PBR"].is_object()) {
+		json& pbr = settings["PBR"];
+
+		if (pbr["Use Multiple Scattering"].is_boolean()) {
+			pbrSettings.useMultipleScattering = pbr["Use Multiple Scattering"];
+		}
+		if (pbr["Use Multi-bounce AO"].is_boolean()) {
+			pbrSettings.useMultiBounceAO = pbr["Use Multi-bounce AO"];
+		}
+
+		if (pbr["Direct Light Color Multiplier"].is_number_float()) {
+			globalPBRDirectLightColorMultiplier = pbr["Direct Light Color Multiplier"];
+		}
+		if (pbr["Ambient Light Color Multiplier"].is_number_float()) {
+			globalPBRAmbientLightColorMultiplier = pbr["Ambient Light Color Multiplier"];
+		}
+	}
+
 	for (auto* feature : Feature::GetFeatureList())
 		feature->Load(settings);
 	i.close();
@@ -225,6 +325,16 @@ void State::Save(ConfigMode a_configMode)
 	general["Enable Async"] = shaderCache.IsAsync();
 
 	settings["General"] = general;
+
+	{
+		json pbr;
+		pbr["Use Multiple Scattering"] = pbrSettings.useMultipleScattering;
+		pbr["Use Multi-bounce AO"] = pbrSettings.useMultiBounceAO;
+
+		pbr["Direct Light Color Multiplier"] = globalPBRDirectLightColorMultiplier;
+		pbr["Ambient Light Color Multiplier"] = globalPBRAmbientLightColorMultiplier;
+		settings["PBR"] = pbr;
+	}
 
 	json originalShaders;
 	for (int classIndex = 0; classIndex < RE::BSShader::Type::Total - 1; ++classIndex) {
@@ -519,4 +629,208 @@ void State::UpdateSharedData()
 	auto srv = (terrainBlending->loaded ? terrainBlending->blendedDepthTexture16->srv.get() : depth.depthSRV);
 
 	context->PSSetShaderResources(20, 1, &srv);
+}
+
+void State::SetupFrame()
+{
+	float newDirectionalLightScale = 1.f;
+	float newDirectionalAmbientLightScale = 1.f;
+
+	if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
+		if (const auto* currentCell = player->GetParentCell()) {
+			if (currentCell->IsInteriorCell()) {
+				if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
+					const auto* editorId = lightingTemplate->GetFormEditorID();
+					if (auto it = pbrLightingTemplates.find(editorId); it != pbrLightingTemplates.cend()) {
+						newDirectionalLightScale = it->second.directionalLightColorScale;
+						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
+					}
+				}
+			} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
+				if (const auto* weather = sky->currentWeather) {
+					const auto* editorId = weather->GetFormEditorID();
+					if (auto it = pbrWeathers.find(editorId); it != pbrWeathers.cend()) {
+						newDirectionalLightScale = it->second.directionalLightColorScale;
+						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
+					}
+				}
+			}
+		}
+	}
+
+	weatherPBRDirectionalLightColorMultiplier = newDirectionalLightScale;
+	weatherPBRDirectionalAmbientLightColorMultiplier = newDirectionalAmbientLightScale;
+
+	pbrSettings.directionalLightColorMultiplier = globalPBRDirectLightColorMultiplier * weatherPBRDirectionalLightColorMultiplier;
+	pbrSettings.pointLightColorMultiplier = globalPBRDirectLightColorMultiplier;
+	pbrSettings.ambientLightColorMultiplier = globalPBRAmbientLightColorMultiplier * weatherPBRDirectionalAmbientLightColorMultiplier;
+}
+
+void State::SetupTextureSetData()
+{
+	logger::info("[TruePBR] loading PBR texture set configs");
+
+	pbrTextureSets.clear();
+
+	PNState::ReadPBRRecordConfigs("Data\\PBRTextureSets", [this](const std::string& editorId, const json& config) {
+		PBRTextureSetData textureSetData;
+
+		PNState::Read(config["roughnessScale"], textureSetData.roughnessScale);
+		PNState::Read(config["displacementScale"], textureSetData.displacementScale);
+		PNState::Read(config["specularLevel"], textureSetData.specularLevel);
+		PNState::Read(config["subsurfaceColor"], textureSetData.subsurfaceColor);
+		PNState::Read(config["subsurfaceOpacity"], textureSetData.subsurfaceOpacity);
+		PNState::Read(config["coatColor"], textureSetData.coatColor);
+		PNState::Read(config["coatStrength"], textureSetData.coatStrength);
+		PNState::Read(config["coatRoughness"], textureSetData.coatRoughness);
+		PNState::Read(config["coatSpecularLevel"], textureSetData.coatSpecularLevel);
+		PNState::Read(config["innerLayerDisplacementOffset"], textureSetData.innerLayerDisplacementOffset);
+		PNState::Read(config["fuzzColor"], textureSetData.fuzzColor);
+		PNState::Read(config["fuzzWeight"], textureSetData.fuzzWeight);
+
+		pbrTextureSets.insert_or_assign(editorId, textureSetData);
+	});
+}
+
+State::PBRTextureSetData* State::GetPBRTextureSetData(const RE::TESForm* textureSet)
+{
+	if (textureSet == nullptr) {
+		return nullptr;
+	}
+
+	auto it = pbrTextureSets.find(textureSet->GetFormEditorID());
+	if (it == pbrTextureSets.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+bool State::IsPBRTextureSet(const RE::TESForm* textureSet)
+{
+	return GetPBRTextureSetData(textureSet) != nullptr;
+}
+
+void State::SetupMaterialObjectData()
+{
+	logger::info("[TruePBR] loading PBR material object configs");
+
+	pbrMaterialObjects.clear();
+
+	PNState::ReadPBRRecordConfigs("Data\\PBRMaterialObjects", [this](const std::string& editorId, const json& config) {
+		PBRMaterialObjectData materialObjectData;
+
+		PNState::Read(config["baseColorScale"], materialObjectData.baseColorScale);
+		PNState::Read(config["roughness"], materialObjectData.roughness);
+		PNState::Read(config["specularLevel"], materialObjectData.specularLevel);
+
+		pbrMaterialObjects.insert_or_assign(editorId, materialObjectData);
+	});
+}
+
+State::PBRMaterialObjectData* State::GetPBRMaterialObjectData(const RE::TESForm* materialObject)
+{
+	if (materialObject == nullptr) {
+		return nullptr;
+	}
+
+	auto it = pbrMaterialObjects.find(materialObject->GetFormEditorID());
+	if (it == pbrMaterialObjects.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+bool State::IsPBRMaterialObject(const RE::TESForm* materialObject)
+{
+	return GetPBRMaterialObjectData(materialObject) != nullptr;
+}
+
+void State::SetupLightingTemplateData()
+{
+	logger::info("[TruePBR] loading PBR lighting template configs");
+
+	pbrLightingTemplates.clear();
+
+	PNState::ReadPBRRecordConfigs("Data\\PBRLightingTemplates", [this](const std::string& editorId, const json& config) {
+		PBRLightingTemplateData lightingTemplateData;
+
+		PNState::Read(config["directionalLightColorScale"], lightingTemplateData.directionalLightColorScale);
+		PNState::Read(config["directionalAmbientLightColorScale"], lightingTemplateData.directionalAmbientLightColorScale);
+
+		pbrLightingTemplates.insert_or_assign(editorId, lightingTemplateData);
+	});
+}
+
+State::PBRLightingTemplateData* State::GetPBRLightingTemplateData(const RE::TESForm* lightingTemplate)
+{
+	if (lightingTemplate == nullptr) {
+		return nullptr;
+	}
+
+	auto it = pbrLightingTemplates.find(lightingTemplate->GetFormEditorID());
+	if (it == pbrLightingTemplates.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+bool State::IsPBRLightingTemplate(const RE::TESForm* lightingTemplate)
+{
+	return GetPBRLightingTemplateData(lightingTemplate) != nullptr;
+}
+
+void State::SavePBRLightingTemplateData(const std::string& editorId)
+{
+	const auto& pbrLightingTemplateData = pbrLightingTemplates[editorId];
+
+	json config;
+	config["directionalLightColorScale"] = pbrLightingTemplateData.directionalLightColorScale;
+	config["directionalAmbientLightColorScale"] = pbrLightingTemplateData.directionalAmbientLightColorScale;
+
+	PNState::SavePBRRecordConfig("Data\\PBRLightingTemplates\\", editorId, config);
+}
+
+void State::SetupWeatherData()
+{
+	logger::info("[TruePBR] loading PBR weather configs");
+
+	pbrWeathers.clear();
+
+	PNState::ReadPBRRecordConfigs("Data\\PBRWeathers", [this](const std::string& editorId, const json& config) {
+		PBRWeatherData weatherData;
+
+		PNState::Read(config["directionalLightColorScale"], weatherData.directionalLightColorScale);
+		PNState::Read(config["directionalAmbientLightColorScale"], weatherData.directionalAmbientLightColorScale);
+
+		pbrWeathers.insert_or_assign(editorId, weatherData);
+	});
+}
+
+State::PBRWeatherData* State::GetPBRWeatherData(const RE::TESForm* weather)
+{
+	if (weather == nullptr) {
+		return nullptr;
+	}
+
+	auto it = pbrWeathers.find(weather->GetFormEditorID());
+	if (it == pbrWeathers.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+bool State::IsPBRWeather(const RE::TESForm* weather)
+{
+	return GetPBRWeatherData(weather) != nullptr;
+}
+
+void State::SavePBRWeatherData(const std::string& editorId)
+{
+	const auto& pbrWeatherData = pbrWeathers[editorId];
+
+	json config;
+	config["directionalLightColorScale"] = pbrWeatherData.directionalLightColorScale;
+	config["directionalAmbientLightColorScale"] = pbrWeatherData.directionalAmbientLightColorScale;
+
+	PNState::SavePBRRecordConfig("Data\\PBRWeathers\\", editorId, config);
 }

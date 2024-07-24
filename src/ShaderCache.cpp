@@ -58,16 +58,13 @@ namespace SIE
 			static REL::Relocation<void(uint32_t, D3D_SHADER_MACRO*)> VanillaGetLightingShaderDefines(
 				RELOCATION_ID(101631, 108698));
 
-			const auto technique =
-				static_cast<ShaderCache::LightingShaderTechniques>(GetTechnique(descriptor));
-
 			int lastIndex = 0;
-
-			if (technique == ShaderCache::LightingShaderTechniques::Outline)
-				defines[lastIndex++] = { "OUTLINE", nullptr };
 
 			if (descriptor & static_cast<uint32_t>(ShaderCache::LightingShaderFlags::Deferred)) {
 				defines[lastIndex++] = { "DEFERRED", nullptr };
+			}
+			if ((descriptor & static_cast<uint32_t>(ShaderCache::LightingShaderFlags::TruePbr)) != 0) {
+				defines[lastIndex++] = { "TRUE_PBR", nullptr };
 			}
 
 			for (auto* feature : Feature::GetFeatureList()) {
@@ -203,6 +200,8 @@ namespace SIE
 			int lastIndex = 0;
 			if (technique == static_cast<uint32_t>(ShaderCache::GrassShaderTechniques::RenderDepth)) {
 				defines[lastIndex++] = { "RENDER_DEPTH", nullptr };
+			} else if (technique == static_cast<uint32_t>(ShaderCache::GrassShaderTechniques::TruePbr)) {
+				defines[lastIndex++] = { "TRUE_PBR", nullptr };
 			}
 			if (descriptor & static_cast<uint32_t>(ShaderCache::GrassShaderFlags::AlphaTest)) {
 				defines[lastIndex++] = { "DO_ALPHA_TEST", nullptr };
@@ -728,6 +727,15 @@ namespace SIE
 				{ "SSRParams", 16 },
 				{ "WorldMapOverlayParametersPS", 17 },
 				{ "AmbientColor", 18 },
+
+				{ "PBRFlags", 36 },
+				{ "PBRParams1", 37 },
+				{ "LandscapeTexture2PBRParams", 38 },
+				{ "LandscapeTexture3PBRParams", 39 },
+				{ "LandscapeTexture4PBRParams", 40 },
+				{ "LandscapeTexture5PBRParams", 41 },
+				{ "LandscapeTexture6PBRParams", 42 },
+				{ "PBRParams2", 43 },
 			};
 
 			auto& bloodSplatterVS = result[static_cast<size_t>(RE::BSShader::Type::BloodSplatter)]
@@ -796,6 +804,14 @@ namespace SIE
 				{ "AlphaParam2", 12 },
 				{ "ScaleMask", 13 },
 				{ "ShadowClampValue", 14 },
+			};
+
+			auto& grassPS = result[static_cast<size_t>(RE::BSShader::Type::Grass)]
+								  [static_cast<size_t>(ShaderClass::Pixel)];
+			grassPS = {
+				{ "PBRFlags", 0 },
+				{ "PBRParams1", 1 },
+				{ "PBRParams2", 2 },
 			};
 
 			auto& particleVS = result[static_cast<size_t>(RE::BSShader::Type::Particle)]
@@ -1012,10 +1028,6 @@ namespace SIE
 				return;
 			}
 
-			if (desc.ConstantBuffers <= 0) {
-				return;
-			}
-
 			if (shaderClass == ShaderClass::Vertex) {
 				vertexDesc = 0b1111;
 				bool hasTexcoord2 = false;
@@ -1065,6 +1077,10 @@ namespace SIE
 						AddAttribute(vertexDesc, RE::BSGraphics::Vertex::VA_EYEDATA);
 					}
 				}
+			}
+
+			if (desc.ConstantBuffers <= 0) {
+				return;
 			}
 
 			auto mapBufferConsts =
@@ -1256,7 +1272,6 @@ namespace SIE
 				ID3DBlob* strippedShaderBlob = nullptr;
 
 				const uint32_t stripFlags = D3DCOMPILER_STRIP_DEBUG_INFO |
-				                            D3DCOMPILER_STRIP_REFLECTION_DATA |
 				                            D3DCOMPILER_STRIP_TEST_BLOBS |
 				                            D3DCOMPILER_STRIP_PRIVATE_DATA;
 
