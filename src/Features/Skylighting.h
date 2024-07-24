@@ -82,9 +82,10 @@ struct Skylighting : Feature
 
 	// cached variables
 	bool inOcclusion = false;
-	RE::NiPoint3 eyePosition{};
 	REX::W32::XMFLOAT4X4 OcclusionTransform;
 	float4 OcclusionDir;
+
+	std::chrono::time_point<std::chrono::system_clock> lastUpdateTimer = std::chrono::system_clock::now();
 
 	//////////////////////////////////////////////////////////////////////////////////
 
