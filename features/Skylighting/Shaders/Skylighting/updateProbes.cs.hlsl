@@ -36,7 +36,7 @@ SamplerState samplerPointClamp : register(s0);
 		uint accumFrames = isValid ? (outAccumFramesArray[dtid] + 1) : 1;
 		if (accumFrames < 255) {
 			float occlusionDepth = srcOcclusionDepth.SampleLevel(samplerPointClamp, occlusionUV, 0);
-			bool visible = cellCentreOS.z - 0.001 < occlusionDepth;
+			bool visible = cellCentreOS.z < occlusionDepth;
 
 			sh2 occlusionSH = shScale(shEvaluate(settings.OcclusionDir.xyz), float(visible));
 			if (isValid) {
