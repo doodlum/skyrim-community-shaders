@@ -41,7 +41,7 @@ SamplerState samplerPointClamp : register(s0);
 			sh2 occlusionSH = shScale(shEvaluate(settings.OcclusionDir.xyz), float(visible));
 			if (isValid) {
 				float lerpFactor = rcp(accumFrames);
-				occlusionSH = shAdd(shScale(outProbeArray[dtid], 1 - lerpFactor), shScale(occlusionSH, lerpFactor));  // exponential accumulation
+				occlusionSH = shAdd(shScale(outProbeArray[dtid], 1 - lerpFactor), shScale(occlusionSH, lerpFactor));
 			}
 			outProbeArray[dtid] = occlusionSH;
 			outAccumFramesArray[dtid] = accumFrames;
