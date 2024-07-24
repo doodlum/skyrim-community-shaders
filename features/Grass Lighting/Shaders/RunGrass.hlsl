@@ -468,7 +468,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	sh2 skylightingSH = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal);
 	float skylighting = shHallucinateZH3Irradiance(skylightingSH, normalWS);
 	skylighting = lerp(skylightingSettings.MixParams.x, 1, saturate(skylighting * skylightingSettings.MixParams.y));
-	skylighting = applySkylightingFadeout(skylighting, length(positionMSSkylight));
 	directionalAmbientColor *= skylighting;
 #			endif
 
