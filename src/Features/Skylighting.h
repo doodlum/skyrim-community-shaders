@@ -34,10 +34,9 @@ struct Skylighting : Feature
 	virtual void Prepass() override;
 
 	virtual void PostPostLoad() override;
-	
+
 	ID3D11PixelShader* GetFoliagePS();
 	void SkylightingShaderHacks();  // referenced in State.cpp
-
 
 	//////////////////////////////////////////////////////////////////////////////////
 

@@ -42,7 +42,6 @@ void Skylighting::DrawSettings()
 	ImGui::SliderFloat("Specular Brightness", &settings.SpecularBrightness, 0, 10, "%.1f");
 }
 
-
 ID3D11PixelShader* Skylighting::GetFoliagePS()
 {
 	if (!foliagePixelShader) {
@@ -64,7 +63,6 @@ void Skylighting::SkylightingShaderHacks()
 		}
 	}
 }
-
 
 void Skylighting::SetupResources()
 {
@@ -655,7 +653,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 				precipitation = precipitationCopy;
 
 				singleton->foliage = false;
-
 			}
 		}
 	}
