@@ -34,6 +34,10 @@ struct Skylighting : Feature
 	virtual void Prepass() override;
 
 	virtual void PostPostLoad() override;
+	
+	ID3D11PixelShader* GetFoliagePS();
+	void SkylightingShaderHacks();  // referenced in State.cpp
+
 
 	//////////////////////////////////////////////////////////////////////////////////
 
@@ -73,6 +77,8 @@ struct Skylighting : Feature
 
 	winrt::com_ptr<ID3D11ComputeShader> probeUpdateCompute = nullptr;
 
+	ID3D11PixelShader* foliagePixelShader = nullptr;
+
 	// misc parameters
 	bool doOcclusion = true;
 	uint probeArrayDims[3] = { 128, 128, 64 };
@@ -82,6 +88,7 @@ struct Skylighting : Feature
 
 	// cached variables
 	bool inOcclusion = false;
+	bool foliage = false;
 	REX::W32::XMFLOAT4X4 OcclusionTransform;
 	float4 OcclusionDir;
 

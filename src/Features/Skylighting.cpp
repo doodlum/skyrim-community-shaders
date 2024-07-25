@@ -42,6 +42,30 @@ void Skylighting::DrawSettings()
 	ImGui::SliderFloat("Specular Brightness", &settings.SpecularBrightness, 0, 10, "%.1f");
 }
 
+
+ID3D11PixelShader* Skylighting::GetFoliagePS()
+{
+	if (!foliagePixelShader) {
+		logger::debug("Compiling Utility.hlsl");
+		foliagePixelShader = (ID3D11PixelShader*)Util::CompileShader(L"Data\\Shaders\\Utility.hlsl", { { "RENDER_DEPTH", "" }, { "FOLIAGE", "" } }, "ps_5_0");
+	}
+	return foliagePixelShader;
+}
+
+void Skylighting::SkylightingShaderHacks()
+{
+	if (inOcclusion) {
+		auto& context = State::GetSingleton()->context;
+
+		if (foliage) {
+			context->PSSetShader(GetFoliagePS(), NULL, NULL);
+		} else {
+			context->PSSetShader(nullptr, NULL, NULL);
+		}
+	}
+}
+
+
 void Skylighting::SetupResources()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
@@ -135,6 +159,10 @@ void Skylighting::ClearShaderCache()
 		}
 
 	CompileComputeShaders();
+	if (foliagePixelShader) {
+		foliagePixelShader->Release();
+		foliagePixelShader = nullptr;
+	}
 }
 
 void Skylighting::CompileComputeShaders()
@@ -239,6 +267,7 @@ void Skylighting::PostPostLoad()
 	stl::write_vfunc<0x2D, BSLightingShaderProperty_GetPrecipitationOcclusionMapRenderPassesImpl>(RE::VTABLE_BSLightingShaderProperty[0]);
 	stl::write_thunk_call<Main_Precipitation_RenderOcclusion>(REL::RelocationID(35560, 36559).address() + REL::Relocate(0x3A1, 0x3A1, 0x2FA));
 	stl::write_thunk_call<SetViewFrustum>(REL::RelocationID(25643, 26185).address() + REL::Relocate(0x5D9, 0x59D, 0x5DC));
+	stl::write_vfunc<0x6, BSUtilityShader_SetupGeometry>(RE::VTABLE_BSUtilityShader[0]);
 }
 
 //////////////////////////////////////////////////////////////
@@ -624,6 +653,9 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 				PrecipitationShaderDirection = originalParticleShaderDirection;
 
 				precipitation = precipitationCopy;
+
+				singleton->foliage = false;
+
 			}
 		}
 	}
@@ -634,16 +666,7 @@ void Skylighting::BSUtilityShader_SetupGeometry::thunk(RE::BSShader* This, RE::B
 {
 	auto& feat = *GetSingleton();
 	if (feat.inOcclusion) {
-		auto renderer = RE::BSGraphics::Renderer::GetSingleton();
-		auto& precipitation = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPRECIPITATION_OCCLUSION_MAP];
-
-		precipitation.depthSRV = feat.texOcclusion->srv.get();
-		precipitation.texture = feat.texOcclusion->resource.get();
-		precipitation.views[0] = feat.texOcclusion->dsv.get();
-
-		auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
-		GET_INSTANCE_MEMBER(stateUpdateFlags, state)
-		stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET);
+		feat.foliage = Pass->shaderProperty->flags.any(RE::BSShaderProperty::EShaderPropertyFlag::kTreeAnim);
 	}
 
 	func(This, Pass, RenderFlags);
