@@ -135,9 +135,10 @@ sh2 fauxSpecularLobeSH(float3 N, float3 V, float roughness)
 	float3 D = lerp(N, R, f);
 	float3 dominantDir = normalize(D);
 
+	float lerpFactor = pow(f, 0.5);
 	sh2 directional = shEvaluate(dominantDir);
 	sh2 cosineLobe = shEvaluateCosineLobe(dominantDir);
-	sh2 result = shAdd(shScale(directional, f), shScale(cosineLobe, 1 - f));
+	sh2 result = shAdd(shScale(directional, lerpFactor), shScale(cosineLobe, 1 - lerpFactor));
 
 	return result;
 }

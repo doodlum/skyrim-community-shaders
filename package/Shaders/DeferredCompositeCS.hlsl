@@ -120,7 +120,7 @@ Texture3D<sh2> SkylightingProbeArray : register(t9);
 			specularIrradianceReflections = EnvReflectionsTexture.SampleLevel(LinearSampler, R, level).xyz;
 			specularIrradianceReflections = sRGB2Lin(specularIrradianceReflections);
 		}
-		finalIrradiance += lerp(specularIrradiance, specularIrradianceReflections, skylightingSpecular);
+		finalIrradiance = finalIrradiance * skylightingSpecular + lerp(specularIrradiance, specularIrradianceReflections, skylightingSpecular);
 #	else
 		half3 specularIrradianceReflections = EnvReflectionsTexture.SampleLevel(LinearSampler, R, level).xyz;
 		specularIrradianceReflections = sRGB2Lin(specularIrradianceReflections);
