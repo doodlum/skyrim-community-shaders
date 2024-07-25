@@ -582,7 +582,7 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 					static uint randFrameCount = 0;
 
 					// r2 sequence
-					vPoint = float2(randSeed * rcpRandMax) + (float)randFrameCount * float2(0.245122333753, 0.430159709002);
+					vPoint = float2(randSeed * rcpRandMax) + (float)randFrameCount * float2(0.245122333753f, 0.430159709002f);
 					vPoint.x -= static_cast<unsigned long long>(vPoint.x);
 					vPoint.y -= static_cast<unsigned long long>(vPoint.y);
 
@@ -594,7 +594,7 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 					// disc transformation
 					vPoint.x = sqrt(vPoint.x * sin(singleton->settings.MaxZenith));
-					vPoint.y *= 6.28318530718;
+					vPoint.y *= 6.28318530718f;
 
 					vPoint = { vPoint.x * cos(vPoint.y), vPoint.x * sin(vPoint.y) };
 				}
