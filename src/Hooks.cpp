@@ -405,16 +405,9 @@ namespace Hooks
 				auto type = currentShader->shaderType.get();
 				if (type > 0 && type < RE::BSShader::Type::Total) {
 					if (state->enabledClasses[type - 1]) {
-						if (state->lastModifiedPixelDescriptor != state->modifiedPixelDescriptor) {
-							RE::BSGraphics::PixelShader* pixelShader = shaderCache.GetPixelShader(*currentShader, state->modifiedPixelDescriptor);
-							if (pixelShader) {
-								state->context->PSSetShader(reinterpret_cast<ID3D11PixelShader*>(pixelShader->shader), NULL, NULL);
-								auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-								GET_INSTANCE_MEMBER(currentPixelShader, shadowState)
-								currentPixelShader = a_pixelShader;
-								return;
-							}
-						} else {
+						RE::BSGraphics::PixelShader* pixelShader = shaderCache.GetPixelShader(*currentShader, state->modifiedPixelDescriptor);
+						if (pixelShader) {
+							state->context->PSSetShader(reinterpret_cast<ID3D11PixelShader*>(pixelShader->shader), NULL, NULL);
 							auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 							GET_INSTANCE_MEMBER(currentPixelShader, shadowState)
 							currentPixelShader = a_pixelShader;
