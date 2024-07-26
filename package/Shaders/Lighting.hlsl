@@ -393,9 +393,7 @@ struct PS_OUTPUT
 	float4 Specular : SV_Target4;
 	float4 Reflectance : SV_Target5;
 	float4 Masks : SV_Target6;
-#	if defined(SNOW) || defined(TRUE_PBR)
 	float4 Parameters : SV_Target7;
-#	endif
 #	if defined(TERRAIN_BLENDING)
 	float Depth : SV_Depth;
 #	endif
@@ -2551,7 +2549,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(TRUE_PBR)
 	psout.Parameters.z = pbrWeight;
+#		else
+	psout.Parameters.z = 0;
+#		endif
 
+#		if defined(TRUE_PBR)
 	psout.Reflectance = float4(indirectSpecularLobeWeight, psout.Diffuse.w);
 	psout.NormalGlossiness = float4(EncodeNormal(screenSpaceNormal), pbrGlossiness, psout.Diffuse.w);
 #		elif defined(WETNESS_EFFECTS)
@@ -2562,9 +2564,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	psout.NormalGlossiness = float4(EncodeNormal(screenSpaceNormal), outGlossiness, psout.Diffuse.w);
 #		endif
 
-#		if defined(SNOW) || defined(TRUE_PBR)
 	psout.Parameters.w = psout.Diffuse.w;
-#		endif
 
 #		if (defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX) || defined(EYE))
 #			if defined(DYNAMIC_CUBEMAPS)
