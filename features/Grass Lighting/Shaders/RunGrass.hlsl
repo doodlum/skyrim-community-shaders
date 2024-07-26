@@ -592,7 +592,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
 	directionalAmbientColor *= skylighting;
 	directionalAmbientColor = Lin2sRGB(directionalAmbientColor);
-#			endif
+#				endif
 
 	diffuseColor += directionalAmbientColor;
 #			endif
