@@ -2183,8 +2183,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(SKYLIGHTING)
 	float skylightingDiffuse = shHallucinateZH3Irradiance(skylightingSH, worldSpaceNormal);
 	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
-	skylightingDiffuse = applySkylightingFadeout(skylightingDiffuse, viewPosition.z);
+	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
 	directionalAmbientColor *= skylightingDiffuse;
+	directionalAmbientColor = Lin2sRGB(directionalAmbientColor);
 #	endif
 
 #	if defined(TRUE_PBR) && defined(LOD_LAND_BLEND) && !defined(DEFERRED)

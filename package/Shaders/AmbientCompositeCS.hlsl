@@ -36,6 +36,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 								: SV_DispatchThreadID) {
 	half2 uv = half2(dispatchID.xy + 0.5) * BufferDim.zw;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
+	uv = ConvertFromStereoUV(uv, eyeIndex);
 
 	half3 normalGlossiness = NormalRoughnessTexture[dispatchID.xy];
 	half3 normalVS = DecodeNormal(normalGlossiness.xy);
@@ -55,7 +56,6 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	half3 linDiffuseColor = sRGB2Lin(diffuseColor);
 
 	half3 linAmbient = lerp(sRGB2Lin(albedo * directionalAmbientColor), linAlbedo * linDirectionalAmbientColor, pbrWeight);
-	linAmbient = max(0, linAmbient);  // Fixes black blobs on the world map
 
 	half visibility = 1.0;
 #if defined(SKYLIGHTING)
@@ -71,7 +71,6 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMS.xyz, normalWS);
 	half skylightingDiffuse = shHallucinateZH3Irradiance(skylighting, skylightingSettings.DirectionalDiffuse ? normalWS : float3(0, 0, 1));
 	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
-	skylightingDiffuse = applySkylightingFadeout(skylightingDiffuse, length(positionMS.xyz));
 
 	visibility = skylightingDiffuse;
 #endif
@@ -82,20 +81,19 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 	visibility = min(visibility, ssgiDiffuse.a);
 
-	DiffuseAmbientRW[dispatchID.xy] = linAmbient + ssgiDiffuse.rgb;
+	DiffuseAmbientRW[dispatchID.xy] = linAlbedo * linDirectionalAmbientColor + ssgiDiffuse.rgb;
 
 #	if defined(INTERIOR)
 	linDiffuseColor *= ssgiDiffuse.a;
 #	endif
 	linDiffuseColor += ssgiDiffuse.rgb;
 #endif
-
+	
 	linAmbient *= visibility;
-
-	half3 ambient = Lin2sRGB(linAmbient);
 	diffuseColor = Lin2sRGB(linDiffuseColor);
+    directionalAmbientColor = Lin2sRGB(linDirectionalAmbientColor * visibility);
 
-	diffuseColor = lerp(diffuseColor + ambient, Lin2sRGB(linDiffuseColor + linAmbient), pbrWeight);
+	diffuseColor = lerp(diffuseColor + directionalAmbientColor * albedo, Lin2sRGB(linDiffuseColor + linAmbient), pbrWeight);
 
 	MainRW[dispatchID.xy] = diffuseColor;
 };
