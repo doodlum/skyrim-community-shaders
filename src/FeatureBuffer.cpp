@@ -8,6 +8,8 @@
 #include "Features/TerrainOcclusion.h"
 #include "Features/WetnessEffects.h"
 
+#include "TruePBR.h"
+
 template <class... Ts>
 std::pair<unsigned char*, size_t> _GetFeatureBufferData(Ts... feat_datas)
 {
@@ -34,5 +36,5 @@ std::pair<unsigned char*, size_t> GetFeatureBufferData()
 		WetnessEffects::GetSingleton()->GetCommonBufferData(),
 		LightLimitFix::GetSingleton()->GetCommonBufferData(),
 		Skylighting::GetSingleton()->cbData,
-		State::GetSingleton()->pbrSettings);
+		TruePBR::GetSingleton()->settings);
 }

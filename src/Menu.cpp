@@ -12,6 +12,7 @@
 #include "Features/LightLimitFix/ParticleLights.h"
 
 #include "Deferred.h"
+#include "TruePBR.h"
 
 #include "VariableRateShading.h"
 
@@ -408,64 +409,7 @@ void Menu::DrawSettings()
 				ImGui::TreePop();
 			}
 			ImGui::Checkbox("Extended Frame Annotations", &State::GetSingleton()->extendedFrameAnnotations);
-			if (ImGui::TreeNodeEx("PBR", ImGuiTreeNodeFlags_DefaultOpen)) {
-				auto* state = State::GetSingleton();
-
-				if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
-					if (const auto* currentCell = player->GetParentCell()) {
-						if (currentCell->IsInteriorCell()) {
-							if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
-								if (ImGui::TreeNodeEx("Lighting Template Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-									const auto* editorId = lightingTemplate->GetFormEditorID();
-									ImGui::Text(std::format("Current Lighting Template : {}", editorId).c_str());
-
-									auto& pbrData = state->pbrLightingTemplates[editorId];
-
-									ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
-									ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
-
-									if (ImGui::Button("Save")) {
-										state->SavePBRLightingTemplateData(editorId);
-									}
-
-									ImGui::TreePop();
-								}
-							}
-						} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
-							if (const auto* weather = sky->currentWeather) {
-								if (ImGui::TreeNodeEx("Weather Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-									const auto* editorId = weather->GetFormEditorID();
-									ImGui::Text(std::format("Current Weather : {}", editorId).c_str());
-
-									auto& pbrData = state->pbrWeathers[editorId];
-
-									ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
-									ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
-
-									if (ImGui::Button("Save")) {
-										state->SavePBRWeatherData(editorId);
-									}
-
-									ImGui::TreePop();
-								}
-							}
-						}
-					}
-				}
-
-				bool useMultipleScattering = state->pbrSettings.useMultipleScattering;
-				bool useMultiBounceAO = state->pbrSettings.useMultiBounceAO;
-				if (ImGui::Checkbox("Use Multiple Scattering", &useMultipleScattering)) {
-					state->pbrSettings.useMultipleScattering = useMultipleScattering;
-				}
-				if (ImGui::Checkbox("Use Multi-bounce AO", &useMultiBounceAO)) {
-					state->pbrSettings.useMultiBounceAO = useMultiBounceAO;
-				}
-
-				ImGui::SliderFloat("Direct Light Color Multiplier", &state->globalPBRDirectLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
-				ImGui::SliderFloat("Ambient Light Color Multiplier", &state->globalPBRAmbientLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
-				ImGui::TreePop();
-			}
+			TruePBR::GetSingleton()->DrawSettings();
 		}
 
 		if (ImGui::CollapsingHeader("Replace Original Shaders", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
