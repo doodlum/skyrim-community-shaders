@@ -2,8 +2,9 @@
 
 #include <detours/Detours.h>
 
-#include "Features/TruePBR/BSLightingShaderMaterialPBR.h"
-#include "Features/TruePBR/BSLightingShaderMaterialPBRLandscape.h"
+#include "TruePBR/BSLightingShaderMaterialPBR.h"
+#include "TruePBR/BSLightingShaderMaterialPBRLandscape.h"
+
 #include "Hooks.h"
 #include "ShaderCache.h"
 #include "State.h"
@@ -88,59 +89,62 @@ namespace PNState
 
 void TruePBR::DrawSettings()
 {
-	if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
-		if (const auto* currentCell = player->GetParentCell()) {
-			if (currentCell->IsInteriorCell()) {
-				if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
-					if (ImGui::TreeNodeEx("Lighting Template Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-						const auto* editorId = lightingTemplate->GetFormEditorID();
-						ImGui::Text(std::format("Current Lighting Template : {}", editorId).c_str());
+	if (ImGui::TreeNodeEx("PBR", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
+			if (const auto* currentCell = player->GetParentCell()) {
+				if (currentCell->IsInteriorCell()) {
+					if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
+						if (ImGui::TreeNodeEx("Lighting Template Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+							const auto* editorId = lightingTemplate->GetFormEditorID();
+							ImGui::Text(std::format("Current Lighting Template : {}", editorId).c_str());
 
-						auto& pbrData = pbrLightingTemplates[editorId];
+							auto& pbrData = pbrLightingTemplates[editorId];
 
-						ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
-						ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
+							ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
+							ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
 
-						if (ImGui::Button("Save")) {
-							SavePBRLightingTemplateData(editorId);
+							if (ImGui::Button("Save")) {
+								SavePBRLightingTemplateData(editorId);
+							}
+
+							ImGui::TreePop();
 						}
-
-						ImGui::TreePop();
 					}
-				}
-			} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
-				if (const auto* weather = sky->currentWeather) {
-					if (ImGui::TreeNodeEx("Weather Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-						const auto* editorId = weather->GetFormEditorID();
-						ImGui::Text(std::format("Current Weather : {}", editorId).c_str());
+				} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
+					if (const auto* weather = sky->currentWeather) {
+						if (ImGui::TreeNodeEx("Weather Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+							const auto* editorId = weather->GetFormEditorID();
+							ImGui::Text(std::format("Current Weather : {}", editorId).c_str());
 
-						auto& pbrData = pbrWeathers[editorId];
+							auto& pbrData = pbrWeathers[editorId];
 
-						ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
-						ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
+							ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
+							ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
 
-						if (ImGui::Button("Save")) {
-							SavePBRWeatherData(editorId);
+							if (ImGui::Button("Save")) {
+								SavePBRWeatherData(editorId);
+							}
+
+							ImGui::TreePop();
 						}
-
-						ImGui::TreePop();
 					}
 				}
 			}
 		}
-	}
 
-	bool useMultipleScattering = settings.useMultipleScattering;
-	bool useMultiBounceAO = settings.useMultiBounceAO;
-	if (ImGui::Checkbox("Use Multiple Scattering", &useMultipleScattering)) {
-		settings.useMultipleScattering = useMultipleScattering;
-	}
-	if (ImGui::Checkbox("Use Multi-bounce AO", &useMultiBounceAO)) {
-		settings.useMultiBounceAO = useMultiBounceAO;
-	}
+		bool useMultipleScattering = settings.useMultipleScattering;
+		bool useMultiBounceAO = settings.useMultiBounceAO;
+		if (ImGui::Checkbox("Use Multiple Scattering", &useMultipleScattering)) {
+			settings.useMultipleScattering = useMultipleScattering;
+		}
+		if (ImGui::Checkbox("Use Multi-bounce AO", &useMultiBounceAO)) {
+			settings.useMultiBounceAO = useMultiBounceAO;
+		}
 
-	ImGui::SliderFloat("Direct Light Color Multiplier", &globalPBRDirectLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
-	ImGui::SliderFloat("Ambient Light Color Multiplier", &globalPBRAmbientLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
+		ImGui::SliderFloat("Direct Light Color Multiplier", &globalPBRDirectLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
+		ImGui::SliderFloat("Ambient Light Color Multiplier", &globalPBRAmbientLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
+		ImGui::TreePop();
+	}
 }
 
 void TruePBR::SetupResources()
@@ -170,8 +174,8 @@ void TruePBR::LoadSettings(json& o_json)
 
 void TruePBR::SaveSettings(json& o_json)
 {
-	o_json["Use Multiple Scattering"] = settings.useMultipleScattering;
-	o_json["Use Multi-bounce AO"] = settings.useMultiBounceAO;
+	o_json["Use Multiple Scattering"] = (bool)settings.useMultipleScattering;
+	o_json["Use Multi-bounce AO"] = (bool)settings.useMultiBounceAO;
 
 	o_json["Direct Light Color Multiplier"] = globalPBRDirectLightColorMultiplier;
 	o_json["Ambient Light Color Multiplier"] = globalPBRAmbientLightColorMultiplier;

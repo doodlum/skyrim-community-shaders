@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Feature.h"
-
-struct TruePBR : Feature
+struct TruePBR
 {
 public:
 	static TruePBR* GetSingleton()
@@ -11,25 +9,13 @@ public:
 		return &singleton;
 	}
 
-	virtual inline std::string GetName() override { return "True PBR"; }
-	virtual inline std::string GetShortName() override { return "TruePBR"; }
-	virtual inline std::string_view GetShaderDefineName() override { return "TRUE_PBR"; }
+	inline std::string GetShortName() { return "TruePBR"; }
 
-	// Return false due to not set based on shaderType
-	bool HasShaderDefine(RE::BSShader::Type) override { return false; }
-
-	virtual void DrawSettings() override;
-	virtual void SetupResources() override;
-	virtual void LoadSettings(json& o_json) override;
-	virtual void SaveSettings(json& o_json) override;
-	virtual void RestoreDefaultSettings() override
-	{
-		globalPBRDirectLightColorMultiplier = 1.f;
-		globalPBRAmbientLightColorMultiplier = 1.f;
-		settings.useMultipleScattering = true;
-		settings.useMultiBounceAO = true;
-	}
-	virtual void PostPostLoad() override;
+	void DrawSettings();
+	void SetupResources();
+	void LoadSettings(json& o_json);
+	void SaveSettings(json& o_json);
+	void PostPostLoad();
 
 	void SetShaderResouces();
 	void GenerateShaderPermutations(RE::BSShader* shader);

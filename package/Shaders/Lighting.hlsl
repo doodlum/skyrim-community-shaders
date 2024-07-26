@@ -946,7 +946,7 @@ float3 ApplyFogAndClampColor(float3 srcColor, float4 fogParam, float3 clampColor
 #	endif
 
 #	if defined(TRUE_PBR)
-#		include "TruePBR/TruePBR.hlsli"
+#		include "Common/PBR.hlsli"
 #	endif
 
 #	if defined(EMAT)

@@ -1,6 +1,6 @@
 #include "BSLightingShaderMaterialPBR.h"
 
-#include "Features/TruePBR.h"
+#include "TruePBR.h"
 
 BSLightingShaderMaterialPBR::~BSLightingShaderMaterialPBR()
 {}

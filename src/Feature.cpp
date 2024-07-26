@@ -13,7 +13,6 @@
 #include "Features/SubsurfaceScattering.h"
 #include "Features/TerrainBlending.h"
 #include "Features/TerrainOcclusion.h"
-#include "Features/TruePBR.h"
 #include "Features/WaterCaustics.h"
 #include "Features/WaterParallax.h"
 #include "Features/WetnessEffects.h"
@@ -127,8 +126,7 @@ const std::vector<Feature*>& Feature::GetFeatureList()
 		TerrainOcclusion::GetSingleton(),
 		ScreenSpaceGI::GetSingleton(),
 		Skylighting::GetSingleton(),
-		TerrainBlending::GetSingleton(),
-		TruePBR::GetSingleton()
+		TerrainBlending::GetSingleton()
 	};
 
 	static std::vector<Feature*> featuresVR(features);

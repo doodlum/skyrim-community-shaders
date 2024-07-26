@@ -2,10 +2,10 @@
 
 #include <detours/Detours.h>
 
-#include "Features/TruePBR.h"
 #include "Menu.h"
 #include "ShaderCache.h"
 #include "State.h"
+#include "TruePBR.h"
 #include "Util.h"
 
 #include "ShaderTools/BSShaderHooks.h"
@@ -89,11 +89,8 @@ void hk_BSShader_LoadShaders(RE::BSShader* shader, std::uintptr_t stream)
 	auto& shaderCache = SIE::ShaderCache::Instance();
 
 	if (shaderCache.IsDiskCache() || shaderCache.IsDump()) {
-		auto truePBR = TruePBR::GetSingleton();
-		if (truePBR->loaded) {
-			if (shaderCache.IsDiskCache()) {
-				truePBR->GenerateShaderPermutations(shader);
-			}
+		if (shaderCache.IsDiskCache()) {
+			TruePBR::GetSingleton()->GenerateShaderPermutations(shader);
 		}
 
 		for (const auto& entry : shader->vertexShaders) {
