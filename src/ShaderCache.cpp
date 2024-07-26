@@ -12,6 +12,7 @@
 #include "State.h"
 
 #include "Features/DynamicCubemaps.h"
+#include "Features/TruePBR.h"
 
 namespace SIE
 {
@@ -64,7 +65,9 @@ namespace SIE
 				defines[lastIndex++] = { "DEFERRED", nullptr };
 			}
 			if ((descriptor & static_cast<uint32_t>(ShaderCache::LightingShaderFlags::TruePbr)) != 0) {
-				defines[lastIndex++] = { "TRUE_PBR", nullptr };
+				auto truePBR = TruePBR::GetSingleton();
+				if (truePBR->loaded)
+					defines[lastIndex++] = { truePBR->GetShaderDefineName().data(), nullptr };
 			}
 
 			for (auto* feature : Feature::GetFeatureList()) {
@@ -201,7 +204,9 @@ namespace SIE
 			if (technique == static_cast<uint32_t>(ShaderCache::GrassShaderTechniques::RenderDepth)) {
 				defines[lastIndex++] = { "RENDER_DEPTH", nullptr };
 			} else if (technique == static_cast<uint32_t>(ShaderCache::GrassShaderTechniques::TruePbr)) {
-				defines[lastIndex++] = { "TRUE_PBR", nullptr };
+				auto truePBR = TruePBR::GetSingleton();
+				if (truePBR->loaded)
+					defines[lastIndex++] = { truePBR->GetShaderDefineName().data(), nullptr };
 			}
 			if (descriptor & static_cast<uint32_t>(ShaderCache::GrassShaderFlags::AlphaTest)) {
 				defines[lastIndex++] = { "DO_ALPHA_TEST", nullptr };

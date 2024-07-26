@@ -329,7 +329,7 @@ float3x3 CalculateTBN(float3 N, float3 p, float2 uv)
 #	endif
 
 #	if defined(TRUE_PBR)
-#		include "Common/PBR.hlsli"
+#		include "TruePBR/TruePBR.hlsli"
 #	endif
 
 PS_OUTPUT main(PS_INPUT input, bool frontFace

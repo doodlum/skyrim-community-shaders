@@ -49,7 +49,7 @@ public:
 	void ReceiveValuesFromRootMaterial(bool skinned, bool rimLighting, bool softLighting, bool backLighting, bool MSN) override;  // 0A
 	uint32_t GetTextures(RE::NiSourceTexture** textures) override;                                                                // 0B
 	void LoadBinary(RE::NiStream& stream) override;                                                                               // 0D
-	
+
 	static BSLightingShaderMaterialPBR* Make();
 
 	float GetRoughnessScale() const;
