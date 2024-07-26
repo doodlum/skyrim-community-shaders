@@ -437,7 +437,7 @@ namespace Hooks
 								state->context->PSSetShader(reinterpret_cast<ID3D11PixelShader*>(pixelShader->shader), NULL, NULL);
 								auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 								GET_INSTANCE_MEMBER(currentPixelShader, shadowState)
-									currentPixelShader = a_pixelShader;
+								currentPixelShader = a_pixelShader;
 								return;
 							}
 						}
