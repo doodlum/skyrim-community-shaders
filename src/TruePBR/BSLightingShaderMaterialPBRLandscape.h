@@ -27,18 +27,31 @@ public:
 
 	// members
 	std::uint32_t numLandscapeTextures = 0;
-	RE::NiPointer<RE::NiSourceTexture> landscapeBaseColorTextures[NumTiles - 1];
-	RE::NiPointer<RE::NiSourceTexture> landscapeNormalTextures[NumTiles - 1];
+
+	// We need terrainOverlayTexture, terrainNoiseTexture, landBlendParams, terrainTexOffsetX, terrainTexOffsetY, terrainTexFade 
+	// to be at the same offsets as in vanilla BSLightingShaderMaterialLandscape so we arrange PBR fields in specific way
+	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeBaseColorTextures;
+	std::array<bool, NumTiles> isPbr;
+	std::array<float, NumTiles> roughnessScales;
+
 	RE::NiPointer<RE::NiSourceTexture> terrainOverlayTexture;
 	RE::NiPointer<RE::NiSourceTexture> terrainNoiseTexture;
 	RE::NiColorA landBlendParams;
-	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeDisplacementTextures;
-	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeRMAOSTextures;
-	std::array<bool, NumTiles> isPbr;
-	std::array<float, NumTiles> roughnessScales;
-	std::array<float, NumTiles> displacementScales;
-	std::array<float, NumTiles> specularLevels;
+
+	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeNormalTextures;
+
 	float terrainTexOffsetX = 0.f;
 	float terrainTexOffsetY = 0.f;
 	float terrainTexFade = 0.f;
+
+	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeDisplacementTextures;
+	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeRMAOSTextures;
+	std::array<float, NumTiles> displacementScales;
+	std::array<float, NumTiles> specularLevels;
 };
+static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainOverlayTexture) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainOverlayTexture));
+static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainNoiseTexture) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainNoiseTexture));
+static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, landBlendParams) == offsetof(RE::BSLightingShaderMaterialLandscape, landBlendParams));
+static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainTexOffsetX) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainTexOffsetX));
+static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainTexOffsetY) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainTexOffsetY));
+static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainTexFade) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainTexFade));

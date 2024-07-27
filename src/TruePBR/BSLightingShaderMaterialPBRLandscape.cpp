@@ -101,12 +101,6 @@ void BSLightingShaderMaterialPBRLandscape::ReceiveValuesFromRootMaterial(bool sk
 uint32_t BSLightingShaderMaterialPBRLandscape::GetTextures(RE::NiSourceTexture** textures)
 {
 	uint32_t textureIndex = 0;
-	if (diffuseTexture != nullptr) {
-		textures[textureIndex++] = diffuseTexture.get();
-	}
-	if (normalTexture != nullptr) {
-		textures[textureIndex++] = normalTexture.get();
-	}
 	if (rimSoftLightingTexture != nullptr) {
 		textures[textureIndex++] = rimSoftLightingTexture.get();
 	}

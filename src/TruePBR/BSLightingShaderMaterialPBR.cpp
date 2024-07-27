@@ -31,21 +31,11 @@ void BSLightingShaderMaterialPBR::CopyMembers(RE::BSShaderMaterial* that)
 	projectedMaterialRoughness = pbrThat->projectedMaterialRoughness;
 	projectedMaterialSpecularLevel = pbrThat->projectedMaterialSpecularLevel;
 
-	if (rmaosTexture != pbrThat->rmaosTexture) {
-		rmaosTexture = pbrThat->rmaosTexture;
-	}
-	if (emissiveTexture != pbrThat->emissiveTexture) {
-		emissiveTexture = pbrThat->emissiveTexture;
-	}
-	if (displacementTexture != pbrThat->displacementTexture) {
-		displacementTexture = pbrThat->displacementTexture;
-	}
-	if (featuresTexture0 != pbrThat->featuresTexture0) {
-		featuresTexture0 = pbrThat->featuresTexture0;
-	}
-	if (featuresTexture1 != pbrThat->featuresTexture1) {
-		featuresTexture1 = pbrThat->featuresTexture1;
-	}
+	rmaosTexture = pbrThat->rmaosTexture;
+	emissiveTexture = pbrThat->emissiveTexture;
+	displacementTexture = pbrThat->displacementTexture;
+	featuresTexture0 = pbrThat->featuresTexture0;
+	featuresTexture1 = pbrThat->featuresTexture1;
 }
 
 std::uint32_t BSLightingShaderMaterialPBR::ComputeCRC32(uint32_t srcHash)

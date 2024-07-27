@@ -12,21 +12,34 @@
 namespace PNState
 {
 	template <typename ResultType>
-	bool Read(const json& config, ResultType& result)
+	bool Read(const json& config, const std::string_view& key, ResultType& result)
 	{
+		if (!config.is_object())
+		{
+			return false;
+		}
+
+		auto it = config.find(key);
+		if (it == config.end())
+		{
+			return false;
+		}
+
+		const json& section = it.value();
+
 		if constexpr (std::is_same_v<ResultType, std::array<float, 3>> || std::is_same_v<ResultType, RE::NiColor>) {
-			if (config.is_array() && config.size() == 3 &&
-				config[0].is_number_float() && config[1].is_number_float() &&
-				config[2].is_number_float()) {
-				result[0] = config[0];
-				result[1] = config[1];
-				result[2] = config[2];
+			if (section.is_array() && section.size() == 3 &&
+				section[0].is_number_float() && section[1].is_number_float() &&
+				section[2].is_number_float()) {
+				result[0] = section[0];
+				result[1] = section[1];
+				result[2] = section[2];
 				return true;
 			}
 		}
 		if constexpr (std::is_same_v<ResultType, float>) {
-			if (config.is_number_float()) {
-				result = config;
+			if (section.is_number_float()) {
+				result = section;
 				return true;
 			}
 		}
@@ -225,18 +238,18 @@ void TruePBR::SetupTextureSetData()
 	PNState::ReadPBRRecordConfigs("Data\\PBRTextureSets", [this](const std::string& editorId, const json& config) {
 		PBRTextureSetData textureSetData;
 
-		PNState::Read(config["roughnessScale"], textureSetData.roughnessScale);
-		PNState::Read(config["displacementScale"], textureSetData.displacementScale);
-		PNState::Read(config["specularLevel"], textureSetData.specularLevel);
-		PNState::Read(config["subsurfaceColor"], textureSetData.subsurfaceColor);
-		PNState::Read(config["subsurfaceOpacity"], textureSetData.subsurfaceOpacity);
-		PNState::Read(config["coatColor"], textureSetData.coatColor);
-		PNState::Read(config["coatStrength"], textureSetData.coatStrength);
-		PNState::Read(config["coatRoughness"], textureSetData.coatRoughness);
-		PNState::Read(config["coatSpecularLevel"], textureSetData.coatSpecularLevel);
-		PNState::Read(config["innerLayerDisplacementOffset"], textureSetData.innerLayerDisplacementOffset);
-		PNState::Read(config["fuzzColor"], textureSetData.fuzzColor);
-		PNState::Read(config["fuzzWeight"], textureSetData.fuzzWeight);
+		PNState::Read(config, "roughnessScale", textureSetData.roughnessScale);
+		PNState::Read(config, "displacementScale", textureSetData.displacementScale);
+		PNState::Read(config, "specularLevel", textureSetData.specularLevel);
+		PNState::Read(config, "subsurfaceColor", textureSetData.subsurfaceColor);
+		PNState::Read(config, "subsurfaceOpacity", textureSetData.subsurfaceOpacity);
+		PNState::Read(config, "coatColor", textureSetData.coatColor);
+		PNState::Read(config, "coatStrength", textureSetData.coatStrength);
+		PNState::Read(config, "coatRoughness", textureSetData.coatRoughness);
+		PNState::Read(config, "coatSpecularLevel", textureSetData.coatSpecularLevel);
+		PNState::Read(config, "innerLayerDisplacementOffset", textureSetData.innerLayerDisplacementOffset);
+		PNState::Read(config, "fuzzColor", textureSetData.fuzzColor);
+		PNState::Read(config, "fuzzWeight", textureSetData.fuzzWeight);
 
 		pbrTextureSets.insert_or_assign(editorId, textureSetData);
 	});
@@ -269,9 +282,9 @@ void TruePBR::SetupMaterialObjectData()
 	PNState::ReadPBRRecordConfigs("Data\\PBRMaterialObjects", [this](const std::string& editorId, const json& config) {
 		PBRMaterialObjectData materialObjectData;
 
-		PNState::Read(config["baseColorScale"], materialObjectData.baseColorScale);
-		PNState::Read(config["roughness"], materialObjectData.roughness);
-		PNState::Read(config["specularLevel"], materialObjectData.specularLevel);
+		PNState::Read(config, "baseColorScale", materialObjectData.baseColorScale);
+		PNState::Read(config, "roughness", materialObjectData.roughness);
+		PNState::Read(config, "specularLevel", materialObjectData.specularLevel);
 
 		pbrMaterialObjects.insert_or_assign(editorId, materialObjectData);
 	});
@@ -304,8 +317,8 @@ void TruePBR::SetupLightingTemplateData()
 	PNState::ReadPBRRecordConfigs("Data\\PBRLightingTemplates", [this](const std::string& editorId, const json& config) {
 		PBRLightingTemplateData lightingTemplateData;
 
-		PNState::Read(config["directionalLightColorScale"], lightingTemplateData.directionalLightColorScale);
-		PNState::Read(config["directionalAmbientLightColorScale"], lightingTemplateData.directionalAmbientLightColorScale);
+		PNState::Read(config, "directionalLightColorScale", lightingTemplateData.directionalLightColorScale);
+		PNState::Read(config, "directionalAmbientLightColorScale", lightingTemplateData.directionalAmbientLightColorScale);
 
 		pbrLightingTemplates.insert_or_assign(editorId, lightingTemplateData);
 	});
@@ -349,8 +362,8 @@ void TruePBR::SetupWeatherData()
 	PNState::ReadPBRRecordConfigs("Data\\PBRWeathers", [this](const std::string& editorId, const json& config) {
 		PBRWeatherData weatherData;
 
-		PNState::Read(config["directionalLightColorScale"], weatherData.directionalLightColorScale);
-		PNState::Read(config["directionalAmbientLightColorScale"], weatherData.directionalAmbientLightColorScale);
+		PNState::Read(config, "directionalLightColorScale", weatherData.directionalLightColorScale);
+		PNState::Read(config, "directionalAmbientLightColorScale", weatherData.directionalAmbientLightColorScale);
 
 		pbrWeathers.insert_or_assign(editorId, weatherData);
 	});
@@ -539,7 +552,7 @@ struct ExtendedRendererState
 	static constexpr uint32_t FirstPSTexture = 80;
 
 	uint32_t PSResourceModifiedBits = 0;
-	ID3D11ShaderResourceView* PSTexture[NumPSTextures];
+	std::array<ID3D11ShaderResourceView*, NumPSTextures> PSTexture;
 
 	void SetPSTexture(size_t textureIndex, RE::BSGraphics::Texture* newTexture)
 	{
@@ -553,7 +566,7 @@ struct ExtendedRendererState
 
 	ExtendedRendererState()
 	{
-		std::fill_n(PSTexture, NumPSTextures, nullptr);
+		std::fill(PSTexture.begin(), PSTexture.end(), nullptr);
 	}
 } extendedRendererState;
 
@@ -703,24 +716,17 @@ struct BSLightingShader_SetupMaterial
 
 				constexpr size_t NormalStartIndex = 7;
 
-				if (pbrMaterial->diffuseTexture != nullptr) {
-					shadowState->SetPSTexture(0, pbrMaterial->diffuseTexture->rendererTexture);
-				}
-				if (pbrMaterial->normalTexture != nullptr) {
-					shadowState->SetPSTexture(NormalStartIndex, pbrMaterial->normalTexture->rendererTexture);
-				}
-				if (pbrMaterial->landscapeDisplacementTextures[0] != nullptr) {
-					extendedRendererState.SetPSTexture(0, pbrMaterial->landscapeDisplacementTextures[0]->rendererTexture);
-				}
-				if (pbrMaterial->landscapeRMAOSTextures[0] != nullptr) {
-					extendedRendererState.SetPSTexture(BSLightingShaderMaterialPBRLandscape::NumTiles, pbrMaterial->landscapeRMAOSTextures[0]->rendererTexture);
-				}
-				for (uint32_t textureIndex = 1; textureIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureIndex) {
-					if (pbrMaterial->landscapeBaseColorTextures[textureIndex - 1] != nullptr) {
-						shadowState->SetPSTexture(textureIndex, pbrMaterial->landscapeBaseColorTextures[textureIndex - 1]->rendererTexture);
+				for (uint32_t textureIndex = 0; textureIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureIndex) {
+					if (pbrMaterial->landscapeBaseColorTextures[textureIndex] != nullptr) {
+						shadowState->SetPSTexture(textureIndex, pbrMaterial->landscapeBaseColorTextures[textureIndex]->rendererTexture);
+						shadowState->SetPSTextureAddressMode(textureIndex, RE::BSGraphics::TextureAddressMode::kWrapSWrapT);
+						shadowState->SetPSTextureFilterMode(textureIndex, RE::BSGraphics::TextureFilterMode::kAnisotropic);
 					}
-					if (pbrMaterial->landscapeNormalTextures[textureIndex - 1] != nullptr) {
-						shadowState->SetPSTexture(NormalStartIndex + textureIndex, pbrMaterial->landscapeNormalTextures[textureIndex - 1]->rendererTexture);
+					if (pbrMaterial->landscapeNormalTextures[textureIndex] != nullptr) {
+						const uint32_t normalTextureIndex = NormalStartIndex + textureIndex;
+						shadowState->SetPSTexture(normalTextureIndex, pbrMaterial->landscapeNormalTextures[textureIndex]->rendererTexture);
+						shadowState->SetPSTextureAddressMode(normalTextureIndex, RE::BSGraphics::TextureAddressMode::kWrapSWrapT);
+						shadowState->SetPSTextureFilterMode(normalTextureIndex, RE::BSGraphics::TextureFilterMode::kAnisotropic);
 					}
 					if (pbrMaterial->landscapeDisplacementTextures[textureIndex] != nullptr) {
 						extendedRendererState.SetPSTexture(textureIndex, pbrMaterial->landscapeDisplacementTextures[textureIndex]->rendererTexture);
@@ -729,9 +735,6 @@ struct BSLightingShader_SetupMaterial
 						extendedRendererState.SetPSTexture(BSLightingShaderMaterialPBRLandscape::NumTiles + textureIndex, pbrMaterial->landscapeRMAOSTextures[textureIndex]->rendererTexture);
 					}
 				}
-
-				shadowState->SetPSTextureAddressMode(0, RE::BSGraphics::TextureAddressMode::kWrapSWrapT);
-				shadowState->SetPSTextureFilterMode(0, RE::BSGraphics::TextureFilterMode::kAnisotropic);
 
 				if (pbrMaterial->terrainOverlayTexture != nullptr) {
 					shadowState->SetPSTexture(13, pbrMaterial->terrainOverlayTexture->rendererTexture);
@@ -999,8 +1002,8 @@ void SetupLandscapeTexture(BSLightingShaderMaterialPBRLandscape& material, RE::T
 	auto* textureSetData = TruePBR::GetSingleton()->GetPBRTextureSetData(landTexture.textureSet);
 	const bool isPbr = textureSetData != nullptr;
 
-	textureSet->SetTexture(BSLightingShaderMaterialPBRLandscape::BaseColorTexture, textureIndex == 0 ? material.diffuseTexture : material.landscapeBaseColorTextures[textureIndex - 1]);
-	textureSet->SetTexture(BSLightingShaderMaterialPBRLandscape::NormalTexture, textureIndex == 0 ? material.normalTexture : material.landscapeNormalTextures[textureIndex - 1]);
+	textureSet->SetTexture(BSLightingShaderMaterialPBRLandscape::BaseColorTexture, material.landscapeBaseColorTextures[textureIndex]);
+	textureSet->SetTexture(BSLightingShaderMaterialPBRLandscape::NormalTexture, material.landscapeNormalTextures[textureIndex]);
 
 	if (isPbr) {
 		textureSet->SetTexture(BSLightingShaderMaterialPBRLandscape::RmaosTexture, material.landscapeRMAOSTextures[textureIndex]);
@@ -1011,14 +1014,8 @@ void SetupLandscapeTexture(BSLightingShaderMaterialPBRLandscape& material, RE::T
 	}
 	material.isPbr[textureIndex] = isPbr;
 
-	if (textureIndex == 0) {
-		if (material.diffuseTexture != nullptr) {
-			material.numLandscapeTextures = std::max(material.numLandscapeTextures, 1u);
-		}
-	} else {
-		if (material.landscapeBaseColorTextures[textureIndex] != nullptr) {
-			material.numLandscapeTextures = std::max(material.numLandscapeTextures, textureIndex + 2);
-		}
+	if (material.landscapeBaseColorTextures[textureIndex] != nullptr) {
+		material.numLandscapeTextures = std::max(material.numLandscapeTextures, textureIndex + 1);
 	}
 }
 
@@ -1056,7 +1053,6 @@ bool hk_TESObjectLAND_SetupMaterial(RE::TESObjectLAND* land)
 	static const auto settings = RE::INISettingCollection::GetSingleton();
 	static const bool bEnableLandFade = settings->GetSetting("bEnableLandFade:Display");
 	static const bool bDrawLandShadows = settings->GetSetting("bDrawLandShadows:Display");
-	static const bool bLandSpecular = settings->GetSetting("bLandSpecular:Landscape");
 
 	if (land->loadedData != nullptr && land->loadedData->mesh[0] != nullptr) {
 		land->data.flags.set(static_cast<RE::OBJ_LAND::Flag>(8));
@@ -1072,21 +1068,17 @@ bool hk_TESObjectLAND_SetupMaterial(RE::TESObjectLAND* land)
 			auto material = static_cast<BSLightingShaderMaterialPBRLandscape*>(shaderProperty->material);
 			const auto& stateData = RE::BSGraphics::State::GetSingleton()->GetRuntimeData();
 
-			material->diffuseTexture = stateData.defaultTextureBlack;
-			material->normalTexture = stateData.defaultTextureNormalMap;
-			material->landscapeDisplacementTextures[0] = stateData.defaultTextureBlack;
-			material->landscapeRMAOSTextures[0] = stateData.defaultTextureWhite;
-			for (uint32_t textureIndex = 0; textureIndex < BSLightingShaderMaterialPBRLandscape::NumTiles - 1; ++textureIndex) {
+			for (uint32_t textureIndex = 0; textureIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureIndex) {
 				material->landscapeBaseColorTextures[textureIndex] = stateData.defaultTextureBlack;
 				material->landscapeNormalTextures[textureIndex] = stateData.defaultTextureNormalMap;
-				material->landscapeDisplacementTextures[textureIndex + 1] = stateData.defaultTextureBlack;
-				material->landscapeRMAOSTextures[textureIndex + 1] = stateData.defaultTextureWhite;
+				material->landscapeDisplacementTextures[textureIndex] = stateData.defaultTextureBlack;
+				material->landscapeRMAOSTextures[textureIndex] = stateData.defaultTextureWhite;
 			}
 
 			if (auto defTexture = land->loadedData->defQuadTextures[quadIndex]) {
 				SetupLandscapeTexture(*material, *defTexture, 0);
 			}
-			for (uint32_t textureIndex = 0; textureIndex < 6; ++textureIndex) {
+			for (uint32_t textureIndex = 0; textureIndex < BSLightingShaderMaterialPBRLandscape::NumTiles - 1; ++textureIndex) {
 				if (auto landTexture = land->loadedData->quadTextures[quadIndex][textureIndex]) {
 					SetupLandscapeTexture(*material, *landTexture, textureIndex + 1);
 				}
@@ -1098,8 +1090,9 @@ bool hk_TESObjectLAND_SetupMaterial(RE::TESObjectLAND* land)
 
 			bool noLODLandBlend = false;
 			auto tes = RE::TES::GetSingleton();
-			if (tes->worldSpace != nullptr) {
-				if (auto terrainManager = tes->worldSpace->GetTerrainManager()) {
+			auto worldSpace = tes->GetRuntimeData2().worldSpace;
+			if (worldSpace != nullptr) {
+				if (auto terrainManager = worldSpace->GetTerrainManager()) {
 					noLODLandBlend = reinterpret_cast<bool*>(terrainManager)[0x36];
 				}
 			}
