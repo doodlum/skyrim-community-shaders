@@ -5,14 +5,14 @@
 #include "common.hlsli"
 
 Texture2D<half4> srcDiffuse : register(t0);
-Texture2D<half4> srcPrevGI : register(t1);
-Texture2D<half4> srcPrevGISpecular : register(t2);
+Texture2D<half4> srcPrevGI : register(t1);          // maybe half-res
+Texture2D<half4> srcPrevGISpecular : register(t2);  // maybe half-res
 Texture2D<half> srcCurrDepth : register(t3);
 Texture2D<half4> srcCurrNormal : register(t4);
-Texture2D<half3> srcPrevGeo : register(t5);
+Texture2D<half3> srcPrevGeo : register(t5);  // maybe half-res
 Texture2D<float4> srcMotionVec : register(t6);
 Texture2D<half3> srcPrevAmbient : register(t7);
-Texture2D<unorm float> srcAccumFrames : register(t8);
+Texture2D<unorm float> srcAccumFrames : register(t8);  // maybe half-res
 
 RWTexture2D<float3> outRadianceDisocc : register(u0);
 RWTexture2D<unorm float> outAccumFrames : register(u1);
@@ -27,7 +27,7 @@ void readHistory(
 	uint eyeIndex, float curr_depth, float3 curr_pos, int2 pixCoord, float bilinear_weight,
 	inout half4 prev_gi, inout half4 prev_gi_specular, inout half3 prev_ambient, inout float accum_frames, inout float wsum)
 {
-	const float2 uv = (pixCoord + .5) * RcpFrameDim;
+	const float2 uv = (pixCoord + .5) * RCP_OUT_FRAME_DIM;
 	const float2 screen_pos = ConvertFromStereoUV(uv, eyeIndex);
 	if (any(screen_pos < 0) || any(screen_pos > 1))
 		return;
@@ -62,13 +62,15 @@ void readHistory(
 
 [numthreads(8, 8, 1)] void main(const uint2 pixCoord
 								: SV_DispatchThreadID) {
-	const float2 uv = (pixCoord + .5) * RcpFrameDim;
+	const float2 frameScale = FrameDim * RcpTexDim;
+
+	const float2 uv = (pixCoord + .5) * RCP_OUT_FRAME_DIM;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 	const float2 screen_pos = ConvertFromStereoUV(uv, eyeIndex);
 
 	float2 prev_uv = uv;
 #ifdef REPROJECTION
-	prev_uv += srcMotionVec[pixCoord].xy;
+	prev_uv += FULLRES_LOAD(srcMotionVec, pixCoord, uv * frameScale, samplerLinearClamp).xy;
 #endif
 	float2 prev_screen_pos = ConvertFromStereoUV(prev_uv, eyeIndex);
 
@@ -78,7 +80,7 @@ void readHistory(
 	float accum_frames = 0;
 	float wsum = 0;
 
-	const float curr_depth = srcCurrDepth[pixCoord];
+	const float curr_depth = READ_DEPTH(srcCurrDepth, pixCoord);
 
 	if (curr_depth < FP_Z) {
 		outRadianceDisocc[pixCoord] = half3(0, 0, 0);
@@ -89,12 +91,12 @@ void readHistory(
 
 #ifdef REPROJECTION
 	if ((curr_depth <= DepthFadeRange.y) && !(any(prev_screen_pos < 0) || any(prev_screen_pos > 1))) {
-		// float3 curr_normal = DecodeNormal(srcCurrNormal[pixCoord];
+		// float3 curr_normal = DecodeNormal(srcCurrNormal[pixCoord]);
 		// curr_normal = ViewToWorldVector(curr_normal, CameraViewInverse[eyeIndex]);
 		float3 curr_pos = ScreenToViewPosition(screen_pos, curr_depth, eyeIndex);
 		curr_pos = ViewToWorldPosition(curr_pos, CameraViewInverse[eyeIndex]) + CameraPosAdjust[eyeIndex];
 
-		float2 prev_px_coord = prev_uv * FrameDim;
+		float2 prev_px_coord = prev_uv * OUT_FRAME_DIM;
 		int2 prev_px_lu = floor(prev_px_coord - 0.5);
 		float2 bilinear_weights = prev_px_coord - 0.5 - prev_px_lu;
 
@@ -102,13 +104,13 @@ void readHistory(
 			prev_px_lu, (1 - bilinear_weights.x) * (1 - bilinear_weights.y),
 			prev_gi, prev_gi_specular, prev_ambient, accum_frames, wsum);
 		readHistory(eyeIndex, curr_depth, curr_pos,
-			prev_px_lu + uint2(1, 0), bilinear_weights.x * (1 - bilinear_weights.y),
+			prev_px_lu + int2(1, 0), bilinear_weights.x * (1 - bilinear_weights.y),
 			prev_gi, prev_gi_specular, prev_ambient, accum_frames, wsum);
 		readHistory(eyeIndex, curr_depth, curr_pos,
-			prev_px_lu + uint2(0, 1), (1 - bilinear_weights.x) * bilinear_weights.y,
+			prev_px_lu + int2(0, 1), (1 - bilinear_weights.x) * bilinear_weights.y,
 			prev_gi, prev_gi_specular, prev_ambient, accum_frames, wsum);
 		readHistory(eyeIndex, curr_depth, curr_pos,
-			prev_px_lu + uint2(1, 1), bilinear_weights.x * bilinear_weights.y,
+			prev_px_lu + int2(1, 1), bilinear_weights.x * bilinear_weights.y,
 			prev_gi, prev_gi_specular, prev_ambient, accum_frames, wsum);
 
 		if (wsum > 1e-2) {
@@ -129,7 +131,7 @@ void readHistory(
 
 	half3 radiance = 0;
 #ifdef GI
-	radiance = sRGB2Lin(srcDiffuse[pixCoord].rgb * GIStrength);
+	radiance = sRGB2Lin(FULLRES_LOAD(srcDiffuse, pixCoord, uv * frameScale, samplerLinearClamp).rgb * GIStrength);
 #	ifdef GI_BOUNCE
 	radiance += prev_ambient.rgb * GIBounceFade;
 #	endif

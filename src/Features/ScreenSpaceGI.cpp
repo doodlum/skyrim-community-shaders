@@ -179,9 +179,17 @@ void ScreenSpaceGI::DrawSettings()
 			ImGui::Text("Mainly performance (texture memory bandwidth) setting but as a side-effect reduces overshadowing by thin objects and increases temporal instability.");
 	}
 
-	recompileFlag |= ImGui::Checkbox("Half Rate", &settings.HalfRate);
-	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("Shading only half the pixels per frame. Cheaper but has more ghosting, and takes twice as long to converge.");
+	if (ImGui::BeginTable("Less Work", 2)) {
+		ImGui::TableNextColumn();
+		recompileFlag |= ImGui::Checkbox("Half Rate", &settings.HalfRate);
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text("Shading only half the pixels per frame. Cheaper but has more ghosting, and takes twice as long to converge.");
+
+		ImGui::TableNextColumn();
+		recompileFlag |= ImGui::Checkbox("Half Resolution", &settings.HalfRes);
+
+		ImGui::EndTable();
+	}
 
 	///////////////////////////////
 	ImGui::SeparatorText("Visual");
@@ -519,7 +527,7 @@ void ScreenSpaceGI::SetupResources()
 void ScreenSpaceGI::ClearShaderCache()
 {
 	static const std::vector<winrt::com_ptr<ID3D11ComputeShader>*> shaderPtrs = {
-		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute
+		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute
 	};
 
 	for (auto shader : shaderPtrs)
@@ -545,11 +553,14 @@ void ScreenSpaceGI::CompileComputeShaders()
 			{ &prefilterDepthsCompute, "prefilterDepths.cs.hlsl", {} },
 			{ &radianceDisoccCompute, "radianceDisocc.cs.hlsl", {} },
 			{ &giCompute, "gi.cs.hlsl", {} },
-			{ &blurCompute, "blur.cs.hlsl", {} }
+			{ &blurCompute, "blur.cs.hlsl", {} },
+			{ &upsampleCompute, "upsample.cs.hlsl", {} },
 		};
 	for (auto& info : shaderInfos) {
 		if (REL::Module::IsVR())
 			info.defines.push_back({ "VR", "" });
+		if (settings.HalfRes)
+			info.defines.push_back({ "HALF_RES", "" });
 		if (settings.HalfRate)
 			info.defines.push_back({ "HALF_RATE", "" });
 		if (settings.EnableTemporalDenoiser)
@@ -577,7 +588,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return texNoise && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute;
+	return texNoise && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute;
 }
 
 void ScreenSpaceGI::UpdateSB()
@@ -672,6 +683,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 
 	float2 size = Util::ConvertToDynamic(State::GetSingleton()->screenSize);
 	uint resolution[2] = { (uint)size.x, (uint)size.y };
+	uint halfRes[2] = { resolution[0] >> 1, resolution[1] >> 1 };
+	auto internalRes = settings.HalfRes ? halfRes : resolution;
 
 	std::array<ID3D11ShaderResourceView*, 9> srvs = { nullptr };
 	std::array<ID3D11UnorderedAccessView*, 5> uavs = { nullptr };
@@ -724,7 +737,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 		context->CSSetShader(radianceDisoccCompute.get(), nullptr, 0);
-		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+		context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
 
 		context->GenerateMips(texRadiance->srv.get());
 
@@ -751,7 +764,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 		context->CSSetShader(giCompute.get(), nullptr, 0);
-		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+		context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
 
 		inputGITexIdx = !inputGITexIdx;
 		lastFrameGITexIdx = inputGITexIdx;
@@ -772,7 +785,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 			context->CSSetShader(blurCompute.get(), nullptr, 0);
-			context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+			context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
 
 			if (doSpecular) {
 				resetViews();
@@ -785,13 +798,42 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 
 				context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 				context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-				context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+				context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
 			}
 
 			inputGITexIdx = !inputGITexIdx;
 			lastFrameGITexIdx = inputGITexIdx;
 			lastFrameAccumTexIdx = !lastFrameAccumTexIdx;
 		}
+	}
+
+	// upsasmple
+	if (settings.HalfRes) {
+		resetViews();
+		srvs.at(0) = texWorkingDepth->srv.get();
+		srvs.at(1) = texGI[inputGITexIdx]->srv.get();
+
+		uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
+
+		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+		context->CSSetShader(upsampleCompute.get(), nullptr, 0);
+		context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+
+		if (doSpecular) {
+			resetViews();
+			srvs.at(0) = texWorkingDepth->srv.get();
+			srvs.at(1) = texGISpecular[inputGITexIdx]->srv.get();
+
+			uavs.at(0) = texGISpecular[!inputGITexIdx]->uav.get();
+
+			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+			context->CSSetShader(upsampleCompute.get(), nullptr, 0);
+			context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+		}
+
+		inputGITexIdx = !inputGITexIdx;
 	}
 
 	outputGIIdx = inputGITexIdx;

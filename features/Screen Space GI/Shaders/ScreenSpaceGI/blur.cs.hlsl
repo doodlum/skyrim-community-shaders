@@ -6,8 +6,8 @@
 #include "../Common/VR.hlsli"
 #include "common.hlsli"
 
-Texture2D<float4> srcGI : register(t0);
-Texture2D<unorm float> srcAccumFrames : register(t1);
+Texture2D<float4> srcGI : register(t0);                // maybe half-res
+Texture2D<unorm float> srcAccumFrames : register(t1);  // maybe half-res
 Texture2D<half> srcDepth : register(t2);
 Texture2D<half4> srcNormal : register(t3);
 
@@ -37,13 +37,13 @@ static const float3 g_Poisson8[8] = {
 #endif
 	const uint numSamples = 8;
 
-	const float2 uv = (dtid + .5) * RcpFrameDim;
+	const float2 uv = (dtid + .5) * RCP_OUT_FRAME_DIM;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 	const float2 screenPos = ConvertFromStereoUV(uv, eyeIndex);
 
-	float depth = srcDepth[dtid];
+	float depth = READ_DEPTH(srcDepth, dtid);
 	float3 pos = ScreenToViewPosition(screenPos, depth, eyeIndex);
-	float3 normal = DecodeNormal(srcNormal[dtid].xy);
+	float3 normal = DecodeNormal(FULLRES_LOAD(srcNormal, dtid, uv, samplerLinearClamp).xy);
 
 	float4 gi = srcGI[dtid];
 
@@ -57,7 +57,7 @@ static const float3 g_Poisson8[8] = {
 
 		float2 pxOffset = radius * g_Poisson8[i].xy;
 		float2 pxSample = dtid + .5 + pxOffset;
-		float2 uvSample = pxSample * RcpFrameDim;
+		float2 uvSample = pxSample * RCP_OUT_FRAME_DIM;
 		float2 screenPosSample = ConvertFromStereoUV(uvSample, eyeIndex);
 
 		if (any(screenPosSample < 0) || any(screenPosSample > 1))
@@ -68,7 +68,7 @@ static const float3 g_Poisson8[8] = {
 
 		float3 normalSample = DecodeNormal(srcNormal.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0).xy);
 
-		float4 giSample = srcGI.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0);
+		float4 giSample = srcGI.SampleLevel(samplerLinearClamp, uvSample * OUT_FRAME_SCALE, 0);
 
 		// geometry weight
 		w *= saturate(1 - abs(dot(normal, posSample - pos)) * DistanceNormalisation);
@@ -77,7 +77,7 @@ static const float3 g_Poisson8[8] = {
 
 		sum += giSample * w;
 #ifdef TEMPORAL_DENOISER
-		fsum += srcAccumFrames.SampleLevel(samplerLinearClamp, uvSample * frameScale, 0) * w;
+		fsum += srcAccumFrames.SampleLevel(samplerLinearClamp, uvSample * OUT_FRAME_SCALE, 0) * w;
 #endif
 		wsum += w;
 	}

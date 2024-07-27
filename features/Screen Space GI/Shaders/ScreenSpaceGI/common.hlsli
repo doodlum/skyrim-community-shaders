@@ -73,6 +73,24 @@ SamplerState samplerLinearClamp : register(s1);
 
 #define ISNAN(x) (!(x < 0.f || x > 0.f || x == 0.f))
 
+// screenPos - normalised position in FrameDim, one eye only
+// uv - normalised position in FrameDim, both eye
+// texCoord - texture coordinate
+
+#ifdef HALF_RES
+#	define READ_DEPTH(tex, px) tex.Load(int3(px, 1))
+#	define FULLRES_LOAD(tex, px, texCoord, samp) tex.SampleLevel(samp, texCoord, 0)
+#	define OUT_FRAME_DIM (FrameDim * 0.5)
+#	define RCP_OUT_FRAME_DIM (RcpFrameDim * 2)
+#	define OUT_FRAME_SCALE (frameScale * 0.5)
+#else
+#	define READ_DEPTH(tex, px) tex[px]
+#	define FULLRES_LOAD(tex, px, texCoord, samp) tex[px]
+#	define OUT_FRAME_DIM FrameDim
+#	define RCP_OUT_FRAME_DIM RcpFrameDim
+#	define OUT_FRAME_SCALE frameScale
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // Inputs are screen XY and viewspace depth, output is viewspace position

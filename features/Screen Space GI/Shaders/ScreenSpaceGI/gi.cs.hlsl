@@ -34,11 +34,11 @@
 
 Texture2D<float> srcWorkingDepth : register(t0);
 Texture2D<float4> srcNormalRoughness : register(t1);
-Texture2D<float3> srcRadiance : register(t2);
+Texture2D<float3> srcRadiance : register(t2);  // maybe half-res
 Texture2D<unorm float2> srcNoise : register(t3);
-Texture2D<unorm float> srcAccumFrames : register(t4);
-Texture2D<float4> srcPrevGI : register(t5);
-Texture2D<float4> srcPrevGISpecular : register(t6);
+Texture2D<unorm float> srcAccumFrames : register(t4);  // maybe half-res
+Texture2D<float4> srcPrevGI : register(t5);            // maybe half-res
+Texture2D<float4> srcPrevGISpecular : register(t6);    // maybe half-res
 
 RWTexture2D<float4> outGI : register(u0);
 RWTexture2D<float4> outGISpecular : register(u1);
@@ -102,7 +102,7 @@ void CalculateGI(
 	// if the offset is under approx pixel size (pixelTooCloseThreshold), push it out to the minimum distance
 	const float pixelTooCloseThreshold = 1.3;
 	// approx viewspace pixel size at pixCoord; approximation of NDCToViewspace( uv.xy + ViewportSize.xy, pixCenterPos.z ).xy - pixCenterPos.xy;
-	const float2 pixelDirRBViewspaceSizeAtCenterZ = viewspaceZ.xx * (eyeIndex == 0 ? NDCToViewMul.xy : NDCToViewMul.zw) * RcpFrameDim;
+	const float2 pixelDirRBViewspaceSizeAtCenterZ = viewspaceZ.xx * (eyeIndex == 0 ? NDCToViewMul.xy : NDCToViewMul.zw) * RCP_OUT_FRAME_DIM;
 
 	float screenspaceRadius = EffectRadius / pixelDirRBViewspaceSizeAtCenterZ.x;
 	// this is the min distance to start sampling from to avoid sampling from the center pixel (no useful data obtained from sampling center pixel)
@@ -186,12 +186,15 @@ void CalculateGI(
 				float2 sampleOffset = s * omega;
 
 				float2 samplePxCoord = dtid + .5 + sampleOffset * sideSign;
-				float2 sampleUV = samplePxCoord * RcpFrameDim;
+				float2 sampleUV = samplePxCoord * RCP_OUT_FRAME_DIM;
 				float2 sampleScreenPos = ConvertFromStereoUV(sampleUV, eyeIndex);
 				[branch] if (any(sampleScreenPos > 1.0) || any(sampleScreenPos < 0.0)) break;
 
 				float sampleOffsetLength = length(sampleOffset);
 				float mipLevel = clamp(log2(sampleOffsetLength) - DepthMIPSamplingOffset, 0, 5);
+#ifdef HALF_RES
+				mipLevel = max(mipLevel, 1);
+#endif
 
 				float SZ = srcWorkingDepth.SampleLevel(samplerPointClamp, sampleUV * frameScale, mipLevel);
 
@@ -268,7 +271,7 @@ void CalculateGI(
 
 #	ifdef BITMASK
 					if (frontBackMult > 0.f) {
-						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * frameScale, mipLevel).rgb * frontBackMult * giBoost;
+						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * OUT_FRAME_SCALE, mipLevel).rgb * frontBackMult * giBoost;
 
 						float nov = dot(viewspaceNormal, sampleHorizonVec);
 
@@ -288,7 +291,7 @@ void CalculateGI(
 					}
 #	else
 					if (frontBackMult > 0.f) {
-						float3 newSampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * frameScale, mipLevel).rgb * frontBackMult * giBoost;
+						float3 newSampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * OUT_FRAME_SCALE, mipLevel).rgb * frontBackMult * giBoost;
 
 						float anglePrev = n + sideSign * HALF_PI - ACos(horizonCos);
 						float angleCurr = n + sideSign * HALF_PI - ACos(shc);
@@ -417,19 +420,19 @@ void CalculateGI(
 
 	uint2 pxCoord = dtid;
 #if defined(HALF_RATE)
-	const uint halfWidth = uint(FrameDim.x) >> 1;
+	const uint halfWidth = uint(OUT_FRAME_DIM.x) >> 1;
 	const bool useHistory = dtid.x >= halfWidth;
 	pxCoord.x = (pxCoord.x % halfWidth) * 2 + (dtid.y + FrameIndex + useHistory) % 2;
 #else
 	const static bool useHistory = false;
 #endif
 
-	float2 uv = (pxCoord + .5) * RcpFrameDim;
+	float2 uv = (pxCoord + .5) * RCP_OUT_FRAME_DIM;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
-	float viewspaceZ = srcWorkingDepth[pxCoord];
+	float viewspaceZ = READ_DEPTH(srcWorkingDepth, pxCoord);
 
-	float2 normalSample = srcNormalRoughness[pxCoord].xy;
+	float2 normalSample = FULLRES_LOAD(srcNormalRoughness, pxCoord, uv * frameScale, samplerLinearClamp).xy;
 	float3 viewspaceNormal = DecodeNormal(normalSample);
 
 	half2 encodedWorldNormal = EncodeNormal(ViewToWorldVector(viewspaceNormal, CameraViewInverse[eyeIndex]));
