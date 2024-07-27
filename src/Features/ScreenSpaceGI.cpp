@@ -10,9 +10,11 @@
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	ScreenSpaceGI::Settings,
 	Enabled,
-	UseBitmask,
+	// UseBitmask,
 	EnableGI,
 	EnableSpecularGI,
+	HalfRate,
+	HalfRes,
 	EnableTemporalDenoiser,
 	NumSlices,
 	NumSteps,
@@ -82,17 +84,26 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::Checkbox("Show Advanced Options", &showAdvanced);
 
-	if (ImGui::BeginTable("Toggles", 4)) {
+	if (ImGui::BeginTable("Toggles", 3)) {
 		ImGui::TableNextColumn();
 		ImGui::Checkbox("Enabled", &settings.Enabled);
 		ImGui::TableNextColumn();
-		recompileFlag |= ImGui::Checkbox("GI", &settings.EnableGI);
-		ImGui::TableNextColumn();
-		recompileFlag |= ImGui::Checkbox("Specular GI", &settings.EnableSpecularGI);
-		ImGui::TableNextColumn();
-		recompileFlag |= ImGui::Checkbox("Bitmask", &settings.UseBitmask);
+		recompileFlag |= ImGui::Checkbox("Diffuse IL", &settings.EnableGI);
 		if (auto _tt = Util::HoverTooltipWrapper())
-			ImGui::Text("An alternative way to calculate AO/GI");
+			ImGui::Text("Simulates indirect diffuse lighting.");
+		ImGui::TableNextColumn();
+		{
+			auto _ = DisableGuard(!settings.EnableGI);
+			recompileFlag |= ImGui::Checkbox("Specular IL", &settings.EnableSpecularGI);
+			if (auto _tt = Util::HoverTooltipWrapper())
+				ImGui::Text(
+					"Reuses diffuse samples to simulate indirect specular lighting.\n"
+					"Doubles the cost of denoisers.");
+		}
+		// ImGui::TableNextColumn();
+		// recompileFlag |= ImGui::Checkbox("Bitmask", &settings.UseBitmask);
+		// if (auto _tt = Util::HoverTooltipWrapper())
+		// 	ImGui::Text("An alternative way to calculate AO/GI");
 
 		ImGui::EndTable();
 	}
@@ -198,7 +209,7 @@ void ScreenSpaceGI::DrawSettings()
 
 	{
 		auto _ = DisableGuard(!settings.EnableGI);
-		ImGui::SliderFloat("GI Source Brightness", &settings.GIStrength, 0.f, 20.f, "%.2f");
+		ImGui::SliderFloat("IL Source Brightness", &settings.GIStrength, 0.f, 20.f, "%.2f");
 	}
 
 	ImGui::Separator();
@@ -234,13 +245,13 @@ void ScreenSpaceGI::DrawSettings()
 	}
 
 	///////////////////////////////
-	ImGui::SeparatorText("Visual - GI");
+	ImGui::SeparatorText("Visual - IL");
 
 	{
 		auto _ = DisableGuard(!settings.EnableGI);
 
 		if (showAdvanced) {
-			ImGui::SliderFloat("GI Distance Compensation", &settings.GIDistanceCompensation, -5.0f, 5.0f, "%.1f");
+			ImGui::SliderFloat("IL Distance Compensation", &settings.GIDistanceCompensation, -5.0f, 5.0f, "%.1f");
 			if (auto _tt = Util::HoverTooltipWrapper())
 				ImGui::Text("Brighten/Dimming further radiance samples.");
 
@@ -251,7 +262,7 @@ void ScreenSpaceGI::DrawSettings()
 		if (auto _tt = Util::HoverTooltipWrapper())
 			ImGui::Text(
 				"Simulates multiple light bounces. Better with denoiser on.\n"
-				"Mandatory if you want ambient as part of the light source for GI calculation.");
+				"Mandatory if you want ambient as part of the light source for IL calculation.");
 
 		{
 			auto __ = DisableGuard(!settings.EnableGIBounce);
@@ -259,7 +270,7 @@ void ScreenSpaceGI::DrawSettings()
 			percentageSlider("Ambient Bounce Strength", &settings.GIBounceFade);
 			ImGui::Unindent();
 			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text("How much of this frame's ambient+GI get carried to the next frame as source.");
+				ImGui::Text("How much of this frame's ambient+IL get carried to the next frame as source.");
 		}
 
 		if (showAdvanced) {
