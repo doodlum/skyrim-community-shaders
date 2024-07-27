@@ -2286,7 +2286,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			if !defined(SSGI)
 	color.xyz += indirectDiffuseLobeWeight * directionalAmbientColor;
 #			endif
+#			if defined(DYNAMIC_CUBEMAPS)
 	specularColorPBR += indirectSpecularLobeWeight * GetDynamicCubemapSpecularIrradiance(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, pbrSurfaceProperties.Roughness, viewPosition.z);
+#			endif
 #		else
 	indirectDiffuseLobeWeight *= vertexColor;
 #		endif
