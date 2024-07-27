@@ -73,7 +73,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	half4 ssgiDiffuse = SSGITexture[dispatchID.xy];
 	ssgiDiffuse.rgb *= albedo;
 
-	visibility = min(visibility, ssgiDiffuse.a);
+	visibility = min(visibility, 1 - ssgiDiffuse.a);
 
 	DiffuseAmbientRW[dispatchID.xy] = albedo * ambient + ssgiDiffuse.rgb;
 

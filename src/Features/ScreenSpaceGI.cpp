@@ -12,6 +12,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Enabled,
 	UseBitmask,
 	EnableGI,
+	EnableSpecularGI,
 	EnableTemporalDenoiser,
 	NumSlices,
 	NumSteps,
@@ -81,11 +82,13 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::Checkbox("Show Advanced Options", &showAdvanced);
 
-	if (ImGui::BeginTable("Toggles", 3)) {
+	if (ImGui::BeginTable("Toggles", 4)) {
 		ImGui::TableNextColumn();
 		ImGui::Checkbox("Enabled", &settings.Enabled);
 		ImGui::TableNextColumn();
 		recompileFlag |= ImGui::Checkbox("GI", &settings.EnableGI);
+		ImGui::TableNextColumn();
+		recompileFlag |= ImGui::Checkbox("Specular GI", &settings.EnableSpecularGI);
 		ImGui::TableNextColumn();
 		recompileFlag |= ImGui::Checkbox("Bitmask", &settings.UseBitmask);
 		if (auto _tt = Util::HoverTooltipWrapper())
@@ -187,7 +190,7 @@ void ScreenSpaceGI::DrawSettings()
 
 	{
 		auto _ = DisableGuard(!settings.EnableGI);
-		ImGui::SliderFloat("GI Strength", &settings.GIStrength, 0.f, 20.f, "%.2f");
+		ImGui::SliderFloat("GI Source Brightness", &settings.GIStrength, 0.f, 20.f, "%.2f");
 	}
 
 	ImGui::Separator();
@@ -337,6 +340,8 @@ void ScreenSpaceGI::DrawSettings()
 		BUFFER_VIEWER_NODE(texRadiance, debugRescale)
 		BUFFER_VIEWER_NODE(texGI[0], debugRescale)
 		BUFFER_VIEWER_NODE(texGI[1], debugRescale)
+		BUFFER_VIEWER_NODE(texGISpecular[0], debugRescale)
+		BUFFER_VIEWER_NODE(texGISpecular[1], debugRescale)
 
 		BUFFER_VIEWER_NODE(deferred->prevDiffuseAmbientTexture, debugRescale)
 
@@ -428,6 +433,14 @@ void ScreenSpaceGI::SetupResources()
 			texGI[1] = eastl::make_unique<Texture2D>(texDesc);
 			texGI[1]->CreateSRV(srvDesc);
 			texGI[1]->CreateUAV(uavDesc);
+
+			texGISpecular[0] = eastl::make_unique<Texture2D>(texDesc);
+			texGISpecular[0]->CreateSRV(srvDesc);
+			texGISpecular[0]->CreateUAV(uavDesc);
+
+			texGISpecular[1] = eastl::make_unique<Texture2D>(texDesc);
+			texGISpecular[1]->CreateSRV(srvDesc);
+			texGISpecular[1]->CreateUAV(uavDesc);
 		}
 
 		srvDesc.Format = uavDesc.Format = texDesc.Format = DXGI_FORMAT_R8_UNORM;
@@ -545,6 +558,8 @@ void ScreenSpaceGI::CompileComputeShaders()
 			info.defines.push_back({ "BITMASK", "" });
 		if (settings.EnableGI)
 			info.defines.push_back({ "GI", "" });
+		if (settings.EnableSpecularGI)
+			info.defines.push_back({ "GI_SPECULAR", "" });
 		if (settings.EnableGIBounce)
 			info.defines.push_back({ "GI_BOUNCE", "" });
 		if (settings.CheckBackface)
@@ -629,8 +644,9 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	auto& context = State::GetSingleton()->context;
 
 	if (!(settings.Enabled && ShadersOK())) {
-		FLOAT clr[4] = { 0., 0., 0., 1. };
+		FLOAT clr[4] = { 0., 0., 0., 0. };
 		context->ClearUnorderedAccessViewFloat(texGI[outputGIIdx]->uav.get(), clr);
+		context->ClearUnorderedAccessViewFloat(texGISpecular[outputGIIdx]->uav.get(), clr);
 
 		return;
 	}
@@ -646,6 +662,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 
 	UpdateSB();
 
+	bool doSpecular = settings.EnableGI && settings.EnableSpecularGI;
+
 	//////////////////////////////////////////////////////
 
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
@@ -655,7 +673,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	float2 size = Util::ConvertToDynamic(State::GetSingleton()->screenSize);
 	uint resolution[2] = { (uint)size.x, (uint)size.y };
 
-	std::array<ID3D11ShaderResourceView*, 8> srvs = { nullptr };
+	std::array<ID3D11ShaderResourceView*, 9> srvs = { nullptr };
 	std::array<ID3D11UnorderedAccessView*, 5> uavs = { nullptr };
 	std::array<ID3D11SamplerState*, 2> samplers = { pointClampSampler.get(), linearClampSampler.get() };
 	auto cb = ssgiCB->CB();
@@ -690,16 +708,18 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		resetViews();
 		srvs.at(0) = rts[deferred->forwardRenderTargets[0]].SRV;
 		srvs.at(1) = texGI[inputGITexIdx]->srv.get();
-		srvs.at(2) = texWorkingDepth->srv.get();
-		srvs.at(3) = rts[NORMALROUGHNESS].SRV;
-		srvs.at(4) = texPrevGeo->srv.get();
-		srvs.at(5) = rts[RE::RENDER_TARGET::kMOTION_VECTOR].SRV;
-		srvs.at(6) = srcPrevAmbient->srv.get();
-		srvs.at(7) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
+		srvs.at(2) = doSpecular ? texGISpecular[inputGITexIdx]->srv.get() : nullptr;
+		srvs.at(3) = texWorkingDepth->srv.get();
+		srvs.at(4) = rts[NORMALROUGHNESS].SRV;
+		srvs.at(5) = texPrevGeo->srv.get();
+		srvs.at(6) = rts[RE::RENDER_TARGET::kMOTION_VECTOR].SRV;
+		srvs.at(7) = srcPrevAmbient->srv.get();
+		srvs.at(8) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
 
 		uavs.at(0) = texRadiance->uav.get();
 		uavs.at(1) = texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
 		uavs.at(2) = texGI[!inputGITexIdx]->uav.get();
+		uavs.at(3) = doSpecular ? texGISpecular[!inputGITexIdx]->uav.get() : nullptr;
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -721,10 +741,12 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		srvs.at(3) = texNoise->srv.get();
 		srvs.at(4) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
 		srvs.at(5) = texGI[inputGITexIdx]->srv.get();
+		srvs.at(6) = texGISpecular[inputGITexIdx]->srv.get();
 
 		uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
-		uavs.at(1) = nullptr;
-		uavs.at(2) = texPrevGeo->uav.get();
+		uavs.at(1) = texGISpecular[!inputGITexIdx]->uav.get();
+		uavs.at(2) = nullptr;
+		uavs.at(3) = texPrevGeo->uav.get();
 
 		context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 		context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -751,6 +773,20 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 			context->CSSetShader(blurCompute.get(), nullptr, 0);
 			context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+
+			if (doSpecular) {
+				resetViews();
+				srvs.at(0) = texGISpecular[inputGITexIdx]->srv.get();
+				srvs.at(1) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
+				srvs.at(2) = texWorkingDepth->srv.get();
+				srvs.at(3) = rts[NORMALROUGHNESS].SRV;
+
+				uavs.at(0) = texGISpecular[!inputGITexIdx]->uav.get();
+
+				context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+				context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+				context->Dispatch((resolution[0] + 7u) >> 3, (resolution[1] + 7u) >> 3, 1);
+			}
 
 			inputGITexIdx = !inputGITexIdx;
 			lastFrameGITexIdx = inputGITexIdx;

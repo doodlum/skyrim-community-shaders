@@ -47,6 +47,7 @@ struct ScreenSpaceGI : Feature
 		bool Enabled = true;
 		bool UseBitmask = true;
 		bool EnableGI = true;
+		bool EnableSpecularGI = false;
 		// performance/quality
 		uint NumSlices = 2;
 		uint NumSteps = 4;
@@ -127,6 +128,7 @@ struct ScreenSpaceGI : Feature
 	eastl::unique_ptr<Texture2D> texRadiance = nullptr;
 	eastl::unique_ptr<Texture2D> texAccumFrames[2] = { nullptr };
 	eastl::unique_ptr<Texture2D> texGI[2] = { nullptr };
+	eastl::unique_ptr<Texture2D> texGISpecular[2] = { nullptr };
 
 	winrt::com_ptr<ID3D11SamplerState> linearClampSampler = nullptr;
 	winrt::com_ptr<ID3D11SamplerState> pointClampSampler = nullptr;
