@@ -14,14 +14,12 @@ namespace PNState
 	template <typename ResultType>
 	bool Read(const json& config, const std::string_view& key, ResultType& result)
 	{
-		if (!config.is_object())
-		{
+		if (!config.is_object()) {
 			return false;
 		}
 
 		auto it = config.find(key);
-		if (it == config.end())
-		{
+		if (it == config.end()) {
 			return false;
 		}
 

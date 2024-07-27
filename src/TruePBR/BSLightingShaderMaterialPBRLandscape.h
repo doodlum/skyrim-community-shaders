@@ -28,7 +28,7 @@ public:
 	// members
 	std::uint32_t numLandscapeTextures = 0;
 
-	// We need terrainOverlayTexture, terrainNoiseTexture, landBlendParams, terrainTexOffsetX, terrainTexOffsetY, terrainTexFade 
+	// We need terrainOverlayTexture, terrainNoiseTexture, landBlendParams, terrainTexOffsetX, terrainTexOffsetY, terrainTexFade
 	// to be at the same offsets as in vanilla BSLightingShaderMaterialLandscape so we arrange PBR fields in specific way
 	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeBaseColorTextures;
 	std::array<bool, NumTiles> isPbr;
