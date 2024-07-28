@@ -538,7 +538,7 @@ void ScreenSpaceGI::SetupResources()
 void ScreenSpaceGI::ClearShaderCache()
 {
 	static const std::vector<winrt::com_ptr<ID3D11ComputeShader>*> shaderPtrs = {
-		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &upsampleCompute
+		&prefilterDepthsCompute, &radianceDisoccCompute, &giCompute, &blurCompute, &blurSpecularCompute, &upsampleCompute
 	};
 
 	for (auto shader : shaderPtrs)
@@ -565,6 +565,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 			{ &radianceDisoccCompute, "radianceDisocc.cs.hlsl", {} },
 			{ &giCompute, "gi.cs.hlsl", {} },
 			{ &blurCompute, "blur.cs.hlsl", {} },
+			{ &blurSpecularCompute, "blur.cs.hlsl", { { "SPECULAR_BLUR", "" } } },
 			{ &upsampleCompute, "upsample.cs.hlsl", {} },
 		};
 	for (auto& info : shaderInfos) {
@@ -599,7 +600,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 
 bool ScreenSpaceGI::ShadersOK()
 {
-	return texNoise && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && upsampleCompute;
+	return texNoise && prefilterDepthsCompute && radianceDisoccCompute && giCompute && blurCompute && blurSpecularCompute && upsampleCompute;
 }
 
 void ScreenSpaceGI::UpdateSB()
@@ -784,6 +785,22 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	// blur
 	if (settings.EnableBlur) {
 		for (uint i = 0; i < settings.BlurPasses; i++) {
+			if (doSpecular) {
+				resetViews();
+				srvs.at(0) = texGISpecular[inputGITexIdx]->srv.get();
+				srvs.at(1) = nullptr;
+				srvs.at(2) = texWorkingDepth->srv.get();
+				srvs.at(3) = rts[NORMALROUGHNESS].SRV;
+
+				uavs.at(0) = texGISpecular[!inputGITexIdx]->uav.get();
+				uavs.at(1) = nullptr;
+
+				context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
+				context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
+				context->CSSetShader(blurSpecularCompute.get(), nullptr, 0);
+				context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
+			}
+
 			resetViews();
 			srvs.at(0) = texGI[inputGITexIdx]->srv.get();
 			srvs.at(1) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
@@ -791,27 +808,12 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 			srvs.at(3) = rts[NORMALROUGHNESS].SRV;
 
 			uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
-			uavs.at(1) = doSpecular ? nullptr : texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
+			uavs.at(1) = texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
 
 			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
 			context->CSSetShader(blurCompute.get(), nullptr, 0);
 			context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
-
-			if (doSpecular) {
-				resetViews();
-				srvs.at(0) = texGISpecular[inputGITexIdx]->srv.get();
-				srvs.at(1) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
-				srvs.at(2) = texWorkingDepth->srv.get();
-				srvs.at(3) = rts[NORMALROUGHNESS].SRV;
-
-				uavs.at(0) = texGISpecular[!inputGITexIdx]->uav.get();
-				uavs.at(1) = texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
-
-				context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
-				context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
-				context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
-			}
 
 			inputGITexIdx = !inputGITexIdx;
 			lastFrameGITexIdx = inputGITexIdx;

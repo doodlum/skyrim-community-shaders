@@ -160,4 +160,23 @@ float3x3 RotFromToMatrix(float3 from, float3 to)
 	return mtx;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+// credit: Olivier Therrien
+float specularLobeHalfAngle(float roughness)
+{
+	float roughness2 = roughness * roughness;
+	return clamp(4.1679 * roughness2 * roughness2 - 9.0127 * roughness2 * roughness + 4.6161 * roughness2 + 1.7048 * roughness + 0.1, 0, 1.57079632679);
+}
+
+// https://www.gdcvault.com/play/1026701/Fast-Denoising-With-Self-Stabilizing
+float3 getSpecularDominantDirection(float3 N, float3 V, float roughness)
+{
+	float f = (1 - roughness) * (sqrt(1 - roughness) + roughness);
+	float3 R = reflect(-V, N);
+	float3 D = lerp(N, R, f);
+
+	return normalize(D);
+}
+
 #endif

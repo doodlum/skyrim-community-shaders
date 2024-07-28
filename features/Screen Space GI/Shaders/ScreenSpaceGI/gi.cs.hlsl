@@ -70,16 +70,6 @@ float IlIntegral(float2 integral_factor, float angle_prev, float angle_new)
 	return max(0, integral_factor.x * (delta_angle + sin_prev * cos_prev - sin_new * cos_new) + integral_factor.y * (cos_prev * cos_prev - cos_new * cos_new));
 }
 
-// https://www.gdcvault.com/play/1026701/Fast-Denoising-With-Self-Stabilizing
-float3 getSpecularDominantDirection(float3 N, float3 V, float roughness)
-{
-	float f = (1 - roughness) * (sqrt(1 - roughness) + roughness);
-	float3 R = reflect(-V, N);
-	float3 D = lerp(N, R, f);
-
-	return normalize(D);
-}
-
 void CalculateGI(
 	uint2 dtid, float2 uv, float viewspaceZ, float3 viewspaceNormal,
 	out float4 o_currGIAO, out float4 o_currGIAOSpecular, out float3 o_bentNormal)
@@ -127,7 +117,6 @@ void CalculateGI(
 
 #ifdef GI_SPECULAR
 	const float roughness = 1 - FULLRES_LOAD(srcNormalRoughness, dtid, uv * frameScale, samplerLinearClamp).z;
-	const float roughness2 = roughness * roughness;
 #endif
 
 	for (uint slice = 0; slice < NumSlices; slice++) {
@@ -235,7 +224,7 @@ void CalculateGI(
 
 #		ifdef GI_SPECULAR
 				// thank u Olivier!
-				float coneHalfAngles = clamp(4.1679 * roughness2 * roughness2 - 9.0127 * roughness2 * roughness + 4.6161 * roughness2 + 1.7048 * roughness + 0.1, 0, HALF_PI);
+				float coneHalfAngles = specularLobeHalfAngle(roughness);
 				float2 angleRangeSpecular = clamp((angleRangeGI + nDom) * 0.5 / coneHalfAngles, -1, 1) * 0.5 + 0.5;
 
 				// Experimental method using importance sampling
