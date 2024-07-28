@@ -51,7 +51,7 @@ struct ScreenSpaceGI : Feature
 		// performance/quality
 		uint NumSlices = 4;
 		uint NumSteps = 4;
-		bool HalfRes = true;
+		bool HalfRes = false;
 		bool HalfRate = true;
 		float DepthMIPSamplingOffset = 3.3f;
 		// visual

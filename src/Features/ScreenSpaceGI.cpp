@@ -194,10 +194,12 @@ void ScreenSpaceGI::DrawSettings()
 		ImGui::TableNextColumn();
 		recompileFlag |= ImGui::Checkbox("Half Rate", &settings.HalfRate);
 		if (auto _tt = Util::HoverTooltipWrapper())
-			ImGui::Text("Shading only half the pixels per frame. Cheaper but has more ghosting, and takes twice as long to converge.");
+			ImGui::Text("Shading only half the pixels per frame. Cheaper for higher settings but has more ghosting, and takes twice as long to converge.");
 
 		ImGui::TableNextColumn();
 		recompileFlag |= ImGui::Checkbox("Half Resolution", &settings.HalfRes);
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text("Rendering internally with half resolution. Vastly cheaper but quite more noise.");
 
 		ImGui::EndTable();
 	}
