@@ -401,9 +401,9 @@ struct PS_OUTPUT
 #else
 struct PS_OUTPUT
 {
-	float4 Diffuse : SV_Target0;
-	float4 MotionVectors : SV_Target1;
-	float4 ScreenSpaceNormals : SV_Target2;
+    float4 Diffuse : SV_Target0;
+    float4 MotionVectors : SV_Target1;
+    float4 ScreenSpaceNormals : SV_Target2;
 #	if defined(SNOW)
 	float4 Parameters : SV_Target3;
 #	endif
@@ -1684,8 +1684,110 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 worldSpaceVertexNormal = worldSpaceNormal;
 #	endif
 
+	float porosity = 1.0;
+
+	float nearFactor = smoothstep(4096.0 * 2.5, 0.0, viewPosition.z);
+
+#	if defined(SKYLIGHTING)
+#		if defined(VR)
+	float3 positionMSSkylight = input.WorldPosition.xyz + CameraPosAdjust[eyeIndex] - CameraPosAdjust[0];
+#		else
+	float3 positionMSSkylight = input.WorldPosition.xyz;
+#		endif
+
+	sh2 skylightingSH = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal);
+#	endif
+
 	float4 waterData = GetWaterData(input.WorldPosition.xyz);
 	float waterHeight = waterData.w;
+
+	float waterRoughnessSpecular = 1;
+	
+#	if defined(WETNESS_EFFECTS)
+	float wetness = 0.0;
+
+	float wetnessDistToWater = abs(input.WorldPosition.z - waterHeight);
+	float shoreFactor = saturate(1.0 - (wetnessDistToWater / (float)wetnessEffects.ShoreRange));
+	float shoreFactorAlbedo = shoreFactor;
+
+	[flatten] if (input.WorldPosition.z < waterHeight)
+		shoreFactorAlbedo = 1.0;
+
+	float minWetnessValue = wetnessEffects.MinRainWetness;
+
+	float maxOcclusion = 1;
+	float minWetnessAngle = 0;
+	minWetnessAngle = saturate(max(minWetnessValue, worldSpaceNormal.z));
+#		if defined(SKYLIGHTING)
+	float wetnessOcclusion = saturate(shUnproject(skylightingSH, float3(0, 0, 1)) * 10);
+#		endif  // SKYLIGHTING
+
+	float4 raindropInfo = float4(0, 0, 1, 0);
+	if (worldSpaceNormal.z > 0 && wetnessEffects.Raining > 0.0f && wetnessEffects.EnableRaindropFx &&
+		(dot(input.WorldPosition, input.WorldPosition) < wetnessEffects.RaindropFxRange * wetnessEffects.RaindropFxRange)) {
+#		if defined(SKYLIGHTING)
+		if (wetnessOcclusion > 0.0)
+#		endif
+#		if defined(SKINNED)
+			raindropInfo = GetRainDrops(input.ModelPosition, wetnessEffects.Time, worldSpaceNormal);
+#		elif defined(DEFERRED)
+		raindropInfo = GetRainDrops(input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
+#		else
+		raindropInfo = GetRainDrops(!FrameParams.y ? input.ModelPosition : input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
+#		endif
+	}
+
+	float rainWetness = wetnessEffects.Wetness * minWetnessAngle * wetnessEffects.MaxRainWetness;
+	rainWetness = max(rainWetness, raindropInfo.w);
+
+	float puddleWetness = wetnessEffects.PuddleWetness * minWetnessAngle;
+#		if defined(SKIN)
+	rainWetness = wetnessEffects.SkinWetness * wetnessEffects.Wetness;
+#		endif
+#		if defined(HAIR)
+	rainWetness = wetnessEffects.SkinWetness * wetnessEffects.Wetness * 0.8f;
+#		endif
+
+#		if defined(SKYLIGHTING)
+	rainWetness *= wetnessOcclusion;
+	puddleWetness *= wetnessOcclusion;
+#		endif
+
+	wetness = max(shoreFactor * wetnessEffects.MaxShoreWetness, rainWetness);
+
+	float3 wetnessNormal = worldSpaceNormal;
+
+	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 * (1 / wetnessEffects.PuddleRadius);
+	float puddle = wetness;
+	if (wetness > 0.0 || puddleWetness > 0) {
+#		if !defined(SKINNED)
+		puddle = noise(puddleCoords) * ((minWetnessAngle / wetnessEffects.PuddleMaxAngle) * wetnessEffects.MaxPuddleWetness * 0.25) + 0.5;
+		wetness = lerp(wetness, puddleWetness, saturate(puddle - 0.25));
+#		endif
+		puddle *= wetness;
+	}
+
+	puddle *= nearFactor;
+
+	float3 wetnessSpecular = 0.0;
+
+	float wetnessGlossinessAlbedo = max(puddle, shoreFactorAlbedo * wetnessEffects.MaxShoreWetness);
+	wetnessGlossinessAlbedo *= wetnessGlossinessAlbedo;
+
+	float wetnessGlossinessSpecular = puddle;
+	wetnessGlossinessSpecular = lerp(wetnessGlossinessSpecular, wetnessGlossinessSpecular * shoreFactor, input.WorldPosition.z < waterHeight);
+
+	float flatnessAmount = smoothstep(wetnessEffects.PuddleMaxAngle, 1.0, minWetnessAngle);
+
+	flatnessAmount *= smoothstep(wetnessEffects.PuddleMinWetness, 1.0, wetnessGlossinessSpecular);
+
+	wetnessNormal = normalize(lerp(wetnessNormal, float3(0, 0, 1), saturate(flatnessAmount)));
+
+	float3 rippleNormal = normalize(lerp(float3(0, 0, 1), raindropInfo.xyz, clamp(flatnessAmount, 0.0, 1.0)));
+	wetnessNormal = ReorientNormal(rippleNormal, wetnessNormal);
+
+	waterRoughnessSpecular = 1.0 - wetnessGlossinessSpecular;
+#	endif
 
 	float3 dirLightColor = DirLightColor.xyz;
 	float3 dirLightColorMultiplier = 1;
@@ -1791,15 +1893,26 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(TRUE_PBR)
 	{
 		float3 pbrDirLightColor = AdjustDirectionalLightColorForPBR(DirLightColor.xyz);
+		float3 mainLayerFinalLightColor = fullShadowDirLightColorMultiplier * pbrDirLightColor;
+		float coatShadowDirLightColorMultiplier = fullShadowDirLightColorMultiplier;
+		[branch] if ((PBRFlags & TruePBR_InterlayerParallax) != 0)
+		{
+			coatShadowDirLightColorMultiplier = noParallaxShadowDirLightColorMultiplier;
+		}
+		float3 coatFinalLightColor = coatShadowDirLightColorMultiplier * pbrDirLightColor;
 
 		float3 dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor;
-		GetDirectLightInputPBR(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, fullShadowDirLightColorMultiplier * pbrDirLightColor, noParallaxShadowDirLightColorMultiplier * pbrDirLightColor, pbrSurfaceProperties);
+		GetDirectLightInputPBR(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
 		lightsDiffuseColor += dirDiffuseColor;
 		coatLightsDiffuseColor += coatDirDiffuseColor;
 		transmissionColor += dirTransmissionColor;
 		specularColorPBR += dirSpecularColor;
 #		if defined(LOD_LAND_BLEND)
 		lodLandDiffuseColor += dirLightColor * saturate(dirLightAngle) * dirDetailShadow;
+#		endif
+#		if defined(WETNESS_EFFECTS)
+		if (waterRoughnessSpecular < 1.0)
+			specularColorPBR += GetWetnessDirectLightSpecularInputPBR(wetnessNormal, worldSpaceViewDirection, normalizedDirLightDirectionWS, coatFinalLightColor, waterRoughnessSpecular);
 #		endif
 	}
 #	else
@@ -1832,109 +1945,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 
 	lightsDiffuseColor += dirDiffuseColor;
-#	endif
 
-	float porosity = 1.0;
-
-	float nearFactor = smoothstep(4096.0 * 2.5, 0.0, viewPosition.z);
-
-#	if defined(SKYLIGHTING)
-#		if defined(VR)
-	float3 positionMSSkylight = input.WorldPosition.xyz + CameraPosAdjust[eyeIndex] - CameraPosAdjust[0];
-#		else
-	float3 positionMSSkylight = input.WorldPosition.xyz;
-#		endif
-
-	sh2 skylightingSH = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal);
-#	endif
-
-#	if defined(WETNESS_EFFECTS)
-	float wetness = 0.0;
-
-	float wetnessDistToWater = abs(input.WorldPosition.z - waterHeight);
-	float shoreFactor = saturate(1.0 - (wetnessDistToWater / (float)wetnessEffects.ShoreRange));
-	float shoreFactorAlbedo = shoreFactor;
-
-	[flatten] if (input.WorldPosition.z < waterHeight)
-		shoreFactorAlbedo = 1.0;
-
-	float minWetnessValue = wetnessEffects.MinRainWetness;
-
-	float maxOcclusion = 1;
-	float minWetnessAngle = 0;
-	minWetnessAngle = saturate(max(minWetnessValue, worldSpaceNormal.z));
-#		if defined(SKYLIGHTING)
-	float wetnessOcclusion = saturate(shUnproject(skylightingSH, float3(0, 0, 1)) * 10);
-#		endif  // SKYLIGHTING
-
-	float4 raindropInfo = float4(0, 0, 1, 0);
-	if (worldSpaceNormal.z > 0 && wetnessEffects.Raining > 0.0f && wetnessEffects.EnableRaindropFx &&
-		(dot(input.WorldPosition, input.WorldPosition) < wetnessEffects.RaindropFxRange * wetnessEffects.RaindropFxRange)) {
-#		if defined(SKYLIGHTING)
-		if (wetnessOcclusion > 0.0)
-#		endif
-#		if defined(SKINNED)
-			raindropInfo = GetRainDrops(input.ModelPosition, wetnessEffects.Time, worldSpaceNormal);
-#		elif defined(DEFERRED)
-		raindropInfo = GetRainDrops(input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
-#		else
-		raindropInfo = GetRainDrops(!FrameParams.y ? input.ModelPosition : input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
-#		endif
-	}
-
-	float rainWetness = wetnessEffects.Wetness * minWetnessAngle * wetnessEffects.MaxRainWetness;
-	rainWetness = max(rainWetness, raindropInfo.w);
-
-	float puddleWetness = wetnessEffects.PuddleWetness * minWetnessAngle;
-#		if defined(SKIN)
-	rainWetness = wetnessEffects.SkinWetness * wetnessEffects.Wetness;
-#		endif
-#		if defined(HAIR)
-	rainWetness = wetnessEffects.SkinWetness * wetnessEffects.Wetness * 0.8f;
-#		endif
-
-#		if defined(SKYLIGHTING)
-	rainWetness *= wetnessOcclusion;
-	puddleWetness *= wetnessOcclusion;
-#		endif
-
-	wetness = max(shoreFactor * wetnessEffects.MaxShoreWetness, rainWetness);
-
-	float3 wetnessNormal = worldSpaceNormal;
-
-	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 * (1 / wetnessEffects.PuddleRadius);
-	float puddle = wetness;
-	if (wetness > 0.0 || puddleWetness > 0) {
-#		if !defined(SKINNED)
-		puddle = noise(puddleCoords) * ((minWetnessAngle / wetnessEffects.PuddleMaxAngle) * wetnessEffects.MaxPuddleWetness * 0.25) + 0.5;
-		wetness = lerp(wetness, puddleWetness, saturate(puddle - 0.25));
-#		endif
-		puddle *= wetness;
-	}
-
-	puddle *= nearFactor;
-
-	float3 wetnessSpecular = 0.0;
-
-	float wetnessGlossinessAlbedo = max(puddle, shoreFactorAlbedo * wetnessEffects.MaxShoreWetness);
-	wetnessGlossinessAlbedo *= wetnessGlossinessAlbedo;
-
-	float wetnessGlossinessSpecular = puddle;
-	wetnessGlossinessSpecular = lerp(wetnessGlossinessSpecular, wetnessGlossinessSpecular * shoreFactor, input.WorldPosition.z < waterHeight);
-
-	float flatnessAmount = smoothstep(wetnessEffects.PuddleMaxAngle, 1.0, minWetnessAngle);
-
-	flatnessAmount *= smoothstep(wetnessEffects.PuddleMinWetness, 1.0, wetnessGlossinessSpecular);
-
-	wetnessNormal = normalize(lerp(wetnessNormal, float3(0, 0, 1), saturate(flatnessAmount)));
-
-	float3 rippleNormal = normalize(lerp(float3(0, 0, 1), raindropInfo.xyz, clamp(flatnessAmount, 0.0, 1.0)));
-	wetnessNormal = ReorientNormal(rippleNormal, wetnessNormal);
-
-	float waterRoughnessSpecular = 1.0 - wetnessGlossinessSpecular;
-
+#		if defined(WETNESS_EFFECTS)
 	if (waterRoughnessSpecular < 1.0)
 		wetnessSpecular += GetWetnessSpecular(wetnessNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, sRGB2Lin(dirLightColor * dirDetailShadow), waterRoughnessSpecular);
+#		endif
 #	endif
 
 #	if !defined(LOD)
@@ -2100,12 +2115,23 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #			if defined(TRUE_PBR)
 		{
+			float3 mainLayerFinalLightColor = AdjustPointLightColorForPBR(fullShadowLightColor);
+			float3 coatFinalLightColor = mainLayerFinalLightColor;
+			[branch] if ((PBRFlags & TruePBR_InterlayerParallax) != 0)
+			{
+				coatFinalLightColor = AdjustPointLightColorForPBR(noParallaxShadowLightColor);
+			}
+			
 			float3 pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor;
-			GetDirectLightInputPBR(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, AdjustPointLightColorForPBR(fullShadowLightColor), AdjustPointLightColorForPBR(noParallaxShadowLightColor), pbrSurfaceProperties);
+			GetDirectLightInputPBR(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
 			lightsDiffuseColor += pointDiffuseColor;
 			coatLightsDiffuseColor += coatPointDiffuseColor;
 			transmissionColor += pointTransmissionColor;
 			specularColorPBR += pointSpecularColor;
+#				if defined(WETNESS_EFFECTS)
+			if (waterRoughnessSpecular < 1.0)
+				specularColorPBR += GetWetnessDirectLightSpecularInputPBR(wetnessNormal, worldSpaceViewDirection, normalizedLightDirection, coatFinalLightColor, waterRoughnessSpecular);
+#				endif
 		}
 #			else
 		float3 lightDiffuseColor = lightColor * contactShadow * saturate(lightAngle.xxx);
@@ -2245,7 +2271,16 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(WETNESS_EFFECTS)
 #		if !(defined(FACEGEN) || defined(FACEGEN_RGB_TINT) || defined(EYE)) || defined(TREE_ANIM)
-#			if defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX)
+#			if defined(TRUE_PBR)
+	[branch] if ((PBRFlags & TruePBR_TwoLayer) != 0)
+	{
+		porosity = 0;
+	}
+	else
+	{
+		porosity = lerp(porosity, 0.0, saturate(sqrt(pbrSurfaceProperties.Metallic)));
+	}
+#			elif defined(ENVMAP) || defined(MULTI_LAYER_PARALLAX)
 	porosity = lerp(porosity, 0.0, saturate(sqrt(envMask)));
 #			endif
 	float wetnessDarkeningAmount = porosity * wetnessGlossinessAlbedo;
@@ -2280,7 +2315,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 
 	float3 indirectDiffuseLobeWeight, indirectSpecularLobeWeight;
-	GetPBRIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, worldSpaceNormal.xyz, worldSpaceViewDirection, baseColor.xyz, pbrSurfaceProperties);
+	GetPBRIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, worldSpaceNormal.xyz, worldSpaceViewDirection, worldSpaceVertexNormal, baseColor.xyz, pbrSurfaceProperties);
+#		if defined(WETNESS_EFFECTS)
+	if (waterRoughnessSpecular < 1.0)
+		indirectSpecularLobeWeight += GetWetnessIndirectSpecularLobeWeight(wetnessNormal, worldSpaceViewDirection, worldSpaceVertexNormal, waterRoughnessSpecular);
+#		endif
 
 #		if !defined(DEFERRED)
 #			if !defined(SSGI)
@@ -2377,7 +2416,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	color.xyz = sRGB2Lin(color.xyz);
 #	endif
 
-#	if defined(WETNESS_EFFECTS)
+#	if defined(WETNESS_EFFECTS) && !defined(TRUE_PBR)
 	color.xyz += wetnessSpecular * wetnessGlossinessSpecular;
 #	endif
 

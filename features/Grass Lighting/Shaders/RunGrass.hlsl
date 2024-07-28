@@ -568,7 +568,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(TRUE_PBR)
 	float3 indirectDiffuseLobeWeight, indirectSpecularLobeWeight;
-	GetPBRIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, normal, viewDirection, baseColor.xyz, pbrSurfaceProperties);
+	GetPBRIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, normal, normal, viewDirection, baseColor.xyz, pbrSurfaceProperties);
 
 	diffuseColor.xyz += transmissionColor;
 	specularColor.xyz += specularColorPBR;
