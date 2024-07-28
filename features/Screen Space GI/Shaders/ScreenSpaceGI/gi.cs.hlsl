@@ -340,10 +340,10 @@ void CalculateGI(
 		}
 
 #ifdef BITMASK
-		visibility += 1.0 - countbits(bitmask) * 0.03125;
+		visibility += countbits(bitmask) * 0.03125;
 
 #	if defined(GI) && defined(GI_SPECULAR)
-		visibilitySpecular += 1.0 - countbits(bitmaskGISpecular) * 0.03125;
+		visibilitySpecular += countbits(bitmaskGISpecular) * 0.03125;
 #	endif
 
 		// TODO: bent normal for bitmask?
@@ -386,7 +386,6 @@ void CalculateGI(
 	visibility *= rcpNumSlices;
 	visibility = lerp(saturate(visibility), 1, depthFade);
 	visibility = pow(abs(visibility), AOPower);
-	visibility = 1 - visibility;
 
 #ifdef GI
 	radiance *= rcpNumSlices;
@@ -397,12 +396,11 @@ void CalculateGI(
 
 	visibilitySpecular *= rcpNumSlices;
 	visibilitySpecular = lerp(saturate(visibility), 1, depthFade);
-	visibilitySpecular = 1 - visibilitySpecular;
 #	endif
 #endif
 
 #if !defined(GI) || !defined(GI_SPECULAR)
-	visibilitySpecular = 1.0;
+	visibilitySpecular = 0.0;
 #endif
 
 #ifdef BENT_NORMAL
@@ -438,12 +436,8 @@ void CalculateGI(
 	half2 encodedWorldNormal = EncodeNormal(ViewToWorldVector(viewspaceNormal, CameraViewInverse[eyeIndex]));
 	outPrevGeo[pxCoord] = half3(viewspaceZ, encodedWorldNormal);
 
-// Move center pixel slightly towards camera to avoid imprecision artifacts due to depth buffer imprecision; offset depends on depth texture format used
-#if USE_HALF_FLOAT_PRECISION == 1
+	// Move center pixel slightly towards camera to avoid imprecision artifacts due to depth buffer imprecision; offset depends on depth texture format used
 	viewspaceZ *= 0.99920h;  // this is good for FP16 depth buffer
-#else
-	viewspaceZ *= 0.99999;  // this is good for FP32 depth buffer
-#endif
 
 	float4 currGIAO = float4(0, 0, 0, 0);
 	float4 currGIAOSpecular = float4(0, 0, 0, 0);
@@ -463,8 +457,7 @@ void CalculateGI(
 			lerpFactor = 0;
 #	endif
 
-		float4 prevGIAO = srcPrevGI[pxCoord];
-		currGIAO = lerp(prevGIAO, currGIAO, lerpFactor);
+		currGIAO = lerp(srcPrevGI[pxCoord], currGIAO, lerpFactor);
 #	ifdef GI_SPECULAR
 		currGIAOSpecular = lerp(srcPrevGISpecular[pxCoord], currGIAOSpecular, lerpFactor);
 #	endif
