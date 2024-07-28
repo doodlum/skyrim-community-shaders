@@ -1317,7 +1317,7 @@ struct BSGrassShader_SetupTechnique
 
 			static auto* bShadowsOnGrass = RE::GetINISetting("bShadowsOnGrass:Display");
 			if (!bShadowsOnGrass->GetBool()) {
-				shadowState->SetPSTexture(1, graphicsState->defaultTextureWhite->rendererTexture);
+				shadowState->SetPSTexture(1, graphicsState->GetRuntimeData().defaultTextureWhite->rendererTexture);
 				shadowState->SetPSTextureAddressMode(1, RE::BSGraphics::TextureAddressMode::kClampSClampT);
 				shadowState->SetPSTextureFilterMode(1, RE::BSGraphics::TextureFilterMode::kNearest);
 			} else {
