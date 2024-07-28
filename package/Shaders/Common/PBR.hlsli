@@ -398,23 +398,23 @@ void GetDirectLightInputPBR(out float3 diffuse, out float3 coatDiffuse, out floa
 			specular += coatSpecular * surfaceProperties.CoatStrength;
 		}
 #endif
-    }
+	}
 }
 
 float3 GetWetnessDirectLightSpecularInputPBR(float3 N, float3 V, float3 L, float3 lightColor, float roughness)
 {
 	const float wetnessStrength = 1;
 	const float wetnessF0 = 0.02;
-	
+
 	float3 H = normalize(V + L);
 	float NdotL = clamp(dot(N, L), 1e-5, 1);
 	float NdotV = saturate(abs(dot(N, V)) + 1e-5);
 	float NdotH = saturate(dot(N, H));
-    float VdotH = saturate(dot(V, H));
+	float VdotH = saturate(dot(V, H));
 
 	float3 wetnessF;
 	float3 wetnessSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(roughness, wetnessF0, NdotL, NdotV, NdotH, VdotH, wetnessF) * lightColor * NdotL;
-	
+
 	return wetnessSpecular * wetnessStrength;
 }
 
@@ -458,7 +458,7 @@ void GetPBRIndirectLobeWeights(out float3 diffuseLobeWeight, out float3 specular
 		{
 			specularLobeWeight *= 1 + surfaceProperties.F0 * (1 / (specularBRDF.x + specularBRDF.y) - 1);
 		}
-		
+
 #if !defined(LANDSCAPE) && !defined(LODLANDSCAPE)
 		[branch] if ((PBRFlags & TruePBR_TwoLayer) != 0)
 		{
@@ -489,7 +489,7 @@ void GetPBRIndirectLobeWeights(out float3 diffuseLobeWeight, out float3 specular
 	float3 R = reflect(-V, N);
 	float horizon = min(1.0 + dot(R, VN), 1.0);
 	horizon *= horizon * horizon;
-    specularLobeWeight *= horizon;
+	specularLobeWeight *= horizon;
 
 	float3 diffuseAO = surfaceProperties.AO;
 	float3 specularAO = SpecularAOLagarde(NdotV, surfaceProperties.AO, surfaceProperties.Roughness);
@@ -507,17 +507,17 @@ float3 GetWetnessIndirectSpecularLobeWeight(float3 N, float3 V, float3 VN, float
 {
 	const float wetnessStrength = 1;
 	const float wetnessF0 = 0.02;
-	
+
 	float NdotV = saturate(abs(dot(N, V)) + 1e-5);
 	float2 specularBRDF = GetEnvBRDFApproxLazarov(roughness, NdotV);
 	float3 specularLobeWeight = wetnessF0 * specularBRDF.x + specularBRDF.y;
-	
+
 	// Horizon specular occlusion
 	// https://marmosetco.tumblr.com/post/81245981087
 	float3 R = reflect(-V, N);
 	float horizon = min(1.0 + dot(R, VN), 1.0);
 	horizon *= horizon * horizon;
-    specularLobeWeight *= horizon;
-	
+	specularLobeWeight *= horizon;
+
 	return specularLobeWeight * wetnessStrength;
 }
