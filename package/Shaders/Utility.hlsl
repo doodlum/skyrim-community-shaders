@@ -3,7 +3,7 @@
 #include "Common/LodLandscape.hlsli"
 #include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"
-
+#include "Common/Constants.hlsli"
 #include "Common/SharedData.hlsli"
 
 #if defined(RENDER_SHADOWMASK) || defined(RENDER_SHADOWMASKSPOT) || defined(RENDER_SHADOWMASKPB) || defined(RENDER_SHADOWMASKDPB)
@@ -461,11 +461,10 @@ PS_OUTPUT main(PS_INPUT input)
 
 	positionMS.xyz += CameraPosAdjust[eyeIndex];
 
-	positionMS.xyz *= 0.000001;
+	// https://www.shadertoy.com/view/mts3zN
+	float checkerboard = frac(positionMS.xyz + float3(0.180827486604, 0.328956393296, 0.450299522098));
 
-	float checkerboard = frac(sin(dot(positionMS.xy, float2(12.9898, 78.233))) * 43758.5453);
-
-	if (checkerboard > 0.5)
+	if (checkerboard > 0.25)
 		discard;
 #	endif
 
@@ -547,7 +546,7 @@ PS_OUTPUT main(PS_INPUT input)
 #		endif
 
 	float noise = InterleavedGradientNoise(input.PositionCS.xy);
-	float noiseAdjusted = noise * 2.0 * 3.14;
+	float noiseAdjusted = noise * M_2PI;
 
 	noise = noise * 2.0 - 1.0;
 
