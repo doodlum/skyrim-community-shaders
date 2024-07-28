@@ -4,47 +4,47 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState TintMask0Sampler			: register(s0);
-SamplerState TintMask1Sampler			: register(s1);
-SamplerState TintMask2Sampler			: register(s2);
-SamplerState TintMask3Sampler			: register(s3);
-SamplerState TintMask4Sampler			: register(s4);
-SamplerState TintMask5Sampler			: register(s5);
-SamplerState TintMask6Sampler			: register(s6);
-SamplerState TintMask7Sampler			: register(s7);
-SamplerState TintMask8Sampler			: register(s8);
-SamplerState TintMask9Sampler			: register(s9);
-SamplerState TintMask10Sampler			: register(s10);
-SamplerState TintMask11Sampler			: register(s11);
-SamplerState TintMask12Sampler			: register(s12);
-SamplerState TintMask13Sampler			: register(s13);
-SamplerState TintMask14Sampler			: register(s14);
-SamplerState TintMask15Sampler			: register(s15);
+SamplerState TintMask0Sampler : register(s0);
+SamplerState TintMask1Sampler : register(s1);
+SamplerState TintMask2Sampler : register(s2);
+SamplerState TintMask3Sampler : register(s3);
+SamplerState TintMask4Sampler : register(s4);
+SamplerState TintMask5Sampler : register(s5);
+SamplerState TintMask6Sampler : register(s6);
+SamplerState TintMask7Sampler : register(s7);
+SamplerState TintMask8Sampler : register(s8);
+SamplerState TintMask9Sampler : register(s9);
+SamplerState TintMask10Sampler : register(s10);
+SamplerState TintMask11Sampler : register(s11);
+SamplerState TintMask12Sampler : register(s12);
+SamplerState TintMask13Sampler : register(s13);
+SamplerState TintMask14Sampler : register(s14);
+SamplerState TintMask15Sampler : register(s15);
 
-Texture2D<float4> TintMask0Tex			: register(t0);
-Texture2D<float4> TintMask1Tex			: register(t1);
-Texture2D<float4> TintMask2Tex			: register(t2);
-Texture2D<float4> TintMask3Tex			: register(t3);
-Texture2D<float4> TintMask4Tex			: register(t4);
-Texture2D<float4> TintMask5Tex			: register(t5);
-Texture2D<float4> TintMask6Tex			: register(t6);
-Texture2D<float4> TintMask7Tex			: register(t7);
-Texture2D<float4> TintMask8Tex			: register(t8);
-Texture2D<float4> TintMask9Tex			: register(t9);
-Texture2D<float4> TintMask10Tex			: register(t10);
-Texture2D<float4> TintMask11Tex			: register(t11);
-Texture2D<float4> TintMask12Tex			: register(t12);
-Texture2D<float4> TintMask13Tex			: register(t13);
-Texture2D<float4> TintMask14Tex			: register(t14);
-Texture2D<float4> TintMask15Tex			: register(t15);
+Texture2D<float4> TintMask0Tex : register(t0);
+Texture2D<float4> TintMask1Tex : register(t1);
+Texture2D<float4> TintMask2Tex : register(t2);
+Texture2D<float4> TintMask3Tex : register(t3);
+Texture2D<float4> TintMask4Tex : register(t4);
+Texture2D<float4> TintMask5Tex : register(t5);
+Texture2D<float4> TintMask6Tex : register(t6);
+Texture2D<float4> TintMask7Tex : register(t7);
+Texture2D<float4> TintMask8Tex : register(t8);
+Texture2D<float4> TintMask9Tex : register(t9);
+Texture2D<float4> TintMask10Tex : register(t10);
+Texture2D<float4> TintMask11Tex : register(t11);
+Texture2D<float4> TintMask12Tex : register(t12);
+Texture2D<float4> TintMask13Tex : register(t13);
+Texture2D<float4> TintMask14Tex : register(t14);
+Texture2D<float4> TintMask15Tex : register(t15);
 
-cbuffer PerGeometry						: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float4 Color[16]					: packoffset(c0);
+	float4 Color[16] : packoffset(c0);
 };
 
 float3 BlendAlpha(Texture2D<float4> tintMaskTex, SamplerState tintMaskSamplerState, float2 texCoord, float4 blendColor, float3 color)

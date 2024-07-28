@@ -1,21 +1,21 @@
-#include "Common/DummyVSTexCoord.hlsl"
 #include "Common/Color.hlsl"
+#include "Common/DummyVSTexCoord.hlsl"
 
 typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState ImageSampler					: register(s0);
+SamplerState ImageSampler : register(s0);
 
-Texture2D<float4> ImageTex					: register(t0);
+Texture2D<float4> ImageTex : register(t0);
 
-cbuffer PerGeometry							: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float4 TexelSize						: packoffset(c0);
+	float4 TexelSize : packoffset(c0);
 };
 
 PS_OUTPUT main(PS_INPUT input)
@@ -25,12 +25,11 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 weight = float3(0.5, 0.25, 1);
 	float3 colorLR = 0;
 	float3 colorBT = 0;
-	[unroll] for(int j = -1; j <= 1; ++j)
+	[unroll] for (int j = -1; j <= 1; ++j)
 	{
-		[unroll] for(int i = -1; i <= 1; ++i)
+		[unroll] for (int i = -1; i <= 1; ++i)
 		{
-			if (i == 0 && j == 0)
-			{
+			if (i == 0 && j == 0) {
 				continue;
 			}
 
@@ -39,8 +38,7 @@ PS_OUTPUT main(PS_INPUT input)
 					.xyz;
 
 			float centerMul = 1;
-			if (i == 0 || j == 0)
-			{
+			if (i == 0 || j == 0) {
 				centerMul = 2;
 			}
 

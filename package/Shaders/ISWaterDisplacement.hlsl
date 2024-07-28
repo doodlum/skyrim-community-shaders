@@ -1,5 +1,5 @@
 #if defined(SMOOTH_HEIGHTMAP) || defined(RAIN_HEIGHTMAP) || defined(WADING_HEIGHTMAP)
-#define HEIGHTMAP
+#	define HEIGHTMAP
 #endif
 
 struct VS_INPUT
@@ -27,12 +27,12 @@ VS_OUTPUT main(VS_INPUT input)
 
 	vsout.Position = float4(input.Position.xyz, 1);
 	vsout.TexCoord = input.TexCoord.xy;
-#if defined(HEIGHTMAP)
+#	if defined(HEIGHTMAP)
 	vsout.TexCoord1 = input.TexCoord.xy + float2(-0.0009765625, -0.0009765625);
 	vsout.TexCoord2 = input.TexCoord.xy + float2(-0.0009765625, 0.0009765625);
 	vsout.TexCoord3 = input.TexCoord.xy + float2(0.0009765625, -0.0009765625);
 	vsout.TexCoord4 = input.TexCoord.xy + float2(0.0009765625, 0.0009765625);
-#endif
+#	endif
 
 	return vsout;
 }
@@ -42,52 +42,52 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-#if defined(BLEND_HEIGHTMAPS)
-SamplerState HeightMap01Sampler			: register(s0);
-SamplerState HeightMap02Sampler			: register(s1);
-#elif defined (NORMALS)
-SamplerState DisplaceMapSampler			: register(s0);
-#elif defined (TEX_OFFSET)
-SamplerState DisplaySamplerSampler		: register(s0);
-#elif defined(HEIGHTMAP)
-SamplerState HeightMapSampler			: register(s0);
-#endif
+#	if defined(BLEND_HEIGHTMAPS)
+SamplerState HeightMap01Sampler : register(s0);
+SamplerState HeightMap02Sampler : register(s1);
+#	elif defined(NORMALS)
+SamplerState DisplaceMapSampler : register(s0);
+#	elif defined(TEX_OFFSET)
+SamplerState DisplaySamplerSampler : register(s0);
+#	elif defined(HEIGHTMAP)
+SamplerState HeightMapSampler : register(s0);
+#	endif
 
-#if defined(BLEND_HEIGHTMAPS)
-Texture2D<float4> HeightMap01Tex		: register(t0);
-Texture2D<float4> HeightMap02Tex		: register(t1);
-#elif defined (NORMALS)
-Texture2D<float4> DisplaceMapTex		: register(t0);
-#elif defined (TEX_OFFSET)
-Texture2D<float4> DisplaySamplerTex		: register(t0);
-#elif defined(HEIGHTMAP)
-Texture2D<float4> HeightMapTex			: register(t0);
-#endif
+#	if defined(BLEND_HEIGHTMAPS)
+Texture2D<float4> HeightMap01Tex : register(t0);
+Texture2D<float4> HeightMap02Tex : register(t1);
+#	elif defined(NORMALS)
+Texture2D<float4> DisplaceMapTex : register(t0);
+#	elif defined(TEX_OFFSET)
+Texture2D<float4> DisplaySamplerTex : register(t0);
+#	elif defined(HEIGHTMAP)
+Texture2D<float4> HeightMapTex : register(t0);
+#	endif
 
-cbuffer PerGeometry						: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float Time							: packoffset(c0.x);
-	float BlendAmount					: packoffset(c0.y);
-	float2 TextureOffset				: packoffset(c0.z);
-	float fDamp							: packoffset(c1.x);
-	float3 RainVars						: packoffset(c1.y);
-	float4 WadingVars					: packoffset(c2.x);
+	float Time : packoffset(c0.x);
+	float BlendAmount : packoffset(c0.y);
+	float2 TextureOffset : packoffset(c0.z);
+	float fDamp : packoffset(c1.x);
+	float3 RainVars : packoffset(c1.y);
+	float4 WadingVars : packoffset(c2.x);
 };
 
-#if defined (NORMALS)
+#	if defined(NORMALS)
 float GetDisplacementNormalValue(float2 texCoord)
 {
 	float displaceValue = DisplaceMapTex.Sample(DisplaceMapSampler, texCoord).x;
 	return fDamp * pow(abs(displaceValue), 7);
 }
-#endif
+#	endif
 
-#if defined(HEIGHTMAP)
-float4 GetHeight(PS_INPUT input, uniform float3 Vars) 
+#	if defined(HEIGHTMAP)
+float4 GetHeight(PS_INPUT input, uniform float3 Vars)
 {
 	float2 height = HeightMapTex.Sample(HeightMapSampler, input.TexCoord).xy;
 	float heightLB = HeightMapTex.Sample(HeightMapSampler, input.TexCoord1).x;
@@ -101,21 +101,21 @@ float4 GetHeight(PS_INPUT input, uniform float3 Vars)
 	float heightBT = heightLB - heightLT + heightRB - heightRT;
 	return 0.5 + float4(max(-1, Vars.z * float2(Vars.y * tmp1 + (height.x - 0.5), tmp1)), 0.5 * float2(heightLR, heightBT));
 }
-#endif
+#	endif
 
 PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
 
-#if defined(BLEND_HEIGHTMAPS)
+#	if defined(BLEND_HEIGHTMAPS)
 	float height01 = HeightMap01Tex.Sample(HeightMap01Sampler, input.TexCoord).x;
 	float height02 = HeightMap02Tex.Sample(HeightMap02Sampler, input.TexCoord).x;
 
 	psout.Color.xyz = lerp((0.8 / fDamp) * abs(height01), abs(height02), BlendAmount);
 	psout.Color.w = 1;
-#elif defined (CLEAR_SIMULATION)
+#	elif defined(CLEAR_SIMULATION)
 	psout.Color = 0.5;
-#elif defined (NORMALS)
+#	elif defined(NORMALS)
 
 	float offset = 0.001953125;
 	float valueRL = 0;
@@ -124,16 +124,14 @@ PS_OUTPUT main(PS_INPUT input)
 	{
 		[unroll] for (int j = -1; j <= 1; ++j)
 		{
-			if (i == 0 && j == 0)
-			{
+			if (i == 0 && j == 0) {
 				continue;
 			}
 
 			float currentValue = GetDisplacementNormalValue(input.TexCoord + float2(i * offset, j * offset));
 
 			float centerMul = 1;
-			if (i == 0 || j == 0)
-			{
+			if (i == 0 || j == 0) {
 				centerMul = 2;
 			}
 
@@ -143,21 +141,21 @@ PS_OUTPUT main(PS_INPUT input)
 	}
 
 	psout.Color = float4(normalize(float3(-valueRL, valueTB, 1)), 1) * 0.5 + 0.5;
-	
-#elif defined(RAIN_RIPPLE) || defined(WADING_RIPPLE)
+
+#	elif defined(RAIN_RIPPLE) || defined(WADING_RIPPLE)
 	psout.Color = float4(1, 0.5, 0.5, 0.5);
-#elif defined (TEX_OFFSET)
+#	elif defined(TEX_OFFSET)
 	float lerpFactor = saturate(10 * (-0.4 + length(input.TexCoord - 0.5)));
 	float4 displayColor = DisplaySamplerTex.Sample(DisplaySamplerSampler, TextureOffset + input.TexCoord);
 	psout.Color.xy = displayColor.xy;
 	psout.Color.zw = lerp(displayColor.zw, 0.5, lerpFactor);
-#elif defined (SMOOTH_HEIGHTMAP)
+#	elif defined(SMOOTH_HEIGHTMAP)
 	psout.Color = HeightMapTex.Sample(HeightMapSampler, input.TexCoord);
-#elif defined (RAIN_HEIGHTMAP)
+#	elif defined(RAIN_HEIGHTMAP)
 	psout.Color = GetHeight(input, RainVars);
-#elif defined (WADING_HEIGHTMAP)
+#	elif defined(WADING_HEIGHTMAP)
 	psout.Color = GetHeight(input, WadingVars);
-#endif
+#	endif
 
 	return psout;
 }

@@ -4,15 +4,15 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState snowAlphaSpecSampler		: register(s0);
-SamplerState sceneSampler				: register(s1);
+SamplerState snowAlphaSpecSampler : register(s0);
+SamplerState sceneSampler : register(s1);
 
-Texture2D<float4> snowAlphaSpecTex		: register(t0);
-Texture2D<float4> sceneTex				: register(t1);
+Texture2D<float4> snowAlphaSpecTex : register(t0);
+Texture2D<float4> sceneTex : register(t1);
 
 PS_OUTPUT main(PS_INPUT input)
 {

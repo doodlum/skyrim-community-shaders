@@ -4,17 +4,17 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState Src0Sampler					: register(s0);
+SamplerState Src0Sampler : register(s0);
 
-Texture2D<float4> Src0Tex					: register(t0);
+Texture2D<float4> Src0Tex : register(t0);
 
-cbuffer PerGeometry							: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float4 CameraPos						: packoffset(c0);
+	float4 CameraPos : packoffset(c0);
 };
 
 PS_OUTPUT main(PS_INPUT input)
@@ -23,12 +23,11 @@ PS_OUTPUT main(PS_INPUT input)
 
 	float4 colorLR = 0;
 	float4 colorBT = 0;
-	[unroll] for(int j = -1; j <= 1; ++j)
+	[unroll] for (int j = -1; j <= 1; ++j)
 	{
-		[unroll] for(int i = -1; i <= 1; ++i)
+		[unroll] for (int i = -1; i <= 1; ++i)
 		{
-			if (i == 0 && j == 0)
-			{
+			if (i == 0 && j == 0) {
 				continue;
 			}
 
@@ -37,8 +36,7 @@ PS_OUTPUT main(PS_INPUT input)
 					.Sample(Src0Sampler, input.TexCoord + float2(i * CameraPos.x, j * CameraPos.y));
 
 			float centerMul = 1;
-			if (i == 0 || j == 0)
-			{
+			if (i == 0 || j == 0) {
 				centerMul = 2;
 			}
 

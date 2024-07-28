@@ -1646,8 +1646,7 @@ namespace SIE
 
 		static bool IsSupportedShader(const RE::BSImagespaceShader& shader)
 		{
-			static const std::unordered_set<std::string_view> supportedShaders
-			{
+			static const std::unordered_set<std::string_view> supportedShaders{
 				"ISAlphaBlend",
 				"ISApplyReflections",
 				"ISBasicCopy",

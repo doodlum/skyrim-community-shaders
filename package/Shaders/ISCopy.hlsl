@@ -5,38 +5,38 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState ImageSampler				: register(s0);
+SamplerState ImageSampler : register(s0);
 
-Texture2D<float4> ImageTex				: register(t0);
+Texture2D<float4> ImageTex : register(t0);
 
-cbuffer PerGeometry						: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float4 RotationMatrix				: packoffset(c0);
-	float4 ColorSelect					: packoffset(c1);
-	float4 ScaleBias					: packoffset(c2);
+	float4 RotationMatrix : packoffset(c0);
+	float4 ColorSelect : packoffset(c1);
+	float4 ScaleBias : packoffset(c2);
 };
 
 PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
 
-#if !defined(DYNAMIC_FETCH_DISABLED)
+#	if !defined(DYNAMIC_FETCH_DISABLED)
 	float2 screenPosition = GetDynamicResolutionAdjustedScreenPosition(input.TexCoord);
-#else
+#	else
 	float2 screenPosition = input.TexCoord;
-#endif
+#	endif
 
 	float4 color = ImageTex.Sample(ImageSampler, screenPosition);
 
-#if defined(GRAY_SCALE)
+#	if defined(GRAY_SCALE)
 	color = float4(dot(color, ColorSelect).xxx, color.w);
-#elif defined(TEXTURE_MASK)
+#	elif defined(TEXTURE_MASK)
 	color.w = 1 - color.x;
-#endif
+#	endif
 
 	psout.Color = color;
 

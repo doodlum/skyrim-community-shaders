@@ -5,20 +5,20 @@ typedef VS_OUTPUT PS_INPUT;
 
 struct PS_OUTPUT
 {
-	float4 Color						: SV_Target0;
+	float4 Color : SV_Target0;
 };
 
 #if defined(PSHADER)
-SamplerState Src0Sampler				: register(s0);
-SamplerState Src1Sampler				: register(s1);
+SamplerState Src0Sampler : register(s0);
+SamplerState Src1Sampler : register(s1);
 
-Texture2D<float4> Src0Tex				: register(t0);
-Texture2D<float4> Src1Tex				: register(t1);
+Texture2D<float4> Src0Tex : register(t0);
+Texture2D<float4> Src1Tex : register(t1);
 
-cbuffer PerGeometry						: register(b2)
+cbuffer PerGeometry : register(b2)
 {
-	float4 blurParams					: packoffset(c0);
-	float4 doubleVisParams				: packoffset(c1);
+	float4 blurParams : packoffset(c0);
+	float4 doubleVisParams : packoffset(c1);
 };
 
 PS_OUTPUT main(PS_INPUT input)
