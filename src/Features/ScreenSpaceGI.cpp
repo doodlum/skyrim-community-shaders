@@ -209,7 +209,7 @@ void ScreenSpaceGI::DrawSettings()
 
 	{
 		auto _ = DisableGuard(!settings.EnableGI);
-		ImGui::SliderFloat("IL Source Brightness", &settings.GIStrength, 0.f, 20.f, "%.2f");
+		ImGui::SliderFloat("IL Source Brightness", &settings.GIStrength, 0.f, 10.f, "%.2f");
 	}
 
 	ImGui::Separator();

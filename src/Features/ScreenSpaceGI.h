@@ -68,7 +68,7 @@ struct ScreenSpaceGI : Feature
 		float GIDistanceCompensation = 0.f;
 		// mix
 		float AOPower = 1.f;
-		float GIStrength = 4.f;
+		float GIStrength = 2.f;
 		// denoise
 		bool EnableTemporalDenoiser = true;
 		bool EnableBlur = true;
