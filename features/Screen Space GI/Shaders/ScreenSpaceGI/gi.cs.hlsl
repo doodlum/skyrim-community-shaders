@@ -384,8 +384,8 @@ void CalculateGI(
 	float depthFade = GetDepthFade(viewspaceZ);
 
 	visibility *= rcpNumSlices;
-	visibility = lerp(saturate(visibility), 1, depthFade);
-	visibility = pow(abs(visibility), AOPower);
+	visibility = lerp(saturate(visibility), 0, depthFade);
+	visibility = 1 - pow(abs(1 - visibility), AOPower);
 
 #ifdef GI
 	radiance *= rcpNumSlices;
@@ -395,7 +395,7 @@ void CalculateGI(
 	radianceSpecular = lerp(radianceSpecular, 0, depthFade);
 
 	visibilitySpecular *= rcpNumSlices;
-	visibilitySpecular = lerp(saturate(visibility), 1, depthFade);
+	visibilitySpecular = lerp(saturate(visibility), 0, depthFade);
 #	endif
 #endif
 
