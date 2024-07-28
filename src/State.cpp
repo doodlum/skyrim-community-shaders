@@ -49,7 +49,12 @@ void State::Draw()
 
 						lastVertexDescriptor = currentVertexDescriptor;
 						lastPixelDescriptor = currentPixelDescriptor;
-
+					}
+			
+					auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
+					auto cubeMapRenderTarget = !REL::Module::IsVR() ? shadowState->GetRuntimeData().cubeMapRenderTarget : shadowState->GetVRRuntimeData().cubeMapRenderTarget;
+					
+					if (cubeMapRenderTarget != RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
 						static Util::FrameChecker frameChecker;
 						if (frameChecker.isNewFrame()) {
 							ID3D11Buffer* buffers[3] = { permutationCB->CB(), sharedDataCB->CB(), featureDataCB->CB() };
