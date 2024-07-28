@@ -6,7 +6,6 @@
 
 #include "Common/SharedData.hlsli"
 
-
 #if defined(RENDER_SHADOWMASK) || defined(RENDER_SHADOWMASKSPOT) || defined(RENDER_SHADOWMASKPB) || defined(RENDER_SHADOWMASKDPB)
 #	define RENDER_SHADOWMASK_ANY
 #endif
@@ -376,19 +375,18 @@ float GetPoissonDiskFilteredShadowVisibility(float noise, float2x2 rotationMatri
 	compareValue += 0.002;
 
 	const static float2 PoissonDiskSampleOffsets[] = {
-        float2(0.105594f, 0.25663f) * 2.0 - 1.0,
-        float2(0.874569f, 0.149052f) * 2.0 - 1.0,
-        float2(0.467879f, 0.644795f) * 2.0 - 1.0,
-        float2(0.00152593f, 0.856075f) * 2.0 - 1.0,
-        float2(0.85107f, 0.984954f) * 2.0 - 1.0,
-        float2(0.967528f, 0.541826f) * 2.0 - 1.0,
-        float2(0.494308f, 0.155065f) * 2.0 - 1.0,
-        float2(0.35902f, 0.954466f) * 2.0 - 1.0
+		float2(0.105594f, 0.25663f) * 2.0 - 1.0,
+		float2(0.874569f, 0.149052f) * 2.0 - 1.0,
+		float2(0.467879f, 0.644795f) * 2.0 - 1.0,
+		float2(0.00152593f, 0.856075f) * 2.0 - 1.0,
+		float2(0.85107f, 0.984954f) * 2.0 - 1.0,
+		float2(0.967528f, 0.541826f) * 2.0 - 1.0,
+		float2(0.494308f, 0.155065f) * 2.0 - 1.0,
+		float2(0.35902f, 0.954466f) * 2.0 - 1.0
 	};
 
 	float visibility = 0;
 	for (int sampleIndex = 0; sampleIndex < SampleCount; ++sampleIndex) {
-
 		float2 sampleOffset = mul(PoissonDiskSampleOffsets[sampleIndex], rotationMatrix);
 		float2 sampleOffsetScale = ShadowSampleParam.z;
 
