@@ -791,7 +791,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 			srvs.at(3) = rts[NORMALROUGHNESS].SRV;
 
 			uavs.at(0) = texGI[!inputGITexIdx]->uav.get();
-			uavs.at(1) = texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
+			uavs.at(1) = doSpecular ? nullptr : texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
 
 			context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 			context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);
@@ -806,6 +806,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 				srvs.at(3) = rts[NORMALROUGHNESS].SRV;
 
 				uavs.at(0) = texGISpecular[!inputGITexIdx]->uav.get();
+				uavs.at(1) = texAccumFrames[!lastFrameAccumTexIdx]->uav.get();
 
 				context->CSSetShaderResources(0, (uint)srvs.size(), srvs.data());
 				context->CSSetUnorderedAccessViews(0, (uint)uavs.size(), uavs.data(), nullptr);

@@ -126,7 +126,7 @@ void CalculateGI(
 	float3 bentNormal = viewspaceNormal;
 
 #ifdef GI_SPECULAR
-	const float roughness = 1 - srcNormalRoughness[dtid].z;
+	const float roughness = 1 - FULLRES_LOAD(srcNormalRoughness, dtid, uv * frameScale, samplerLinearClamp).z;
 	const float roughness2 = roughness * roughness;
 #endif
 
