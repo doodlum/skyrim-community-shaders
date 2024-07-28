@@ -1,10 +1,9 @@
 #include "Common/Constants.hlsli"
 #include "Common/FrameBuffer.hlsl"
 #include "Common/LodLandscape.hlsli"
+#include "Common/SharedData.hlsli"
 #include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"
-#include "Common/Constants.hlsli"
-#include "Common/SharedData.hlsli"
 
 #if defined(RENDER_SHADOWMASK) || defined(RENDER_SHADOWMASKSPOT) || defined(RENDER_SHADOWMASKPB) || defined(RENDER_SHADOWMASKDPB)
 #	define RENDER_SHADOWMASK_ANY
