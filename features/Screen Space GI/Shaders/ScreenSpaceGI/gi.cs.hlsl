@@ -217,7 +217,7 @@ void CalculateGI(
 
 #ifdef GI
 #	ifdef BITMASK
-				float3 sampleBackPosGI = samplePos - viewVec * 500;
+				float3 sampleBackPosGI = samplePos - viewVec * EffectRadius * Thickness;
 				float3 sampleBackHorizonVecGI = normalize(sampleBackPosGI - pixCenterPos);
 				float angleBackGI = ACos(dot(sampleBackHorizonVecGI, viewVec));
 				float2 angleRangeGI = -sideSign * (sideSign == -1 ? float2(angleFront, angleBackGI) : float2(angleBackGI, angleFront));
