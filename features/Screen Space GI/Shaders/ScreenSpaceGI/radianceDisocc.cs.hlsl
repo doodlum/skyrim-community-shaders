@@ -139,7 +139,13 @@ void readHistory(
 #endif
 
 #ifdef TEMPORAL_DENOISER
-	accum_frames = min(accum_frames * 255 + 1, MaxAccumFrames);
+#	ifdef HALF_RATE
+	uint useHistory = (pixCoord.x % 2) == (FrameIndex % 2);
+#	else
+	uint useHistory = 1;
+#	endif
+
+	accum_frames = max(1, min(accum_frames * 255 + useHistory, MaxAccumFrames));
 	outAccumFrames[pixCoord] = accum_frames / 255.0;
 	outRemappedPrevGI[pixCoord] = prev_gi;
 	outRemappedPrevGISpecular[pixCoord] = prev_gi_specular;
