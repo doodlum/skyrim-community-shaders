@@ -18,6 +18,24 @@ struct DepthStates
 struct BlendStates
 {
 	ID3D11BlendState* a[7][2][13][2];
+
+	static BlendStates* GetSingleton()
+	{
+		return reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
+	}
+
+	static std::array<ID3D11BlendState**, 6> GetDXBlendStates()
+	{
+		auto blendStates = GetSingleton();
+		return {
+			&blendStates->a[0][0][1][0],
+			&blendStates->a[0][0][10][0],
+			&blendStates->a[1][0][1][0],
+			&blendStates->a[1][0][11][0],
+			&blendStates->a[2][0][1][0],
+			&blendStates->a[3][0][11][0]
+		};
+	}
 };
 
 void SetupRenderTarget(RE::RENDER_TARGET target, D3D11_TEXTURE2D_DESC texDesc, D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc, D3D11_RENDER_TARGET_VIEW_DESC rtvDesc, D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc, DXGI_FORMAT format)
@@ -271,90 +289,23 @@ void Deferred::StartDeferred()
 
 	State::GetSingleton()->UpdateSharedData();
 
-	static bool setup = false;
-	if (!setup) {
+	static std::once_flag setup;
+	std::call_once(setup, [&]() {
 		auto& device = State::GetSingleton()->device;
 
-		static BlendStates* blendStates = reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
+		auto dxBlendStates = BlendStates::GetDXBlendStates();
 
-		{
-			forwardBlendStates[0] = blendStates->a[0][0][1][0];
+		for (int i = 0; i < dxBlendStates.size(); ++i) {
+			forwardBlendStates[i] = *dxBlendStates[i];
 
 			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[0]->GetDesc(&blendDesc);
+			forwardBlendStates[i]->GetDesc(&blendDesc);
 
 			blendDesc.IndependentBlendEnable = false;
 
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[0]));
+			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[i]));
 		}
-
-		{
-			forwardBlendStates[1] = blendStates->a[0][0][10][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[1]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[1]));
-		}
-
-		{
-			forwardBlendStates[2] = blendStates->a[1][0][1][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[2]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[2]));
-		}
-
-		{
-			forwardBlendStates[3] = blendStates->a[1][0][11][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[3]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[3]));
-		}
-
-		{
-			forwardBlendStates[4] = blendStates->a[2][0][1][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[4]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[4]));
-		}
-
-		{
-			forwardBlendStates[5] = blendStates->a[2][0][11][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[5]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[5]));
-		}
-
-		{
-			forwardBlendStates[6] = blendStates->a[3][0][11][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[6]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[6]));
-		}
-		setup = true;
-	}
+	});
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	GET_INSTANCE_MEMBER(renderTargets, shadowState)
@@ -555,101 +506,29 @@ void Deferred::EndDeferred()
 
 void Deferred::OverrideBlendStates()
 {
-	static bool setup = false;
-	if (!setup) {
+	auto dxBlendStates = BlendStates::GetDXBlendStates();
+
+	static std::once_flag setup;
+	std::call_once(setup, [&]() {
 		auto& device = State::GetSingleton()->device;
 
-		static BlendStates* blendStates = reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
-
-		{
-			forwardBlendStates[0] = blendStates->a[0][0][1][0];
+		for (int i = 0; i < dxBlendStates.size(); ++i) {
+			forwardBlendStates[i] = *dxBlendStates[i];
 
 			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[0]->GetDesc(&blendDesc);
+			forwardBlendStates[i]->GetDesc(&blendDesc);
 
 			blendDesc.IndependentBlendEnable = false;
 
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[0]));
+			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[i]));
 		}
-
-		{
-			forwardBlendStates[1] = blendStates->a[0][0][10][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[1]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[1]));
-		}
-
-		{
-			forwardBlendStates[2] = blendStates->a[1][0][1][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[2]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[2]));
-		}
-
-		{
-			forwardBlendStates[3] = blendStates->a[1][0][11][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[3]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[3]));
-		}
-
-		{
-			forwardBlendStates[4] = blendStates->a[2][0][1][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[4]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[4]));
-		}
-
-		{
-			forwardBlendStates[5] = blendStates->a[2][0][11][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[5]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[5]));
-		}
-
-		{
-			forwardBlendStates[6] = blendStates->a[3][0][11][0];
-
-			D3D11_BLEND_DESC blendDesc;
-			forwardBlendStates[6]->GetDesc(&blendDesc);
-
-			blendDesc.IndependentBlendEnable = false;
-
-			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[6]));
-		}
-		setup = true;
-	}
+	});
 
 	static BlendStates* blendStates = reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
 
 	// Set modified blend states
-	blendStates->a[0][0][1][0] = deferredBlendStates[0];
-	blendStates->a[0][0][10][0] = deferredBlendStates[1];
-	blendStates->a[1][0][1][0] = deferredBlendStates[2];
-	blendStates->a[1][0][11][0] = deferredBlendStates[3];
-	blendStates->a[2][0][1][0] = deferredBlendStates[4];
-	blendStates->a[2][0][11][0] = deferredBlendStates[5];
-	blendStates->a[3][0][11][0] = deferredBlendStates[6];
+	for (int i = 0; i < dxBlendStates.size(); ++i)
+		*dxBlendStates[i] = deferredBlendStates[i];
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	GET_INSTANCE_MEMBER(stateUpdateFlags, shadowState)
@@ -659,16 +538,11 @@ void Deferred::OverrideBlendStates()
 
 void Deferred::ResetBlendStates()
 {
-	static BlendStates* blendStates = reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
+	auto dxBlendStates = BlendStates::GetDXBlendStates();
 
 	// Restore modified blend states
-	blendStates->a[0][0][1][0] = forwardBlendStates[0];
-	blendStates->a[0][0][10][0] = forwardBlendStates[1];
-	blendStates->a[1][0][1][0] = forwardBlendStates[2];
-	blendStates->a[1][0][11][0] = forwardBlendStates[3];
-	blendStates->a[2][0][1][0] = forwardBlendStates[4];
-	blendStates->a[2][0][11][0] = forwardBlendStates[5];
-	blendStates->a[3][0][11][0] = forwardBlendStates[6];
+	for (int i = 0; i < dxBlendStates.size(); ++i)
+		*dxBlendStates[i] = forwardBlendStates[i];
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	GET_INSTANCE_MEMBER(stateUpdateFlags, shadowState)
