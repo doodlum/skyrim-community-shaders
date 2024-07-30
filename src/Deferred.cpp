@@ -21,7 +21,8 @@ struct BlendStates
 
 	static BlendStates* GetSingleton()
 	{
-		return reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
+		static auto blendStates = reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
+		return blendStates;
 	}
 
 	static std::array<ID3D11BlendState**, 6> GetDXBlendStates()
@@ -342,7 +343,7 @@ void Deferred::DeferredPasses()
 	UpdateConstantBuffer();
 
 	{
-		REL::Relocation<ID3D11Buffer**> perFrame{ REL::RelocationID(524768, 411384) };
+		static REL::Relocation<ID3D11Buffer**> perFrame{ REL::RelocationID(524768, 411384) };
 		ID3D11Buffer* buffers[2] = { deferredCB->CB(), *perFrame.get() };
 
 		context->CSSetConstantBuffers(11, 2, buffers);
@@ -517,8 +518,6 @@ void Deferred::OverrideBlendStates()
 			DX::ThrowIfFailed(device->CreateBlendState(&blendDesc, &deferredBlendStates[i]));
 		}
 	});
-
-	static BlendStates* blendStates = reinterpret_cast<BlendStates*>(REL::RelocationID(524749, 411364).address());
 
 	// Set modified blend states
 	for (int i = 0; i < dxBlendStates.size(); ++i)

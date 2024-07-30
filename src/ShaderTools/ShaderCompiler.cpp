@@ -6,7 +6,7 @@ namespace ShaderCompiler
 {
 	ID3D11PixelShader* RegisterPixelShader(const std::wstring& a_filePath)
 	{
-		REL::Relocation<ID3D11Device**> g_ID3D11Device{ RELOCATION_ID(524729, 411348) };
+		static REL::Relocation<ID3D11Device**> g_ID3D11Device{ RELOCATION_ID(524729, 411348) };
 
 		ID3DBlob* shaderBlob = nullptr;
 
