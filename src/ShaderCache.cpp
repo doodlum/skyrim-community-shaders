@@ -977,7 +977,7 @@ namespace SIE
 			for (const auto& def : defines) {
 				if (def.Name != nullptr) {
 					result += def.Name;
-					if (def.Definition != nullptr && !std::string(def.Definition).empty()) {
+					if (def.Definition != nullptr && !std::string_view(def.Definition).empty()) {
 						result += "=";
 						result += def.Definition;
 					}
