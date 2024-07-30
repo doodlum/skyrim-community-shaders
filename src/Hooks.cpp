@@ -38,7 +38,7 @@ void DumpShader(const REX::BSShader* thisClass, const ShaderType* shader, const 
 	constexpr auto shaderExtStr = std::is_same_v<ShaderType, RE::BSGraphics::VertexShader> ? "vs" : "ps";
 	constexpr auto shaderTypeStr = std::is_same_v<ShaderType, RE::BSGraphics::VertexShader> ? "vertex" : "pixel";
 
-	std::string dumpDir = std::format("Data\\ShaderDump\\{}\\{}.{}.bin", thisClass->m_LoaderType, shader->id, shaderExtStr);
+	std::string dumpDir = std::format("Data\\ShaderDump\\{}\\{:X}.{}.bin", thisClass->m_LoaderType, shader->id, shaderExtStr);
 	auto directoryPath = std::format("Data\\ShaderDump\\{}", thisClass->m_LoaderType);
 	logger::debug(fmt::runtime("Dumping {} shader {} with id {:x} at {}"), shaderTypeStr, thisClass->m_LoaderType, shader->id, dumpDir);
 
