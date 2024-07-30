@@ -7,8 +7,8 @@ struct SkylightingSettings
 	row_major float4x4 OcclusionViewProj;
 	float4 OcclusionDir;
 
-	float4 PosOffset;
-	uint4 ArrayOrigin;
+	float4 PosOffset;   // xyz: cell origin in camera model space
+	uint4 ArrayOrigin;  // xyz: array origin, w: max accum frames
 	int4 ValidMargin;
 
 	float4 MixParams;  // x: min diffuse visibility, y: diffuse mult, z: min specular visibility, w: specular mult

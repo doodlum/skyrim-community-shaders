@@ -47,6 +47,10 @@ void Skylighting::DrawSettings()
 	if (auto _tt = Util::HoverTooltipWrapper())
 		ImGui::Text("Changes below require rebuilding, a loading screen, or moving away from the current location to apply.");
 
+	ImGui::SliderInt("Update Frames", &settings.MaxFrames, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Aggregating over how many frames to build up skylighting.");
+
 	ImGui::SliderAngle("Max Zenith Angle", &settings.MaxZenith, 0, 90);
 	if (auto _tt = Util::HoverTooltipWrapper())
 		ImGui::Text("Smaller angles creates more focused top-down shadow.");
@@ -221,7 +225,8 @@ void Skylighting::Prepass()
 			.ArrayOrigin = {
 				((int)cellID.x - probeArrayDims[0] / 2) % probeArrayDims[0],
 				((int)cellID.y - probeArrayDims[1] / 2) % probeArrayDims[1],
-				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2], 0 },
+				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2],
+				(uint)settings.MaxFrames },
 			.ValidMargin = { (int)cellIDDiff.x, (int)cellIDDiff.y, (int)cellIDDiff.z },
 			.MixParams = { settings.MinDiffuseVisibility, settings.DiffuseBrightness, settings.MinSpecularVisibility, settings.SpecularBrightness },
 			.DirectionalDiffuse = settings.DirectionalDiffuse,
