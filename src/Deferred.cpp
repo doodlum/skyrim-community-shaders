@@ -193,17 +193,11 @@ void Deferred::CopyShadowData()
 	ID3D11UnorderedAccessView* uavs[1]{ perShadow->uav.get() };
 	context->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
 
-	ID3D11Buffer* buffers[1];
-	context->PSGetConstantBuffers(2, 1, buffers);
-	context->CSSetConstantBuffers(0, 1, buffers);
+	ID3D11Buffer* buffers[3];
+	context->PSGetConstantBuffers(0, 3, buffers);
+	context->PSGetConstantBuffers(12, 1, buffers + 1);
 
-	context->PSGetConstantBuffers(12, 1, buffers);
-	context->CSSetConstantBuffers(1, 1, buffers);
-
-	context->PSGetConstantBuffers(0, 1, buffers);
-	context->CSSetConstantBuffers(2, 1, buffers);
-
-	context->PSGetShaderResources(4, 1, &shadowView);
+	context->CSSetConstantBuffers(0, 3, buffers);
 
 	context->CSSetShader(copyShadowCS, nullptr, 0);
 
@@ -212,14 +206,14 @@ void Deferred::CopyShadowData()
 	uavs[0] = nullptr;
 	context->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
 
-	buffers[0] = nullptr;
-	context->CSSetConstantBuffers(0, 1, buffers);
-	context->CSSetConstantBuffers(1, 1, buffers);
-	context->CSSetConstantBuffers(2, 1, buffers);
+	std::fill(buffers, buffers + ARRAYSIZE(buffers), nullptr);
+	context->CSSetConstantBuffers(0, 3, buffers);
 
 	context->CSSetShader(nullptr, nullptr, 0);
 
 	{
+		context->PSGetShaderResources(4, 1, &shadowView);
+
 		ID3D11ShaderResourceView* srvs[2]{
 			shadowView,
 			perShadow->srv.get(),
