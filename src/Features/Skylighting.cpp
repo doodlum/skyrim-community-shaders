@@ -32,14 +32,24 @@ void Skylighting::DrawSettings()
 			"Extra darkening depending on surface orientation.\n"
 			"More physically correct, but may impact the intended visual of certain weathers.");
 
-	ImGui::SliderAngle("Max Zenith Angle", &settings.MaxZenith, 0, 90);
-	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("Smaller angles creates more focused top-down shadow.");
-
 	ImGui::SliderFloat("Diffuse Min Visibility", &settings.MinDiffuseVisibility, 0, 1, "%.2f");
 	ImGui::SliderFloat("Diffuse Brightness", &settings.DiffuseBrightness, 0, 10, "%.1f");
 	ImGui::SliderFloat("Specular Min Visibility", &settings.MinSpecularVisibility, 0, 1, "%.2f");
 	ImGui::SliderFloat("Specular Brightness", &settings.SpecularBrightness, 0, 10, "%.1f");
+
+	ImGui::Separator();
+
+	if (ImGui::Button("Rebuild Skylighting")) {
+		auto& context = State::GetSingleton()->context;
+		UINT clr[1] = { 0 };
+		context->ClearUnorderedAccessViewUint(texAccumFramesArray->uav.get(), clr);
+	}
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Changes below require rebuilding, a loading screen, or moving away from the current location to apply.");
+
+	ImGui::SliderAngle("Max Zenith Angle", &settings.MaxZenith, 0, 90);
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Smaller angles creates more focused top-down shadow.");
 }
 
 ID3D11PixelShader* Skylighting::GetFoliagePS()
