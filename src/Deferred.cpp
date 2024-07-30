@@ -170,6 +170,9 @@ void Deferred::SetupResources()
 
 void Deferred::CopyShadowData()
 {
+	ZoneScoped;
+	TracyD3D11Zone(State::GetSingleton()->tracyCtx, "CopyShadowData");
+
 	auto& context = State::GetSingleton()->context;
 
 	ID3D11UnorderedAccessView* uavs[1]{ perShadow->uav.get() };
@@ -239,6 +242,9 @@ void Deferred::UpdateConstantBuffer()
 
 void Deferred::PrepassPasses()
 {
+	ZoneScoped;
+	TracyD3D11Zone(State::GetSingleton()->tracyCtx, "Prepass");
+
 	auto& shaderCache = SIE::ShaderCache::Instance();
 
 	if (!shaderCache.IsEnabled())
@@ -391,6 +397,9 @@ void Deferred::StartDeferred()
 
 void Deferred::DeferredPasses()
 {
+	ZoneScoped;
+	TracyD3D11Zone(State::GetSingleton()->tracyCtx, "Deferred");
+
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto& context = State::GetSingleton()->context;
 
@@ -431,6 +440,8 @@ void Deferred::DeferredPasses()
 
 		// Ambient Composite
 		{
+			TracyD3D11Zone(State::GetSingleton()->tracyCtx, "Ambient Composite");
+
 			ID3D11Buffer* buffer = skylighting->loaded ? skylighting->skylightingCB->CB() : nullptr;
 			context->CSSetConstantBuffers(1, 1, &buffer);
 
@@ -469,6 +480,8 @@ void Deferred::DeferredPasses()
 
 	// Deferred Composite
 	{
+		TracyD3D11Zone(State::GetSingleton()->tracyCtx, "Deferred Composite");
+
 		ID3D11Buffer* buffer = skylighting->loaded ? skylighting->skylightingCB->CB() : nullptr;
 		context->CSSetConstantBuffers(1, 1, &buffer);
 
