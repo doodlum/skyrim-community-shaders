@@ -33,9 +33,9 @@ void Skylighting::DrawSettings()
 			"More physically correct, but may impact the intended visual of certain weathers.");
 
 	ImGui::SliderFloat("Diffuse Min Visibility", &settings.MinDiffuseVisibility, 0, 1, "%.2f");
-	ImGui::SliderFloat("Diffuse Brightness", &settings.DiffuseBrightness, 0, 10, "%.1f");
+	ImGui::SliderFloat("Diffuse Brightness", &settings.DiffuseBrightness, 0.3, 3, "%.1f");
 	ImGui::SliderFloat("Specular Min Visibility", &settings.MinSpecularVisibility, 0, 1, "%.2f");
-	ImGui::SliderFloat("Specular Brightness", &settings.SpecularBrightness, 0, 10, "%.1f");
+	ImGui::SliderFloat("Specular Brightness", &settings.SpecularBrightness, 0.3, 3, "%.1f");
 
 	ImGui::Separator();
 
