@@ -28,8 +28,7 @@ namespace ShaderCompiler
 		if (FAILED((*g_ID3D11Device)->CreatePixelShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, &regShader))) {
 			logger::error("pixel shader registration failed");
 
-			if (shaderBlob)
-				shaderBlob->Release();
+			shaderBlob->Release();
 
 			return nullptr;
 		}

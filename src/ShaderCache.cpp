@@ -2059,7 +2059,6 @@ namespace SIE
 	{
 		int milliseconds = (int)a_totalms;
 		int seconds = milliseconds / 1000;
-		milliseconds %= 1000;
 		int minutes = seconds / 60;
 		seconds %= 60;
 		int hours = minutes / 60;

@@ -70,7 +70,7 @@ void hk_BSShader_LoadShaders(RE::BSShader* shader, std::uintptr_t stream)
 	if (shaderCache.IsDiskCache() || shaderCache.IsDump()) {
 		for (const auto& entry : shader->vertexShaders) {
 			if (entry->shader && shaderCache.IsDump()) {
-				auto& bytecode = GetShaderBytecode(entry->shader);
+				const auto& bytecode = GetShaderBytecode(entry->shader);
 				DumpShader((REX::BSShader*)shader, entry, bytecode);
 			}
 			auto vertexShaderDesriptor = entry->id;
@@ -80,7 +80,7 @@ void hk_BSShader_LoadShaders(RE::BSShader* shader, std::uintptr_t stream)
 		}
 		for (const auto& entry : shader->pixelShaders) {
 			if (entry->shader && shaderCache.IsDump()) {
-				auto& bytecode = GetShaderBytecode(entry->shader);
+				const auto& bytecode = GetShaderBytecode(entry->shader);
 				DumpShader((REX::BSShader*)shader, entry, bytecode);
 			}
 			auto vertexShaderDesriptor = entry->id;
