@@ -4,6 +4,7 @@
 
 #define WATER
 
+#include "Common/Color.hlsl"
 #include "Common/SharedData.hlsli"
 
 struct VS_INPUT
@@ -374,6 +375,11 @@ float calculateDepthMultfromUV(float2 a_uv, float a_depth, uint a_eyeIndex = 0)
 #		include "TerrainOcclusion/TerrainOcclusion.hlsli"
 #	endif
 
+#	if defined(SKYLIGHTING)
+#		define SL_INCL_METHODS
+#		include "Skylighting/Skylighting.hlsli"
+#	endif
+
 #	include "Common/ShadowSampling.hlsli"
 
 #	if defined(SIMPLE) || defined(UNDERWATER) || defined(LOD) || defined(SPECULAR)
@@ -528,6 +534,24 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 		}
 #		endif
 
+#		if defined(SKYLIGHTING)
+#			if defined(VR)
+		float3 positionMS = input.WPosition.xyz + CameraPosAdjust[eyeIndex] - CameraPosAdjust[0];
+#			else
+		float3 positionMS = input.WPosition.xyz;
+#			endif
+
+		half3 V = normalize(input.WPosition.xyz);
+
+		sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMS.xyz, float3(0, 0, 1));
+		sh2 specularLobe = fauxSpecularLobeSH(normal, -V, 0.05);
+
+		half skylightingSpecular = shFuncProductIntegral(skylighting, specularLobe);
+		skylightingSpecular = lerp(skylightingSettings.MixParams.z, 1, saturate(skylightingSpecular * skylightingSettings.MixParams.w));
+
+		reflectionColor = Lin2sRGB(sRGB2Lin(reflectionColor) * skylightingSpecular);
+#		endif
+
 		float3 finalReflectionColor = lerp(reflectionColor * WaterParams.w, finalSsrReflectionColor, ssrFraction);
 		return lerp(ReflectionColor.xyz, finalReflectionColor, VarAmounts.y);
 	}
@@ -567,11 +591,6 @@ float GetFresnelValue(float3 normal, float3 viewDirection)
 	float viewAngle = 1 - saturate(dot(-viewDirection, actualNormal));
 	return (1 - FresnelRI.x) * pow(viewAngle, 5) + FresnelRI.x;
 }
-
-#		if defined(SKYLIGHTING)
-#			define SL_INCL_METHODS
-#			include "Skylighting/Skylighting.hlsli"
-#		endif
 
 float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	inout float4 distanceMul, float refractionsDepthFactor, float fresnel, uint a_eyeIndex, float3 viewPosition)
