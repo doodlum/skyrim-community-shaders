@@ -41,7 +41,7 @@ float getFadeOutFactor(float3 positionMS)
 
 sh2 sampleSkylighting(SkylightingSettings params, Texture3D<sh2> probeArray, float3 positionMS, float3 normalWS)
 {
-	const static sh2 unitSH = shEvaluate(float3(0, 0, 1)) * 4.0 * shPI;
+	const static sh2 unitSH = float4(sqrt(4 * shPI), 0, 0, 0);
 	sh2 scaledUnitSH = unitSH / (params.MixParams.y + 1e-10);
 
 	float3 positionMSAdjusted = positionMS - params.PosOffset;
@@ -126,14 +126,16 @@ float shHallucinateZH3Irradiance(sh2 sh, float3 normal)
 {
 	const static float factor = sqrt(5.0f / (16.0f * 3.1415926f));
 
+	float result = shFuncProductIntegral(sh, shEvaluateCosineLobe(normal)) / shPI;  // cosine lobe integral -> pi
+	if (all(abs(sh.yzw) < 1e-10))
+		return result;
+
 	float3 zonalAxis = normalize(sh.wyz);
 	float ratio = abs(dot(sh.wyz * float3(-1, -1, 0), zonalAxis)) / sh.x;
 	float zonalL2Coeff = sh.x * (0.08f * ratio + 0.6f * ratio * ratio);
 
 	float fZ = dot(zonalAxis, normal);
 	float zhDir = factor * (3.0f * fZ * fZ - 1.0f);
-
-	float result = shFuncProductIntegral(sh, shEvaluateCosineLobe(normal)) / shPI;  // cosine lobe integral -> pi
 
 	result += 0.25f * zonalL2Coeff * zhDir;
 
@@ -149,9 +151,14 @@ sh2 fauxSpecularLobeSH(float3 N, float3 V, float roughness)
 	float3 D = lerp(N, R, f);
 	float3 dominantDir = normalize(D);
 
+	// lobe half angle
+	// credit: Olivier Therrien
+	float roughness2 = roughness * roughness;
+	float halfAngle = clamp(4.1679 * roughness2 * roughness2 - 9.0127 * roughness2 * roughness + 4.6161 * roughness2 + 1.7048 * roughness + 0.1, 0, 1.57079632679);
+	float lerpFactor = halfAngle / 1.57079632679;
 	sh2 directional = shEvaluate(dominantDir);
 	sh2 cosineLobe = shEvaluateCosineLobe(dominantDir) / shPI;
-	sh2 result = shAdd(shScale(directional, f), shScale(cosineLobe, 1 - f));
+	sh2 result = shAdd(shScale(directional, lerpFactor), shScale(cosineLobe, 1 - lerpFactor));
 
 	return result;
 }
