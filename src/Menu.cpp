@@ -138,7 +138,6 @@ void Menu::DrawSettings()
 {
 	ImGuiStyle oldStyle = ImGui::GetStyle();
 	SetupImGuiStyle();
-	static bool visible = false;
 
 	ImGui::DockSpaceOverViewport(NULL, ImGuiDockNodeFlags_PassthruCentralNode);
 

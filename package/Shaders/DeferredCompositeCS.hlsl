@@ -39,7 +39,7 @@ Texture3D<sh2> SkylightingProbeArray : register(t9);
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchID
 								: SV_DispatchThreadID) {
-	half2 uv = half2(dispatchID.xy + 0.5) * BufferDim.zw;
+	half2 uv = half2(dispatchID.xy + 0.5) * BufferDim.zw * DynamicResolutionParams2.xy;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 	uv = ConvertFromStereoUV(uv, eyeIndex);
 
@@ -103,7 +103,7 @@ Texture3D<sh2> SkylightingProbeArray : register(t9);
 		sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMS.xyz, normalWS);
 		sh2 specularLobe = fauxSpecularLobeSH(normalWS, -V, roughness);
 
-		half skylightingSpecular = saturate(shFuncProductIntegral(skylighting, specularLobe));
+		half skylightingSpecular = shFuncProductIntegral(skylighting, specularLobe);
 		skylightingSpecular = lerp(skylightingSettings.MixParams.z, 1, saturate(skylightingSpecular * skylightingSettings.MixParams.w));
 
 		half3 specularIrradiance = 1;
