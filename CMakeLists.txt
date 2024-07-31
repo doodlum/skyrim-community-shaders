@@ -15,9 +15,11 @@ message("Options:")
 option(AUTO_PLUGIN_DEPLOYMENT "Copy the build output and addons to env:CommunityShadersOutputDir." OFF)
 option(ZIP_TO_DIST "Zip the base mod and addons to their own 7z file in dist." ON)
 option(AIO_ZIP_TO_DIST "Zip the base mod and addons to a AIO 7z file in dist." ON)
+option(TRACY_ENABLE "Enable support for tracy profiler" ON)
 message("\tAuto plugin deployment: ${AUTO_PLUGIN_DEPLOYMENT}")
 message("\tZip to dist: ${ZIP_TO_DIST}")
 message("\tAIO Zip to dist: ${AIO_ZIP_TO_DIST}")
+message("\tTracy profiler: ${TRACY_ENABLE}")
 
 # #######################################################################################################################
 # # Add CMake features

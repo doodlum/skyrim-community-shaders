@@ -31,8 +31,6 @@ void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, cons
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#define TRACY_ENABLE
-
 using namespace std::literals;
 
 namespace stl
