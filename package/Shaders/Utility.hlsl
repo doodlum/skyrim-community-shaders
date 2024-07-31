@@ -374,15 +374,17 @@ float GetPoissonDiskFilteredShadowVisibility(float noise, float2x2 rotationMatri
 	compareValue += 0.002;
 
 	const static float2 PoissonDiskSampleOffsets[] = {
-		float2(0.105594f, 0.25663f) * 2.0 - 1.0,
-		float2(0.874569f, 0.149052f) * 2.0 - 1.0,
-		float2(0.467879f, 0.644795f) * 2.0 - 1.0,
-		float2(0.00152593f, 0.856075f) * 2.0 - 1.0,
-		float2(0.85107f, 0.984954f) * 2.0 - 1.0,
-		float2(0.967528f, 0.541826f) * 2.0 - 1.0,
-		float2(0.494308f, 0.155065f) * 2.0 - 1.0,
-		float2(0.35902f, 0.954466f) * 2.0 - 1.0
+		float2(-0.4706069, -0.4427112),
+		float2(-0.9057375, +0.3003471),
+		float2(-0.3487388, +0.4037880),
+		float2(+0.1023042, +0.6439373),
+		float2(+0.5699277, +0.3513750),
+		float2(+0.2939128, -0.1131226),
+		float2(+0.7836658, -0.4208784),
+		float2(+0.1564120, -0.8198990)
 	};
+
+	float layerIndexRcp = rcp(1 + layerIndex);
 
 	float visibility = 0;
 	for (int sampleIndex = 0; sampleIndex < SampleCount; ++sampleIndex) {
@@ -405,11 +407,11 @@ float GetPoissonDiskFilteredShadowVisibility(float noise, float2x2 rotationMatri
 		visibility += tex.SampleCmpLevelZero(samp, float3(shadowMapUV, layerIndex), compareValue + noise * 0.001).x;
 
 #	else
-		float2 sampleUV = sampleOffset * sampleOffsetScale + baseUV;
+		float2 sampleUV = layerIndexRcp * sampleOffset * sampleOffsetScale + baseUV;
 		visibility += tex.SampleCmpLevelZero(samp, float3(sampleUV, layerIndex), compareValue + noise * 0.001).x;
 #	endif
 	}
-	return visibility / float(SampleCount);
+	return visibility * rcp(SampleCount);
 }
 
 PS_OUTPUT main(PS_INPUT input)
