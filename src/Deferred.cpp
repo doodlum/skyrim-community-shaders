@@ -25,7 +25,7 @@ struct BlendStates
 		return blendStates;
 	}
 
-	static std::array<ID3D11BlendState**, 6> GetDXBlendStates()
+	static std::array<ID3D11BlendState**, 6> GetBlendStates()
 	{
 		auto blendStates = GetSingleton();
 		return {
@@ -288,10 +288,10 @@ void Deferred::StartDeferred()
 	std::call_once(setup, [&]() {
 		auto& device = State::GetSingleton()->device;
 
-		auto dxBlendStates = BlendStates::GetDXBlendStates();
+		auto blendStates = BlendStates::GetBlendStates();
 
-		for (int i = 0; i < dxBlendStates.size(); ++i) {
-			forwardBlendStates[i] = *dxBlendStates[i];
+		for (int i = 0; i < blendStates.size(); ++i) {
+			forwardBlendStates[i] = *blendStates[i];
 
 			D3D11_BLEND_DESC blendDesc;
 			forwardBlendStates[i]->GetDesc(&blendDesc);
@@ -501,14 +501,14 @@ void Deferred::EndDeferred()
 
 void Deferred::OverrideBlendStates()
 {
-	auto dxBlendStates = BlendStates::GetDXBlendStates();
+	auto blendStates = BlendStates::GetBlendStates();
 
 	static std::once_flag setup;
 	std::call_once(setup, [&]() {
 		auto& device = State::GetSingleton()->device;
 
-		for (int i = 0; i < dxBlendStates.size(); ++i) {
-			forwardBlendStates[i] = *dxBlendStates[i];
+		for (int i = 0; i < blendStates.size(); ++i) {
+			forwardBlendStates[i] = *blendStates[i];
 
 			D3D11_BLEND_DESC blendDesc;
 			forwardBlendStates[i]->GetDesc(&blendDesc);
@@ -520,8 +520,8 @@ void Deferred::OverrideBlendStates()
 	});
 
 	// Set modified blend states
-	for (int i = 0; i < dxBlendStates.size(); ++i)
-		*dxBlendStates[i] = deferredBlendStates[i];
+	for (int i = 0; i < blendStates.size(); ++i)
+		*blendStates[i] = deferredBlendStates[i];
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	GET_INSTANCE_MEMBER(stateUpdateFlags, shadowState)
@@ -531,11 +531,11 @@ void Deferred::OverrideBlendStates()
 
 void Deferred::ResetBlendStates()
 {
-	auto dxBlendStates = BlendStates::GetDXBlendStates();
+	auto blendStates = BlendStates::GetBlendStates();
 
 	// Restore modified blend states
-	for (int i = 0; i < dxBlendStates.size(); ++i)
-		*dxBlendStates[i] = forwardBlendStates[i];
+	for (int i = 0; i < blendStates.size(); ++i)
+		*blendStates[i] = forwardBlendStates[i];
 
 	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
 	GET_INSTANCE_MEMBER(stateUpdateFlags, shadowState)
