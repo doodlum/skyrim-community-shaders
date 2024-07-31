@@ -33,10 +33,10 @@ void Skylighting::DrawSettings()
 			"Extra darkening depending on surface orientation.\n"
 			"More physically correct, but may impact the intended visual of certain weathers.");
 
-	ImGui::SliderFloat("Diffuse Min Visibility", &settings.MinDiffuseVisibility, 0, 1, "%.2f");
-	ImGui::SliderFloat("Diffuse Power", &settings.DiffusePower, 0.3, 3, "%.1f");
-	ImGui::SliderFloat("Specular Min Visibility", &settings.MinSpecularVisibility, 0, 1, "%.2f");
-	ImGui::SliderFloat("Specular Power", &settings.SpecularPower, 0.3, 3, "%.1f");
+	ImGui::SliderFloat("Diffuse Min Visibility", &settings.MinDiffuseVisibility, 0.f, 1.f, "%.2f");
+	ImGui::SliderFloat("Diffuse Power", &settings.DiffusePower, 0.3f, 3.f, "%.1f");
+	ImGui::SliderFloat("Specular Min Visibility", &settings.MinSpecularVisibility, 0.f, 1.f, "%.2f");
+	ImGui::SliderFloat("Specular Power", &settings.SpecularPower, 0.3f, 3.f, "%.1f");
 
 	ImGui::Separator();
 
