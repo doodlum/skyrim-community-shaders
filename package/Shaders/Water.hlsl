@@ -536,18 +536,18 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 
 #		if defined(SKYLIGHTING)
 #			if defined(VR)
-		float3 positionMS = input.WPosition.xyz + CameraPosAdjust[eyeIndex] - CameraPosAdjust[0];
+		float3 positionMS = input.WPosition.xyz + CameraPosAdjust[a_eyeIndex] - CameraPosAdjust[0];
 #			else
 		float3 positionMS = input.WPosition.xyz;
 #			endif
 
 		half3 V = normalize(input.WPosition.xyz);
 
-		sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMS.xyz, float3(0, 0, 1));
-		sh2 specularLobe = fauxSpecularLobeSH(normal, -V, 0.05);
+		sh2 skylighting = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMS.xyz, float3(0, 0, 1));
+		sh2 specularLobe = Skylighting::fauxSpecularLobeSH(normal, -V, 0.05);
 
 		half skylightingSpecular = shFuncProductIntegral(skylighting, specularLobe);
-		skylightingSpecular = lerp(skylightingSettings.MixParams.z, 1, saturate(skylightingSpecular * skylightingSettings.MixParams.w));
+		skylightingSpecular = Skylighting::mixSpecular(skylightingSettings, skylightingSpecular);
 
 		reflectionColor = Lin2sRGB(sRGB2Lin(reflectionColor) * skylightingSpecular);
 #		endif
@@ -652,7 +652,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 		float3 skylightPosOffset = 0;
 #				endif
 		float3 refractionDiffuseColorSkylight =
-			getVLSkylighting(skylightingSettings, SkylightingProbeArray, input.WPosition.xyz + skylightPosOffset, refractionWorldPosition.xyz + skylightPosOffset, screenPosition);
+			Skylighting::getVL(skylightingSettings, SkylightingProbeArray, input.WPosition.xyz + skylightPosOffset, refractionWorldPosition.xyz + skylightPosOffset, screenPosition);
 		refractionDiffuseColorSkylight = refractionDiffuseColor * lerp(refractionDiffuseColorSkylight, 1.0, 0.25);
 		refractionDiffuseColor = refractionDiffuseColorSkylight;
 #			endif
