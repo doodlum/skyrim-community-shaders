@@ -667,7 +667,7 @@ namespace SIE
 				result;
 
 			auto& lightingVS =
-				result[static_cast<size_t>(RE::BSShader::Type::Lighting)][static_cast<size_t>(ShaderClass::Vertex)];\
+				result[static_cast<size_t>(RE::BSShader::Type::Lighting)][static_cast<size_t>(ShaderClass::Vertex)];
 			lightingVS = {
 				{ "HighDetailRange", 12 },
 				{ "FogParam", 13 },
@@ -746,8 +746,7 @@ namespace SIE
 					{ "LandscapeTexture6PBRParams", 50 },
 					{ "PBRParams2", 51 },
 				};
-			}
-			else {
+			} else {
 				lightingPS = {
 					{ "VPOSOffset", 11 },
 					{ "FogColor", 19 },
