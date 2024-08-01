@@ -669,13 +669,6 @@ namespace SIE
 			auto& lightingVS =
 				result[static_cast<size_t>(RE::BSShader::Type::Lighting)][static_cast<size_t>(ShaderClass::Vertex)];
 			lightingVS = {
-				{ "HighDetailRange", 12 },
-				{ "FogParam", 13 },
-				{ "FogNearColor", 14 },
-				{ "FogFarColor", 15 },
-				{ "LeftEyeCenter", 9 },
-				{ "RightEyeCenter", 10 },
-				{ "TexcoordOffset", 11 },
 				{ "World", 0 },
 				{ "PreviousWorld", 1 },
 				{ "EyePosition", 2 },
@@ -685,14 +678,49 @@ namespace SIE
 				{ "TextureProj", 6 },
 				{ "IndexScale", 7 },
 				{ "WorldMapOverlayParameters", 8 },
+				{ "LeftEyeCenter", 9 },
+				{ "RightEyeCenter", 10 },
+				{ "TexcoordOffset", 11 },
+				{ "HighDetailRange", 12 },
+				{ "FogParam", 13 },
+				{ "FogNearColor", 14 },
+				{ "FogFarColor", 15 },
 				{ "Bones", 16 },
 			};
 
 			auto& lightingPS = result[static_cast<size_t>(RE::BSShader::Type::Lighting)]
 									 [static_cast<size_t>(ShaderClass::Pixel)];
+
+			lightingPS = {
+				{ "NumLightNumShadowLight", 0 },
+				{ "PointLightPosition", 1 },
+				{ "PointLightColor", 2 },
+				{ "DirLightDirection", 3 },
+				{ "DirLightColor", 4 },
+				{ "DirectionalAmbient", 5 },
+				{ "AmbientSpecularTintAndFresnelPower", 6 },
+				{ "MaterialData", 7 },
+				{ "EmitColor", 8 },
+				{ "AlphaTestRef", 9 },
+				{ "ShadowLightMaskSelect", 10 },
+				{ "VPOSOffset", 11 },
+				{ "ProjectedUVParams", 12 },
+				{ "ProjectedUVParams2", 13 },
+				{ "ProjectedUVParams3", 14 },
+				{ "SplitDistance", 15 },
+				{ "SSRParams", 16 },
+				{ "WorldMapOverlayParametersPS", 17 },
+			};
+
 			if (REL::Module::IsVR()) {
-				lightingPS = {
-					{ "VPOSOffset", 11 },
+				lightingPS.insert({
+					{ "ShadowSampleParam", 18 },    // VR only
+					{ "EndSplitDistances", 19 },    // VR only
+					{ "StartSplitDistances", 20 },  // VR only
+					{ "DephBiasParam", 21 },        // VR only
+					{ "ShadowLightParam", 22 },     // VR only
+					{ "ShadowMapProj", 23 },        // VR only
+					{ "AmbientColor", 24 },
 					{ "FogColor", 25 },
 					{ "ColourOutputClamp", 26 },
 					{ "EnvmapData", 27 },
@@ -710,32 +738,8 @@ namespace SIE
 					{ "LandscapeTexture5to6IsSpecPower", 39 },
 					{ "SnowRimLightParameters", 40 },
 					{ "CharacterLightParams", 41 },
-					{ "NumLightNumShadowLight", 0 },
-					{ "PointLightPosition", 1 },
-					{ "PointLightColor", 2 },
-					{ "DirLightDirection", 3 },
-					{ "DirLightColor", 4 },
-					{ "DirectionalAmbient", 5 },
-					{ "AmbientSpecularTintAndFresnelPower", 6 },
-					{ "MaterialData", 7 },
-					{ "EmitColor", 8 },
-					{ "AlphaTestRef", 9 },
-					{ "ShadowLightMaskSelect", 10 },
-					{ "ProjectedUVParams", 12 },
-					{ "ProjectedUVParams2", 13 },
-					{ "ProjectedUVParams3", 14 },
-					{ "SplitDistance", 15 },
-					{ "SSRParams", 16 },
-					{ "WorldMapOverlayParametersPS", 17 },
-					{ "AmbientColor", 24 },
-					{ "ShadowSampleParam", 18 },
-					{ "EndSplitDistances", 19 },
-					{ "StartSplitDistances", 20 },
-					{ "ShadowLightParam", 22 },
-					{ "DephBiasParam", 21 },
-					{ "ShadowMapProj", 23 },
-					{ "InvWorldMat", 42 },
-					{ "PreviousWorldMat", 43 },
+					{ "InvWorldMat", 42 },       // VR only
+					{ "PreviousWorldMat", 43 },  // VR only
 
 					{ "PBRFlags", 44 },
 					{ "PBRParams1", 45 },
@@ -745,10 +749,10 @@ namespace SIE
 					{ "LandscapeTexture5PBRParams", 49 },
 					{ "LandscapeTexture6PBRParams", 50 },
 					{ "PBRParams2", 51 },
-				};
+				});
 			} else {
-				lightingPS = {
-					{ "VPOSOffset", 11 },
+				lightingPS.insert({
+					{ "AmbientColor", 18 },
 					{ "FogColor", 19 },
 					{ "ColourOutputClamp", 20 },
 					{ "EnvmapData", 21 },
@@ -766,24 +770,6 @@ namespace SIE
 					{ "LandscapeTexture5to6IsSpecPower", 33 },
 					{ "SnowRimLightParameters", 34 },
 					{ "CharacterLightParams", 35 },
-					{ "NumLightNumShadowLight", 0 },
-					{ "PointLightPosition", 1 },
-					{ "PointLightColor", 2 },
-					{ "DirLightDirection", 3 },
-					{ "DirLightColor", 4 },
-					{ "DirectionalAmbient", 5 },
-					{ "AmbientSpecularTintAndFresnelPower", 6 },
-					{ "MaterialData", 7 },
-					{ "EmitColor", 8 },
-					{ "AlphaTestRef", 9 },
-					{ "ShadowLightMaskSelect", 10 },
-					{ "ProjectedUVParams", 12 },
-					{ "ProjectedUVParams2", 13 },
-					{ "ProjectedUVParams3", 14 },
-					{ "SplitDistance", 15 },
-					{ "SSRParams", 16 },
-					{ "WorldMapOverlayParametersPS", 17 },
-					{ "AmbientColor", 18 },
 
 					{ "PBRFlags", 36 },
 					{ "PBRParams1", 37 },
@@ -793,7 +779,7 @@ namespace SIE
 					{ "LandscapeTexture5PBRParams", 41 },
 					{ "LandscapeTexture6PBRParams", 42 },
 					{ "PBRParams2", 43 },
-				};
+				});
 			}
 
 			auto& bloodSplatterVS = result[static_cast<size_t>(RE::BSShader::Type::BloodSplatter)]
@@ -812,11 +798,17 @@ namespace SIE
 
 			auto& distantTreeVS = result[static_cast<size_t>(RE::BSShader::Type::DistantTree)]
 										[static_cast<size_t>(ShaderClass::Vertex)];
+
 			distantTreeVS = {
+				{ "InstanceData", 0 },
 				{ "WorldViewProj", 1 },
 				{ "World", 2 },
 				{ "PreviousWorld", 3 },
 				{ "FogParam", 4 },
+				{ "FogNearColor", 5 },
+				{ "FogFarColor", 6 },
+				{ "DiffuseDir", 7 },
+				{ "IndexScale", 8 },
 			};
 
 			auto& distantTreePS = result[static_cast<size_t>(RE::BSShader::Type::DistantTree)]
@@ -861,8 +853,13 @@ namespace SIE
 				{ "AmbientColor", 11 },
 				{ "AlphaParam2", 12 },
 				{ "ScaleMask", 13 },
-				{ "ShadowClampValue", 14 },
 			};
+
+			if (REL::Module::IsVR()) {
+				grassVS.insert({ "Padding", 14 });
+			} else {
+				grassVS.insert({ "ShadowClampValue", 14 });
+			}
 
 			auto& grassPS = result[static_cast<size_t>(RE::BSShader::Type::Grass)]
 								  [static_cast<size_t>(ShaderClass::Pixel)];
@@ -956,10 +953,16 @@ namespace SIE
 				{ "VSFogNearColor", 9 },
 				{ "VSFogFarColor", 10 },
 				{ "CellTexCoordOffset", 11 },
-				{ "SubTexOffset", 12 },
-				{ "PosAdjust", 13 },
-				{ "MatProj", 14 },
 			};
+
+			if (!REL::Module::IsVR()) {
+				waterVS.insert(
+					{
+						{ "SubTexOffset", 12 },
+						{ "PosAdjust", 13 },
+						{ "MatProj", 14 },
+					});
+			}
 
 			auto& waterPS = result[static_cast<size_t>(RE::BSShader::Type::Water)]
 								  [static_cast<size_t>(ShaderClass::Pixel)];
@@ -1017,12 +1020,28 @@ namespace SIE
 				{ "ShadowMapProj", 6 },
 				{ "ShadowSampleParam", 7 },
 				{ "ShadowLightParam", 8 },
-				{ "ShadowFadeParam", 9 },
-				{ "VPOSOffset", 10 },
-				{ "EndSplitDistances", 11 },
-				{ "StartSplitDistances", 12 },
-				{ "FocusShadowFadeParam", 13 },
 			};
+
+			if (!REL::Module::IsVR()) {
+				utilityPS.insert(
+					{
+						{ "ShadowFadeParam", 9 },
+						{ "VPOSOffset", 10 },
+						{ "EndSplitDistances", 11 },
+						{ "StartSplitDistances", 12 },
+						{ "FocusShadowFadeParam", 13 },
+					});
+			} else {
+				utilityPS.insert(
+					{
+						{ "StereoClipRects", 9 },  // VR only
+						{ "ShadowFadeParam", 10 },
+						{ "VPOSOffset", 11 },
+						{ "EndSplitDistances", 12 },
+						{ "StartSplitDistances", 13 },
+						{ "FocusShadowFadeParam", 14 },
+					});
+			}
 
 			return result;
 		}
