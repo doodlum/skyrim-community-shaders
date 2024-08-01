@@ -20,8 +20,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	NumSteps,
 	DepthMIPSamplingOffset,
 	EffectRadius,
-	EffectFalloffRange,
-	ThinOccluderCompensation,
+	// EffectFalloffRange,
+	// ThinOccluderCompensation,
 	Thickness,
 	DepthFadeRange,
 	CheckBackface,
@@ -224,19 +224,19 @@ void ScreenSpaceGI::DrawSettings()
 
 	if (showAdvanced) {
 		ImGui::Separator();
-		{
-			auto _ = DisableGuard(settings.UseBitmask);
+		// {
+		// 	auto _ = DisableGuard(settings.UseBitmask);
 
-			ImGui::SliderFloat("Falloff Range", &settings.EffectFalloffRange, 0.05f, 1.0f, "%.2f");
-			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text("Gently reduce sample impact as it gets out of 'Effect radius' bounds");
+		// 	ImGui::SliderFloat("Falloff Range", &settings.EffectFalloffRange, 0.05f, 1.0f, "%.2f");
+		// 	if (auto _tt = Util::HoverTooltipWrapper())
+		// 		ImGui::Text("Gently reduce sample impact as it gets out of 'Effect radius' bounds");
 
-			if (showAdvanced) {
-				ImGui::SliderFloat("Thin Occluder Compensation", &settings.ThinOccluderCompensation, 0.f, 0.7f, "%.2f");
-				if (auto _tt = Util::HoverTooltipWrapper())
-					ImGui::Text("Slightly reduce impact of samples further back to counter the bias from depth-based (incomplete) input scene geometry data");
-			}
-		}
+		// 	if (showAdvanced) {
+		// 		ImGui::SliderFloat("Thin Occluder Compensation", &settings.ThinOccluderCompensation, 0.f, 0.7f, "%.2f");
+		// 		if (auto _tt = Util::HoverTooltipWrapper())
+		// 			ImGui::Text("Slightly reduce impact of samples further back to counter the bias from depth-based (incomplete) input scene geometry data");
+		// 	}
+		// }
 		{
 			auto _ = DisableGuard(!settings.UseBitmask);
 
