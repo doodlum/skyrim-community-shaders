@@ -385,7 +385,7 @@ void Deferred::DeferredPasses()
 				normalRoughness.SRV,
 				skylighting->loaded ? depth.depthSRV : nullptr,
 				skylighting->loaded ? skylighting->texProbeArray->srv.get() : nullptr,
-				ssgi->loaded ? ssgi->texGI[ssgi->outputGIIdx]->srv.get() : nullptr,
+				ssgi->settings.Enabled ? ssgi->texGI[ssgi->outputGIIdx]->srv.get() : nullptr,
 				masks2.SRV,
 			};
 
@@ -419,6 +419,8 @@ void Deferred::DeferredPasses()
 		ID3D11Buffer* buffer = skylighting->loaded ? skylighting->skylightingCB->CB() : nullptr;
 		context->CSSetConstantBuffers(1, 1, &buffer);
 
+		bool doSSGISpecular = ssgi->loaded && ssgi->settings.Enabled && ssgi->settings.EnableGI && ssgi->settings.EnableSpecularGI;
+
 		ID3D11ShaderResourceView* srvs[11]{
 			specular.SRV,
 			albedo.SRV,
@@ -430,7 +432,7 @@ void Deferred::DeferredPasses()
 			dynamicCubemaps->loaded ? dynamicCubemaps->envTexture->srv.get() : nullptr,
 			dynamicCubemaps->loaded ? dynamicCubemaps->envReflectionsTexture->srv.get() : nullptr,
 			dynamicCubemaps->loaded && skylighting->loaded ? skylighting->texProbeArray->srv.get() : nullptr,
-			(ssgi->loaded && ssgi->settings.EnableGI && ssgi->settings.EnableSpecularGI) ? ssgi->texGISpecular[ssgi->outputGIIdx]->srv.get() : nullptr,
+			doSSGISpecular ? ssgi->texGISpecular[ssgi->outputGIIdx]->srv.get() : nullptr,
 		};
 
 		if (dynamicCubemaps->loaded)
