@@ -98,7 +98,8 @@ void ScreenSpaceGI::DrawSettings()
 			if (auto _tt = Util::HoverTooltipWrapper())
 				ImGui::Text(
 					"Reuses diffuse samples to simulate indirect specular lighting.\n"
-					"Doubles the cost of denoisers.");
+					"Doubles the cost of denoisers.\n"
+					"Only for Complex Material or TruePBR materials.");
 		}
 		// ImGui::TableNextColumn();
 		// recompileFlag |= ImGui::Checkbox("Bitmask", &settings.UseBitmask);
