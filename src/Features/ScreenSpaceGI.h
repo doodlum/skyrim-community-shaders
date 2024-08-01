@@ -49,7 +49,7 @@ struct ScreenSpaceGI : Feature
 		bool EnableGI = true;
 		bool EnableSpecularGI = false;
 		// performance/quality
-		uint NumSlices = 4;
+		uint NumSlices = 2;
 		uint NumSteps = 4;
 		bool HalfRes = false;
 		bool HalfRate = true;
