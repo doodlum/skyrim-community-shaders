@@ -26,7 +26,11 @@ bool LightIntersectsCluster(StructuredLight light, ClusterAABB cluster, int eyeI
 }
 
 [numthreads(NUMTHREAD_X, NUMTHREAD_Y, NUMTHREAD_Z)] void main(
-	uint3 groupId : SV_GroupID, uint3 dispatchThreadId : SV_DispatchThreadID, uint3 groupThreadId : SV_GroupThreadID, uint groupIndex : SV_GroupIndex) {
+	uint3 groupId
+	: SV_GroupID, uint3 dispatchThreadId
+	: SV_DispatchThreadID, uint3 groupThreadId
+	: SV_GroupThreadID, uint groupIndex
+	: SV_GroupIndex) {
 	if (all(dispatchThreadId == 0)) {
 		lightIndexCounter[0] = 0;
 	}
