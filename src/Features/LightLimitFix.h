@@ -171,6 +171,8 @@ public:
 	float lightsNear = 0.0f;
 	float lightsFar = 16384.0f;
 
+	uint clusterSize[3] = { 16 };
+
 	Settings settings;
 
 	using ConfigPair = std::pair<ParticleLights::Config*, ParticleLights::GradientConfig*>;
