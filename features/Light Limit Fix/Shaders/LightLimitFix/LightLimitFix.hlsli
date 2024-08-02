@@ -38,8 +38,7 @@ bool GetClusterIndex(in float2 uv, in float z, out uint clusterIndex)
 
 	float clampedZ = clamp(z, strictLights[0].LightsNear, strictLights[0].LightsFar);
 	uint clusterZ = uint(max((log2(z) - log2(strictLights[0].LightsNear)) * clusterSize.z / log2(strictLights[0].LightsFar / strictLights[0].LightsNear), 0.0));
-	uint2 clusterDim = ceil(BufferDim / (float2)clusterSize.xy);
-	uint3 cluster = uint3(uint2((uv * BufferDim) / clusterDim), clusterZ);
+	uint3 cluster = uint3(uint2(uv * clusterSize.xy), clusterZ);
 
 	clusterIndex = cluster.x + (clusterSize.x * cluster.y) + (clusterSize.x * clusterSize.y * cluster.z);
 	return true;

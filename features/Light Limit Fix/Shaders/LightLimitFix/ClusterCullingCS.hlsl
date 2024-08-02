@@ -31,6 +31,9 @@ bool LightIntersectsCluster(StructuredLight light, ClusterAABB cluster, int eyeI
 	: SV_DispatchThreadID, uint3 groupThreadId
 	: SV_GroupThreadID, uint groupIndex
 	: SV_GroupIndex) {
+	if (any(dispatchThreadId >= uint3(CLUSTER_BUILDING_DISPATCH_SIZE_X, CLUSTER_BUILDING_DISPATCH_SIZE_Y, CLUSTER_BUILDING_DISPATCH_SIZE_Z)))
+		return;
+
 	if (all(dispatchThreadId == 0)) {
 		lightIndexCounter[0] = 0;
 	}
@@ -38,7 +41,9 @@ bool LightIntersectsCluster(StructuredLight light, ClusterAABB cluster, int eyeI
 	uint visibleLightCount = 0;
 	uint visibleLightIndices[MAX_CLUSTER_LIGHTS];
 
-	uint clusterIndex = groupIndex + GROUP_SIZE * groupId.z;
+	uint clusterIndex = dispatchThreadId.x +
+	                    dispatchThreadId.y * CLUSTER_BUILDING_DISPATCH_SIZE_X +
+	                    dispatchThreadId.z * (CLUSTER_BUILDING_DISPATCH_SIZE_X * CLUSTER_BUILDING_DISPATCH_SIZE_Y);
 
 	ClusterAABB cluster = clusters[clusterIndex];
 
@@ -59,11 +64,13 @@ bool LightIntersectsCluster(StructuredLight light, ClusterAABB cluster, int eyeI
 		for (uint i = 0; i < batchSize; i++) {
 			StructuredLight light = lights[i];
 
-			if (visibleLightCount < MAX_CLUSTER_LIGHTS && (LightIntersectsCluster(light, cluster)
+			bool updateCluster = LightIntersectsCluster(light, cluster);
 #ifdef VR
-															  || LightIntersectsCluster(light, cluster, 1)
+			updateCluster = updateCluster || LightIntersectsCluster(light, cluster, 1);
 #endif  // VR
-																  )) {
+			updateCluster = updateCluster && (visibleLightCount < MAX_CLUSTER_LIGHTS);
+
+			if (updateCluster) {
 				visibleLightIndices[visibleLightCount] = lightOffset + i;
 				visibleLightCount++;
 			}
@@ -81,8 +88,11 @@ bool LightIntersectsCluster(StructuredLight light, ClusterAABB cluster, int eyeI
 		lightIndexList[offset + i] = visibleLightIndices[i];
 	}
 
-	lightGrid[clusterIndex].offset = offset;
-	lightGrid[clusterIndex].lightCount = visibleLightCount;
+	LightGrid output = {
+		offset, visibleLightCount, 0, 0
+	};
+
+	lightGrid[clusterIndex] = output;
 }
 
 //https://www.3dgep.com/forward-plus/#Grid_Frustums_Compute_Shader
