@@ -33,39 +33,6 @@ float noise(float3 pos)
 		u.z);
 }
 
-// https://www.pcg-random.org/
-uint pcg(uint v)
-{
-	uint state = v * 747796405u + 2891336453u;
-	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-	return (word >> 22u) ^ word;
-}
-
-uint3 pcg3d(uint3 v)
-{
-	v = v * 1664525u + 1013904223u;
-
-	v.x += v.y * v.z;
-	v.y += v.z * v.x;
-	v.z += v.x * v.y;
-
-	v ^= v >> 16u;
-
-	v.x += v.y * v.z;
-	v.y += v.z * v.x;
-	v.z += v.x * v.y;
-
-	return v;
-}
-
-uint iqint3(uint2 x)
-{
-	uint2 q = 1103515245U * ((x >> 1U) ^ (x.yx));
-	uint n = 1103515245U * ((q.x) ^ (q.y >> 3U));
-
-	return n;
-}
-
 float SmoothstepDeriv(float x)
 {
 	return 6.0 * x * (1. - x);
