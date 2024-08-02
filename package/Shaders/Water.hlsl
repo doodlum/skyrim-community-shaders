@@ -4,7 +4,6 @@
 
 #define WATER
 
-#include "Common/Color.hlsli"
 #include "Common/SharedData.hlsli"
 
 struct VS_INPUT
@@ -532,24 +531,6 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			finalSsrReflectionColor = max(0, ssrReflectionColor.xyz);
 			ssrFraction = saturate(ssrReflectionColor.w * (SSRParams.x * distanceFactor));
 		}
-#		endif
-
-#		if defined(SKYLIGHTING)
-#			if defined(VR)
-		float3 positionMS = input.WPosition.xyz + CameraPosAdjust[a_eyeIndex] - CameraPosAdjust[0];
-#			else
-		float3 positionMS = input.WPosition.xyz;
-#			endif
-
-		half3 V = normalize(input.WPosition.xyz);
-
-		sh2 skylighting = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMS.xyz, float3(0, 0, 1));
-		sh2 specularLobe = Skylighting::fauxSpecularLobeSH(normal, -V, 0.05);
-
-		half skylightingSpecular = shFuncProductIntegral(skylighting, specularLobe);
-		skylightingSpecular = Skylighting::mixSpecular(skylightingSettings, skylightingSpecular);
-
-		reflectionColor = Lin2sRGB(sRGB2Lin(reflectionColor) * skylightingSpecular);
 #		endif
 
 		float3 finalReflectionColor = lerp(reflectionColor * WaterParams.w, finalSsrReflectionColor, ssrFraction);
