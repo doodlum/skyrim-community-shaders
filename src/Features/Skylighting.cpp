@@ -4,6 +4,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Skylighting::Settings,
 	DirectionalDiffuse,
 	MaxZenith,
+	MaxFrames,
 	MinDiffuseVisibility,
 	DiffuseBrightness,
 	MinSpecularVisibility,
@@ -399,7 +400,7 @@ public:
 
 	static BSUtilityShader* GetSingleton()
 	{
-		REL::Relocation<BSUtilityShader**> singleton{ RELOCATION_ID(528354, 415300) };
+		static REL::Relocation<BSUtilityShader**> singleton{ RELOCATION_ID(528354, 415300) };
 		return *singleton;
 	}
 	~BSUtilityShader() override;  // 00
@@ -417,14 +418,14 @@ struct RenderPassArray
 		uint32_t technique, uint8_t numLights, RE::BSLight** lights)
 	{
 		using func_t = decltype(&RenderPassArray::MakeRenderPass);
-		REL::Relocation<func_t> func{ RELOCATION_ID(100717, 107497) };
+		static REL::Relocation<func_t> func{ RELOCATION_ID(100717, 107497) };
 		return func(shader, property, geometry, technique, numLights, lights);
 	}
 
 	static void ClearRenderPass(RE::BSRenderPass* pass)
 	{
 		using func_t = decltype(&RenderPassArray::ClearRenderPass);
-		REL::Relocation<func_t> func{ RELOCATION_ID(100718, 107498) };
+		static REL::Relocation<func_t> func{ RELOCATION_ID(100718, 107498) };
 		func(pass);
 	}
 
@@ -506,14 +507,14 @@ public:
 static void Precipitation_SetupMask(RE::Precipitation* a_This)
 {
 	using func_t = decltype(&Precipitation_SetupMask);
-	REL::Relocation<func_t> func{ REL::RelocationID(25641, 26183) };
+	static REL::Relocation<func_t> func{ REL::RelocationID(25641, 26183) };
 	func(a_This);
 }
 
 static void Precipitation_RenderMask(RE::Precipitation* a_This, BSParticleShaderRainEmitter* a_emitter)
 {
 	using func_t = decltype(&Precipitation_RenderMask);
-	REL::Relocation<func_t> func{ REL::RelocationID(25642, 26184) };
+	static REL::Relocation<func_t> func{ REL::RelocationID(25642, 26184) };
 	func(a_This, a_emitter);
 }
 
