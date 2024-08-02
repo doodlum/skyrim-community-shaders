@@ -74,6 +74,8 @@ public:
 		uint EnableLightsVisualisation;
 		uint LightsVisualisationMode;
 		uint pad0;
+
+		uint ClusterSize[4];
 	};
 
 	PerFrame GetCommonBufferData();
