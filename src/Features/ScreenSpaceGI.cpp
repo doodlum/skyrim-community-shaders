@@ -797,9 +797,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	// blur
 	if (settings.EnableBlur) {
 		for (uint i = 0; i < settings.BlurPasses; i++) {
-			TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Blur");
-
 			if (doSpecular) {
+				TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Specular Blur");
 				resetViews();
 				srvs.at(0) = texGISpecular[inputGITexIdx]->srv.get();
 				srvs.at(1) = nullptr;
@@ -814,6 +813,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 				context->CSSetShader(blurSpecularCompute.get(), nullptr, 0);
 				context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
 			}
+
+			TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Diffuse Blur");
 
 			resetViews();
 			srvs.at(0) = texGI[inputGITexIdx]->srv.get();
