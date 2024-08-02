@@ -1758,11 +1758,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 wetnessNormal = worldSpaceNormal;
 
-	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 * (1 / wetnessEffects.PuddleRadius);
+	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 / wetnessEffects.PuddleRadius;
 	float puddle = wetness;
 	if (wetness > 0.0 || puddleWetness > 0) {
 #		if !defined(SKINNED)
-		puddle = noise(puddleCoords) * ((minWetnessAngle / wetnessEffects.PuddleMaxAngle) * wetnessEffects.MaxPuddleWetness * 0.25) + 0.5;
+		puddle = perlinNoise(puddleCoords) * .5 + .5;
+		puddle = puddle * ((minWetnessAngle / wetnessEffects.PuddleMaxAngle) * wetnessEffects.MaxPuddleWetness * 0.25) + 0.5;
 		wetness = lerp(wetness, puddleWetness, saturate(puddle - 0.25));
 #		endif
 		puddle *= wetness;
