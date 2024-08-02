@@ -4,7 +4,7 @@
 
 #define WATER
 
-#include "Common/Color.hlsl"
+#include "Common/Color.hlsli"
 #include "Common/SharedData.hlsli"
 
 struct VS_INPUT
