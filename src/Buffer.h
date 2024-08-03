@@ -88,7 +88,7 @@ D3D11_BUFFER_DESC StructuredBufferDesc(UINT a_count = 1)
 	D3D11_BUFFER_DESC desc{};
 	ZeroMemory(&desc, sizeof(desc));
 	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	desc.StructureByteStride = sizeof(T);
