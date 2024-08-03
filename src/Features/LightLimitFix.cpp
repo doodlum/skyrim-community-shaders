@@ -127,6 +127,8 @@ LightLimitFix::PerFrame LightLimitFix::GetCommonBufferData()
 void LightLimitFix::SetupResources()
 {
 	auto screenSize = Util::ConvertToDynamic(State::GetSingleton()->screenSize);
+	if (REL::Module::IsVR())
+		screenSize.x *= .5;
 	clusterSize[0] = ((uint)screenSize.x + 63) / 64;
 	clusterSize[1] = ((uint)screenSize.y + 63) / 64;
 	clusterSize[2] = 16;
