@@ -4,10 +4,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Skylighting::Settings,
 	DirectionalDiffuse,
 	MaxZenith,
+	MaxFrames,
 	MinDiffuseVisibility,
-	DiffuseBrightness,
+	DiffusePower,
 	MinSpecularVisibility,
-	SpecularBrightness)
+	SpecularPower)
 
 void Skylighting::LoadSettings(json& o_json)
 {
@@ -32,14 +33,28 @@ void Skylighting::DrawSettings()
 			"Extra darkening depending on surface orientation.\n"
 			"More physically correct, but may impact the intended visual of certain weathers.");
 
+	ImGui::SliderFloat("Diffuse Min Visibility", &settings.MinDiffuseVisibility, 0.f, 1.f, "%.2f");
+	ImGui::SliderFloat("Diffuse Power", &settings.DiffusePower, 0.3f, 3.f, "%.1f");
+	ImGui::SliderFloat("Specular Min Visibility", &settings.MinSpecularVisibility, 0.f, 1.f, "%.2f");
+	ImGui::SliderFloat("Specular Power", &settings.SpecularPower, 0.3f, 3.f, "%.1f");
+
+	ImGui::Separator();
+
+	if (ImGui::Button("Rebuild Skylighting")) {
+		auto& context = State::GetSingleton()->context;
+		UINT clr[1] = { 0 };
+		context->ClearUnorderedAccessViewUint(texAccumFramesArray->uav.get(), clr);
+	}
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Changes below require rebuilding, a loading screen, or moving away from the current location to apply.");
+
+	ImGui::SliderInt("Update Frames", &settings.MaxFrames, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
+	if (auto _tt = Util::HoverTooltipWrapper())
+		ImGui::Text("Aggregating over how many frames to build up skylighting.");
+
 	ImGui::SliderAngle("Max Zenith Angle", &settings.MaxZenith, 0, 90);
 	if (auto _tt = Util::HoverTooltipWrapper())
 		ImGui::Text("Smaller angles creates more focused top-down shadow.");
-
-	ImGui::SliderFloat("Diffuse Min Visibility", &settings.MinDiffuseVisibility, 0, 1, "%.2f");
-	ImGui::SliderFloat("Diffuse Brightness", &settings.DiffuseBrightness, 0, 10, "%.1f");
-	ImGui::SliderFloat("Specular Min Visibility", &settings.MinSpecularVisibility, 0, 1, "%.2f");
-	ImGui::SliderFloat("Specular Brightness", &settings.SpecularBrightness, 0, 10, "%.1f");
 }
 
 ID3D11PixelShader* Skylighting::GetFoliagePS()
@@ -211,9 +226,10 @@ void Skylighting::Prepass()
 			.ArrayOrigin = {
 				((int)cellID.x - probeArrayDims[0] / 2) % probeArrayDims[0],
 				((int)cellID.y - probeArrayDims[1] / 2) % probeArrayDims[1],
-				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2], 0 },
+				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2],
+				(uint)settings.MaxFrames },
 			.ValidMargin = { (int)cellIDDiff.x, (int)cellIDDiff.y, (int)cellIDDiff.z },
-			.MixParams = { settings.MinDiffuseVisibility, settings.DiffuseBrightness, settings.MinSpecularVisibility, settings.SpecularBrightness },
+			.MixParams = { settings.MinDiffuseVisibility, settings.DiffusePower, settings.MinSpecularVisibility, settings.SpecularPower },
 			.DirectionalDiffuse = settings.DirectionalDiffuse,
 		};
 
@@ -382,7 +398,7 @@ public:
 
 	static BSUtilityShader* GetSingleton()
 	{
-		REL::Relocation<BSUtilityShader**> singleton{ RELOCATION_ID(528354, 415300) };
+		static REL::Relocation<BSUtilityShader**> singleton{ RELOCATION_ID(528354, 415300) };
 		return *singleton;
 	}
 	~BSUtilityShader() override;  // 00
@@ -400,14 +416,14 @@ struct RenderPassArray
 		uint32_t technique, uint8_t numLights, RE::BSLight** lights)
 	{
 		using func_t = decltype(&RenderPassArray::MakeRenderPass);
-		REL::Relocation<func_t> func{ RELOCATION_ID(100717, 107497) };
+		static REL::Relocation<func_t> func{ RELOCATION_ID(100717, 107497) };
 		return func(shader, property, geometry, technique, numLights, lights);
 	}
 
 	static void ClearRenderPass(RE::BSRenderPass* pass)
 	{
 		using func_t = decltype(&RenderPassArray::ClearRenderPass);
-		REL::Relocation<func_t> func{ RELOCATION_ID(100718, 107498) };
+		static REL::Relocation<func_t> func{ RELOCATION_ID(100718, 107498) };
 		func(pass);
 	}
 
@@ -489,14 +505,14 @@ public:
 static void Precipitation_SetupMask(RE::Precipitation* a_This)
 {
 	using func_t = decltype(&Precipitation_SetupMask);
-	REL::Relocation<func_t> func{ REL::RelocationID(25641, 26183) };
+	static REL::Relocation<func_t> func{ REL::RelocationID(25641, 26183) };
 	func(a_This);
 }
 
 static void Precipitation_RenderMask(RE::Precipitation* a_This, BSParticleShaderRainEmitter* a_emitter)
 {
 	using func_t = decltype(&Precipitation_RenderMask);
-	REL::Relocation<func_t> func{ REL::RelocationID(25642, 26184) };
+	static REL::Relocation<func_t> func{ REL::RelocationID(25642, 26184) };
 	func(a_This, a_emitter);
 }
 

@@ -1,6 +1,6 @@
-#include "Common/Color.hlsl"
+#include "Common/Color.hlsli"
 #include "Common/DeferredShared.hlsli"
-#include "Common/FrameBuffer.hlsl"
+#include "Common/FrameBuffer.hlsli"
 #include "Common/GBuffer.hlsli"
 #include "Common/VR.hlsli"
 
@@ -25,6 +25,8 @@ Texture3D<sh2> SkylightingProbeArray : register(t3);
 Texture2D<half4> SSGITexture : register(t4);
 #endif
 
+Texture2D<unorm half3> Masks2Texture : register(t5);
+
 RWTexture2D<half3> MainRW : register(u0);
 #if defined(SSGI)
 RWTexture2D<half3> DiffuseAmbientRW : register(u1);
@@ -32,7 +34,7 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchID
 								: SV_DispatchThreadID) {
-	half2 uv = half2(dispatchID.xy + 0.5) * BufferDim.zw;
+	half2 uv = half2(dispatchID.xy + 0.5) * BufferDim.zw * DynamicResolutionParams2.xy;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 	uv = ConvertFromStereoUV(uv, eyeIndex);
 
@@ -41,16 +43,19 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 	half3 diffuseColor = MainRW[dispatchID.xy];
 	half3 albedo = AlbedoTexture[dispatchID.xy];
+	half3 masks2 = Masks2Texture[dispatchID.xy];
+
+	half pbrWeight = masks2.z;
 
 	half3 normalWS = normalize(mul(CameraViewInverse[eyeIndex], half4(normalVS, 0)).xyz);
 
 	half3 directionalAmbientColor = mul(DirectionalAmbient, half4(normalWS, 1.0));
 
-	half3 ambient = directionalAmbientColor;
+	half3 linAlbedo = sRGB2Lin(albedo);
+	half3 linDirectionalAmbientColor = sRGB2Lin(directionalAmbientColor);
+	half3 linDiffuseColor = sRGB2Lin(diffuseColor);
 
-	diffuseColor = sRGB2Lin(diffuseColor);
-	ambient = sRGB2Lin(ambient);
-	albedo = sRGB2Lin(albedo);
+	half3 linAmbient = lerp(sRGB2Lin(albedo * directionalAmbientColor), linAlbedo * linDirectionalAmbientColor, pbrWeight);
 
 	half visibility = 1.0;
 #if defined(SKYLIGHTING)
@@ -62,32 +67,33 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 	positionMS.xyz += CameraPosAdjust[eyeIndex] - CameraPosAdjust[0];
 #	endif
 
-	sh2 skylighting = sampleSkylighting(skylightingSettings, SkylightingProbeArray, positionMS.xyz, normalWS);
-	half skylightingDiffuse = shHallucinateZH3Irradiance(skylighting, skylightingSettings.DirectionalDiffuse ? normalWS : float3(0, 0, 1));
-	skylightingDiffuse = lerp(skylightingSettings.MixParams.x, 1, saturate(skylightingDiffuse * skylightingSettings.MixParams.y));
+	sh2 skylighting = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMS.xyz, normalWS);
+	half skylightingDiffuse = Skylighting::hallucinateZH3(skylighting, skylightingSettings.DirectionalDiffuse ? normalWS : float3(0, 0, 1));
+	skylightingDiffuse = Skylighting::mixDiffuse(skylightingSettings, skylightingDiffuse);
 
 	visibility = skylightingDiffuse;
 #endif
 
 #if defined(SSGI)
 	half4 ssgiDiffuse = SSGITexture[dispatchID.xy];
-	ssgiDiffuse.rgb *= albedo;
+	ssgiDiffuse.rgb *= linAlbedo;
+	ssgiDiffuse.a = 1 - ssgiDiffuse.a;
 
-	visibility = min(visibility, ssgiDiffuse.a);
+	visibility *= ssgiDiffuse.a;
 
-	DiffuseAmbientRW[dispatchID.xy] = albedo * ambient + ssgiDiffuse.rgb;
+	DiffuseAmbientRW[dispatchID.xy] = linAlbedo * linDirectionalAmbientColor + ssgiDiffuse.rgb;
 
 #	if defined(INTERIOR)
-	diffuseColor *= ssgiDiffuse.a;
+	linDiffuseColor *= ssgiDiffuse.a;
 #	endif
-	diffuseColor += ssgiDiffuse.rgb;
+	linDiffuseColor += ssgiDiffuse.rgb;
 #endif
 
-	diffuseColor = Lin2sRGB(diffuseColor);
-	ambient = Lin2sRGB(ambient * visibility);
-	albedo = Lin2sRGB(albedo);
+	linAmbient *= visibility;
+	diffuseColor = Lin2sRGB(linDiffuseColor);
+	directionalAmbientColor = Lin2sRGB(linDirectionalAmbientColor * visibility);
 
-	diffuseColor += ambient * albedo;
+	diffuseColor = lerp(diffuseColor + directionalAmbientColor * albedo, Lin2sRGB(linDiffuseColor + linAmbient), pbrWeight);
 
 	MainRW[dispatchID.xy] = diffuseColor;
 };
