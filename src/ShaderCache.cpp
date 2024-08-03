@@ -1916,10 +1916,6 @@ namespace SIE
 
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			const auto& isShader = static_cast<const RE::BSImagespaceShader&>(shader);
-			if (std::string_view(isShader.originalShaderName.c_str()) != "ISHDR") {
-				return nullptr;
-			}
-
 			descriptor = SShaderCache::GetImagespaceShaderDescriptor(isShader);
 		}
 
@@ -1972,10 +1968,6 @@ namespace SIE
 
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			const auto& isShader = static_cast<const RE::BSImagespaceShader&>(shader);
-			if (std::string_view(isShader.originalShaderName.c_str()) != "ISHDR") {
-				return nullptr;
-			}
-
 			descriptor = SShaderCache::GetImagespaceShaderDescriptor(isShader);
 		}
 
