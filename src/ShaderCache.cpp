@@ -1873,6 +1873,7 @@ namespace SIE
 				{ "BSImagespaceShaderISSAOCompositeFog", static_cast<uint32_t>(ISSAOCompositeFog) },
 				{ "BSImagespaceShaderISSAOCompositeSAOFog", static_cast<uint32_t>(ISSAOCompositeSAOFog) },
 				{ "BSImagespaceShaderISSAOCameraZ", static_cast<uint32_t>(ISSAOCameraZ) },
+				{ "BSImagespaceShaderISSILComposite", static_cast<uint32_t>(ISSILComposite) },
 			};
 
 			auto it = descriptors.find(imagespaceShader.name.c_str());
