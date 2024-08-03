@@ -4,6 +4,7 @@
 #include "Common/LodLandscape.hlsli"
 #include "Common/MotionBlur.hlsli"
 #include "Common/Permutation.hlsli"
+#include "Common/Random.hlsli"
 #include "Common/SharedData.hlsli"
 #include "Common/Skinned.hlsli"
 
@@ -326,7 +327,7 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.ScreenNormalTransform1.xyz = ScreenNormalTransform[1];
 	vsout.ScreenNormalTransform2.xyz = ScreenNormalTransform[2];
 #	else
-	float3x4 transMat = mul(ScreenProj[eyeIndex], World[eyeIndex]);
+	float3x4 transMat = mul((float4x3)(ScreenProj[eyeIndex]), World[eyeIndex]);
 
 #		if defined(MODELSPACENORMALS)
 	vsout.ScreenNormalTransform0.xyz = transMat[0].xyz;
@@ -918,17 +919,17 @@ float3 ApplyFogAndClampColor(float3 srcColor, float4 fogParam, float3 clampColor
 	return min(preClampColor + clampColor, srcColor);
 }
 
-#	if defined(WATER_CAUSTICS)
-#		include "WaterCaustics/WaterCaustics.hlsli"
-#	endif
-
 #	if defined(LOD)
 #		undef EXTENDED_MATERIALS
 #		undef WATER_BLENDING
 #		undef LIGHT_LIMIT_FIX
 #		undef WETNESS_EFFECTS
 #		undef DYNAMIC_CUBEMAPS
-#		undef WATER_CAUSTICS
+#		undef WATER_LIGHTING
+#	endif
+
+#	if defined(WATER_LIGHTING)
+#		include "WaterLighting/WaterCaustics.hlsli"
 #	endif
 
 #	if defined(EYE)
@@ -1021,7 +1022,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
-	float screenNoise = InterleavedGradientNoise(input.Position.xy);
+	float screenNoise = InterleavedGradientNoise(screenUV * BufferDim * DynamicResolutionParams1.xy, FrameCount);
 
 #	if defined(TERRAIN_BLENDING)
 	float depthSampled = GetTerrainOffsetDepth(screenUV, eyeIndex);
@@ -1127,11 +1128,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			eta = (1 - sqrt(MultiLayerParallaxData.y)) / (1 + sqrt(MultiLayerParallaxData.y));
 			[branch] if ((PBRFlags & TruePBR_CoatNormal) != 0)
 			{
-				entryNormalTS = normalize(TransformNormal(TexBackLightSampler.Sample(SampBackLightSampler, uvOriginal)));
+				entryNormalTS = normalize(TransformNormal(TexBackLightSampler.Sample(SampBackLightSampler, uvOriginal).xyz));
 			}
 			else
 			{
-				entryNormalTS = normalize(TransformNormal(TexNormalSampler.Sample(SampNormalSampler, uvOriginal)));
+				entryNormalTS = normalize(TransformNormal(TexNormalSampler.Sample(SampNormalSampler, uvOriginal).xyz));
 			}
 			entryNormal = normalize(mul(tbn, entryNormalTS));
 			refractedViewDirection = -refract(-viewDirection, entryNormal, eta);
@@ -1579,7 +1580,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 screenSpaceNormal = normalize(WorldToView(worldSpaceNormal, false, eyeIndex));
 
 #	if defined(TRUE_PBR)
-	PBRSurfaceProperties pbrSurfaceProperties;
+	PBR::SurfaceProperties pbrSurfaceProperties;
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
@@ -1690,7 +1691,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(SKYLIGHTING)
 #		if defined(VR)
-	float3 positionMSSkylight = input.WorldPosition.xyz + CameraPosAdjust[eyeIndex] - CameraPosAdjust[0];
+	float3 positionMSSkylight = input.WorldPosition.xyz + CameraPosAdjust[eyeIndex].xyz - CameraPosAdjust[0].xyz;
 #		else
 	float3 positionMSSkylight = input.WorldPosition.xyz;
 #		endif
@@ -1757,11 +1758,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 wetnessNormal = worldSpaceNormal;
 
-	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0]) * 0.5 + 0.5) * 0.01 * (1 / wetnessEffects.PuddleRadius);
+	float3 puddleCoords = ((input.WorldPosition.xyz + CameraPosAdjust[0].xyz) * 0.5 + 0.5) * 0.01 / wetnessEffects.PuddleRadius;
 	float puddle = wetness;
 	if (wetness > 0.0 || puddleWetness > 0) {
 #		if !defined(SKINNED)
-		puddle = noise(puddleCoords) * ((minWetnessAngle / wetnessEffects.PuddleMaxAngle) * wetnessEffects.MaxPuddleWetness * 0.25) + 0.5;
+		puddle = perlinNoise(puddleCoords) * .5 + .5;
+		puddle = puddle * ((minWetnessAngle / wetnessEffects.PuddleMaxAngle) * wetnessEffects.MaxPuddleWetness * 0.25) + 0.5;
 		wetness = lerp(wetness, puddleWetness, saturate(puddle - 0.25));
 #		endif
 		puddle *= wetness;
@@ -1792,8 +1794,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 dirLightColor = DirLightColor.xyz;
 	float3 dirLightColorMultiplier = 1;
 
-#	if defined(WATER_CAUSTICS)
-	dirLightColorMultiplier *= ComputeWaterCaustics(waterData, input.WorldPosition.xyz, worldSpaceNormal);
+#	if defined(WATER_LIGHTING)
+	dirLightColorMultiplier *= WaterLighting::ComputeCaustics(waterData, input.WorldPosition.xyz, worldSpaceNormal);
 #	endif
 
 	float selfShadowFactor = 1.0f;
@@ -1861,7 +1863,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(TERRA_OCC)
 		float terrainShadow = 1;
 		float terrainAo = 1;
-		GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex], length(input.WorldPosition.xyz), SampColorSampler, terrainShadow, terrainAo);
+		GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex].xyz, length(input.WorldPosition.xyz), SampColorSampler, terrainShadow, terrainAo);
 		dirShadow *= terrainShadow;
 		inDirShadow = inDirShadow || dirShadow == 0.0;
 #	endif
@@ -1869,7 +1871,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(CLOUD_SHADOWS)
 	if (!inDirShadow) {
-		dirShadow *= GetCloudShadowMult(input.WorldPosition, SampColorSampler);
+		dirShadow *= GetCloudShadowMult(input.WorldPosition.xyz, SampColorSampler);
 	}
 #	endif
 
@@ -1892,7 +1894,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(TRUE_PBR)
 	{
-		float3 pbrDirLightColor = AdjustDirectionalLightColorForPBR(DirLightColor.xyz);
+		float3 pbrDirLightColor = PBR::AdjustDirectionalLightColor(DirLightColor.xyz);
 		float3 mainLayerFinalLightColor = fullShadowDirLightColorMultiplier * pbrDirLightColor;
 		float coatShadowDirLightColorMultiplier = fullShadowDirLightColorMultiplier;
 		[branch] if ((PBRFlags & TruePBR_InterlayerParallax) != 0)
@@ -1902,7 +1904,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float3 coatFinalLightColor = coatShadowDirLightColorMultiplier * pbrDirLightColor;
 
 		float3 dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor;
-		GetDirectLightInputPBR(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
+		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
 		lightsDiffuseColor += dirDiffuseColor;
 		coatLightsDiffuseColor += coatDirDiffuseColor;
 		transmissionColor += dirTransmissionColor;
@@ -1912,7 +1914,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 #		if defined(WETNESS_EFFECTS)
 		if (waterRoughnessSpecular < 1.0)
-			specularColorPBR += GetWetnessDirectLightSpecularInputPBR(wetnessNormal, worldSpaceViewDirection, normalizedDirLightDirectionWS, coatFinalLightColor, waterRoughnessSpecular);
+			specularColorPBR += PBR::GetWetnessDirectLightSpecularInput(wetnessNormal, worldSpaceViewDirection, normalizedDirLightDirectionWS, coatFinalLightColor, waterRoughnessSpecular);
 #		endif
 	}
 #	else
@@ -2115,22 +2117,22 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #			if defined(TRUE_PBR)
 		{
-			float3 mainLayerFinalLightColor = AdjustPointLightColorForPBR(fullShadowLightColor);
+			float3 mainLayerFinalLightColor = PBR::AdjustPointLightColor(fullShadowLightColor);
 			float3 coatFinalLightColor = mainLayerFinalLightColor;
 			[branch] if ((PBRFlags & TruePBR_InterlayerParallax) != 0)
 			{
-				coatFinalLightColor = AdjustPointLightColorForPBR(noParallaxShadowLightColor);
+				coatFinalLightColor = PBR::AdjustPointLightColor(noParallaxShadowLightColor);
 			}
 
 			float3 pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor;
-			GetDirectLightInputPBR(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
+			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
 			lightsDiffuseColor += pointDiffuseColor;
 			coatLightsDiffuseColor += coatPointDiffuseColor;
 			transmissionColor += pointTransmissionColor;
 			specularColorPBR += pointSpecularColor;
 #				if defined(WETNESS_EFFECTS)
 			if (waterRoughnessSpecular < 1.0)
-				specularColorPBR += GetWetnessDirectLightSpecularInputPBR(wetnessNormal, worldSpaceViewDirection, normalizedLightDirection, coatFinalLightColor, waterRoughnessSpecular);
+				specularColorPBR += PBR::GetWetnessDirectLightSpecularInput(wetnessNormal, worldSpaceViewDirection, normalizedLightDirection, coatFinalLightColor, waterRoughnessSpecular);
 #				endif
 		}
 #			else
@@ -2173,7 +2175,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
 		float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightProjNoiseSampler.Sample(SampCharacterLightProjNoiseSampler, baseShadowUV).x));
 #		if defined(TRUE_PBR)
-		charLightColor = AdjustPointLightColorForPBR(charLightColor);
+		charLightColor = PBR::AdjustPointLightColor(charLightColor);
 #		endif
 		diffuseColor += (charLightMul * charLightColor).xxx;
 	}
@@ -2315,10 +2317,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 
 	float3 indirectDiffuseLobeWeight, indirectSpecularLobeWeight;
-	GetPBRIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, worldSpaceNormal.xyz, worldSpaceViewDirection, worldSpaceVertexNormal, baseColor.xyz, pbrSurfaceProperties);
+	PBR::GetIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, worldSpaceNormal.xyz, worldSpaceViewDirection, worldSpaceVertexNormal, baseColor.xyz, pbrSurfaceProperties);
 #		if defined(WETNESS_EFFECTS)
 	if (waterRoughnessSpecular < 1.0)
-		indirectSpecularLobeWeight += GetWetnessIndirectSpecularLobeWeight(wetnessNormal, worldSpaceViewDirection, worldSpaceVertexNormal, waterRoughnessSpecular);
+		indirectSpecularLobeWeight += PBR::GetWetnessIndirectSpecularLobeWeight(wetnessNormal, worldSpaceViewDirection, worldSpaceVertexNormal, waterRoughnessSpecular);
 #		endif
 
 #		if !defined(DEFERRED)
