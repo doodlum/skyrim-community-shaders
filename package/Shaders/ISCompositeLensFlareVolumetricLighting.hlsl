@@ -1,5 +1,5 @@
 #include "Common/DummyVSTexCoord.hlsl"
-#include "Common/FrameBuffer.hlsl"
+#include "Common/FrameBuffer.hlsli"
 
 typedef VS_OUTPUT PS_INPUT;
 

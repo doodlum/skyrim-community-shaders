@@ -1,4 +1,4 @@
-#include "Common/Color.hlsl"
+#include "Common/Color.hlsli"
 #include "Common/DummyVSTexCoord.hlsl"
 
 typedef VS_OUTPUT PS_INPUT;
