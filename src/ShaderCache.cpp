@@ -1736,43 +1736,7 @@ namespace SIE
 			return newShader;
 		}
 
-		static bool IsSupportedShader(const RE::BSImagespaceShader& shader)
-		{
-			static const std::unordered_set<std::string_view> supportedShaders{
-				"ISAlphaBlend",
-				"ISApplyReflections",
-				"ISBasicCopy",
-				"ISBlur",
-				"ISCompositeLensFlareVolumetricLighting",
-				"ISCopy",
-				"ISDebugSnow",
-				"ISDepthOfField",
-				"ISDoubleVision",
-				"ISDownsample",
-				"ISExp",
-				"ISHDR",
-				"ISIBLensFlare",
-				"ISLightingComposite",
-				"ISLocalMap",
-				"ISMap",
-				"ISNoise",
-				"ISRadialBlur",
-				"ISRefraction",
-				"ISSAOMinify",
-				"ISSimpleColor",
-				"ISUpsampleDynamicResolution",
-				"ISVolumetricLighting",
-				"ISWaterBlend",
-				"ISWaterDisplacement",
-				"ISWaterFlow",
-				"ISWorldMap",
-			};
-
-			const auto shaderName = std::string_view(shader.originalShaderName.c_str());
-			return supportedShaders.contains(shaderName);
-		}
-
-		static uint32_t GetImagespaceShaderDescriptor(const RE::BSImagespaceShader& imagespaceShader)
+		static bool GetImagespaceShaderDescriptor(const RE::BSImagespaceShader& imagespaceShader, uint32_t& descriptor)
 		{
 			using enum RE::ImageSpaceManager::ImageSpaceEffectEnum;
 
@@ -1898,9 +1862,10 @@ namespace SIE
 
 			auto it = descriptors.find(imagespaceShader.name.c_str());
 			if (it == descriptors.cend()) {
-				return std::numeric_limits<uint32_t>::max();
+				return false;
 			}
-			return it->second;
+			descriptor = it->second;
+			return true;
 		}
 	}
 
@@ -1916,7 +1881,10 @@ namespace SIE
 
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			const auto& isShader = static_cast<const RE::BSImagespaceShader&>(shader);
-			descriptor = SShaderCache::GetImagespaceShaderDescriptor(isShader);
+			if (!SShaderCache::GetImagespaceShaderDescriptor(isShader, descriptor))
+			{
+				return nullptr;
+			}
 		}
 
 		auto state = State::GetSingleton();
@@ -1968,7 +1936,10 @@ namespace SIE
 
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			const auto& isShader = static_cast<const RE::BSImagespaceShader&>(shader);
-			descriptor = SShaderCache::GetImagespaceShaderDescriptor(isShader);
+			if (!SShaderCache::GetImagespaceShaderDescriptor(isShader, descriptor))
+			{
+				return nullptr;
+			}
 		}
 
 		auto key = SIE::SShaderCache::GetShaderString(ShaderClass::Pixel, shader, descriptor, true);
