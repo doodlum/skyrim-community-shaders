@@ -1895,8 +1895,7 @@ namespace SIE
 
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			const auto& isShader = static_cast<const RE::BSImagespaceShader&>(shader);
-			if (!SShaderCache::GetImagespaceShaderDescriptor(isShader, descriptor))
-			{
+			if (!SShaderCache::GetImagespaceShaderDescriptor(isShader, descriptor)) {
 				return nullptr;
 			}
 		}
@@ -1950,8 +1949,7 @@ namespace SIE
 
 		if (shader.shaderType == RE::BSShader::Type::ImageSpace) {
 			const auto& isShader = static_cast<const RE::BSImagespaceShader&>(shader);
-			if (!SShaderCache::GetImagespaceShaderDescriptor(isShader, descriptor))
-			{
+			if (!SShaderCache::GetImagespaceShaderDescriptor(isShader, descriptor)) {
 				return nullptr;
 			}
 		}
