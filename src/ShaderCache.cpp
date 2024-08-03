@@ -783,6 +783,17 @@ namespace SIE
 			} else if (descEnum == ISRadialBlurMedium) {
 				defines[0] = { "SAMPLES_COUNT", "6" };
 				++defines;
+			} else if (descEnum == ISSAOCompositeSAO) {
+				defines[0] = { "APPLY_SAO", nullptr };
+				++defines;
+			} else if (descEnum == ISSAOCompositeFog) {
+				defines[0] = { "APPLY_FOG", nullptr };
+				++defines;
+			} else if (descEnum == ISSAOCompositeSAOFog) {
+				defines[0] = { "APPLY_SAO", nullptr };
+				++defines;
+				defines[0] = { "APPLY_FOG", nullptr };
+				++defines;
 			}
 			defines[0] = { nullptr, nullptr };
 		}
@@ -1858,6 +1869,9 @@ namespace SIE
 				{ "BSImagespaceShaderRadialBlurHigh", static_cast<uint32_t>(ISRadialBlurHigh) },
 				{ "BSImagespaceShaderRadialBlurMedium", static_cast<uint32_t>(ISRadialBlurMedium) },
 				{ "BSImagespaceShaderRefraction", static_cast<uint32_t>(ISRefraction) },
+				{ "BSImagespaceShaderISSAOCompositeSAO", static_cast<uint32_t>(ISSAOCompositeSAO) },
+				{ "BSImagespaceShaderISSAOCompositeFog", static_cast<uint32_t>(ISSAOCompositeFog) },
+				{ "BSImagespaceShaderISSAOCompositeSAOFog", static_cast<uint32_t>(ISSAOCompositeSAOFog) },
 			};
 
 			auto it = descriptors.find(imagespaceShader.name.c_str());
