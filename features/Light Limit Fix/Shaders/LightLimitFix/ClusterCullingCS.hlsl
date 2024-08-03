@@ -11,9 +11,9 @@ cbuffer PerFrame : register(b0)
 StructuredBuffer<ClusterAABB> clusters : register(t0);
 StructuredBuffer<StructuredLight> lights : register(t1);
 
-RWStructuredBuffer<uint> lightIndexCounter : register(u0);  //1
-RWStructuredBuffer<uint> lightIndexList : register(u1);     //MAX_CLUSTER_LIGHTS * 16^3
-RWStructuredBuffer<LightGrid> lightGrid : register(u2);     //16^3
+RWStructuredBuffer<uint> lightIndexCounter : register(u0);
+RWStructuredBuffer<uint> lightIndexList : register(u1);
+RWStructuredBuffer<LightGrid> lightGrid : register(u2);
 
 groupshared StructuredLight sharedLights[GROUP_SIZE];
 
