@@ -2,6 +2,7 @@
 #include "Common/FrameBuffer.hlsli"
 #include "Common/GBuffer.hlsli"
 #include "Common/MotionBlur.hlsli"
+#include "Common/Random.hlsli"
 #include "Common/SharedData.hlsli"
 
 #ifdef GRASS_LIGHTING
@@ -447,7 +448,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
-	float screenNoise = InterleavedGradientNoise(screenUV * BufferDim.xy);
+	float screenNoise = InterleavedGradientNoise(screenUV * BufferDim.xy * DynamicResolutionParams1.xy, FrameCount);
 
 	// Swaps direction of the backfaces otherwise they seem to get lit from the wrong direction.
 	if (!frontFace)
@@ -473,7 +474,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			if defined(TRUE_PBR)
 	float4 rawRMAOS = TexRMAOSSampler.Sample(SampRMAOSSampler, input.TexCoord.xy) * float4(PBRParams1.x, 1, 1, PBRParams1.y);
 
-	PBRSurfaceProperties pbrSurfaceProperties;
+	PBR::SurfaceProperties pbrSurfaceProperties;
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
@@ -550,10 +551,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #			if defined(TRUE_PBR)
 	{
-		float3 pbrDirLightColor = AdjustDirectionalLightColorForPBR(DirLightColorShared.xyz) * dirLightColorMultiplier * dirShadow;
+		float3 pbrDirLightColor = PBR::AdjustDirectionalLightColor(DirLightColorShared.xyz) * dirLightColorMultiplier * dirShadow;
 
 		float3 dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor;
-		GetDirectLightInputPBR(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, normal, normal, viewDirection, viewDirection, DirLightDirection, DirLightDirection, pbrDirLightColor, pbrDirLightColor, pbrSurfaceProperties);
+		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, normal, normal, viewDirection, viewDirection, DirLightDirection, DirLightDirection, pbrDirLightColor, pbrDirLightColor, pbrSurfaceProperties);
 		lightsDiffuseColor += dirDiffuseColor;
 		transmissionColor += dirTransmissionColor;
 		specularColorPBR += dirSpecularColor;
@@ -608,8 +609,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #				if defined(TRUE_PBR)
 				{
 					float3 pointDiffuseColor, coatDirDiffuseColor, pointTransmissionColor, pointSpecularColor;
-					float3 pbrLightColor = AdjustPointLightColorForPBR(lightColor * intensityMultiplier);
-					GetDirectLightInputPBR(pointDiffuseColor, coatDirDiffuseColor, pointTransmissionColor, pointSpecularColor, normal, normal, viewDirection, viewDirection, normalizedLightDirection, normalizedLightDirection, pbrLightColor, pbrLightColor, pbrSurfaceProperties);
+					float3 pbrLightColor = PBR::AdjustPointLightColor(lightColor * intensityMultiplier);
+					PBR::GetDirectLightInput(pointDiffuseColor, coatDirDiffuseColor, pointTransmissionColor, pointSpecularColor, normal, normal, viewDirection, viewDirection, normalizedLightDirection, normalizedLightDirection, pbrLightColor, pbrLightColor, pbrSurfaceProperties);
 					lightsDiffuseColor += pointDiffuseColor;
 					transmissionColor += pointTransmissionColor;
 					specularColorPBR += pointSpecularColor;
@@ -633,7 +634,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #			if defined(TRUE_PBR)
 	float3 indirectDiffuseLobeWeight, indirectSpecularLobeWeight;
-	GetPBRIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, normal, normal, viewDirection, baseColor.xyz, pbrSurfaceProperties);
+	PBR::GetIndirectLobeWeights(indirectDiffuseLobeWeight, indirectSpecularLobeWeight, normal, normal, viewDirection, baseColor.xyz, pbrSurfaceProperties);
 
 	diffuseColor.xyz += transmissionColor;
 	specularColor.xyz += specularColorPBR;
@@ -652,7 +653,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #						endif
 
 	sh2 skylightingSH = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, normal);
-	float skylighting = Skylighting::hallucinateZH3(skylightingSH, skylightingSettings.DirectionalDiffuse ? normal : float3(0, 0, 1));
+	float skylighting = shFuncProductIntegral(skylightingSH, shEvaluateCosineLobe(skylightingSettings.DirectionalDiffuse ? normal : float3(0, 0, 1)));
 	skylighting = Skylighting::mixDiffuse(skylightingSettings, skylighting);
 
 	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);

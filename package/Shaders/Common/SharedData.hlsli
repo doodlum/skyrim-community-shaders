@@ -112,6 +112,8 @@ struct LightLimitFixSettings
 	uint EnableLightsVisualisation;
 	uint LightsVisualisationMode;
 	uint pad0;
+
+	uint4 ClusterSize;
 };
 
 #	define SL_INCL_STRUCT
@@ -184,18 +186,6 @@ float4 GetWaterData(float3 worldPosition)
 	[flatten] if (cellInt.x < 5 && cellInt.x >= 0 && cellInt.y < 5 && cellInt.y >= 0)
 		waterData = WaterData[waterTile];
 	return waterData;
-}
-
-// Derived from the interleaved gradient function from Jimenez 2014 http://goo.gl/eomGso
-float InterleavedGradientNoise(float2 uv)
-{
-	// Temporal factor
-	float frameStep = float(FrameCount % 16) * 0.0625f;
-	uv.x += frameStep * 4.7526;
-	uv.y += frameStep * 3.1914;
-
-	float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
-	return frac(magic.z * frac(dot(uv, magic.xy)));
 }
 
 #endif

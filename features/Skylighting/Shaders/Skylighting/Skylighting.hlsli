@@ -21,6 +21,7 @@ struct SkylightingSettings
 
 #ifdef SL_INCL_METHODS
 
+#	include "Common/Random.hlsli"
 #	include "Common/Spherical Harmonics/SphericalHarmonics.hlsli"
 
 #	ifdef PSHADER
@@ -103,7 +104,7 @@ namespace Skylighting
 		return result;
 	}
 
-	float getVL(SkylightingSettings params, Texture3D<sh2> probeArray, float3 startPosWS, float3 endPosWS, float2 screenPosition)
+	float getVL(SkylightingSettings params, Texture3D<sh2> probeArray, float3 startPosWS, float3 endPosWS, float2 pxCoord)
 	{
 		const static uint nSteps = 16;
 		const static float step = 1.0 / float(nSteps);
@@ -111,7 +112,7 @@ namespace Skylighting
 		float3 worldDir = endPosWS - startPosWS;
 		float3 worldDirNormalised = normalize(worldDir);
 
-		float noise = InterleavedGradientNoise(screenPosition);
+		float noise = InterleavedGradientNoise(pxCoord, FrameCount);
 
 		float vl = 0;
 
@@ -129,29 +130,6 @@ namespace Skylighting
 			vl += shadow;
 		}
 		return vl * step;
-	}
-
-	// http://torust.me/ZH3.pdf
-	// ZH hallucination that makes skylighting more directional
-	// skipped luminance because it's single channel
-	float hallucinateZH3(sh2 sh, float3 normal)
-	{
-		const static float factor = sqrt(5.0f / (16.0f * 3.1415926f));
-
-		float result = shFuncProductIntegral(sh, shEvaluateCosineLobe(normal)) / shPI;  // cosine lobe integral -> pi
-		if (all(abs(sh.yzw) < 1e-10))
-			return result;
-
-		float3 zonalAxis = normalize(sh.wyz);
-		float ratio = abs(dot(sh.wyz * float3(-1, -1, 0), zonalAxis)) / sh.x;
-		float zonalL2Coeff = sh.x * (0.08f * ratio + 0.6f * ratio * ratio);
-
-		float fZ = dot(zonalAxis, normal);
-		float zhDir = factor * (3.0f * fZ * fZ - 1.0f);
-
-		result += 0.25f * zonalL2Coeff * zhDir;
-
-		return saturate(result);
 	}
 
 	sh2 fauxSpecularLobeSH(float3 N, float3 V, float roughness)
