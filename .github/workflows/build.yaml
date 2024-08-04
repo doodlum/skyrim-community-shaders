@@ -16,7 +16,7 @@ jobs:
     steps:
         - uses: actions/checkout@v3
           with:
-            submodules: 'true'
+            submodules: recursive
 
         - uses: ilammy/msvc-dev-cmd@v1.10.0
 
@@ -28,7 +28,7 @@ jobs:
           run: cmake -S . --preset=ALL --check-stamp-file "build\CMakeFiles\generate.stamp"
 
         - name: cmake build
-          run: cmake --build build --config Release
+          run: cmake --build build/ALL --config Release
 
         - name: create a tagged release and upload the archive
           uses: ncipollo/release-action@v1

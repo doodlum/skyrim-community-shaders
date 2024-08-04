@@ -327,7 +327,7 @@ VS_OUTPUT main(VS_INPUT input)
 	vsout.ScreenNormalTransform1.xyz = ScreenNormalTransform[1];
 	vsout.ScreenNormalTransform2.xyz = ScreenNormalTransform[2];
 #	else
-	float3x4 transMat = mul((float4x3)(ScreenProj[eyeIndex]), World[eyeIndex]);
+	float3x4 transMat = mul(ScreenProj[eyeIndex], World[eyeIndex]);
 
 #		if defined(MODELSPACENORMALS)
 	vsout.ScreenNormalTransform0.xyz = transMat[0].xyz;
@@ -2207,7 +2207,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 reflectionDiffuseColor = diffuseColor + directionalAmbientColor;
 
 #	if defined(SKYLIGHTING)
-	float skylightingDiffuse = Skylighting::hallucinateZH3(skylightingSH, skylightingSettings.DirectionalDiffuse ? worldSpaceNormal : float3(0, 0, 1));
+	float skylightingDiffuse = shFuncProductIntegral(skylightingSH, shEvaluateCosineLobe(skylightingSettings.DirectionalDiffuse ? worldSpaceNormal : float3(0, 0, 1)));
 	skylightingDiffuse = Skylighting::mixDiffuse(skylightingSettings, skylightingDiffuse);
 	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
 	directionalAmbientColor *= skylightingDiffuse;
