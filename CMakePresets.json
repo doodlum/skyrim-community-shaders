@@ -120,6 +120,6 @@
 				"TRACY_SUPPORT": "ON"
 			},
 			"inherits": "ALL"
-	}
+		}
 	]
 }
