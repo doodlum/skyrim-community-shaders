@@ -794,6 +794,12 @@ namespace SIE
 				++defines;
 				defines[0] = { "APPLY_FOG", nullptr };
 				++defines;
+			} else if (descEnum == ISSAOBlurH) {
+				defines[0] = { "AXIS_H", nullptr };
+				++defines;
+			} else if (descEnum == ISSAOBlurV) {
+				defines[0] = { "AXIS_V", nullptr };
+				++defines;
 			}
 			defines[0] = { nullptr, nullptr };
 		}
@@ -1875,6 +1881,8 @@ namespace SIE
 				{ "BSImagespaceShaderISSAOCameraZ", static_cast<uint32_t>(ISSAOCameraZ) },
 				{ "BSImagespaceShaderISSILComposite", static_cast<uint32_t>(ISSILComposite) },
 				{ "BSImagespaceShaderISSnowSSS", static_cast<uint32_t>(ISSnowSSS) },
+				{ "BSImagespaceShaderISSAOBlurH", static_cast<uint32_t>(ISSAOBlurH) },
+				{ "BSImagespaceShaderISSAOBlurV", static_cast<uint32_t>(ISSAOBlurV) },
 			};
 
 			auto it = descriptors.find(imagespaceShader.name.c_str());
