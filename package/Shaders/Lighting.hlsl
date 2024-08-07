@@ -1840,13 +1840,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
 	if (!inDirShadow && dirLightAngle > 0.0) {
 #		else
-	if (!inDirShadow && PixelShaderDescriptor){
+	if (!inDirShadow && PixelShaderDescriptor) {
 #		endif
 #	else
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
 	if (!inDirShadow && dirLightAngle > 0.0 && (PixelShaderDescriptor & _InWorld || !FrameParams.y)) {
 #		else
-	if (!inDirShadow && PixelShaderDescriptor & (PixelShaderDescriptor & _InWorld || !FrameParams.y)){
+	if (!inDirShadow && PixelShaderDescriptor & (PixelShaderDescriptor & _InWorld || !FrameParams.y)) {
 #		endif
 #	endif
 #	if defined(DEFERRED) && defined(SCREEN_SPACE_SHADOWS)
@@ -1864,11 +1864,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			[branch] if (extendedMaterialSettings.EnableParallax && extendedMaterialSettings.EnableShadows)
 				parallaxShadow = GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexParallaxSampler, SampParallaxSampler, 0, parallaxShadowQuality, screenNoise, displacementParams);
 #		elif defined(ENVMAP)
-			[branch] if (complexMaterialParallax && extendedMaterialSettings.EnableShadows)
-				parallaxShadow = GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexEnvMaskSampler, SampEnvMaskSampler, 3, parallaxShadowQuality, screenNoise, displacementParams);
+		[branch] if (complexMaterialParallax && extendedMaterialSettings.EnableShadows)
+			parallaxShadow = GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexEnvMaskSampler, SampEnvMaskSampler, 3, parallaxShadowQuality, screenNoise, displacementParams);
 #		elif defined(TRUE_PBR) && !defined(LODLANDSCAPE)
-			[branch] if (PBRParallax && extendedMaterialSettings.EnableShadows)
-				parallaxShadow = GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexParallaxSampler, SampParallaxSampler, 0, parallaxShadowQuality, screenNoise, displacementParams);
+		[branch] if (PBRParallax && extendedMaterialSettings.EnableShadows)
+			parallaxShadow = GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexParallaxSampler, SampParallaxSampler, 0, parallaxShadowQuality, screenNoise, displacementParams);
 #		endif  // LANDSCAPE
 		}
 #	endif  // defined(EMAT) && (defined (SKINNED) || !defined \
@@ -2629,8 +2629,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	psout.Reflectance = float4(wetnessReflectance, psout.Diffuse.w);
 	psout.NormalGlossiness = float4(EncodeNormal(screenSpaceNormal), lerp(outGlossiness, 1.0, wetnessGlossinessSpecular), psout.Diffuse.w);
 #		else
-	psout.Reflectance = float4(0.0.xxx, psout.Diffuse.w);
-	psout.NormalGlossiness = float4(EncodeNormal(screenSpaceNormal), outGlossiness, psout.Diffuse.w);
+psout.Reflectance = float4(0.0.xxx, psout.Diffuse.w);
+psout.NormalGlossiness = float4(EncodeNormal(screenSpaceNormal), outGlossiness, psout.Diffuse.w);
 #		endif
 
 	psout.Parameters.w = psout.Diffuse.w;
@@ -2655,7 +2655,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float wetnessNormalAmount = saturate(dot(float3(0, 0, 1), wetnessNormal) * saturate(flatnessAmount));
 	psout.Masks = float4(0, 0, wetnessNormalAmount, psout.Diffuse.w);
 #		else
-	psout.Masks = float4(0, 0, 0, psout.Diffuse.w);
+psout.Masks = float4(0, 0, 0, psout.Diffuse.w);
 #		endif
 #	endif
 

@@ -49,8 +49,7 @@ void State::Draw()
 					// Only check against non-shader bits
 					currentPixelDescriptor &= ~modifiedPixelDescriptor;
 
-					if (Deferred::GetSingleton()->inWorld)
-					{
+					if (Deferred::GetSingleton()->inWorld) {
 						currentPixelDescriptor |= (uint32_t)PermutationFlags::InWorld;
 					}
 
@@ -69,7 +68,7 @@ void State::Draw()
 					if (frameChecker.isNewFrame()) {
 						ID3D11Buffer* buffers[3] = { permutationCB->CB(), sharedDataCB->CB(), featureDataCB->CB() };
 						context->PSSetConstantBuffers(4, 3, buffers);
-					}			
+					}
 
 					if (IsDeveloperMode()) {
 						BeginPerfEvent(std::format("Draw: CS {}::{:x}", magic_enum::enum_name(currentShader->shaderType.get()), currentPixelDescriptor));
