@@ -1696,7 +1696,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 positionMSSkylight = input.WorldPosition.xyz;
 #		endif
 
+#		if defined(DEFERRED)
 	sh2 skylightingSH = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal);
+#		else
+	sh2 skylightingSH = (PixelShaderDescriptor & _InWorld || !FrameParams.y) ? Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal) : float4(sqrt(4.0 * shPI), 0, 0, 0);
+#		endif
+
 #	endif
 
 	float4 waterData = GetWaterData(input.WorldPosition.xyz);
@@ -1830,10 +1835,19 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float dirDetailShadow = 1.0;
 	float dirShadow = 1.0;
 	float parallaxShadow = 1;
-#	if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
+#	if defined(DEFERRED)
+
+#		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
 	if (!inDirShadow && dirLightAngle > 0.0) {
+#		else
+	if (!inDirShadow && PixelShaderDescriptor){
+#		endif
 #	else
-	if (!inDirShadow) {
+#		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
+	if (!inDirShadow && dirLightAngle > 0.0 && (PixelShaderDescriptor & _InWorld || !FrameParams.y)) {
+#		else
+	if (!inDirShadow && PixelShaderDescriptor & (PixelShaderDescriptor & _InWorld || !FrameParams.y)){
+#		endif
 #	endif
 #	if defined(DEFERRED) && defined(SCREEN_SPACE_SHADOWS)
 		dirDetailShadow = GetScreenSpaceShadow(screenUV, screenNoise, viewPosition, eyeIndex);
