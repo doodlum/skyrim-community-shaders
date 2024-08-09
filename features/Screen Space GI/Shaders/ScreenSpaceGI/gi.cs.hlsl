@@ -450,7 +450,8 @@ void CalculateGI(
 			lerpFactor = 0;
 #	endif
 
-		currGIAO = float4(lerp(srcPrevGI[pxCoord].rgb, currGIAO.rgb, lerpFactor), currGIAO.a);
+		float4 lerpGIAO = lerp(srcPrevGI[pxCoord], currGIAO, lerpFactor);
+		currGIAO = useHistory ? lerpGIAO : float4(lerpGIAO.rgb, currGIAO.a);
 #	ifdef GI_SPECULAR
 		currGIAOSpecular = lerp(srcPrevGISpecular[pxCoord], currGIAOSpecular, lerpFactor);
 #	endif

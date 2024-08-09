@@ -580,7 +580,7 @@ void ScreenSpaceGI::CompileComputeShaders()
 			info.defines.push_back({ "HALF_RES", "" });
 		if (settings.HalfRate)
 			info.defines.push_back({ "HALF_RATE", "" });
-		if (settings.EnableGI && settings.EnableTemporalDenoiser)
+		if ((settings.EnableGI && settings.EnableTemporalDenoiser) || settings.HalfRate)
 			info.defines.push_back({ "TEMPORAL_DENOISER", "" });
 		if (settings.UseBitmask)
 			info.defines.push_back({ "BITMASK", "" });
