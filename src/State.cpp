@@ -49,6 +49,7 @@ void State::Draw()
 					// Only check against non-shader bits
 					currentPixelDescriptor &= ~modifiedPixelDescriptor;
 
+					// Set an unused bit to indicate if we are rendering an object in the main rendering pass
 					if (Deferred::GetSingleton()->inWorld) {
 						currentPixelDescriptor |= (uint32_t)PermutationFlags::InWorld;
 					}
