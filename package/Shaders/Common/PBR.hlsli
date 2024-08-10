@@ -55,34 +55,34 @@ namespace PBR
 		float GlintMicrofacetRoughness;
 		float GlintDensityRandomization;
 	};
-	
+
 	SurfaceProperties InitSurfaceProperties()
-    {
-        SurfaceProperties surfaceProperties;
-		
+	{
+		SurfaceProperties surfaceProperties;
+
 		surfaceProperties.Roughness = 1;
 		surfaceProperties.Metallic = 0;
 		surfaceProperties.AO = 1;
 		surfaceProperties.F0 = 0.04;
-		
+
 		surfaceProperties.SubsurfaceColor = 0;
 		surfaceProperties.Thickness = 0;
-		
+
 		surfaceProperties.CoatColor = 0;
 		surfaceProperties.CoatStrength = 0;
 		surfaceProperties.CoatRoughness = 0;
 		surfaceProperties.CoatF0 = 0.04;
-		
+
 		surfaceProperties.FuzzColor = 0;
 		surfaceProperties.FuzzWeight = 0;
-		
+
 		surfaceProperties.GlintScreenSpaceScale = 0;
 		surfaceProperties.GlintLogMicrofacetDensity = 0;
 		surfaceProperties.GlintMicrofacetRoughness = 0;
 		surfaceProperties.GlintDensityRandomization = 0;
-		
-        return surfaceProperties;
-    }
+
+		return surfaceProperties;
+	}
 
 	float3 AdjustDirectionalLightColor(float3 lightColor)
 	{
@@ -161,10 +161,10 @@ namespace PBR
 #else
 		[branch] if (PBRFlags & TruePBR_Glint)
 #endif
-        {
+		{
 			float D_max = GetNormalDistributionFunctionGGX(roughness, 1);
 			D = SampleGlints2023NDF(H, D, D_max, uv, ddx(uv), ddy(uv));
-        }
+		}
 		float G = GetVisibilityFunctionSmithJointApprox(roughness, NdotV, NdotL);
 		F = GetFresnelFactorSchlick(specularColor, VdotH);
 

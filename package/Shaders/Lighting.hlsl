@@ -614,7 +614,7 @@ cbuffer PerMaterial : register(b1)
 	float4 LandscapeTexture5GlintParameters : packoffset(c5);
 	float4 LandscapeTexture6GlintParameters : packoffset(c6);
 #	endif
-	float4 LightingEffectParams : packoffset(c7);    // fSubSurfaceLightRolloff in x, fRimLightPower in y
+	float4 LightingEffectParams : packoffset(c7);  // fSubSurfaceLightRolloff in x, fRimLightPower in y
 	float4 IBLParams : packoffset(c8);
 
 #	if !defined(TRUE_PBR)
@@ -1243,8 +1243,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float4 glossiness = 0;
 
 	float4 rawRMAOS = 0;
-	
-    float4 glintParameters = 0;
+
+	float4 glintParameters = 0;
 
 #	if defined(LANDSCAPE)
 	if (input.LandBlendWeights1.x > 0.0) {
@@ -1295,16 +1295,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile0PBR) != 0)
 		{
 			rawRMAOS = input.LandBlendWeights1.x * TexRMAOSSampler.Sample(SampRMAOSSampler, diffuseUv) * float4(PBRParams1.x, 1, 1, PBRParams1.z);
-			if ((PBRFlags & TruePBR_LandTile0HasGlint) != 0)
-			{
+			if ((PBRFlags & TruePBR_LandTile0HasGlint) != 0) {
 				glintParameters += input.LandBlendWeights1.x * LandscapeTexture1GlintParameters;
 			}
 		}
 		else
 		{
 			rawRMAOS = input.LandBlendWeights1.x * float4(1 - glossiness.x, 0, 1, 0.04);
-			if ((PBRFlags & TruePBR_Glint) != 0)
-			{
+			if ((PBRFlags & TruePBR_Glint) != 0) {
 				glintParameters = MultiLayerParallaxData;
 			}
 		}
@@ -1355,8 +1353,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile1PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights1.y * TexLandRMAOS2Sampler.Sample(SampLandRMAOS2Sampler, uv) * float4(LandscapeTexture2PBRParams.x, 1, 1, LandscapeTexture2PBRParams.z);
-			if ((PBRFlags & TruePBR_LandTile1HasGlint) != 0)
-			{
+			if ((PBRFlags & TruePBR_LandTile1HasGlint) != 0) {
 				glintParameters += input.LandBlendWeights1.y * LandscapeTexture2GlintParameters;
 			}
 		}
@@ -1383,8 +1380,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile2PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights1.z * TexLandRMAOS3Sampler.Sample(SampLandRMAOS3Sampler, uv) * float4(LandscapeTexture3PBRParams.x, 1, 1, LandscapeTexture3PBRParams.z);
-			if ((PBRFlags & TruePBR_LandTile2HasGlint) != 0)
-			{
+			if ((PBRFlags & TruePBR_LandTile2HasGlint) != 0) {
 				glintParameters += input.LandBlendWeights1.z * LandscapeTexture3GlintParameters;
 			}
 		}
@@ -1411,8 +1407,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile3PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights1.w * TexLandRMAOS4Sampler.Sample(SampLandRMAOS4Sampler, uv) * float4(LandscapeTexture4PBRParams.x, 1, 1, LandscapeTexture4PBRParams.z);
-			if ((PBRFlags & TruePBR_LandTile3HasGlint) != 0)
-			{
+			if ((PBRFlags & TruePBR_LandTile3HasGlint) != 0) {
 				glintParameters += input.LandBlendWeights1.w * LandscapeTexture4GlintParameters;
 			}
 		}
@@ -1439,8 +1434,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile4PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights2.x * TexLandRMAOS5Sampler.Sample(SampLandRMAOS5Sampler, uv) * float4(LandscapeTexture5PBRParams.x, 1, 1, LandscapeTexture5PBRParams.z);
-			if ((PBRFlags & TruePBR_LandTile4HasGlint) != 0)
-			{
+			if ((PBRFlags & TruePBR_LandTile4HasGlint) != 0) {
 				glintParameters += input.LandBlendWeights2.x * LandscapeTexture5GlintParameters;
 			}
 		}
@@ -1467,8 +1461,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile5PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights2.y * TexLandRMAOS6Sampler.Sample(SampLandRMAOS6Sampler, uv) * float4(LandscapeTexture6PBRParams.x, 1, 1, LandscapeTexture6PBRParams.z);
-			if ((PBRFlags & TruePBR_LandTile5HasGlint) != 0)
-			{
+			if ((PBRFlags & TruePBR_LandTile5HasGlint) != 0) {
 				glintParameters += input.LandBlendWeights2.y * LandscapeTexture6GlintParameters;
 			}
 		}
@@ -1619,17 +1612,17 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 screenSpaceNormal = normalize(WorldToView(worldSpaceNormal, false, eyeIndex));
 
 #	if defined(TRUE_PBR)
-    PBR::SurfaceProperties pbrSurfaceProperties = PBR::InitSurfaceProperties();
+	PBR::SurfaceProperties pbrSurfaceProperties = PBR::InitSurfaceProperties();
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
 	pbrSurfaceProperties.AO = rawRMAOS.z;
 	pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
-	
-    pbrSurfaceProperties.GlintScreenSpaceScale = glintParameters.x;
-    pbrSurfaceProperties.GlintLogMicrofacetDensity = glintParameters.y;
-    pbrSurfaceProperties.GlintMicrofacetRoughness = glintParameters.z;
-    pbrSurfaceProperties.GlintDensityRandomization = glintParameters.w;
+
+	pbrSurfaceProperties.GlintScreenSpaceScale = glintParameters.x;
+	pbrSurfaceProperties.GlintLogMicrofacetDensity = glintParameters.y;
+	pbrSurfaceProperties.GlintMicrofacetRoughness = glintParameters.z;
+	pbrSurfaceProperties.GlintDensityRandomization = glintParameters.w;
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
 

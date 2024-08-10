@@ -34,11 +34,11 @@ PS_OUTPUT main(PS_INPUT input)
 	PS_OUTPUT psout;
 
 	float4 color = 0;
-	
+
 #	if defined(TEXTAP)
 	int blurRadius = TEXTAP;
 #	else
-    uint blurRadius = asuint(BlurRadius);
+	uint blurRadius = asuint(BlurRadius);
 #	endif
 	float2 blurScale = BlurScale.zw;
 #	if !defined(TEXTAP) || !defined(COLORRANGE)
@@ -47,13 +47,15 @@ PS_OUTPUT main(PS_INPUT input)
 
 	for (int blurIndex = 0; blurIndex < blurRadius; ++blurIndex) {
 		float2 screenPosition = BlurOffsets[blurIndex].xy + input.TexCoord.xy;
-        float4 imageColor = 0;
-		[branch] if (BlurScale.x < 0.5) {
-            imageColor = GetImageColor(GetDynamicResolutionAdjustedScreenPosition(screenPosition), blurScale.y);
-        }
-        else {
-            imageColor = GetImageColor(screenPosition, blurScale.y);
-        }
+		float4 imageColor = 0;
+		[branch] if (BlurScale.x < 0.5)
+		{
+			imageColor = GetImageColor(GetDynamicResolutionAdjustedScreenPosition(screenPosition), blurScale.y);
+		}
+		else
+		{
+			imageColor = GetImageColor(screenPosition, blurScale.y);
+		}
 #	if defined(BRIGHTPASS)
 		imageColor = BlurBrightPass.y * max(0, -BlurBrightPass.x + imageColor);
 #	endif
