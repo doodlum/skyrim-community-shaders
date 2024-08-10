@@ -928,6 +928,11 @@ float3 ApplyFogAndClampColor(float3 srcColor, float4 fogParam, float3 clampColor
 #		undef WATER_LIGHTING
 #	endif
 
+#	if defined(WORLD_MAP)
+#		undef CLOUD_SHADOWS
+#		undef SKYLIGHTING
+#	endif
+
 #	if defined(WATER_LIGHTING)
 #		include "WaterLighting/WaterCaustics.hlsli"
 #	endif
@@ -954,10 +959,6 @@ float3 ApplyFogAndClampColor(float3 srcColor, float4 fogParam, float3 clampColor
 
 #	if defined(SCREEN_SPACE_SHADOWS)
 #		include "ScreenSpaceShadows/ScreenSpaceShadows.hlsli"
-#	endif
-
-#	if defined(WATER_BLENDING)
-#		include "WaterBlending/WaterBlending.hlsli"
 #	endif
 
 #	if defined(LIGHT_LIMIT_FIX)
@@ -1728,15 +1729,15 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float minWetnessAngle = 0;
 	minWetnessAngle = saturate(max(minWetnessValue, worldSpaceNormal.z));
 #		if defined(SKYLIGHTING)
-	float wetnessOcclusion = pow(saturate(shUnproject(skylightingSH, float3(0, 0, 1))), 2);
-#		endif  // SKYLIGHTING
+	float wetnessOcclusion = mainPass ? pow(saturate(shUnproject(skylightingSH, float3(0, 0, 1))), 2) : 0;
+#		else
+	float wetnessOcclusion = mainPass;
+#	endif
 
 	float4 raindropInfo = float4(0, 0, 1, 0);
 	if (worldSpaceNormal.z > 0 && wetnessEffects.Raining > 0.0f && wetnessEffects.EnableRaindropFx &&
 		(dot(input.WorldPosition, input.WorldPosition) < wetnessEffects.RaindropFxRange * wetnessEffects.RaindropFxRange)) {
-#		if defined(SKYLIGHTING)
 		if (wetnessOcclusion > 0.0)
-#		endif
 #		if defined(SKINNED)
 			raindropInfo = GetRainDrops(input.ModelPosition, wetnessEffects.Time, worldSpaceNormal);
 #		elif defined(DEFERRED)
@@ -1757,10 +1758,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	rainWetness = wetnessEffects.SkinWetness * wetnessEffects.Wetness * 0.8f;
 #		endif
 
-#		if defined(SKYLIGHTING)
 	rainWetness *= wetnessOcclusion;
 	puddleWetness *= wetnessOcclusion;
-#		endif
 
 	wetness = max(shoreFactor * wetnessEffects.MaxShoreWetness, rainWetness);
 
