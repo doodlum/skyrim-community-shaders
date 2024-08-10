@@ -1837,23 +1837,28 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float dirDetailShadow = 1.0;
 	float dirShadow = 1.0;
 	float parallaxShadow = 1;
-#	if defined(DEFERRED)
 
+#	if defined(DEFERRED)
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
-	if (!inDirShadow && mainPass) {
+	bool extraDirShadows = !inDirShadow && mainPass;
 #		else
 	// If lighting cannot hit the backface of the object, do not render shadows
-	if (!inDirShadow && dirLightAngle > 0.0 && mainPass) {
+	bool extraDirShadows = !inDirShadow && dirLightAngle > 0.0 && mainPass;
 #		endif
 #	else
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
-	if (!inDirShadow && mainPass) {
+	bool extraDirShadows = !inDirShadow && mainPass;
 #		else
-	// If lighting cannot hit the backface of the object, do not render shadows
-	if (!inDirShadow && dirLightAngle > 0.0 && mainPass) {
+	bool extraDirShadows = !inDirShadow && dirLightAngle > 0.0 && mainPass;
 #		endif
 #	endif
+
+	if (extraDirShadows){
+
 #	if defined(DEFERRED) && defined(SCREEN_SPACE_SHADOWS)
+#		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
+	if (dirLightAngle > 0.0)
+#		endif
 		dirDetailShadow = GetScreenSpaceShadow(screenUV, screenNoise, viewPosition, eyeIndex);
 #	endif
 
