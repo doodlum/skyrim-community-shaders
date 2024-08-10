@@ -1023,6 +1023,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
 	float screenNoise = InterleavedGradientNoise(screenUV * BufferDim * DynamicResolutionParams1.xy, FrameCount);
+	
+	// If InWorld or first-person
+	bool mainPass = (PixelShaderDescriptor & _InWorld) || !FrameParams.y;
 
 #	if defined(TERRAIN_BLENDING)
 	float depthSampled = GetTerrainOffsetDepth(screenUV, eyeIndex);
@@ -1699,7 +1702,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(DEFERRED)
 	sh2 skylightingSH = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal);
 #		else
-	sh2 skylightingSH = (PixelShaderDescriptor & _InWorld || !FrameParams.y) ? Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal) : float4(sqrt(4.0 * shPI), 0, 0, 0);
+	sh2 skylightingSH = mainPass ? Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, worldSpaceNormal) : float4(sqrt(4.0 * shPI), 0, 0, 0);
 #		endif
 
 #	endif
@@ -1838,15 +1841,17 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(DEFERRED)
 
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
-	if (!inDirShadow && dirLightAngle > 0.0) {
+	if (!inDirShadow && mainPass) {
 #		else
-	if (!inDirShadow && PixelShaderDescriptor) {
+	// If lighting cannot hit the backface of the object, do not render shadows
+	if (!inDirShadow && dirLightAngle > 0.0 && mainPass) {
 #		endif
 #	else
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
-	if (!inDirShadow && dirLightAngle > 0.0 && (PixelShaderDescriptor & _InWorld || !FrameParams.y)) {
+	if (!inDirShadow && mainPass) {
 #		else
-	if (!inDirShadow && PixelShaderDescriptor & (PixelShaderDescriptor & _InWorld || !FrameParams.y)) {
+	// If lighting cannot hit the backface of the object, do not render shadows
+	if (!inDirShadow && dirLightAngle > 0.0 && mainPass) {
 #		endif
 #	endif
 #	if defined(DEFERRED) && defined(SCREEN_SPACE_SHADOWS)
