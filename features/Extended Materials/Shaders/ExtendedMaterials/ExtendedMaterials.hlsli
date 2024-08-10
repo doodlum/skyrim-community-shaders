@@ -59,7 +59,7 @@ float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], Displa
 	float2 w2 = pow(input.LandBlendWeights2.xy, 1 + 1 * blendFactor);
 	float blendPower = blendFactor * HEIGHT_POWER;
 	// important to zero initialize, otherwise invalid/old values will be used here and as weights in Lighting.hlsl
-	pixelOffset[0] = w1.x;  
+	pixelOffset[0] = w1.x;
 	pixelOffset[1] = w1.y;
 	pixelOffset[2] = w1.z;
 	pixelOffset[3] = w1.w;
