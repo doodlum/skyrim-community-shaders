@@ -1732,7 +1732,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float wetnessOcclusion = mainPass ? pow(saturate(shUnproject(skylightingSH, float3(0, 0, 1))), 2) : 0;
 #		else
 	float wetnessOcclusion = mainPass;
-#	endif
+#		endif
 
 	float4 raindropInfo = float4(0, 0, 1, 0);
 	if (worldSpaceNormal.z > 0 && wetnessEffects.Raining > 0.0f && wetnessEffects.EnableRaindropFx &&
@@ -1741,9 +1741,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(SKINNED)
 			raindropInfo = GetRainDrops(input.ModelPosition, wetnessEffects.Time, worldSpaceNormal);
 #		elif defined(DEFERRED)
-		raindropInfo = GetRainDrops(input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
+			raindropInfo = GetRainDrops(input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
 #		else
-		raindropInfo = GetRainDrops(!FrameParams.y ? input.ModelPosition : input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
+			raindropInfo = GetRainDrops(!FrameParams.y ? input.ModelPosition : input.WorldPosition + CameraPosAdjust[eyeIndex], wetnessEffects.Time, worldSpaceNormal);
 #		endif
 	}
 
