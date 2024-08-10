@@ -760,6 +760,12 @@ namespace SIE
 					{ "LandscapeTexture5PBRParams", 49 },
 					{ "LandscapeTexture6PBRParams", 50 },
 					{ "PBRParams2", 51 },
+					{ "LandscapeTexture1GlintParameters", 52 },
+					{ "LandscapeTexture2GlintParameters", 53 },
+					{ "LandscapeTexture3GlintParameters", 54 },
+					{ "LandscapeTexture4GlintParameters", 55 },
+					{ "LandscapeTexture5GlintParameters", 56 },
+					{ "LandscapeTexture6GlintParameters", 57 },
 				});
 			} else {
 				lightingPS.insert({
@@ -790,6 +796,12 @@ namespace SIE
 					{ "LandscapeTexture5PBRParams", 41 },
 					{ "LandscapeTexture6PBRParams", 42 },
 					{ "PBRParams2", 43 },
+					{ "LandscapeTexture1GlintParameters", 44 },
+					{ "LandscapeTexture2GlintParameters", 45 },
+					{ "LandscapeTexture3GlintParameters", 46 },
+					{ "LandscapeTexture4GlintParameters", 47 },
+					{ "LandscapeTexture5GlintParameters", 48 },
+					{ "LandscapeTexture6GlintParameters", 49 },
 				});
 			}
 

@@ -599,12 +599,21 @@ cbuffer PerTechnique : register(b0)
 cbuffer PerMaterial : register(b1)
 {
 	float4 LODTexParams : packoffset(c0);  // TerrainTexOffset in xy, LodBlendingEnabled in z
+#	if !(defined(LANDSCAPE) && defined(TRUE_PBR))
 	float4 TintColor : packoffset(c1);
 	float4 EnvmapData : packoffset(c2);  // fEnvmapScale in x, 1 or 0 in y depending of if has envmask
 	float4 ParallaxOccData : packoffset(c3);
 	float4 SpecularColor : packoffset(c4);  // Shininess in w, color in xyz
 	float4 SparkleParams : packoffset(c5);
 	float4 MultiLayerParallaxData : packoffset(c6);  // Layer thickness in x, refraction scale in y, uv scale in zw
+#	else
+	float4 LandscapeTexture1GlintParameters : packoffset(c1);
+	float4 LandscapeTexture2GlintParameters : packoffset(c2);
+	float4 LandscapeTexture3GlintParameters : packoffset(c3);
+	float4 LandscapeTexture4GlintParameters : packoffset(c4);
+	float4 LandscapeTexture5GlintParameters : packoffset(c5);
+	float4 LandscapeTexture6GlintParameters : packoffset(c6);
+#	endif
 	float4 LightingEffectParams : packoffset(c7);    // fSubSurfaceLightRolloff in x, fRimLightPower in y
 	float4 IBLParams : packoffset(c8);
 
@@ -1234,6 +1243,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float4 glossiness = 0;
 
 	float4 rawRMAOS = 0;
+	
+    float4 glintParameters = 0;
 
 #	if defined(LANDSCAPE)
 	if (input.LandBlendWeights1.x > 0.0) {
@@ -1284,10 +1295,18 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile0PBR) != 0)
 		{
 			rawRMAOS = input.LandBlendWeights1.x * TexRMAOSSampler.Sample(SampRMAOSSampler, diffuseUv) * float4(PBRParams1.x, 1, 1, PBRParams1.z);
+			if ((PBRFlags & TruePBR_LandTile0HasGlint) != 0)
+			{
+				glintParameters += input.LandBlendWeights1.x * LandscapeTexture1GlintParameters;
+			}
 		}
 		else
 		{
 			rawRMAOS = input.LandBlendWeights1.x * float4(1 - glossiness.x, 0, 1, 0.04);
+			if ((PBRFlags & TruePBR_Glint) != 0)
+			{
+				glintParameters = MultiLayerParallaxData;
+			}
 		}
 #		else
 		rawRMAOS = TexRMAOSSampler.Sample(SampRMAOSSampler, diffuseUv) * float4(PBRParams1.x, 1, 1, PBRParams1.z);
@@ -1336,6 +1355,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile1PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights1.y * TexLandRMAOS2Sampler.Sample(SampLandRMAOS2Sampler, uv) * float4(LandscapeTexture2PBRParams.x, 1, 1, LandscapeTexture2PBRParams.z);
+			if ((PBRFlags & TruePBR_LandTile1HasGlint) != 0)
+			{
+				glintParameters += input.LandBlendWeights1.y * LandscapeTexture2GlintParameters;
+			}
 		}
 		else
 		{
@@ -1360,6 +1383,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile2PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights1.z * TexLandRMAOS3Sampler.Sample(SampLandRMAOS3Sampler, uv) * float4(LandscapeTexture3PBRParams.x, 1, 1, LandscapeTexture3PBRParams.z);
+			if ((PBRFlags & TruePBR_LandTile2HasGlint) != 0)
+			{
+				glintParameters += input.LandBlendWeights1.z * LandscapeTexture3GlintParameters;
+			}
 		}
 		else
 		{
@@ -1384,6 +1411,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile3PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights1.w * TexLandRMAOS4Sampler.Sample(SampLandRMAOS4Sampler, uv) * float4(LandscapeTexture4PBRParams.x, 1, 1, LandscapeTexture4PBRParams.z);
+			if ((PBRFlags & TruePBR_LandTile3HasGlint) != 0)
+			{
+				glintParameters += input.LandBlendWeights1.w * LandscapeTexture4GlintParameters;
+			}
 		}
 		else
 		{
@@ -1408,6 +1439,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile4PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights2.x * TexLandRMAOS5Sampler.Sample(SampLandRMAOS5Sampler, uv) * float4(LandscapeTexture5PBRParams.x, 1, 1, LandscapeTexture5PBRParams.z);
+			if ((PBRFlags & TruePBR_LandTile4HasGlint) != 0)
+			{
+				glintParameters += input.LandBlendWeights2.x * LandscapeTexture5GlintParameters;
+			}
 		}
 		else
 		{
@@ -1432,6 +1467,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if ((PBRFlags & TruePBR_LandTile5PBR) != 0)
 		{
 			rawRMAOS += input.LandBlendWeights2.y * TexLandRMAOS6Sampler.Sample(SampLandRMAOS6Sampler, uv) * float4(LandscapeTexture6PBRParams.x, 1, 1, LandscapeTexture6PBRParams.z);
+			if ((PBRFlags & TruePBR_LandTile5HasGlint) != 0)
+			{
+				glintParameters += input.LandBlendWeights2.y * LandscapeTexture6GlintParameters;
+			}
 		}
 		else
 		{
@@ -1580,23 +1619,17 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 screenSpaceNormal = normalize(WorldToView(worldSpaceNormal, false, eyeIndex));
 
 #	if defined(TRUE_PBR)
-	PBR::SurfaceProperties pbrSurfaceProperties;
+    PBR::SurfaceProperties pbrSurfaceProperties = PBR::InitSurfaceProperties();
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
 	pbrSurfaceProperties.AO = rawRMAOS.z;
 	pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
-
-	pbrSurfaceProperties.SubsurfaceColor = 0;
-	pbrSurfaceProperties.Thickness = 0;
-
-	pbrSurfaceProperties.CoatColor = 0;
-	pbrSurfaceProperties.CoatStrength = 0;
-	pbrSurfaceProperties.CoatRoughness = 0;
-	pbrSurfaceProperties.CoatF0 = 0.04;
-
-	pbrSurfaceProperties.FuzzColor = 0;
-	pbrSurfaceProperties.FuzzWeight = 0;
+	
+    pbrSurfaceProperties.GlintScreenSpaceScale = glintParameters.x;
+    pbrSurfaceProperties.GlintLogMicrofacetDensity = glintParameters.y;
+    pbrSurfaceProperties.GlintMicrofacetRoughness = glintParameters.z;
+    pbrSurfaceProperties.GlintDensityRandomization = glintParameters.w;
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
 
@@ -1904,7 +1937,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float3 coatFinalLightColor = coatShadowDirLightColorMultiplier * pbrDirLightColor;
 
 		float3 dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor;
-		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
+		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties, tbn, uvOriginal);
 		lightsDiffuseColor += dirDiffuseColor;
 		coatLightsDiffuseColor += coatDirDiffuseColor;
 		transmissionColor += dirTransmissionColor;
@@ -1986,7 +2019,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				refractedLightDirection = -refract(-normalizedLightDirection, coatModelNormal, eta);
 			}
 			float3 pbrLightColor = PBR::AdjustPointLightColor(lightColor);
-			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedLightDirection, normalizedLightDirection, pbrLightColor, pbrLightColor, pbrSurfaceProperties);
+			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedLightDirection, normalizedLightDirection, pbrLightColor, pbrLightColor, pbrSurfaceProperties, tbn, uvOriginal);
 			lightsDiffuseColor += pointDiffuseColor;
 			coatLightsDiffuseColor += coatPointDiffuseColor;
 			transmissionColor += pointTransmissionColor;
@@ -2125,7 +2158,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			}
 
 			float3 pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor;
-			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties);
+			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties, tbn, uvOriginal);
 			lightsDiffuseColor += pointDiffuseColor;
 			coatLightsDiffuseColor += coatPointDiffuseColor;
 			transmissionColor += pointTransmissionColor;

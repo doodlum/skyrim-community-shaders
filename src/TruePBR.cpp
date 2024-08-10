@@ -41,6 +41,16 @@ namespace PNState
 				return true;
 			}
 		}
+		if constexpr (std::is_same_v<ResultType, GlintParameters>) {
+			if (section.is_object()) {
+				result.enabled = section["enabled"];
+				result.screenSpaceScale = section["screenSpaceScale"];
+				result.logMicrofacetDensity = section["logMicrofacetDensity"];
+				result.microfacetRoughness = section["microfacetRoughness"];
+				result.densityRandomization = section["densityRandomization"];
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -248,6 +258,7 @@ void TruePBR::SetupTextureSetData()
 		PNState::Read(config, "innerLayerDisplacementOffset", textureSetData.innerLayerDisplacementOffset);
 		PNState::Read(config, "fuzzColor", textureSetData.fuzzColor);
 		PNState::Read(config, "fuzzWeight", textureSetData.fuzzWeight);
+		PNState::Read(config, "glintParameters", textureSetData.glintParameters);
 
 		pbrTextureSets.insert_or_assign(editorId, textureSetData);
 	});
@@ -648,10 +659,12 @@ struct BSLightingShaderProperty_LoadBinary
 				}
 				if (property->flags.any(kSoftLighting)) {
 					pbrMaterial->pbrFlags.set(PBRFlags::Fuzz);
+				} else if (property->flags.any(kFitSlope)) {
+					pbrMaterial->pbrFlags.set(PBRFlags::Glint);
 				}
 			}
 			property->flags.set(kVertexLighting);
-			property->flags.reset(kMenuScreen, kSpecular, kGlowMap, kEnvMap, kMultiLayerParallax, kSoftLighting, kRimLighting, kBackLighting, kAnisotropicLighting, kEffectLighting);
+			property->flags.reset(kMenuScreen, kSpecular, kGlowMap, kEnvMap, kMultiLayerParallax, kSoftLighting, kRimLighting, kBackLighting, kAnisotropicLighting, kEffectLighting, kFitSlope);
 		}
 	}
 	static inline REL::Relocation<decltype(thunk)> func;
@@ -754,6 +767,14 @@ struct BSLightingShader_SetupMaterial
 							if (pbrMaterial->landscapeDisplacementTextures[textureIndex] != nullptr && pbrMaterial->landscapeDisplacementTextures[textureIndex] != RE::BSGraphics::State::GetSingleton()->GetRuntimeData().defaultTextureBlack) {
 								flags |= (1 << (BSLightingShaderMaterialPBRLandscape::NumTiles + textureIndex));
 							}
+							bool hasGlint = false;
+							if (pbrMaterial->glintParameters[textureIndex].enabled) {
+								hasGlint = true;
+								flags |= (1 << (2 * BSLightingShaderMaterialPBRLandscape::NumTiles + 1 + textureIndex));
+							}
+							if (hasGlint) {
+								flags |= (1 << (2 * BSLightingShaderMaterialPBRLandscape::NumTiles));
+							}
 						}
 					}
 					shadowState->SetPSConstant(flags, RE::BSGraphics::ConstantGroupLevel::PerMaterial, 36);
@@ -761,6 +782,7 @@ struct BSLightingShader_SetupMaterial
 
 				{
 					constexpr size_t PBRParamsStartIndex = 37;
+					constexpr size_t GlintParametersStartIndex = 44;
 
 					for (uint32_t textureIndex = 0; textureIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureIndex) {
 						std::array<float, 3> PBRParams;
@@ -768,6 +790,13 @@ struct BSLightingShader_SetupMaterial
 						PBRParams[1] = pbrMaterial->displacementScales[textureIndex];
 						PBRParams[2] = pbrMaterial->specularLevels[textureIndex];
 						shadowState->SetPSConstant(PBRParams, RE::BSGraphics::ConstantGroupLevel::PerMaterial, PBRParamsStartIndex + textureIndex);
+
+						std::array<float, 4> glintParameters;
+						glintParameters[0] = pbrMaterial->glintParameters[textureIndex].screenSpaceScale;
+						glintParameters[1] = pbrMaterial->glintParameters[textureIndex].logMicrofacetDensity;
+						glintParameters[2] = pbrMaterial->glintParameters[textureIndex].microfacetRoughness;
+						glintParameters[3] = pbrMaterial->glintParameters[textureIndex].densityRandomization;
+						shadowState->SetPSConstant(PBRParams, RE::BSGraphics::ConstantGroupLevel::PerMaterial, GlintParametersStartIndex + textureIndex);
 					}
 				}
 
@@ -843,6 +872,15 @@ struct BSLightingShader_SetupMaterial
 						PBRParams3[2] = pbrMaterial->GetFuzzColor().blue;
 						PBRParams3[3] = pbrMaterial->GetFuzzWeight();
 						shadowState->SetPSConstant(PBRParams3, RE::BSGraphics::ConstantGroupLevel::PerMaterial, 27);
+					} else if (pbrMaterial->pbrFlags.any(PBRFlags::Glint)) {
+						shaderFlags.set(PBRShaderFlags::Glint);
+
+						std::array<float, 4> GlintParameters;
+						GlintParameters[0] = pbrMaterial->GetGlintParameters().screenSpaceScale;
+						GlintParameters[0] = pbrMaterial->GetGlintParameters().logMicrofacetDensity;
+						GlintParameters[0] = pbrMaterial->GetGlintParameters().microfacetRoughness;
+						GlintParameters[0] = pbrMaterial->GetGlintParameters().densityRandomization;
+						shadowState->SetPSConstant(GlintParameters, RE::BSGraphics::ConstantGroupLevel::PerMaterial, 27);
 					}
 				}
 
@@ -1009,6 +1047,8 @@ void SetupLandscapeTexture(BSLightingShaderMaterialPBRLandscape& material, RE::T
 		material.displacementScales[textureIndex] = textureSetData->displacementScale;
 		material.roughnessScales[textureIndex] = textureSetData->roughnessScale;
 		material.specularLevels[textureIndex] = textureSetData->specularLevel;
+
+		material.glintParameters[textureIndex] = textureSetData->glintParameters;
 	}
 	material.isPbr[textureIndex] = isPbr;
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TruePBR.h"
+
 class BSLightingShaderMaterialPBRLandscape : public RE::BSLightingShaderMaterialBase
 {
 public:
@@ -48,6 +50,8 @@ public:
 	std::array<RE::NiPointer<RE::NiSourceTexture>, NumTiles> landscapeRMAOSTextures;
 	std::array<float, NumTiles> displacementScales;
 	std::array<float, NumTiles> specularLevels;
+
+	std::array<GlintParameters, NumTiles> glintParameters;
 };
 static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainOverlayTexture) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainOverlayTexture));
 static_assert(offsetof(BSLightingShaderMaterialPBRLandscape, terrainNoiseTexture) == offsetof(RE::BSLightingShaderMaterialLandscape, terrainNoiseTexture));

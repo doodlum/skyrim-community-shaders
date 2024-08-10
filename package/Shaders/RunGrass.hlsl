@@ -474,23 +474,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			if defined(TRUE_PBR)
 	float4 rawRMAOS = TexRMAOSSampler.Sample(SampRMAOSSampler, input.TexCoord.xy) * float4(PBRParams1.x, 1, 1, PBRParams1.y);
 
-	PBR::SurfaceProperties pbrSurfaceProperties;
+	PBR::SurfaceProperties pbrSurfaceProperties = PBR::InitSurfaceProperties();
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
 	pbrSurfaceProperties.AO = rawRMAOS.z;
 	pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
-
-	pbrSurfaceProperties.SubsurfaceColor = 0;
-	pbrSurfaceProperties.Thickness = 0;
-
-	pbrSurfaceProperties.CoatColor = 0;
-	pbrSurfaceProperties.CoatStrength = 0;
-	pbrSurfaceProperties.CoatRoughness = 0;
-	pbrSurfaceProperties.CoatF0 = 0.04;
-
-	pbrSurfaceProperties.FuzzColor = 0;
-	pbrSurfaceProperties.FuzzWeight = 0;
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
 

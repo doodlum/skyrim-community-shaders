@@ -1,5 +1,14 @@
 #pragma once
 
+struct GlintParameters
+{
+	bool enabled = false;
+	float screenSpaceScale = 1.f;
+	float logMicrofacetDensity = 1.f;
+	float microfacetRoughness = 1.f;
+	float densityRandomization = 1.f;
+};
+
 struct TruePBR
 {
 public:
@@ -55,6 +64,8 @@ public:
 
 		RE::NiColor fuzzColor;
 		float fuzzWeight = 0.f;
+
+		GlintParameters glintParameters;
 	};
 
 	void SetupFrame();
