@@ -705,10 +705,12 @@ float GetRimLightMultiplier(float3 L, float3 V, float3 N)
 	return exp2(LightingEffectParams.y * log2(1 - NdotV)) * saturate(dot(V, -L));
 }
 
+#if	!defined(TRUE_PBR)
 float ProcessSparkleColor(float color)
 {
 	return exp2(SparkleParams.y * log2(min(1, abs(color))));
 }
+#endif
 
 float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float3 lightColor, float shininess, float2 uv)
 {
@@ -1023,11 +1025,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	endif  // defined (SKINNED) || !defined (MODELSPACENORMALS)
 
-#	if defined(LANDSCAPE) && !defined(TRUE_PBR)
+#	if !defined(TRUE_PBR)
+#		if defined(LANDSCAPE)
 	float shininess = dot(input.LandBlendWeights1, LandscapeTexture1to4IsSpecPower) + input.LandBlendWeights2.x * LandscapeTexture5to6IsSpecPower.x + input.LandBlendWeights2.y * LandscapeTexture5to6IsSpecPower.y;
-#	else
+#		else
 	float shininess = SpecularColor.w;
-#	endif  // defined (LANDSCAPE)
+#		endif  // defined (LANDSCAPE)
+#	endif
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
@@ -1302,12 +1306,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		else
 		{
 			rawRMAOS = input.LandBlendWeights1.x * float4(1 - glossiness.x, 0, 1, 0.04);
-			if ((PBRFlags & TruePBR_Glint) != 0) {
-				glintParameters = MultiLayerParallaxData;
-			}
 		}
 #		else
 		rawRMAOS = TexRMAOSSampler.Sample(SampRMAOSSampler, diffuseUv) * float4(PBRParams1.x, 1, 1, PBRParams1.z);
+		if ((PBRFlags & TruePBR_Glint) != 0) {
+			glintParameters = MultiLayerParallaxData;
+		}
 #		endif
 #	endif
 

@@ -65,6 +65,9 @@ namespace SIE
 			}
 			if ((descriptor & static_cast<uint32_t>(ShaderCache::LightingShaderFlags::TruePbr)) != 0) {
 				defines[lastIndex++] = { "TRUE_PBR", nullptr };
+				if ((descriptor & static_cast<uint32_t>(ShaderCache::LightingShaderFlags::AnisoLighting)) != 0) {
+					defines[lastIndex++] = { "GLINT", nullptr };
+				}
 			}
 
 			for (auto* feature : Feature::GetFeatureList()) {

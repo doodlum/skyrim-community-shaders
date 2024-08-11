@@ -27,6 +27,8 @@ public:
 
 	static BSLightingShaderMaterialPBRLandscape* Make();
 
+	bool HasGlint() const;
+
 	// members
 	std::uint32_t numLandscapeTextures = 0;
 

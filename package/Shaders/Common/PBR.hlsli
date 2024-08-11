@@ -1,4 +1,6 @@
+#if defined(GLINT)
 #include "Common/Glints/Glints2023.hlsli"
+#endif
 
 #define TruePBR_HasEmissive (1 << 0)
 #define TruePBR_HasDisplacement (1 << 1)
@@ -83,6 +85,10 @@ namespace PBR
 
 		return surfaceProperties;
 	}
+	
+#if !defined(GLINT)
+	struct GlintInput {};
+#endif
 
 	float3 AdjustDirectionalLightColor(float3 lightColor)
 	{
@@ -156,11 +162,13 @@ namespace PBR
 	float3 GetSpecularDirectLightMultiplierMicrofacet(float roughness, float3 specularColor, float NdotL, float NdotV, float NdotH, float VdotH, GlintInput glintInput, out float3 F)
 	{
 		float D = GetNormalDistributionFunctionGGX(roughness, NdotH);
+#if defined(GLINT)
 		[branch] if (glintInput.enabled)
 		{
 			float D_max = GetNormalDistributionFunctionGGX(roughness, 1);
 			D = SampleGlints2023NDF(glintInput, D, D_max);
 		}
+#endif
 		float G = GetVisibilityFunctionSmithJointApprox(roughness, NdotV, NdotL);
 		F = GetFresnelFactorSchlick(specularColor, VdotH);
 
@@ -393,11 +401,12 @@ namespace PBR
 			diffuse += lightColor * satNdotL;
 
 			GlintInput glintInput;
-#if defined(LANDSCAPE)
+#if defined(GLINT)
+#	if defined(LANDSCAPE)
 			glintInput.enabled = PBRFlags & TruePBR_LandGlint;
-#else
+#	else
 			glintInput.enabled = PBRFlags & TruePBR_Glint;
-#endif
+#	endif
 			[branch] if (glintInput.enabled)
 			{
 				glintInput.H = mul(H, tbn);
@@ -409,6 +418,7 @@ namespace PBR
 				glintInput.MicrofacetRoughness = surfaceProperties.GlintMicrofacetRoughness;
 				glintInput.DensityRandomization = surfaceProperties.GlintDensityRandomization;
 			}
+#endif
 
 			float3 F;
 			specular += PI * GetSpecularDirectLightMultiplierMicrofacet(surfaceProperties.Roughness, surfaceProperties.F0, satNdotL, satNdotV, satNdotH, satVdotH, glintInput, F) * lightColor * satNdotL;
@@ -457,7 +467,9 @@ namespace PBR
 				}
 
 				float3 coatF;
+#if defined(GLINT)
 				glintInput.H = mul(coatH, tbn);
+#endif
 				float3 coatSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(surfaceProperties.CoatRoughness, surfaceProperties.CoatF0, coatNdotL, coatNdotV, coatNdotH, coatVdotH, glintInput, coatF) * coatLightColor * coatNdotL;
 
 				float3 layerAttenuation = 1 - coatF * surfaceProperties.CoatStrength;
@@ -483,7 +495,9 @@ namespace PBR
 		float VdotH = saturate(dot(V, H));
 
 		GlintInput glintInput;
+#if defined(GLINT)
 		glintInput.enabled = false;
+#endif
 		float3 wetnessF;
 		float3 wetnessSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(roughness, wetnessF0, NdotL, NdotV, NdotH, VdotH, glintInput, wetnessF) * lightColor * NdotL;
 
