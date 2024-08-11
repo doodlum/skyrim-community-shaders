@@ -184,45 +184,12 @@ void TruePBR::SaveSettings(json& o_json)
 void TruePBR::PrePass()
 {
 	auto context = State::GetSingleton()->context;
-	if (context && glintsNoiseTexture) {
+	if (context) {
+		if (!glintsNoiseTexture)
+			SetupGlintsTexture();
 		ID3D11ShaderResourceView* srv = glintsNoiseTexture->srv.get();
 		context->PSSetShaderResources(28, 1, &srv);
 	}
-}
-
-void TruePBR::SetupFrame()
-{
-	float newDirectionalLightScale = 1.f;
-	float newDirectionalAmbientLightScale = 1.f;
-
-	if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
-		if (const auto* currentCell = player->GetParentCell()) {
-			if (currentCell->IsInteriorCell()) {
-				if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
-					const auto* editorId = lightingTemplate->GetFormEditorID();
-					if (auto it = pbrLightingTemplates.find(editorId); it != pbrLightingTemplates.cend()) {
-						newDirectionalLightScale = it->second.directionalLightColorScale;
-						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
-					}
-				}
-			} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
-				if (const auto* weather = sky->currentWeather) {
-					const auto* editorId = weather->GetFormEditorID();
-					if (auto it = pbrWeathers.find(editorId); it != pbrWeathers.cend()) {
-						newDirectionalLightScale = it->second.directionalLightColorScale;
-						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
-					}
-				}
-			}
-		}
-	}
-
-	weatherPBRDirectionalLightColorMultiplier = newDirectionalLightScale;
-	weatherPBRDirectionalAmbientLightColorMultiplier = newDirectionalAmbientLightScale;
-
-	settings.directionalLightColorMultiplier = globalPBRDirectLightColorMultiplier * weatherPBRDirectionalLightColorMultiplier;
-	settings.pointLightColorMultiplier = globalPBRDirectLightColorMultiplier;
-	settings.ambientLightColorMultiplier = globalPBRAmbientLightColorMultiplier * weatherPBRDirectionalAmbientLightColorMultiplier;
 }
 
 void TruePBR::SetupGlintsTexture()
@@ -293,6 +260,41 @@ void TruePBR::SetupGlintsTexture()
 	}
 
 	noiseGenProgram->Release();
+}
+
+void TruePBR::SetupFrame()
+{
+	float newDirectionalLightScale = 1.f;
+	float newDirectionalAmbientLightScale = 1.f;
+
+	if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
+		if (const auto* currentCell = player->GetParentCell()) {
+			if (currentCell->IsInteriorCell()) {
+				if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
+					const auto* editorId = lightingTemplate->GetFormEditorID();
+					if (auto it = pbrLightingTemplates.find(editorId); it != pbrLightingTemplates.cend()) {
+						newDirectionalLightScale = it->second.directionalLightColorScale;
+						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
+					}
+				}
+			} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
+				if (const auto* weather = sky->currentWeather) {
+					const auto* editorId = weather->GetFormEditorID();
+					if (auto it = pbrWeathers.find(editorId); it != pbrWeathers.cend()) {
+						newDirectionalLightScale = it->second.directionalLightColorScale;
+						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
+					}
+				}
+			}
+		}
+	}
+
+	weatherPBRDirectionalLightColorMultiplier = newDirectionalLightScale;
+	weatherPBRDirectionalAmbientLightColorMultiplier = newDirectionalAmbientLightScale;
+
+	settings.directionalLightColorMultiplier = globalPBRDirectLightColorMultiplier * weatherPBRDirectionalLightColorMultiplier;
+	settings.pointLightColorMultiplier = globalPBRDirectLightColorMultiplier;
+	settings.ambientLightColorMultiplier = globalPBRAmbientLightColorMultiplier * weatherPBRDirectionalAmbientLightColorMultiplier;
 }
 
 void TruePBR::SetupTextureSetData()

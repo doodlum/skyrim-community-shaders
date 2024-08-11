@@ -226,7 +226,6 @@ void UnpackFloatParallel4(float4 input, out float4 a, out float4 b)
 
 struct GlintInput
 {
-	bool enabled;
 	float3 H;
 	float2 uv;
 	float2 duvdx;

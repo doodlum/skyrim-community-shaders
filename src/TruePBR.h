@@ -6,7 +6,7 @@ struct GlintParameters
 {
 	bool enabled = false;
 	float screenSpaceScale = 1.5f;
-	float logMicrofacetDensity = 18.f;
+	float logMicrofacetDensity = 40.f;
 	float microfacetRoughness = .015f;
 	float densityRandomization = 2.f;
 
