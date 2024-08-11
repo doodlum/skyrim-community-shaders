@@ -27,13 +27,12 @@
 #define TruePBR_LandTile3HasDisplacement (1 << 9)
 #define TruePBR_LandTile4HasDisplacement (1 << 10)
 #define TruePBR_LandTile5HasDisplacement (1 << 11)
-#define TruePBR_LandGlint (1 << 12)
-#define TruePBR_LandTile0HasGlint (1 << 13)
-#define TruePBR_LandTile1HasGlint (1 << 14)
-#define TruePBR_LandTile2HasGlint (1 << 15)
-#define TruePBR_LandTile3HasGlint (1 << 16)
-#define TruePBR_LandTile4HasGlint (1 << 17)
-#define TruePBR_LandTile5HasGlint (1 << 18)
+#define TruePBR_LandTile0HasGlint (1 << 12)
+#define TruePBR_LandTile1HasGlint (1 << 13)
+#define TruePBR_LandTile2HasGlint (1 << 14)
+#define TruePBR_LandTile3HasGlint (1 << 15)
+#define TruePBR_LandTile4HasGlint (1 << 16)
+#define TruePBR_LandTile5HasGlint (1 << 17)
 
 namespace PBR
 {

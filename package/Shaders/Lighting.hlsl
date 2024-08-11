@@ -1363,7 +1363,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			rawRMAOS += input.LandBlendWeights1.y * float4(1 - landNormal2.w, 0, 1, 1);
+			rawRMAOS += input.LandBlendWeights1.y * float4(1 - landNormal2.w, 0, 1, 0.04);
 		}
 #		endif
 	}
@@ -1390,7 +1390,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			rawRMAOS += input.LandBlendWeights1.z * float4(1 - landNormal3.w, 0, 1, 1);
+			rawRMAOS += input.LandBlendWeights1.z * float4(1 - landNormal3.w, 0, 1, 0.04);
 		}
 #		endif
 	}
@@ -1417,7 +1417,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			rawRMAOS += input.LandBlendWeights1.w * float4(1 - landNormal4.w, 0, 1, 1);
+			rawRMAOS += input.LandBlendWeights1.w * float4(1 - landNormal4.w, 0, 1, 0.04);
 		}
 #		endif
 	}
@@ -1444,7 +1444,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			rawRMAOS += input.LandBlendWeights2.x * float4(1 - landNormal5.w, 0, 1, 1);
+			rawRMAOS += input.LandBlendWeights2.x * float4(1 - landNormal5.w, 0, 1, 0.04);
 		}
 #		endif
 	}
@@ -1471,7 +1471,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			rawRMAOS += input.LandBlendWeights2.y * float4(1 - landNormal6.w, 0, 1, 1);
+			rawRMAOS += input.LandBlendWeights2.y * float4(1 - landNormal6.w, 0, 1, 0.04);
 		}
 #		endif
 	}

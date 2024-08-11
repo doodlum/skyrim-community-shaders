@@ -822,10 +822,7 @@ struct BSLightingShader_SetupMaterial
 								flags |= (1 << (BSLightingShaderMaterialPBRLandscape::NumTiles + textureIndex));
 							}
 							if (pbrMaterial->glintParameters[textureIndex].enabled) {
-								flags |= (1 << (2 * BSLightingShaderMaterialPBRLandscape::NumTiles + 1 + textureIndex));
-							}
-							if (pbrMaterial->HasGlint()) {
-								flags |= (1 << (2 * BSLightingShaderMaterialPBRLandscape::NumTiles));
+								flags |= (1 << (2 * BSLightingShaderMaterialPBRLandscape::NumTiles + textureIndex));
 							}
 						}
 					}
