@@ -369,7 +369,6 @@ namespace PBR
 		specular = 0;
 
 		float3 H = normalize(V + L);
-		float3 localH = mul(H, tbn);
 
 		float NdotL = dot(N, L);
 		float NdotV = dot(N, V);
@@ -401,7 +400,7 @@ namespace PBR
 #endif
 			[branch] if (glintInput.enabled)
 			{
-				glintInput.H = H;
+				glintInput.H = mul(H, tbn);
 				glintInput.uv = uv;
 				glintInput.duvdx = ddx(uv);
 				glintInput.duvdy = ddy(uv);
@@ -458,7 +457,7 @@ namespace PBR
 				}
 
 				float3 coatF;
-				glintInput.H = coatH;
+				glintInput.H = mul(coatH, tbn);
 				float3 coatSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(surfaceProperties.CoatRoughness, surfaceProperties.CoatF0, coatNdotL, coatNdotV, coatNdotH, coatVdotH, glintInput, coatF) * coatLightColor * coatNdotL;
 
 				float3 layerAttenuation = 1 - coatF * surfaceProperties.CoatStrength;
