@@ -1,5 +1,5 @@
 #if defined(GLINT)
-#include "Common/Glints/Glints2023.hlsli"
+#	include "Common/Glints/Glints2023.hlsli"
 #endif
 
 #define TruePBR_HasEmissive (1 << 0)
@@ -85,9 +85,10 @@ namespace PBR
 
 		return surfaceProperties;
 	}
-	
+
 #if !defined(GLINT)
-	struct GlintInput {};
+	struct GlintInput
+	{};
 #endif
 
 	float3 AdjustDirectionalLightColor(float3 lightColor)
@@ -467,9 +468,9 @@ namespace PBR
 				}
 
 				float3 coatF;
-#if defined(GLINT)
+#	if defined(GLINT)
 				glintInput.H = mul(coatH, tbn);
-#endif
+#	endif
 				float3 coatSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(surfaceProperties.CoatRoughness, surfaceProperties.CoatF0, coatNdotL, coatNdotV, coatNdotH, coatVdotH, glintInput, coatF) * coatLightColor * coatNdotL;
 
 				float3 layerAttenuation = 1 - coatF * surfaceProperties.CoatStrength;

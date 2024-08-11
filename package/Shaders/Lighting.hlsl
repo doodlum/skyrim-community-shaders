@@ -705,12 +705,12 @@ float GetRimLightMultiplier(float3 L, float3 V, float3 N)
 	return exp2(LightingEffectParams.y * log2(1 - NdotV)) * saturate(dot(V, -L));
 }
 
-#if	!defined(TRUE_PBR)
+#	if !defined(TRUE_PBR)
 float ProcessSparkleColor(float color)
 {
 	return exp2(SparkleParams.y * log2(min(1, abs(color))));
 }
-#endif
+#	endif
 
 float3 GetLightSpecularInput(PS_INPUT input, float3 L, float3 V, float3 N, float3 lightColor, float shininess, float2 uv)
 {

@@ -455,7 +455,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		normal = -normal;
 
 	normal = normalize(lerp(normal, normalize(input.SphereNormal.xyz), input.SphereNormal.w));
-	
+
 	float3x3 tbn = 0;
 
 #			if !defined(TRUE_PBR)

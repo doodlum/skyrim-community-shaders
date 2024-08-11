@@ -741,9 +741,7 @@ struct BSLightingShaderProperty_GetRenderPasses
 						if (material->HasGlint()) {
 							lightingFlags |= static_cast<uint32_t>(SIE::ShaderCache::LightingShaderFlags::AnisoLighting);
 						}
-					}
-					else
-					{
+					} else {
 						auto* material = static_cast<BSLightingShaderMaterialPBR*>(property->material);
 						if (material->pbrFlags.any(PBRFlags::Glint)) {
 							lightingFlags |= static_cast<uint32_t>(SIE::ShaderCache::LightingShaderFlags::AnisoLighting);
