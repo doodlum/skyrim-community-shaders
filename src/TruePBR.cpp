@@ -8,6 +8,7 @@
 #include "Hooks.h"
 #include "ShaderCache.h"
 #include "State.h"
+#include "Util.h"
 
 namespace PNState
 {
@@ -202,6 +203,15 @@ void TruePBR::SaveSettings(json& o_json)
 	o_json["Ambient Light Color Multiplier"] = globalPBRAmbientLightColorMultiplier;
 }
 
+void TruePBR::PrePass()
+{
+	auto context = State::GetSingleton()->context;
+	if (context && glintsNoiseTexture) {
+		ID3D11ShaderResourceView* srv = glintsNoiseTexture->srv.get();
+		context->PSSetShaderResources(28, 1, &srv);
+	}
+}
+
 void TruePBR::SetupFrame()
 {
 	float newDirectionalLightScale = 1.f;
@@ -235,6 +245,76 @@ void TruePBR::SetupFrame()
 	settings.directionalLightColorMultiplier = globalPBRDirectLightColorMultiplier * weatherPBRDirectionalLightColorMultiplier;
 	settings.pointLightColorMultiplier = globalPBRDirectLightColorMultiplier;
 	settings.ambientLightColorMultiplier = globalPBRAmbientLightColorMultiplier * weatherPBRDirectionalAmbientLightColorMultiplier;
+}
+
+void TruePBR::SetupGlintsTexture()
+{
+	constexpr uint noiseTexSize = 512;
+
+	D3D11_TEXTURE2D_DESC tex_desc{
+		.Width = noiseTexSize,
+		.Height = noiseTexSize,
+		.MipLevels = 1,
+		.ArraySize = 1,
+		.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+		.SampleDesc = { .Count = 1, .Quality = 0 },
+		.Usage = D3D11_USAGE_DEFAULT,
+		.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+		.CPUAccessFlags = 0,
+		.MiscFlags = 0
+	};
+	D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = {
+		.Format = tex_desc.Format,
+		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+		.Texture2D = {
+			.MostDetailedMip = 0,
+			.MipLevels = 1 }
+	};
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc = {
+		.Format = tex_desc.Format,
+		.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+		.Texture2D = { .MipSlice = 0 }
+	};
+
+	glintsNoiseTexture = eastl::make_unique<Texture2D>(tex_desc);
+	glintsNoiseTexture->CreateSRV(srv_desc);
+	glintsNoiseTexture->CreateUAV(uav_desc);
+
+	// Compile
+	auto noiseGenProgram = reinterpret_cast<ID3D11ComputeShader*>(Util::CompileShader(L"Data\\Shaders\\Common\\Glints\\noisegen.cs.hlsl", {}, "cs_5_0"));
+	if (!noiseGenProgram) {
+		logger::error("Failed to compile glints noise generation shader!");
+		return;
+	}
+
+	// Generate the noise
+	{
+		auto context = State::GetSingleton()->context;
+
+		struct OldState
+		{
+			ID3D11ComputeShader* shader;
+			ID3D11UnorderedAccessView* uav[1];
+			ID3D11ClassInstance* instance;
+			UINT numInstances;
+		};
+
+		OldState newer{}, old{};
+		context->CSGetShader(&old.shader, &old.instance, &old.numInstances);
+		context->CSGetUnorderedAccessViews(0, ARRAYSIZE(old.uav), old.uav);
+
+		{
+			newer.uav[0] = glintsNoiseTexture->uav.get();
+			context->CSSetShader(noiseGenProgram, nullptr, 0);
+			context->CSSetUnorderedAccessViews(0, ARRAYSIZE(newer.uav), newer.uav, nullptr);
+			context->Dispatch((noiseTexSize + 31) >> 5, (noiseTexSize + 31) >> 5, 1);
+		}
+
+		context->CSSetShader(old.shader, &old.instance, old.numInstances);
+		context->CSSetUnorderedAccessViews(0, ARRAYSIZE(old.uav), old.uav, nullptr);
+	}
+
+	noiseGenProgram->Release();
 }
 
 void TruePBR::SetupTextureSetData()

@@ -2,6 +2,7 @@
 
 #include "ShaderCache.h"
 #include "State.h"
+#include "TruePBR.h"
 #include "Util.h"
 
 #include "Features/DynamicCubemaps.h"
@@ -265,6 +266,7 @@ void Deferred::PrepassPasses()
 
 	stateUpdateFlags.set(RE::BSGraphics::ShaderFlags::DIRTY_RENDERTARGET);  // Run OMSetRenderTargets again
 
+	TruePBR::GetSingleton()->PrePass();
 	for (auto* feature : Feature::GetFeatureList()) {
 		if (feature->loaded) {
 			feature->Prepass();

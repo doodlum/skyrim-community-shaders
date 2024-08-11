@@ -1,12 +1,14 @@
 #pragma once
 
+#include "Buffer.h"
+
 struct GlintParameters
 {
 	bool enabled = false;
-	float screenSpaceScale = 1.f;
-	float logMicrofacetDensity = 1.f;
-	float microfacetRoughness = 1.f;
-	float densityRandomization = 1.f;
+	float screenSpaceScale = 1.5f;
+	float logMicrofacetDensity = 18.f;
+	float microfacetRoughness = .015f;
+	float densityRandomization = 2.f;
 };
 
 struct TruePBR
@@ -24,10 +26,14 @@ public:
 	void SetupResources();
 	void LoadSettings(json& o_json);
 	void SaveSettings(json& o_json);
+	void PrePass();
 	void PostPostLoad();
 
 	void SetShaderResouces();
 	void GenerateShaderPermutations(RE::BSShader* shader);
+
+	void SetupGlintsTexture();
+	eastl::unique_ptr<Texture2D> glintsNoiseTexture = nullptr;
 
 	std::unordered_map<uint32_t, std::string> editorIDs;
 
@@ -37,7 +43,7 @@ public:
 	float weatherPBRDirectionalLightColorMultiplier = 1.f;
 	float weatherPBRDirectionalAmbientLightColorMultiplier = 1.f;
 
-	struct alignas(16) Settings
+	struct Settings
 	{
 		float directionalLightColorMultiplier = 1.f;
 		float pointLightColorMultiplier = 1.f;
@@ -46,6 +52,7 @@ public:
 		uint32_t useMultiBounceAO = true;
 		uint32_t pad[3];
 	} settings{};
+	static_assert(sizeof(Settings) % 16 == 0);
 
 	struct PBRTextureSetData
 	{
