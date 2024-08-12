@@ -1,7 +1,3 @@
-#if defined(GLINT)
-#	include "Common/Glints/Glints2023.hlsli"
-#endif
-
 #define TruePBR_HasEmissive (1 << 0)
 #define TruePBR_HasDisplacement (1 << 1)
 #define TruePBR_HasFeatureTexture0 (1 << 2)
@@ -36,6 +32,10 @@
 
 namespace PBR
 {
+#if defined(GLINT)
+#	include "Common/Glints/Glints2023.hlsli"
+#endif
+
 	struct SurfaceProperties
 	{
 		float3 BaseColor;
@@ -158,8 +158,11 @@ namespace PBR
 	float3 GetSpecularDirectLightMultiplierMicrofacetWithGlint(float roughness, float3 specularColor, float NdotL, float NdotV, float NdotH, float VdotH, GlintInput glintInput, out float3 F)
 	{
 		float D = GetNormalDistributionFunctionGGX(roughness, NdotH);
-		float D_max = GetNormalDistributionFunctionGGX(roughness, 1);
-		D = SampleGlints2023NDF(glintInput, D, D_max);
+		[branch] if (glintInput.LogMicrofacetDensity > 1.1)
+		{
+			float D_max = GetNormalDistributionFunctionGGX(roughness, 1);
+			D = SampleGlints2023NDF(glintInput, D, D_max);
+		}
 		float G = GetVisibilityFunctionSmithJointApprox(roughness, NdotV, NdotL);
 		F = GetFresnelFactorSchlick(specularColor, VdotH);
 
@@ -370,7 +373,7 @@ namespace PBR
 	}
 
 	void GetDirectLightInput(out float3 diffuse, out float3 coatDiffuse, out float3 transmission, out float3 specular, float3 N, float3 coatN, float3 V, float3 coatV, float3 L, float3 coatL, float3 lightColor, float3 coatLightColor, SurfaceProperties surfaceProperties,
-		float3x3 tbn, float2 uv)
+		float3x3 tbnTr, float2 uv)
 	{
 		diffuse = 0;
 		coatDiffuse = 0;
@@ -403,12 +406,12 @@ namespace PBR
 
 #if defined(GLINT)
 			GlintInput glintInput;
-			glintInput.H = mul(tbn, H);
+			glintInput.H = mul(tbnTr, H);
 			glintInput.uv = uv;
 			glintInput.duvdx = ddx(uv);
 			glintInput.duvdy = ddy(uv);
 			glintInput.ScreenSpaceScale = max(1, surfaceProperties.GlintScreenSpaceScale);
-			glintInput.LogMicrofacetDensity = 40 - clamp(surfaceProperties.GlintLogMicrofacetDensity, 0, 40);
+			glintInput.LogMicrofacetDensity = clamp(surfaceProperties.GlintLogMicrofacetDensity, 1, 40);
 			glintInput.MicrofacetRoughness = clamp(surfaceProperties.GlintMicrofacetRoughness, 0.005, 0.3);
 			glintInput.DensityRandomization = clamp(surfaceProperties.GlintDensityRandomization, 0, 5);
 #endif
