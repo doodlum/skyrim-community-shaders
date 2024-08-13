@@ -106,24 +106,14 @@ void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajor, out
 	ellipseMinor = normalize(A1) * r1;
 }
 
-float2 VectorToSlope(float3 v)
-{
-	return float2(-v.x / v.z, -v.y / v.z);
-}
-
-float3 SlopeToVector(float2 s)
-{
-	float z = rsqrt(s.x * s.x + s.y * s.y + 1);
-	float x = s.x * z;
-	float y = s.y * z;
-	return float3(x, y, z);
-}
-
 float2 RotateUV(float2 uv, float rotation, float2 mid)
 {
+	float2 rel_uv = uv - mid;
+	float2 sincos_rot;
+	sincos(rotation, sincos_rot.y, sincos_rot.x);
 	return float2(
-		cos(rotation) * (uv.x - mid.x) + sin(rotation) * (uv.y - mid.y) + mid.x,
-		cos(rotation) * (uv.y - mid.y) - sin(rotation) * (uv.x - mid.x) + mid.y);
+		sincos_rot.x * rel_uv.x + sincos_rot.y * rel_uv.y + mid.x,
+		sincos_rot.x * rel_uv.y - sincos_rot.y * rel_uv.x + mid.y);
 }
 
 float BilinearLerp(float4 values, float2 valuesLerp)
@@ -184,8 +174,9 @@ float3 GetBarycentricWeights(float2 p, float2 a, float2 b, float2 c)
 	float2 v1 = c - a;
 	float2 v2 = p - a;
 	float den = v0.x * v1.y - v1.x * v0.y;
-	float v = (v2.x * v1.y - v1.x * v2.y) / den;
-	float w = (v0.x * v2.y - v2.x * v0.y) / den;
+	float rcpDen = rcp(den);
+	float v = (v2.x * v1.y - v1.x * v2.y) * rcpDen;
+	float w = (v0.x * v2.y - v2.x * v0.y) * rcpDen;
 	float u = 1.0f - v - w;
 	return float3(u, v, w);
 }
@@ -294,7 +285,7 @@ float SampleGlintGridSimplex(GlintInput params, float2 uv, uint gridSeed, float2
 
 	// Compute microfacet count with randomization
 	float3 logDensityRand = clamp(sampleNormalDistribution(float3(rand0.x, rand1.x, rand2.x), params.LogMicrofacetDensity.r, params.DensityRandomization), 0.0, 50.0);  // TODO : optimize sampleNormalDist
-	float3 microfacetCount = max(0.0.rrr, footprintArea.rrr * exp(logDensityRand));
+	float3 microfacetCount = max(1e-8, footprintArea.rrr * exp(logDensityRand));
 	float3 microfacetCountBlended = microfacetCount * gridWeight;
 
 	// Compute binomial properties
@@ -451,13 +442,10 @@ void GetAnisoCorrectingGridTetrahedron(bool centerSpecialCase, inout float theta
 
 float4 SampleGlints2023NDF(GlintInput params, float targetNDF, float maxNDF)
 {
-	static const float DEG2RAD = 0.01745329251;
-	static const float RAD2DEG = 57.2957795131;
-
 	// ACCURATE PIXEL FOOTPRINT ELLIPSE
 	float2 ellipseMajor, ellipseMinor;
 	GetGradientEllipse(params.duvdx, params.duvdy, ellipseMajor, ellipseMinor);
-	float ellipseRatio = length(ellipseMajor) / length(ellipseMinor);
+	float ellipseRatio = length(ellipseMajor) / (length(ellipseMinor) + 1e-8);
 
 	// SHARED GLINT NDF VALUES
 	float halfScreenSpaceScaler = params.ScreenSpaceScale * 0.5;
@@ -472,26 +460,26 @@ float4 SampleGlints2023NDF(GlintInput params, float targetNDF, float maxNDF)
 	float divLod0 = pow(2.0, lod0);
 	float divLod1 = pow(2.0, lod1);
 	float lodLerp = frac(lod);
-	float footprintAreaLOD0 = pow(exp2(lod0), 2.0);
-	float footprintAreaLOD1 = pow(exp2(lod1), 2.0);
+	float footprintAreaLOD0 = exp2(2.0 * lod0);
+	float footprintAreaLOD1 = exp2(2.0 * lod1);
 
 	// MANUAL ANISOTROPY RATIO COMPENSATION
 	float ratio0 = max(pow(2.0, (int)log2(ellipseRatio)), 1.0);
 	float ratio1 = ratio0 * 2.0;
-	float ratioLerp = clamp(Remap(ellipseRatio, ratio0, ratio1, 0.0, 1.0), 0.0, 1.0);
+	float ratioLerp = saturate(Remap(ellipseRatio, ratio0, ratio1, 0.0, 1.0));
 
 	// MANUAL ANISOTROPY ROTATION COMPENSATION
 	float2 v1 = float2(0.0, 1.0);
 	float2 v2 = normalize(ellipseMajor);
-	float theta = atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y) * RAD2DEG;
-	float thetaGrid = 90.0 / max(ratio0, 2.0);
+	float theta = atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y);
+	float thetaGrid = 1.57079632679 / max(ratio0, 2.0);
 	float thetaBin = (int)(theta / thetaGrid) * thetaGrid;
 	thetaBin = thetaBin + (thetaGrid / 2.0);
 	float thetaBin0 = theta < thetaBin ? thetaBin - thetaGrid / 2.0 : thetaBin;
 	float thetaBinH = thetaBin0 + thetaGrid / 4.0;
 	float thetaBin1 = thetaBin0 + thetaGrid / 2.0;
 	float thetaBinLerp = Remap(theta, thetaBin0, thetaBin1, 0.0, 1.0);
-	thetaBin0 = thetaBin0 <= 0.0 ? 180.0 + thetaBin0 : thetaBin0;
+	thetaBin0 = thetaBin0 <= 0.0 ? 3.1415926535 + thetaBin0 : thetaBin0;
 
 	// TETRAHEDRONIZATION OF ROTATION + RATIO + LOD GRID
 	bool centerSpecialCase = (ratio0.x == 1.0);
@@ -517,19 +505,19 @@ float4 SampleGlints2023NDF(GlintInput params, float targetNDF, float maxNDF)
 		tetraC.x = (tetraC.y == 0) ? 3 : tetraC.x;
 		tetraD.x = (tetraD.y == 0) ? 3 : tetraD.x;
 	}
-	float2 uvRotA = RotateUV(params.uv, thetaBins[tetraA.x] * DEG2RAD, 0.0.rr);
-	float2 uvRotB = RotateUV(params.uv, thetaBins[tetraB.x] * DEG2RAD, 0.0.rr);
-	float2 uvRotC = RotateUV(params.uv, thetaBins[tetraC.x] * DEG2RAD, 0.0.rr);
-	float2 uvRotD = RotateUV(params.uv, thetaBins[tetraD.x] * DEG2RAD, 0.0.rr);
+	float2 uvRotA = RotateUV(params.uv, thetaBins[tetraA.x], 0.0.rr);
+	float2 uvRotB = RotateUV(params.uv, thetaBins[tetraB.x], 0.0.rr);
+	float2 uvRotC = RotateUV(params.uv, thetaBins[tetraC.x], 0.0.rr);
+	float2 uvRotD = RotateUV(params.uv, thetaBins[tetraD.x], 0.0.rr);
 
 	// SAMPLE GLINT GRIDS
-	uint gridSeedA = HashWithoutSine13(float3(log2(divLods[tetraA.z]), thetaBins[tetraA.x] % 360, ratios[tetraA.y])) * 4294967296.0;
-	uint gridSeedB = HashWithoutSine13(float3(log2(divLods[tetraB.z]), thetaBins[tetraB.x] % 360, ratios[tetraB.y])) * 4294967296.0;
-	uint gridSeedC = HashWithoutSine13(float3(log2(divLods[tetraC.z]), thetaBins[tetraC.x] % 360, ratios[tetraC.y])) * 4294967296.0;
-	uint gridSeedD = HashWithoutSine13(float3(log2(divLods[tetraD.z]), thetaBins[tetraD.x] % 360, ratios[tetraD.y])) * 4294967296.0;
+	uint gridSeedA = HashWithoutSine13(float3(log2(divLods[tetraA.z]), fmod(thetaBins[tetraA.x], 6.28318530718), ratios[tetraA.y])) * 4294967296.0;
+	uint gridSeedB = HashWithoutSine13(float3(log2(divLods[tetraB.z]), fmod(thetaBins[tetraB.x], 6.28318530718), ratios[tetraB.y])) * 4294967296.0;
+	uint gridSeedC = HashWithoutSine13(float3(log2(divLods[tetraC.z]), fmod(thetaBins[tetraC.x], 6.28318530718), ratios[tetraC.y])) * 4294967296.0;
+	uint gridSeedD = HashWithoutSine13(float3(log2(divLods[tetraD.z]), fmod(thetaBins[tetraD.x], 6.28318530718), ratios[tetraD.y])) * 4294967296.0;
 	float sampleA = SampleGlintGridSimplex(params, uvRotA / divLods[tetraA.z] / float2(1.0, ratios[tetraA.y]), gridSeedA, slope, ratios[tetraA.y] * footprintAreas[tetraA.z], rescaledTargetNDF, tetraBarycentricWeights.x);
 	float sampleB = SampleGlintGridSimplex(params, uvRotB / divLods[tetraB.z] / float2(1.0, ratios[tetraB.y]), gridSeedB, slope, ratios[tetraB.y] * footprintAreas[tetraB.z], rescaledTargetNDF, tetraBarycentricWeights.y);
 	float sampleC = SampleGlintGridSimplex(params, uvRotC / divLods[tetraC.z] / float2(1.0, ratios[tetraC.y]), gridSeedC, slope, ratios[tetraC.y] * footprintAreas[tetraC.z], rescaledTargetNDF, tetraBarycentricWeights.z);
 	float sampleD = SampleGlintGridSimplex(params, uvRotD / divLods[tetraD.z] / float2(1.0, ratios[tetraD.y]), gridSeedD, slope, ratios[tetraD.y] * footprintAreas[tetraD.z], rescaledTargetNDF, tetraBarycentricWeights.w);
-	return min((sampleA + sampleB + sampleC + sampleD) * (1.0 / params.MicrofacetRoughness), 40) * maxNDF;  // somewhat brute force way of prevent glazing angle extremities
+	return min((sampleA + sampleB + sampleC + sampleD) * (1.0 / params.MicrofacetRoughness), 20) * maxNDF;  // somewhat brute force way of prevent glazing angle extremities
 }

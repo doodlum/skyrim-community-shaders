@@ -411,7 +411,7 @@ namespace PBR
 			glintInput.duvdx = ddx(uv);
 			glintInput.duvdy = ddy(uv);
 			glintInput.ScreenSpaceScale = max(1, surfaceProperties.GlintScreenSpaceScale);
-			glintInput.LogMicrofacetDensity = clamp(surfaceProperties.GlintLogMicrofacetDensity, 1, 40);
+			glintInput.LogMicrofacetDensity = clamp(40.f - surfaceProperties.GlintLogMicrofacetDensity, 1, 40);
 			glintInput.MicrofacetRoughness = clamp(surfaceProperties.GlintMicrofacetRoughness, 0.005, 0.3);
 			glintInput.DensityRandomization = clamp(surfaceProperties.GlintDensityRandomization, 0, 5);
 #endif
