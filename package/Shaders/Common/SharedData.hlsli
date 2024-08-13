@@ -136,8 +136,9 @@ struct PBRSettings
 	float DirectionalLightColorMultiplier;
 	float PointLightColorMultiplier;
 	float AmbientLightColorMultiplier;
-	bool UseMultipleScattering;
-	bool UseMultiBounceAO;
+	uint UseMultipleScattering;
+	uint UseMultiBounceAO;
+	uint3 pad;
 };
 
 cbuffer FeatureData : register(b6)
