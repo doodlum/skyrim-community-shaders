@@ -16,7 +16,7 @@ cbuffer SharedData : register(b5)
 	float4 BufferDim;
 	float Timer;
 	uint FrameCount;
-	uint pad0b4[2];
+	uint pad0[2];
 };
 
 struct GrassLightingSettings
@@ -27,7 +27,7 @@ struct GrassLightingSettings
 	bool OverrideComplexGrassSettings;
 
 	float BasicGrassBrightness;
-	float3 pad;
+	float3 pad0;
 };
 
 struct CPMSettings
@@ -128,7 +128,7 @@ struct SkylightingSettings
 	float4 MixParams;  // x: min diffuse visibility, y: diffuse mult, z: min specular visibility, w: specular mult
 
 	uint DirectionalDiffuse;
-	float3 _pad1;
+	float3 pad0;
 };
 
 struct PBRSettings
@@ -138,7 +138,7 @@ struct PBRSettings
 	float AmbientLightColorMultiplier;
 	uint UseMultipleScattering;
 	uint UseMultiBounceAO;
-	uint3 pad;
+	uint3 pad0;
 };
 
 cbuffer FeatureData : register(b6)
