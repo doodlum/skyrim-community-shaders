@@ -16,6 +16,11 @@
 
 #include "VariableRateShading.h"
 
+enum class PermutationFlags : uint32_t
+{
+	InWorld = 1 << 24,
+};
+
 void State::Draw()
 {
 	const auto& shaderCache = SIE::ShaderCache::Instance();
@@ -43,6 +48,12 @@ void State::Draw()
 				if (enabledClasses[type - 1]) {
 					// Only check against non-shader bits
 					currentPixelDescriptor &= ~modifiedPixelDescriptor;
+
+					// Set an unused bit to indicate if we are rendering an object in the main rendering pass
+					if (Deferred::GetSingleton()->inWorld) {
+						currentPixelDescriptor |= (uint32_t)PermutationFlags::InWorld;
+					}
+
 					if (currentPixelDescriptor != lastPixelDescriptor) {
 						PermutationCB data{};
 						data.VertexShaderDescriptor = currentVertexDescriptor;
@@ -54,15 +65,10 @@ void State::Draw()
 						lastPixelDescriptor = currentPixelDescriptor;
 					}
 
-					auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-					GET_INSTANCE_MEMBER(cubeMapRenderTarget, shadowState)
-
-					if (cubeMapRenderTarget != RE::RENDER_TARGETS_CUBEMAP::kREFLECTIONS) {
-						static Util::FrameChecker frameChecker;
-						if (frameChecker.isNewFrame()) {
-							ID3D11Buffer* buffers[3] = { permutationCB->CB(), sharedDataCB->CB(), featureDataCB->CB() };
-							context->PSSetConstantBuffers(4, 3, buffers);
-						}
+					static Util::FrameChecker frameChecker;
+					if (frameChecker.isNewFrame()) {
+						ID3D11Buffer* buffers[3] = { permutationCB->CB(), sharedDataCB->CB(), featureDataCB->CB() };
+						context->PSSetConstantBuffers(4, 3, buffers);
 					}
 
 					if (IsDeveloperMode()) {
@@ -375,6 +381,8 @@ void State::SetupResources()
 	context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 	device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
 	context->QueryInterface(__uuidof(pPerf), reinterpret_cast<void**>(&pPerf));
+
+	tracyCtx = TracyD3D11Context(device, context);
 }
 
 void State::ModifyShaderLookup(const RE::BSShader& a_shader, uint& a_vertexDescriptor, uint& a_pixelDescriptor, bool a_forceDeferred)

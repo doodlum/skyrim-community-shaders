@@ -108,6 +108,7 @@ void CalculateGI(
 
 	const float3 pixCenterPos = ScreenToViewPosition(normalizedScreenPos, viewspaceZ, eyeIndex);
 	const float3 viewVec = normalize(-pixCenterPos);
+	const float NoV = abs(dot(viewVec, viewspaceNormal));
 
 	float visibility = 0;
 	float visibilitySpecular = 0;
@@ -116,7 +117,8 @@ void CalculateGI(
 	float3 bentNormal = viewspaceNormal;
 
 #ifdef GI_SPECULAR
-	const float roughness = 1 - FULLRES_LOAD(srcNormalRoughness, dtid, uv * frameScale, samplerLinearClamp).z;
+	const float roughness2 = saturate(1 - FULLRES_LOAD(srcNormalRoughness, dtid, uv * frameScale, samplerLinearClamp).z);
+	const float roughness = sqrt(roughness2);
 #endif
 
 	for (uint slice = 0; slice < NumSlices; slice++) {
@@ -224,7 +226,7 @@ void CalculateGI(
 
 #		ifdef GI_SPECULAR
 				// thank u Olivier!
-				float coneHalfAngles = specularLobeHalfAngle(roughness);
+				float coneHalfAngles = max(5e-2, specularLobeHalfAngle(roughness));  // not too small
 				float2 angleRangeSpecular = clamp((angleRangeGI + nDom) * 0.5 / coneHalfAngles, -1, 1) * 0.5 + 0.5;
 
 				// Experimental method using importance sampling
@@ -247,7 +249,7 @@ void CalculateGI(
 				uint overlappedBits = maskedBitsGI & ~bitmaskGI;
 				bool checkGI = overlappedBits;
 #		ifdef GI_SPECULAR
-				uint overlappedBitsSpecular = maskedBitsGISpecular & ~bitsRangeGISpecular;
+				uint overlappedBitsSpecular = maskedBitsGISpecular & ~bitmaskGISpecular;
 				checkGI = checkGI || overlappedBitsSpecular;
 #		endif
 #	else
@@ -259,26 +261,26 @@ void CalculateGI(
 
 					// IL
 					float frontBackMult = 1.f;
-#	ifdef BACKFACE
-					if (dot(DecodeNormal(srcNormalRoughness.SampleLevel(samplerPointClamp, sampleUV * frameScale, 0).xy), sampleHorizonVec) > 0)  // backface
+					float3 normalSample = DecodeNormal(srcNormalRoughness.SampleLevel(samplerPointClamp, sampleUV * frameScale, 0).xy);
+					if (dot(normalSample, sampleHorizonVec) > 0)  // backface
 						frontBackMult = BackfaceStrength;
-#	endif
 
 #	ifdef BITMASK
 					if (frontBackMult > 0.f) {
 						float3 sampleRadiance = srcRadiance.SampleLevel(samplerPointClamp, sampleUV * OUT_FRAME_SCALE, mipLevel).rgb * frontBackMult * giBoost;
 
-						float nov = dot(viewspaceNormal, sampleHorizonVec);
+						// float sourceMult = saturate(-dot(normalSample, sampleHorizonVec));
+						float NoL = clamp(dot(viewspaceNormal, sampleHorizonVec), 1e-5, 1);
 
 						float3 diffuseRadiance = sampleRadiance * countbits(overlappedBits) * 0.03125;  // 1/32
-						diffuseRadiance *= nov;
+						diffuseRadiance *= NoL;
 						diffuseRadiance = max(0, diffuseRadiance);
 
 						radiance += diffuseRadiance;
 
 #		ifdef GI_SPECULAR
 						float3 specularRadiance = sampleRadiance * countbits(overlappedBitsSpecular) * 0.03125;  // 1/32
-						specularRadiance *= nov;
+						specularRadiance *= NoL;
 						specularRadiance = max(0, specularRadiance);
 
 						radianceSpecular += specularRadiance;

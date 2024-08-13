@@ -24,7 +24,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	// ThinOccluderCompensation,
 	Thickness,
 	DepthFadeRange,
-	CheckBackface,
 	BackfaceStrength,
 	EnableGIBounce,
 	GIBounceFade,
@@ -279,17 +278,9 @@ void ScreenSpaceGI::DrawSettings()
 		if (showAdvanced) {
 			ImGui::Separator();
 
-			recompileFlag |= ImGui::Checkbox("Backface Checks", &settings.CheckBackface);
+			percentageSlider("Backface Lighting Mix", &settings.BackfaceStrength);
 			if (auto _tt = Util::HoverTooltipWrapper())
-				ImGui::Text("Disable to get some frames, IF you don't care about light emitting from the back of objects.");
-			{
-				auto __ = DisableGuard(!settings.CheckBackface);
-				ImGui::Indent();
-				percentageSlider("Backface Lighting Mix", &settings.BackfaceStrength);
-				ImGui::Unindent();
-				if (auto _tt = Util::HoverTooltipWrapper())
-					ImGui::Text("How bright at the back of objects is compared to the front. A small value to make up for foliage translucency.");
-			}
+				ImGui::Text("How bright at the back of objects is compared to the front. A small value to make up for foliage translucency.");
 		}
 	}
 
@@ -588,8 +579,6 @@ void ScreenSpaceGI::CompileComputeShaders()
 			info.defines.push_back({ "GI_SPECULAR", "" });
 		if (settings.EnableGIBounce)
 			info.defines.push_back({ "GI_BOUNCE", "" });
-		if (settings.CheckBackface)
-			info.defines.push_back({ "BACKFACE", "" });
 	}
 
 	for (auto& info : shaderInfos) {
@@ -677,6 +666,9 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 		return;
 	}
 
+	ZoneScoped;
+	TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI");
+
 	static uint lastFrameGITexIdx = 0;
 	static uint lastFrameAccumTexIdx = 0;
 	uint inputGITexIdx = lastFrameGITexIdx;
@@ -721,6 +713,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 
 	// prefilter depths
 	{
+		TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Prefilter Depths");
+
 		srvs.at(0) = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY].depthSRV;
 		for (int i = 0; i < 5; ++i)
 			uavs.at(i) = uavWorkingDepth[i].get();
@@ -733,6 +727,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 
 	// fetch radiance and disocclusion
 	{
+		TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Radiance Disocc");
+
 		resetViews();
 		srvs.at(0) = rts[deferred->forwardRenderTargets[0]].SRV;
 		srvs.at(1) = texGI[inputGITexIdx]->srv.get();
@@ -762,6 +758,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 
 	// GI
 	{
+		TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - GI");
+
 		resetViews();
 		srvs.at(0) = texWorkingDepth->srv.get();
 		srvs.at(1) = rts[NORMALROUGHNESS].SRV;
@@ -789,6 +787,7 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 	if (settings.EnableBlur) {
 		for (uint i = 0; i < settings.BlurPasses; i++) {
 			if (doSpecular) {
+				TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Specular Blur");
 				resetViews();
 				srvs.at(0) = texGISpecular[inputGITexIdx]->srv.get();
 				srvs.at(1) = texAccumFrames[lastFrameAccumTexIdx]->srv.get();
@@ -803,6 +802,8 @@ void ScreenSpaceGI::DrawSSGI(Texture2D* srcPrevAmbient)
 				context->CSSetShader(blurSpecularCompute.get(), nullptr, 0);
 				context->Dispatch((internalRes[0] + 7u) >> 3, (internalRes[1] + 7u) >> 3, 1);
 			}
+
+			TracyD3D11Zone(State::GetSingleton()->tracyCtx, "SSGI - Diffuse Blur");
 
 			resetViews();
 			srvs.at(0) = texGI[inputGITexIdx]->srv.get();
