@@ -842,7 +842,7 @@ struct BSLightingShader_SetupMaterial
 
 						std::array<float, 4> glintParameters;
 						glintParameters[0] = pbrMaterial->glintParameters[textureIndex].screenSpaceScale;
-						glintParameters[1] = pbrMaterial->glintParameters[textureIndex].logMicrofacetDensity;
+						glintParameters[1] = 40.f - pbrMaterial->glintParameters[textureIndex].logMicrofacetDensity;
 						glintParameters[2] = pbrMaterial->glintParameters[textureIndex].microfacetRoughness;
 						glintParameters[3] = pbrMaterial->glintParameters[textureIndex].densityRandomization;
 						shadowState->SetPSConstant(glintParameters, RE::BSGraphics::ConstantGroupLevel::PerMaterial, GlintParametersStartIndex + textureIndex);
@@ -926,7 +926,7 @@ struct BSLightingShader_SetupMaterial
 
 						std::array<float, 4> GlintParameters;
 						GlintParameters[0] = pbrMaterial->GetGlintParameters().screenSpaceScale;
-						GlintParameters[0] = pbrMaterial->GetGlintParameters().logMicrofacetDensity;
+						GlintParameters[0] = 40.f - pbrMaterial->GetGlintParameters().logMicrofacetDensity;
 						GlintParameters[0] = pbrMaterial->GetGlintParameters().microfacetRoughness;
 						GlintParameters[0] = pbrMaterial->GetGlintParameters().densityRandomization;
 						shadowState->SetPSConstant(GlintParameters, RE::BSGraphics::ConstantGroupLevel::PerMaterial, 27);
