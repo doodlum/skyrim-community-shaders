@@ -94,13 +94,14 @@ void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajor, out
 
 	float T = a + d;
 	float D = a * d - b * c;
-	float L1 = T / 2.0 - pow(T * T / 3.99999 - D, 0.5);
-	float L2 = T / 2.0 + pow(T * T / 3.99999 - D, 0.5);
+	float SQ = sqrt(abs(T * T / 3.99999 - D));
+	float L1 = T / 2.0 - SQ;
+	float L2 = T / 2.0 + SQ;
 
 	float2 A0 = float2(L1 - d, c);
 	float2 A1 = float2(L2 - d, c);
-	float r0 = 1.0 / sqrt(L1);
-	float r1 = 1.0 / sqrt(L2);
+	float r0 = rsqrt(L1);
+	float r1 = rsqrt(L2);
 	ellipseMajor = normalize(A0) * r0;
 	ellipseMinor = normalize(A1) * r1;
 }
@@ -112,7 +113,7 @@ float2 VectorToSlope(float3 v)
 
 float3 SlopeToVector(float2 s)
 {
-	float z = 1 / sqrt(s.x * s.x + s.y * s.y + 1);
+	float z = rsqrt(s.x * s.x + s.y * s.y + 1);
 	float x = s.x * z;
 	float y = s.y * z;
 	return float3(x, y, z);
@@ -239,11 +240,11 @@ struct GlintInput
 
 void CustomRand4Texture(GlintInput params, float2 slope, float2 slopeRandOffset, out float4 outUniform, out float4 outGaussian, out float2 slopeLerp)
 {
-	int2 size = 512;
+	uint2 size = 512;
 	float2 slope2 = abs(slope) / params.MicrofacetRoughness;
 	slope2 = slope2 + (slopeRandOffset * size);
 	slopeLerp = frac(slope2);
-	int2 slopeCoord = int2(floor(slope2)) % size;
+	uint2 slopeCoord = uint2(floor(slope2)) % size;
 
 	float4 packedRead = _Glint2023NoiseMap[slopeCoord];
 	UnpackFloatParallel4(packedRead, outUniform, outGaussian);
@@ -298,7 +299,7 @@ float SampleGlintGridSimplex(GlintInput params, float2 uv, uint gridSeed, float2
 
 	// Compute binomial properties
 	float hitProba = params.MicrofacetRoughness * targetNDF;                                           // probability of hitting desired half vector in NDF distribution
-	float3 footprintOneHitProba = (1.0 - pow(1.0 - hitProba.rrr, microfacetCountBlended));             // probability of hitting at least one microfacet in footprint
+	float3 footprintOneHitProba = (1.0 - pow(abs(1.0 - hitProba.rrr), microfacetCountBlended));        // probability of hitting at least one microfacet in footprint
 	float3 footprintMean = (microfacetCountBlended - 1.0) * hitProba.rrr;                              // Expected value of number of hits in the footprint given already one hit
 	float3 footprintSTD = sqrt((microfacetCountBlended - 1.0) * hitProba.rrr * (1.0 - hitProba.rrr));  // Standard deviation of number of hits in the footprint given already one hit
 	float3 binomialSmoothWidth = 0.1 * clamp(footprintOneHitProba * 10, 0.0, 1.0) * clamp((1.0 - footprintOneHitProba) * 10, 0.0, 1.0);
@@ -530,5 +531,5 @@ float4 SampleGlints2023NDF(GlintInput params, float targetNDF, float maxNDF)
 	float sampleB = SampleGlintGridSimplex(params, uvRotB / divLods[tetraB.z] / float2(1.0, ratios[tetraB.y]), gridSeedB, slope, ratios[tetraB.y] * footprintAreas[tetraB.z], rescaledTargetNDF, tetraBarycentricWeights.y);
 	float sampleC = SampleGlintGridSimplex(params, uvRotC / divLods[tetraC.z] / float2(1.0, ratios[tetraC.y]), gridSeedC, slope, ratios[tetraC.y] * footprintAreas[tetraC.z], rescaledTargetNDF, tetraBarycentricWeights.z);
 	float sampleD = SampleGlintGridSimplex(params, uvRotD / divLods[tetraD.z] / float2(1.0, ratios[tetraD.y]), gridSeedD, slope, ratios[tetraD.y] * footprintAreas[tetraD.z], rescaledTargetNDF, tetraBarycentricWeights.w);
-	return (sampleA + sampleB + sampleC + sampleD) * (1.0 / params.MicrofacetRoughness) * maxNDF;
+	return min((sampleA + sampleB + sampleC + sampleD) * (1.0 / params.MicrofacetRoughness), 40) * maxNDF;  // somewhat brute force way of prevent glazing angle extremities
 }
