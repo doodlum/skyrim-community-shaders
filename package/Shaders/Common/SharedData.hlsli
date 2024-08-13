@@ -16,7 +16,8 @@ cbuffer SharedData : register(b5)
 	float4 BufferDim;
 	float Timer;
 	uint FrameCount;
-	uint pad0[2];
+	bool Interior;
+	uint pad0b5[1];
 };
 
 struct GrassLightingSettings
