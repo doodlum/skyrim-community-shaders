@@ -1020,7 +1020,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float screenNoise = InterleavedGradientNoise(input.Position.xy, FrameCount);
 
 	// If InWorld or first-person
-	bool mainPass = (PixelShaderDescriptor & _InWorld) || !FrameParams.y;
+	bool mainPass = PixelShaderDescriptor & _InWorld;
 
 #	if defined(TERRAIN_BLENDING)
 	float depthSampled = GetTerrainOffsetDepth(screenUV, eyeIndex);
@@ -2044,7 +2044,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	uint totalLightCount = strictLights[0].NumStrictLights;
 	uint clusterIndex = 0;
 	uint lightOffset = 0;
-	if (strictLights[0].EnableGlobalLights && GetClusterIndex(screenUV, viewPosition.z, clusterIndex)) {
+	if (mainPass && GetClusterIndex(screenUV, viewPosition.z, clusterIndex)) {
 		numClusteredLights = lightGrid[clusterIndex].lightCount;
 		totalLightCount += numClusteredLights;
 		lightOffset = lightGrid[clusterIndex].offset;
@@ -2082,19 +2082,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float lightAngle = dot(worldSpaceNormal.xyz, normalizedLightDirection.xyz);
 
 		float contactShadow = 1;
-		[branch] if (strictLights[0].EnableGlobalLights && !FrameParams.z && FrameParams.y && (light.firstPersonShadow || lightLimitFixSettings.EnableContactShadows) && shadowComponent != 0.0 && lightAngle > 0.0)
+		[branch] if (mainPass && !FrameParams.z && lightLimitFixSettings.EnableContactShadows && shadowComponent != 0.0 && lightAngle > 0.0)
 		{
 			float3 normalizedLightDirectionVS = normalize(light.positionVS[eyeIndex].xyz - viewPosition.xyz);
-			contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, light.radius, light.firstPersonShadow, eyeIndex);
-			[flatten] if (light.firstPersonShadow)
-			{
-				contactShadow = contactShadow;
-			}
-			else
-			{
-				float shadowIntensityFactor = saturate(dot(worldSpaceNormal, normalizedLightDirection.xyz) * PI);
-				contactShadow = lerp(lerp(1.0, contactShadow, shadowIntensityFactor), 1.0, !frontFace * 0.2);
-			}
+			contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, eyeIndex);
+			float shadowIntensityFactor = saturate(dot(worldSpaceNormal, normalizedLightDirection.xyz) * 2.0);
+			contactShadow = lerp(lerp(1.0, contactShadow, shadowIntensityFactor), 1.0, !frontFace * 0.2);	
 		}
 
 		float3 refractedLightDirection = normalizedLightDirection;

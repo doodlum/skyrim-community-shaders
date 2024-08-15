@@ -11,17 +11,15 @@ struct StructuredLight
 	float radius;
 	float4 positionWS[2];
 	float4 positionVS[2];
-	uint firstPersonShadow;
-	float pad0[3];
 };
 
 struct StrictLightData
 {
 	StructuredLight StrictLights[15];
 	uint NumStrictLights;
-	bool EnableGlobalLights;
 	float LightsNear;
 	float LightsFar;
+	uint pad0;
 };
 
 StructuredBuffer<StructuredLight> lights : register(t50);
@@ -47,30 +45,28 @@ bool GetClusterIndex(in float2 uv, in float z, out uint clusterIndex)
 bool IsSaturated(float value) { return value == saturate(value); }
 bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
 
-float ContactShadows(float3 rayPos, float2 texcoord, float offset, float3 lightDirectionVS, float radius, bool longShadow, uint a_eyeIndex = 0)
+float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 lightDirectionVS, uint a_eyeIndex = 0)
 {
-	float2 depthDeltaMult;
-	uint loopMax;
-	if (longShadow) {
-		loopMax = log2(radius);
-		depthDeltaMult = float2(1.0 * loopMax, 1.0 / loopMax) * 0.10;
-		lightDirectionVS *= loopMax * 4.0;
-	} else {
-		loopMax = log2(radius) * 0.5;
-		depthDeltaMult = float2(1.0 * loopMax, 1.0 / loopMax) * 0.20;
-		lightDirectionVS *= loopMax;
-	}
+	float nearFactor = 1.0 - saturate(viewPosition.z / 1024.0);
+	uint numSteps = round(4.0 * nearFactor);
+
+	if (nearFactor == 0)
+		return 1.0;
+
+	float2 depthDeltaMult = float2(4.0, 0.25);
+
+	lightDirectionVS *= 2.0;
 
 	// Offset starting position with interleaved gradient noise
-	rayPos += lightDirectionVS * offset;
+	viewPosition += lightDirectionVS * offset;
 
 	// Accumulate samples
 	float shadow = 0.0;
-	[loop] for (uint i = 0; i < loopMax; i++)
+	for (uint i = 0; i < numSteps; i++)
 	{
 		// Step the ray
-		rayPos += lightDirectionVS;
-		float2 rayUV = ViewToUV(rayPos, true, a_eyeIndex);
+		viewPosition += lightDirectionVS;
+		float2 rayUV = ViewToUV(viewPosition, true, a_eyeIndex);
 
 		// Ensure the UV coordinates are inside the screen
 		if (!IsSaturated(rayUV))
@@ -80,7 +76,7 @@ float ContactShadows(float3 rayPos, float2 texcoord, float offset, float3 lightD
 		float rayDepth = GetScreenDepth(rayUV, a_eyeIndex);
 
 		// Difference between the current ray distance and the marched light
-		float depthDelta = rayPos.z - rayDepth;
+		float depthDelta = viewPosition.z - rayDepth;
 		if (rayDepth > 16.5)  // First person
 			shadow += saturate(depthDelta * depthDeltaMult.x) - saturate(depthDelta * depthDeltaMult.y);
 	}
