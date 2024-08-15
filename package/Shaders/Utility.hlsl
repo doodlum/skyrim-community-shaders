@@ -407,7 +407,7 @@ float GetPoissonDiskFilteredShadowVisibility(float noise, float2x2 rotationMatri
 		visibility += tex.SampleCmpLevelZero(samp, float3(shadowMapUV, layerIndex), compareValue + noise * 0.001).x;
 
 #	else
-		float2 sampleUV = layerIndexRcp * sampleOffset * 2 * ShadowSampleParam.z + baseUV;
+		float2 sampleUV = layerIndexRcp * sampleOffset * ShadowSampleParam.z + baseUV;
 		visibility += tex.SampleCmpLevelZero(samp, float3(sampleUV, layerIndex), compareValue + noise * 0.001).x;
 #	endif
 	}
