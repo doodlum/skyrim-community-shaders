@@ -372,7 +372,7 @@ float GetPoissonDiskFilteredShadowVisibility(float noise, float2x2 rotationMatri
 #	endif
 {
 	const int SampleCount = 8;
-	compareValue += 0.002;
+	compareValue += 0.001;
 
 	const static float2 PoissonDiskSampleOffsets[] = {
 		float2(-0.4706069, -0.4427112),

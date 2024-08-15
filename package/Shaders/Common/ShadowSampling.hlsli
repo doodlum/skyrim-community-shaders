@@ -88,7 +88,7 @@ float3 Get3DFilteredShadow(float3 positionWS, float3 viewDirection, float2 scree
 float3 Get2DFilteredShadowCascade(float noise, float2x2 rotationMatrix, float sampleOffsetScale, float2 baseUV, float cascadeIndex, float compareValue, uint eyeIndex)
 {
 	const uint SampleCount = 8;
-	compareValue += 0.002;
+	compareValue += 0.001;
 
 	const static float2 PoissonDiskSampleOffsets[] = {
 		float2(-0.4706069, -0.4427112),
