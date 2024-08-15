@@ -712,10 +712,6 @@ float3 GetSunColor(float3 normal, float3 viewDirection)
 }
 #		endif
 
-#		if defined(WATER_BLENDING)
-#			include "WaterBlending/WaterBlending.hlsli"
-#		endif
-
 #		if defined(LIGHT_LIMIT_FIX)
 #			include "LightLimitFix/LightLimitFix.hlsli"
 #		endif
@@ -844,8 +840,16 @@ PS_OUTPUT main(PS_INPUT input)
 #				else
 	float3 sunColor = GetSunColor(normal, viewDirection);
 
+
 	if (!(PixelShaderDescriptor & _Interior))
-		sunColor *= GetShadow(input.WPosition, normal.xy * 32, eyeIndex) * shadow;
+	{
+		if (shadow != 0.0) {
+			float screenNoise = InterleavedGradientNoise(input.HPosition.xy, FrameCount);
+			sunColor *= min(shadow, GetLightingShadow(screenNoise, input.WPosition, eyeIndex));
+		} else {
+			sunColor *= shadow;
+		}
+	}
 
 	float specularFraction = lerp(1, fresnel * depthControl.x, distanceFactor);
 	float3 finalColorPreFog = lerp(diffuseColor, specularColor, specularFraction) + sunColor * depthControl.w;
