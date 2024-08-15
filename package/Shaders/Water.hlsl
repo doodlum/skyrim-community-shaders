@@ -381,7 +381,7 @@ cbuffer PerGeometry : register(b2)
 #		ifdef VR
 float GetStencil(float2 uv)
 {
-	return DepthTex.Load(int3(uv * BufferDim * DynamicResolutionParams1.xy, 0)).g;
+	return DepthTex.Load(int3(uv * BufferDim.xy * DynamicResolutionParams1.xy, 0)).g;
 }
 
 /**
@@ -843,7 +843,7 @@ PS_OUTPUT main(PS_INPUT input)
 	if (!(PixelShaderDescriptor & _Interior)) {
 		if (shadow != 0.0) {
 			float screenNoise = InterleavedGradientNoise(input.HPosition.xy, FrameCount);
-			sunColor *= min(shadow, GetLightingShadow(screenNoise, input.WPosition, eyeIndex));
+			sunColor *= min(shadow, GetLightingShadow(screenNoise, input.WPosition.xyz, eyeIndex));
 		} else {
 			sunColor *= shadow;
 		}

@@ -259,7 +259,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 ddy = ddy_coarse(input.WorldPosition);
 	float3 normal = normalize(cross(ddx, ddy));
 
-	float3 color = baseColor.xyz * (DiffuseColor + AmbientColor);
+	float3 color = baseColor.xyz * (DiffuseColor.xyz + AmbientColor.xyz);
 	psout.Diffuse = float4(color, 1.0);
 #		endif  // DEFERRED
 #	endif      // RENDER_DEPTH

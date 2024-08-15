@@ -448,7 +448,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
-	float screenNoise = InterleavedGradientNoise(input.HPosition, FrameCount);
+	float screenNoise = InterleavedGradientNoise(input.HPosition.xy, FrameCount);
 
 	// Swaps direction of the backfaces otherwise they seem to get lit from the wrong direction.
 	if (!frontFace)
