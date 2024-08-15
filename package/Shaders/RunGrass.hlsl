@@ -581,8 +581,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		if (lightCount) {
 			uint lightOffset = lightGrid[clusterIndex].offset;
 
-			float shadowQualityScale = saturate(1.0 - (((float)lightCount * (float)lightCount) / 128.0));
-
 			[loop] for (uint i = 0; i < lightCount; i++)
 			{
 				uint light_index = lightList[lightOffset + i];
@@ -599,10 +597,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				float3 normalizedLightDirection = normalize(lightDirection);
 
 				float lightAngle = dot(normal, normalizedLightDirection);
-
-				float3 normalizedLightDirectionVS = WorldToView(normalizedLightDirection, true, eyeIndex);
-				if (lightLimitFixSettings.EnableContactShadows)
-					lightColor *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, eyeIndex);
 
 #				if defined(TRUE_PBR)
 				{
