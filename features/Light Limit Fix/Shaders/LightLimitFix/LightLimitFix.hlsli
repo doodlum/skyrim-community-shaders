@@ -45,15 +45,12 @@ bool GetClusterIndex(in float2 uv, in float z, out uint clusterIndex)
 bool IsSaturated(float value) { return value == saturate(value); }
 bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
 
-float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 lightDirectionVS, uint a_eyeIndex = 0)
+float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 lightDirectionVS, float lightAngle, uint contactShadowSteps, uint a_eyeIndex = 0)
 {
-	float nearFactor = 1.0 - saturate(viewPosition.z / 1024.0);
-	uint numSteps = round(4.0 * nearFactor);
-
-	if (nearFactor == 0)
+	if (contactShadowSteps == 0)
 		return 1.0;
 
-	float2 depthDeltaMult = float2(4.0, 0.25);
+	float2 depthDeltaMult = float2(1.0, 0.05);
 
 	lightDirectionVS *= 2.0;
 
@@ -61,8 +58,9 @@ float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 
 	viewPosition += lightDirectionVS * offset;
 
 	// Accumulate samples
-	float shadow = 0.0;
-	for (uint i = 0; i < numSteps; i++) {
+	float contactShadow = 0.0;
+	for (uint i = 0; i < contactShadowSteps; i++)
+	{
 		// Step the ray
 		viewPosition += lightDirectionVS;
 		float2 rayUV = ViewToUV(viewPosition, true, a_eyeIndex);
@@ -77,10 +75,14 @@ float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 
 		// Difference between the current ray distance and the marched light
 		float depthDelta = viewPosition.z - rayDepth;
 		if (rayDepth > 16.5)  // First person
-			shadow += saturate(depthDelta * depthDeltaMult.x) - saturate(depthDelta * depthDeltaMult.y);
+			contactShadow += saturate(depthDelta * depthDeltaMult.x) - saturate(depthDelta * depthDeltaMult.y);
 	}
 
-	return 1.0 - saturate(shadow);
+	contactShadow = 1.0 - saturate(contactShadow);
+
+	float shadowIntensityFactor = saturate(lightAngle * 2.0);
+	
+	return lerp(1.0, contactShadow, shadowIntensityFactor);
 }
 
 // Copyright 2019 Google LLC.

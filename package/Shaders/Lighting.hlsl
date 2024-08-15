@@ -2058,6 +2058,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		totalLightCount += numClusteredLights;
 		lightOffset = lightGrid[clusterIndex].offset;
 	}
+	
+	uint contactShadowSteps = round(4.0 * (1.0 - saturate(viewPosition.z / 1024.0)));
 
 	[loop] for (uint lightIndex = 0; lightIndex < totalLightCount; lightIndex++)
 	{
@@ -2094,9 +2096,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if (mainPass && !FrameParams.z && lightLimitFixSettings.EnableContactShadows && shadowComponent != 0.0 && lightAngle > 0.0)
 		{
 			float3 normalizedLightDirectionVS = normalize(light.positionVS[eyeIndex].xyz - viewPosition.xyz);
-			contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, eyeIndex);
-			float shadowIntensityFactor = saturate(dot(worldSpaceNormal, normalizedLightDirection.xyz) * 2.0);
-			contactShadow = lerp(lerp(1.0, contactShadow, shadowIntensityFactor), 1.0, !frontFace * 0.2);
+			contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, lightAngle, contactShadowSteps, eyeIndex);
 		}
 
 		float3 refractedLightDirection = normalizedLightDirection;
