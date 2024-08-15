@@ -49,8 +49,7 @@ void State::Draw()
 					// Only check against non-shader bits
 					currentPixelDescriptor &= ~modifiedPixelDescriptor;
 
-					if (auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator()) 
-					{
+					if (auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator()) {
 						// Set an unused bit to indicate if we are rendering an object in the main rendering pass
 						if (accumulator->GetRuntimeData().activeShadowSceneNode == RE::BSShaderManager::State::GetSingleton().shadowSceneNode[0]) {
 							currentPixelDescriptor |= (uint32_t)PermutationFlags::InWorld;

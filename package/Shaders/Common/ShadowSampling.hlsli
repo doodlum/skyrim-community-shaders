@@ -113,7 +113,7 @@ float GetFullShadow(float3 startPosWS, float4 screenPosition, uint eyeIndex = 0)
 
 	sD.EndSplitDistances.x = GetScreenDepth(sD.EndSplitDistances.x);
 	sD.EndSplitDistances.y = GetScreenDepth(sD.EndSplitDistances.y);
-	
+
 	sD.StartSplitDistances.x = GetScreenDepth(sD.StartSplitDistances.x);
 	sD.StartSplitDistances.y = GetScreenDepth(sD.StartSplitDistances.y);
 
@@ -123,9 +123,8 @@ float GetFullShadow(float3 startPosWS, float4 screenPosition, uint eyeIndex = 0)
 		half cascadeIndex = 0;
 		half4x3 lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][0];
 		half shadowRange = sD.EndSplitDistances.x;
-		
-		if (sD.EndSplitDistances.x < startDepth + nearFactor * 8.0 * dot(offset, float2(0, 1)))
-		{
+
+		if (sD.EndSplitDistances.x < startDepth + nearFactor * 8.0 * dot(offset, float2(0, 1))) {
 			lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][1];
 			cascadeIndex = 1;
 			shadowRange = sD.EndSplitDistances.y - sD.StartSplitDistances.y;
@@ -136,7 +135,7 @@ float GetFullShadow(float3 startPosWS, float4 screenPosition, uint eyeIndex = 0)
 		samplePositionLS.xy += nearFactor * 8.0 * offset * rcp(shadowRange);
 
 		float4 depths = TexShadowMapSampler.GatherRed(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
-		
+
 		vlShadow += dot(depths > samplePositionLS.z, 0.25);
 	}
 
@@ -195,7 +194,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 	PerGeometry sD = perShadow[0];
 	sD.EndSplitDistances.x = GetScreenDepth(sD.EndSplitDistances.x);
 	sD.EndSplitDistances.y = GetScreenDepth(sD.EndSplitDistances.y);
-	
+
 	sD.StartSplitDistances.x = GetScreenDepth(sD.StartSplitDistances.x);
 	sD.StartSplitDistances.y = GetScreenDepth(sD.StartSplitDistances.y);
 
@@ -213,7 +212,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 	};
 
 	for (uint i = 0; i < nSteps; ++i) {
-		float t = saturate(i * step);	
+		float t = saturate(i * step);
 		float3 samplePositionWS = startPosWS + worldDir * t;
 
 		half2 offset = mul(PoissonDisk[(float(i) + noise) % 8].xy, rotationMatrix);
@@ -222,8 +221,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 		half4x3 lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][0];
 		half shadowRange = sD.EndSplitDistances.x;
 
-		if (sD.EndSplitDistances.x < length(samplePositionWS) + 8.0 * dot(offset, float2(0, 1)))
-		{
+		if (sD.EndSplitDistances.x < length(samplePositionWS) + 8.0 * dot(offset, float2(0, 1))) {
 			lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][1];
 			cascadeIndex = 1;
 			shadowRange = sD.EndSplitDistances.y - sD.StartSplitDistances.y;
@@ -234,7 +232,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 		samplePositionLS.xy += nearFactor * 8.0 * offset * rcp(shadowRange);
 
 		float4 depths = TexShadowMapSampler.GatherRed(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
-		
+
 		vlShadow += dot(depths > samplePositionLS.z, 0.25);
 	}
 	return lerp(worldShadow, min(worldShadow, vlShadow * step * phase), nearFactor);

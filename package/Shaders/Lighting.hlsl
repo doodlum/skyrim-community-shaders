@@ -2087,7 +2087,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			float3 normalizedLightDirectionVS = normalize(light.positionVS[eyeIndex].xyz - viewPosition.xyz);
 			contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, eyeIndex);
 			float shadowIntensityFactor = saturate(dot(worldSpaceNormal, normalizedLightDirection.xyz) * 2.0);
-			contactShadow = lerp(lerp(1.0, contactShadow, shadowIntensityFactor), 1.0, !frontFace * 0.2);	
+			contactShadow = lerp(lerp(1.0, contactShadow, shadowIntensityFactor), 1.0, !frontFace * 0.2);
 		}
 
 		float3 refractedLightDirection = normalizedLightDirection;

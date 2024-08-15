@@ -62,8 +62,7 @@ float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 
 
 	// Accumulate samples
 	float shadow = 0.0;
-	for (uint i = 0; i < numSteps; i++)
-	{
+	for (uint i = 0; i < numSteps; i++) {
 		// Step the ray
 		viewPosition += lightDirectionVS;
 		float2 rayUV = ViewToUV(viewPosition, true, a_eyeIndex);
