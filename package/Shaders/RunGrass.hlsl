@@ -601,10 +601,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				float lightAngle = dot(normal, normalizedLightDirection);
 
 				float3 normalizedLightDirectionVS = WorldToView(normalizedLightDirection, true, eyeIndex);
-				if (light.firstPersonShadow)
-					lightColor *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, shadowQualityScale, 0.0, eyeIndex);
-				else if (lightLimitFixSettings.EnableContactShadows)
-					lightColor *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, shadowQualityScale, 0.0, eyeIndex);
+				if (lightLimitFixSettings.EnableContactShadows)
+					lightColor *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, eyeIndex);
 
 #				if defined(TRUE_PBR)
 				{
