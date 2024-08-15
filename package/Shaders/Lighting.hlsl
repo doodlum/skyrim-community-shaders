@@ -991,6 +991,10 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #		include "Skylighting/Skylighting.hlsli"
 #	endif
 
+#define LinearSampler SampColorSampler
+
+#	include "Common/ShadowSampling.hlsli"
+
 PS_OUTPUT main(PS_INPUT input, bool frontFace
 			   : SV_IsFrontFace)
 {
@@ -1813,6 +1817,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	if ((PixelShaderDescriptor & _DefShadow) && (PixelShaderDescriptor & _ShadowDir)) {
 		dirLightColorMultiplier *= shadowColor.x;
 	}
+#	if !defined(DEFERRED)
+	else if (!Interior && mainPass) {
+		dirLightColorMultiplier *= GetLightingShadow(screenNoise, input.WorldPosition, eyeIndex);
+	}
+#	endif
 
 #	if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
 	bool inDirShadow = ((PixelShaderDescriptor & _DefShadow) && (PixelShaderDescriptor & _ShadowDir) && shadowColor.x == 0);
