@@ -184,12 +184,10 @@ void TruePBR::SaveSettings(json& o_json)
 void TruePBR::PrePass()
 {
 	auto context = State::GetSingleton()->context;
-	if (context) {
-		if (!glintsNoiseTexture)
-			SetupGlintsTexture();
-		ID3D11ShaderResourceView* srv = glintsNoiseTexture->srv.get();
-		context->PSSetShaderResources(28, 1, &srv);
-	}
+	if (!glintsNoiseTexture)
+		SetupGlintsTexture();
+	ID3D11ShaderResourceView* srv = glintsNoiseTexture->srv.get();
+	context->PSSetShaderResources(28, 1, &srv);
 }
 
 void TruePBR::SetupGlintsTexture()
