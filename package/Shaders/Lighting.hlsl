@@ -991,7 +991,7 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #		include "Skylighting/Skylighting.hlsli"
 #	endif
 
-#define LinearSampler SampColorSampler
+#	define LinearSampler SampColorSampler
 
 #	include "Common/ShadowSampling.hlsli"
 
