@@ -2058,7 +2058,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		totalLightCount += numClusteredLights;
 		lightOffset = lightGrid[clusterIndex].offset;
 	}
-	
+
 	uint contactShadowSteps = round(4.0 * (1.0 - saturate(viewPosition.z / 1024.0)));
 
 	[loop] for (uint lightIndex = 0; lightIndex < totalLightCount; lightIndex++)
