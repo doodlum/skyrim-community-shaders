@@ -45,7 +45,7 @@ bool GetClusterIndex(in float2 uv, in float z, out uint clusterIndex)
 bool IsSaturated(float value) { return value == saturate(value); }
 bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
 
-float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 lightDirectionVS, float lightAngle, uint contactShadowSteps, uint a_eyeIndex = 0)
+float ContactShadows(float3 viewPosition, float noise, uint3 seed, float3 lightDirectionVS, uint contactShadowSteps, uint a_eyeIndex = 0)
 {
 	if (contactShadowSteps == 0)
 		return 1.0;
@@ -55,14 +55,29 @@ float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 
 	lightDirectionVS *= 2.0;
 
 	// Offset starting position with interleaved gradient noise
-	viewPosition += lightDirectionVS * offset;
+	viewPosition += lightDirectionVS * noise;
 
 	// Accumulate samples
 	float contactShadow = 0.0;
-	for (uint i = 0; i < contactShadowSteps; i++) {
+	for (uint i = 0; i < contactShadowSteps; i++)
+	{	
 		// Step the ray
 		viewPosition += lightDirectionVS;
-		float2 rayUV = ViewToUV(viewPosition, true, a_eyeIndex);
+		
+		// Offset the ray to blur
+		float3 rnd = R3Modified(i + FrameCount * 4, seed / 4294967295.f);
+
+		float phi = rnd.x * 2 * 3.1415926535;
+		float cos_theta = rnd.y * 2 - 1;
+		float sin_theta = sqrt(1 - cos_theta);
+		float r = rnd.z;
+		float4 sincos_phi;
+		sincos(phi, sincos_phi.y, sincos_phi.x);
+		float3 sampleOffset = float3(r * sin_theta * sincos_phi.x, r * sin_theta * sincos_phi.y, r * cos_theta);
+
+		float3 viewPositionOffset = viewPosition + sampleOffset;
+
+		float2 rayUV = ViewToUV(viewPositionOffset, true, a_eyeIndex);
 
 		// Ensure the UV coordinates are inside the screen
 		if (!IsSaturated(rayUV))
@@ -72,16 +87,12 @@ float ContactShadows(float3 viewPosition, float2 texcoord, float offset, float3 
 		float rayDepth = GetScreenDepth(rayUV, a_eyeIndex);
 
 		// Difference between the current ray distance and the marched light
-		float depthDelta = viewPosition.z - rayDepth;
+		float depthDelta = viewPositionOffset.z - rayDepth;
 		if (rayDepth > 16.5)  // First person
 			contactShadow += saturate(depthDelta * depthDeltaMult.x) - saturate(depthDelta * depthDeltaMult.y);
 	}
-
-	contactShadow = 1.0 - saturate(contactShadow);
-
-	float shadowIntensityFactor = saturate(lightAngle * 2.0);
-
-	return lerp(1.0, contactShadow, shadowIntensityFactor);
+	
+	return 1.0 - saturate(contactShadow);
 }
 
 // Copyright 2019 Google LLC.

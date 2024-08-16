@@ -1022,6 +1022,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 viewPosition = mul(CameraView[eyeIndex], float4(input.WorldPosition.xyz, 1)).xyz;
 	float2 screenUV = ViewToUV(viewPosition, true, eyeIndex);
 	float screenNoise = InterleavedGradientNoise(input.Position.xy, FrameCount);
+	uint3 seed = pcg3d(uint3(input.Position.xy, input.Position.x * M_PI));
 
 	// If InWorld or first-person
 	bool mainPass = PixelShaderDescriptor & _InWorld;
@@ -2096,7 +2097,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if (mainPass && !FrameParams.z && lightLimitFixSettings.EnableContactShadows && shadowComponent != 0.0 && lightAngle > 0.0)
 		{
 			float3 normalizedLightDirectionVS = normalize(light.positionVS[eyeIndex].xyz - viewPosition.xyz);
-			contactShadow = ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, lightAngle, contactShadowSteps, eyeIndex);
+			contactShadow = ContactShadows(viewPosition, screenNoise, seed, normalizedLightDirectionVS, contactShadowSteps, eyeIndex);
 		}
 
 		float3 refractedLightDirection = normalizedLightDirection;

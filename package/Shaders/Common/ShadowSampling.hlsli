@@ -19,7 +19,7 @@ struct PerGeometry
 
 StructuredBuffer<PerGeometry> SharedPerShadow : register(t26);
 
-float3 Get3DFilteredShadowCascade(float3 positionWS, float3 viewDirection, float viewRange, float radius, float seed, float4x3 lightProjectionMatrix, float cascadeIndex, float compareValue, uint eyeIndex)
+float3 Get3DFilteredShadowCascade(float3 positionWS, float3 viewDirection, float viewRange, float radius, uint3 seed, float4x3 lightProjectionMatrix, float cascadeIndex, float compareValue, uint eyeIndex)
 {
 	float shadow = 0.0;
 	[unroll] for (int i = 0; i < 8; i++)
@@ -56,7 +56,7 @@ float3 Get3DFilteredShadow(float3 positionWS, float3 viewDirection, float2 scree
 
 	if (sD.EndSplitDistances.z >= shadowMapDepth) {
 		float fadeFactor = 1 - pow(saturate(dot(positionWS.xyz, positionWS.xyz) / sD.ShadowLightParam.z), 8);
-		float seed = pcg3d(uint3(screenPosition.xy, screenPosition.x * 3.1415926));
+		uint3 seed = pcg3d(uint3(screenPosition.xy, screenPosition.x * M_PI));
 
 		float4x3 lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][0];
 		float cascadeIndex = 0;

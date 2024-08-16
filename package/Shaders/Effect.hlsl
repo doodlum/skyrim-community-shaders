@@ -6,6 +6,7 @@
 #include "Common/SharedData.hlsli"
 #include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"
+#include "Common/Random.hlsli"
 
 #define EFFECT
 
