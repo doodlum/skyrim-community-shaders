@@ -87,33 +87,22 @@ float3 Get3DFilteredShadow(float3 positionWS, float3 viewDirection, float2 scree
 
 float3 Get2DFilteredShadowCascade(float noise, float2x2 rotationMatrix, float sampleOffsetScale, float2 baseUV, float cascadeIndex, float compareValue, uint eyeIndex)
 {
-	const uint SampleCount = 8;
+	const uint sampleCount = 8;
 	compareValue += 0.001;
-
-	const static float2 PoissonDiskSampleOffsets[] = {
-		float2(-0.4706069, -0.4427112),
-		float2(-0.9057375, +0.3003471),
-		float2(-0.3487388, +0.4037880),
-		float2(+0.1023042, +0.6439373),
-		float2(+0.5699277, +0.3513750),
-		float2(+0.2939128, -0.1131226),
-		float2(+0.7836658, -0.4208784),
-		float2(+0.1564120, -0.8198990)
-	};
 
 	float layerIndexRcp = rcp(1 + cascadeIndex);
 
 	float visibility = 0;
 
-	for (int sampleIndex = 0; sampleIndex < SampleCount; ++sampleIndex) {
-		float2 sampleOffset = mul(PoissonDiskSampleOffsets[sampleIndex], rotationMatrix);
+	for (int sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+		float2 sampleOffset = mul(SpiralSampleOffsets8[sampleIndex], rotationMatrix);
 
-		float2 sampleUV = layerIndexRcp * sampleOffset * 2 * sampleOffsetScale + baseUV;
+		float2 sampleUV = layerIndexRcp * sampleOffset * sampleOffsetScale + baseUV;
 		float4 depths = SharedTexShadowMapSampler.GatherRed(LinearSampler, half3(sampleUV, cascadeIndex), 0);
 		visibility += dot(depths > (compareValue + noise * 0.001), 0.25);
 	}
 
-	return visibility * rcp(SampleCount);
+	return visibility * rcp(sampleCount);
 }
 
 float3 Get2DFilteredShadow(float noise, float2x2 rotationMatrix, float3 positionWS, uint eyeIndex)
@@ -194,67 +183,52 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 	worldShadow *= phase;
 
 	float nearFactor = 1.0 - saturate(startDepth / 5000.0);
-	uint nSteps = round(8 * nearFactor);
+	uint sampleCount = round(8 * nearFactor);
 
-	if (nSteps == 0)
+	if (sampleCount == 0)
 		return worldShadow;
 
-	float step = 1.0 / float(nSteps);
-
 	float noise = InterleavedGradientNoise(screenPosition, FrameCount);
+	
+	float2 rotation;
+	sincos(M_2PI * noise, rotation.y, rotation.x);
+	float2x2 rotationMatrix = float2x2(rotation.x, rotation.y, -rotation.y, rotation.x);
 
-	startPosWS += worldDir * step * noise;
-
-	noise = noise * 2.0 * M_PI;
-	half2x2 rotationMatrix = half2x2(cos(noise), sin(noise), -sin(noise), cos(noise));
+	float stepSize = rcp(sampleCount);
+	startPosWS += worldDir * stepSize * noise;
 
 	PerGeometry sD = SharedPerShadow[0];
 	sD.EndSplitDistances.x = GetScreenDepth(sD.EndSplitDistances.x);
 	sD.EndSplitDistances.y = GetScreenDepth(sD.EndSplitDistances.y);
-
-	sD.StartSplitDistances.x = GetScreenDepth(sD.StartSplitDistances.x);
 	sD.StartSplitDistances.y = GetScreenDepth(sD.StartSplitDistances.y);
 
 	float vlShadow = 0;
 
-	float2 PoissonDisk[8] = {
-		float2(-0.4706069, -0.4427112),
-		float2(-0.9057375, +0.3003471),
-		float2(-0.3487388, +0.4037880),
-		float2(+0.1023042, +0.6439373),
-		float2(+0.5699277, +0.3513750),
-		float2(+0.2939128, -0.1131226),
-		float2(+0.7836658, -0.4208784),
-		float2(+0.1564120, -0.8198990)
-	};
-
-	for (uint i = 0; i < nSteps; ++i) {
-		float t = saturate(i * step);
-		float3 samplePositionWS = startPosWS + worldDir * t;
-
-		half2 offset = mul(PoissonDisk[(float(i) + noise) % 8].xy, rotationMatrix);
+	for (uint i = 0; i < sampleCount; i++) {
+		float3 samplePositionWS = startPosWS + worldDir * saturate(i * stepSize);
+		half2 sampleOffset = mul(SpiralSampleOffsets8[(float(i) + noise * 8) % 8].xy, rotationMatrix);
 
 		half cascadeIndex = 0;
 		half4x3 lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][0];
 		half shadowRange = sD.EndSplitDistances.x;
 
-		if (sD.EndSplitDistances.x < length(samplePositionWS) + 8.0 * dot(offset, float2(0, 1))) {
-			{
-				lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][1];
-				cascadeIndex = 1;
-				shadowRange = sD.EndSplitDistances.y - sD.StartSplitDistances.y;
-			}
-
-			half3 samplePositionLS = mul(transpose(lightProjectionMatrix), half4(samplePositionWS.xyz, 1)).xyz;
-
-			samplePositionLS.xy += nearFactor * 8.0 * offset * rcp(shadowRange);
-
-			float4 depths = SharedTexShadowMapSampler.GatherRed(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
-
-			vlShadow += dot(depths > samplePositionLS.z, 0.25);
+		if (sD.EndSplitDistances.x < length(samplePositionWS) + 8.0 * dot(sampleOffset, float2(0, 1))) // Stochastic cascade sampling
+		{
+			lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][1];
+			cascadeIndex = 1;
+			shadowRange = sD.EndSplitDistances.y - sD.StartSplitDistances.y;
 		}
-		return lerp(worldShadow, min(worldShadow, vlShadow * step * phase), nearFactor);
+
+		half3 samplePositionLS = mul(transpose(lightProjectionMatrix), half4(samplePositionWS.xyz, 1)).xyz;
+
+		samplePositionLS.xy += nearFactor * 8.0 * sampleOffset * rcp(shadowRange);
+
+		float4 depths = SharedTexShadowMapSampler.GatherRed(LinearSampler, half3(samplePositionLS.xy, cascadeIndex), 0);
+		
+		vlShadow += dot(depths > samplePositionLS.z, 0.25);
 	}
+	return lerp(worldShadow, min(worldShadow, vlShadow * stepSize), nearFactor);
+}
 
 	float3 GetEffectShadow(float3 worldPosition, float3 viewDirection, float2 screenPosition, uint eyeIndex)
 	{
@@ -269,7 +243,8 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 
 	float3 GetLightingShadow(float noise, float3 worldPosition, uint eyeIndex)
 	{
-		float noiseAdjusted = noise * M_2PI;
-		half2x2 rotationMatrix = half2x2(cos(noiseAdjusted), sin(noiseAdjusted), -sin(noiseAdjusted), cos(noiseAdjusted));
+		float2 rotation;
+		sincos(M_2PI * noise, rotation.y, rotation.x);
+		float2x2 rotationMatrix = float2x2(rotation.x, rotation.y, -rotation.y, rotation.x);
 		return Get2DFilteredShadow(noise, rotationMatrix, worldPosition, eyeIndex);
 	}
