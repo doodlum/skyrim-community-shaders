@@ -381,7 +381,7 @@ float GetPoissonDiskFilteredShadowVisibility(float noise, float2x2 rotationMatri
 		float2 sampleOffset = mul(SpiralSampleOffsets8[sampleIndex], rotationMatrix);
 
 #	if defined(RENDER_SHADOWMASKDPB)
-		float2 sampleUV = sampleOffset * 2 + baseUV; // Replaced radius parameter to fix sharpness
+		float2 sampleUV = sampleOffset * 2 + baseUV;  // Replaced radius parameter to fix sharpness
 
 		baseUV.z += noise;
 
