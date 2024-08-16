@@ -59,11 +59,10 @@ float ContactShadows(float3 viewPosition, float noise, uint3 seed, float3 lightD
 
 	// Accumulate samples
 	float contactShadow = 0.0;
-	for (uint i = 0; i < contactShadowSteps; i++)
-	{	
+	for (uint i = 0; i < contactShadowSteps; i++) {
 		// Step the ray
 		viewPosition += lightDirectionVS;
-		
+
 		// Offset the ray to blur
 		float3 rnd = R3Modified(i + FrameCount * 4, seed / 4294967295.f);
 
@@ -91,7 +90,7 @@ float ContactShadows(float3 viewPosition, float noise, uint3 seed, float3 lightD
 		if (rayDepth > 16.5)  // First person
 			contactShadow += saturate(depthDelta * depthDeltaMult.x) - saturate(depthDelta * depthDeltaMult.y);
 	}
-	
+
 	return 1.0 - saturate(contactShadow);
 }
 
