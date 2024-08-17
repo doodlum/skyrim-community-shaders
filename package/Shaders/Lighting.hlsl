@@ -1628,7 +1628,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
 	
-    baseColor.xyz = Lin2sRGB(baseColor.xyz);
+    baseColor.xyz = pow(baseColor.xyz, 1 / pbrSettings.BaseColorGamma);
 
 	pbrSurfaceProperties.BaseColor = baseColor.xyz;
 
