@@ -24,8 +24,8 @@ float3 GetDynamicCubemapSpecularIrradiance(float2 uv, float3 N, float3 VN, float
 	horizon *= horizon * horizon;
 
 	float3 specularIrradiance = specularTexture.SampleLevel(SampColorSampler, R, level).xyz;
-	specularIrradiance *= horizon;
 	specularIrradiance = SkyrimGamma2Lin(specularIrradiance);
+	specularIrradiance *= horizon;
 
 	return specularIrradiance;
 }
