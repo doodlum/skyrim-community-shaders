@@ -1253,6 +1253,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif  // LANDSCAPE
 
 		float4 rawBaseColor = TexColorSampler.Sample(SampColorSampler, diffuseUv);
+#	if defined(TRUE_PBR)
+#		if defined(LANDSCAPE)
+		if ((PBRFlags & TruePBR_LandTile0PBR) != 0)
+#		endif
+			rawBaseColor.rgb = Lin2SkyrimGamma(rawBaseColor.rgb);
+#	endif
 		baseColor = rawBaseColor;
 
 		float landSnowMask1 = GetLandSnowMaskValue(baseColor.w);
@@ -1341,6 +1347,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.LandBlendWeights1.y > 0.0) {
 		float4 landColor2 = TexLandColor2Sampler.Sample(SampLandColor2Sampler, uv);
+#		if defined(TRUE_PBR)
+		[branch] if ((PBRFlags & TruePBR_LandTile1PBR) != 0)
+			landColor2.rgb = Lin2SkyrimGamma(landColor2.rgb);
+#		endif
 		float landSnowMask2 = GetLandSnowMaskValue(landColor2.w);
 		baseColor += input.LandBlendWeights1.yyyy * landColor2;
 		float4 landNormal2 = TexLandNormal2Sampler.Sample(SampLandNormal2Sampler, uv);
@@ -1368,6 +1378,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.LandBlendWeights1.z > 0.0) {
 		float4 landColor3 = TexLandColor3Sampler.Sample(SampLandColor3Sampler, uv);
+#		if defined(TRUE_PBR)
+		[branch] if ((PBRFlags & TruePBR_LandTile2PBR) != 0)
+			landColor3.rgb = Lin2SkyrimGamma(landColor3.rgb);
+#		endif
 		float landSnowMask3 = GetLandSnowMaskValue(landColor3.w);
 		baseColor += input.LandBlendWeights1.zzzz * landColor3;
 		float4 landNormal3 = TexLandNormal3Sampler.Sample(SampLandNormal3Sampler, uv);
@@ -1395,6 +1409,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.LandBlendWeights1.w > 0.0) {
 		float4 landColor4 = TexLandColor4Sampler.Sample(SampLandColor4Sampler, uv);
+#		if defined(TRUE_PBR)
+		[branch] if ((PBRFlags & TruePBR_LandTile3PBR) != 0)
+			landColor4.rgb = Lin2SkyrimGamma(landColor4.rgb);
+#		endif
 		float landSnowMask4 = GetLandSnowMaskValue(landColor4.w);
 		baseColor += input.LandBlendWeights1.wwww * landColor4;
 		float4 landNormal4 = TexLandNormal4Sampler.Sample(SampLandNormal4Sampler, uv);
@@ -1422,6 +1440,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.LandBlendWeights2.x > 0.0) {
 		float4 landColor5 = TexLandColor5Sampler.Sample(SampLandColor5Sampler, uv);
+#		if defined(TRUE_PBR)
+		[branch] if ((PBRFlags & TruePBR_LandTile4PBR) != 0)
+			landColor5.rgb = Lin2SkyrimGamma(landColor5.rgb);
+#		endif
 		float landSnowMask5 = GetLandSnowMaskValue(landColor5.w);
 		baseColor += input.LandBlendWeights2.xxxx * landColor5;
 		float4 landNormal5 = TexLandNormal5Sampler.Sample(SampLandNormal5Sampler, uv);
@@ -1449,6 +1471,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	if (input.LandBlendWeights2.y > 0.0) {
 		float4 landColor6 = TexLandColor6Sampler.Sample(SampLandColor6Sampler, uv);
+#		if defined(TRUE_PBR)
+		[branch] if ((PBRFlags & TruePBR_LandTile5PBR) != 0)
+			landColor6.rgb = Lin2SkyrimGamma(landColor6.rgb);
+#		endif
 		float landSnowMask6 = GetLandSnowMaskValue(landColor6.w);
 		baseColor += input.LandBlendWeights2.yyyy * landColor6;
 		float4 landNormal6 = TexLandNormal6Sampler.Sample(SampLandNormal6Sampler, uv);
@@ -1563,7 +1589,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float3 projBaseColor = TexProjDiffuseSampler.Sample(SampProjDiffuseSampler, projNormalDiffuseUv).xyz * ProjectedUVParams2.xyz;
 		float projBlendWeight = smoothstep(0, 1, 5 * (0.1 + projWeight));
 #			if defined(TRUE_PBR)
-		projBaseColor = saturate(EnvmapData.xyz * projBaseColor);
+		projBaseColor = saturate(EnvmapData.xyz * Lin2SkyrimGamma(projBaseColor));
 		rawRMAOS.xyw = lerp(rawRMAOS.xyw, float3(ParallaxOccData.x, 0, ParallaxOccData.y), projBlendWeight);
 #			endif
 		normal.xyz = lerp(normal.xyz, finalProjNormal, projBlendWeight);
@@ -1614,8 +1640,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 screenSpaceNormal = normalize(WorldToView(worldSpaceNormal, false, eyeIndex));
 
 #	if defined(TRUE_PBR)
-	baseColor.xyz = Lin2SkyrimGamma(baseColor.xyz);
-
 	PBR::SurfaceProperties pbrSurfaceProperties = PBR::InitSurfaceProperties();
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
