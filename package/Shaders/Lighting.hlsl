@@ -1619,7 +1619,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
 	pbrSurfaceProperties.AO = rawRMAOS.z;
-    pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
+	pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
 
 	pbrSurfaceProperties.GlintScreenSpaceScale = glintParameters.x;
 	pbrSurfaceProperties.GlintLogMicrofacetDensity = glintParameters.y;
@@ -1627,8 +1627,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	pbrSurfaceProperties.GlintDensityRandomization = glintParameters.w;
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
-	
-    baseColor.xyz = Lin2sRGB(baseColor.xyz);
+
+	baseColor.xyz = Lin2sRGB(baseColor.xyz);
 
 	pbrSurfaceProperties.BaseColor = baseColor.xyz;
 
@@ -1924,7 +1924,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 	dirLightColorMultiplier *= dirShadow;
-	
+
 	float3 diffuseColor = 0.0.xxx;
 	float3 specularColor = 0.0.xxx;
 
@@ -2162,7 +2162,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 #			else
 		lightColor *= parallaxShadow * lightShadow;
-		
+
 		float3 lightDiffuseColor = lightColor * contactShadow * saturate(lightAngle.xxx);
 
 #				if defined(SOFT_LIGHTING)

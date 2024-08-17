@@ -84,7 +84,7 @@ namespace PBR
 
 		return surfaceProperties;
 	}
-	
+
 	struct LightProperties
 	{
 		float3 LightColor;
@@ -92,7 +92,7 @@ namespace PBR
 		float3 LinearLightColor;
 		float3 LinearCoatLightColor;
 	};
-	
+
 	LightProperties InitLightProperties(float3 lightColor, float3 nonParallaxShadow, float3 parallaxShadow)
 	{
 		LightProperties result;
@@ -459,7 +459,7 @@ namespace PBR
 #if !defined(LANDSCAPE) && !defined(LODLANDSCAPE)
 			[branch] if ((PBRFlags & TruePBR_Fuzz) != 0)
 			{
-                float3 fuzzSpecular = PI * GetSpecularDirectLightMultiplierMicroflakes(surfaceProperties.Roughness, surfaceProperties.FuzzColor, satNdotL, satNdotV, satNdotH, satVdotH) * lightProperties.LinearLightColor * satNdotL;
+				float3 fuzzSpecular = PI * GetSpecularDirectLightMultiplierMicroflakes(surfaceProperties.Roughness, surfaceProperties.FuzzColor, satNdotL, satNdotV, satNdotH, satVdotH) * lightProperties.LinearLightColor * satNdotL;
 				[branch] if (pbrSettings.UseMultipleScattering)
 				{
 					fuzzSpecular *= 1 + surfaceProperties.FuzzColor * (1 / (specularBRDF.x + specularBRDF.y) - 1);
@@ -493,7 +493,7 @@ namespace PBR
 				}
 
 				float3 coatF;
-                float3 coatSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(surfaceProperties.CoatRoughness, surfaceProperties.CoatF0, coatNdotL, coatNdotV, coatNdotH, coatVdotH, coatF) * lightProperties.LinearCoatLightColor * coatNdotL;
+				float3 coatSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(surfaceProperties.CoatRoughness, surfaceProperties.CoatF0, coatNdotL, coatNdotV, coatNdotH, coatVdotH, coatF) * lightProperties.LinearCoatLightColor * coatNdotL;
 
 				float3 layerAttenuation = 1 - coatF * surfaceProperties.CoatStrength;
 				diffuse *= layerAttenuation;
@@ -518,7 +518,7 @@ namespace PBR
 		float VdotH = saturate(dot(V, H));
 
 		float3 wetnessF;
-        float3 wetnessSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(roughness, wetnessF0, NdotL, NdotV, NdotH, VdotH, wetnessF) * lightColor * NdotL;
+		float3 wetnessSpecular = PI * GetSpecularDirectLightMultiplierMicrofacet(roughness, wetnessF0, NdotL, NdotV, NdotH, VdotH, wetnessF) * lightColor * NdotL;
 
 		return wetnessSpecular * wetnessStrength;
 	}
