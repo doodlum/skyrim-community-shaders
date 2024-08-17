@@ -59,7 +59,7 @@ cbuffer UpdateData : register(b1)
 bool IsSaturated(float value) { return value == saturate(value); }
 bool IsSaturated(float2 value) { return IsSaturated(value.x) && IsSaturated(value.y); }
 
-float3 sRGB2Lin(float3 color)
+float3 SkyrimGamma2Lin(float3 color)
 {
 	return color > 0.04045 ? pow(color / 1.055 + 0.055 / 1.055, 2.4) : color / 12.92;
 }
@@ -172,7 +172,7 @@ float smoothbumpstep(float edge0, float edge1, float x)
 
 		if (linearDepth > 16.5) {  // Ignore objects which are too close
 			float3 color = ColorTexture.SampleLevel(LinearSampler, uv, 0);
-			float4 output = float4(sRGB2Lin(color), 1.0);
+			float4 output = float4(SkyrimGamma2Lin(color), 1.0);
 			float lerpFactor = 1.0 / 64.0;
 
 			half4 positionCS = half4(2 * half2(uv.x, -uv.y + 1) - 1, depth, 1);

@@ -51,11 +51,11 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 
 	half3 directionalAmbientColor = mul(DirectionalAmbient, half4(normalWS, 1.0));
 
-	half3 linAlbedo = sRGB2Lin(albedo);
-	half3 linDirectionalAmbientColor = sRGB2Lin(directionalAmbientColor);
-	half3 linDiffuseColor = sRGB2Lin(diffuseColor);
+	half3 linAlbedo = SkyrimGamma2Lin(albedo);
+	half3 linDirectionalAmbientColor = SkyrimGamma2Lin(directionalAmbientColor);
+	half3 linDiffuseColor = SkyrimGamma2Lin(diffuseColor);
 
-	half3 linAmbient = lerp(sRGB2Lin(albedo * directionalAmbientColor), linAlbedo * linDirectionalAmbientColor, pbrWeight);
+	half3 linAmbient = lerp(SkyrimGamma2Lin(albedo * directionalAmbientColor), linAlbedo * linDirectionalAmbientColor, pbrWeight);
 
 	half visibility = 1.0;
 #if defined(SKYLIGHTING)
@@ -90,10 +90,10 @@ RWTexture2D<half3> DiffuseAmbientRW : register(u1);
 #endif
 
 	linAmbient *= visibility;
-	diffuseColor = Lin2sRGB(linDiffuseColor);
-	directionalAmbientColor = Lin2sRGB(linDirectionalAmbientColor * visibility);
+	diffuseColor = Lin2SkyrimGamma(linDiffuseColor);
+	directionalAmbientColor = Lin2SkyrimGamma(linDirectionalAmbientColor * visibility);
 
-	diffuseColor = lerp(diffuseColor + directionalAmbientColor * albedo, Lin2sRGB(linDiffuseColor + linAmbient), pbrWeight);
+	diffuseColor = lerp(diffuseColor + directionalAmbientColor * albedo, Lin2SkyrimGamma(linDiffuseColor + linAmbient), pbrWeight);
 
 	MainRW[dispatchID.xy] = diffuseColor;
 };

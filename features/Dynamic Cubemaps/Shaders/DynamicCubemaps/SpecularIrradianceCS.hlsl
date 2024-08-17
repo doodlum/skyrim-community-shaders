@@ -118,12 +118,12 @@ float3 tangentToWorld(const float3 v, const float3 N, const float3 S, const floa
 	return S * v.x + T * v.y + N * v.z;
 }
 
-float3 sRGB2Lin(float3 color)
+float3 SkyrimGamma2Lin(float3 color)
 {
 	return color > 0.04045 ? pow(color / 1.055 + 0.055 / 1.055, 2.4) : color / 12.92;
 }
 
-float3 Lin2sRGB(float3 color)
+float3 Lin2SkyrimGamma(float3 color)
 {
 	return color > 0.0031308 ? 1.055 * pow(color, 1.0 / 2.4) - 0.055 : 12.92 * color;
 }
@@ -181,11 +181,11 @@ float3 Lin2sRGB(float3 color)
 			// Mip level to sample from.
 			float mipLevel = max(0.5 * log2(ws / wt) + 1.0, 0.0);
 
-			color += sRGB2Lin(inputTexture.SampleLevel(linear_wrap_sampler, Li, mipLevel).rgb) * cosLi;
+			color += SkyrimGamma2Lin(inputTexture.SampleLevel(linear_wrap_sampler, Li, mipLevel).rgb) * cosLi;
 			weight += cosLi;
 		}
 	}
 	color /= weight;
 
-	outputTexture[ThreadID] = float4(Lin2sRGB(color), 1.0);
+	outputTexture[ThreadID] = float4(Lin2SkyrimGamma(color), 1.0);
 }
