@@ -1646,6 +1646,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			pbrSurfaceProperties.SubsurfaceColor *= sampledSubsurfaceProperties.xyz;
 			pbrSurfaceProperties.Thickness *= sampledSubsurfaceProperties.w;
 		}
+	
+		pbrSurfaceProperties.SubsurfaceColor = pow(pbrSurfaceProperties.SubsurfaceColor, 1 / pbrSettings.BaseColorGamma);
 	}
 	else if ((PBRFlags & TruePBR_TwoLayer) != 0)
 	{
@@ -1681,6 +1683,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			}
 #			endif
 		}
+	
+		pbrSurfaceProperties.CoatColor = pow(pbrSurfaceProperties.CoatColor, 1 / pbrSettings.BaseColorGamma);
 	}
 
 	[branch] if ((PBRFlags & TruePBR_Fuzz) != 0)
@@ -2369,7 +2373,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	indirectDiffuseLobeWeight *= vertexColor;
 #		endif
 
-	color.xyz += emitColor.xyz;
+    color.xyz += pow(emitColor.xyz, 1 / pbrSettings.BaseColorGamma);
 	color.xyz += transmissionColor;
 #	else
 	color.xyz += diffuseColor * baseColor.xyz;
