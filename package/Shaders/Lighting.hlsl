@@ -1619,7 +1619,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
 	pbrSurfaceProperties.Metallic = saturate(rawRMAOS.y);
 	pbrSurfaceProperties.AO = rawRMAOS.z;
-	pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
+    pbrSurfaceProperties.F0 = lerp(saturate(rawRMAOS.w), baseColor.xyz, pbrSurfaceProperties.Metallic);
 
 	pbrSurfaceProperties.GlintScreenSpaceScale = glintParameters.x;
 	pbrSurfaceProperties.GlintLogMicrofacetDensity = glintParameters.y;
@@ -1627,6 +1627,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	pbrSurfaceProperties.GlintDensityRandomization = glintParameters.w;
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
+	
+    baseColor.xyz = Lin2sRGB(baseColor.xyz);
 
 	pbrSurfaceProperties.BaseColor = baseColor.xyz;
 
@@ -1922,11 +1924,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 	dirLightColorMultiplier *= dirShadow;
-
-	float3 noParallaxShadowDirLightColorMultiplier = dirLightColorMultiplier * dirDetailShadow;
-	dirDetailShadow *= parallaxShadow;
-	float3 fullShadowDirLightColorMultiplier = dirLightColorMultiplier * dirDetailShadow;
-
+	
 	float3 diffuseColor = 0.0.xxx;
 	float3 specularColor = 0.0.xxx;
 
@@ -1936,34 +1934,26 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 lodLandDiffuseColor = 0;
 
-	dirLightColor *= dirLightColorMultiplier;
-
 #	if defined(TRUE_PBR)
 	{
-		float3 pbrDirLightColor = PBR::AdjustDirectionalLightColor(DirLightColor.xyz);
-		float3 mainLayerFinalLightColor = fullShadowDirLightColorMultiplier * pbrDirLightColor;
-		float coatShadowDirLightColorMultiplier = fullShadowDirLightColorMultiplier;
-		[branch] if ((PBRFlags & TruePBR_InterlayerParallax) != 0)
-		{
-			coatShadowDirLightColorMultiplier = noParallaxShadowDirLightColorMultiplier;
-		}
-		float3 coatFinalLightColor = coatShadowDirLightColorMultiplier * pbrDirLightColor;
-
+		PBR::LightProperties lightProperties = PBR::InitLightProperties(dirLightColor, dirLightColorMultiplier * dirDetailShadow, parallaxShadow);
 		float3 dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor;
-		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties, tbnTr, uvOriginal);
+		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedDirLightDirection, DirLightDirection, lightProperties, pbrSurfaceProperties, tbnTr, uvOriginal);
 		lightsDiffuseColor += dirDiffuseColor;
 		coatLightsDiffuseColor += coatDirDiffuseColor;
 		transmissionColor += dirTransmissionColor;
 		specularColorPBR += dirSpecularColor * !Interior;
 #		if defined(LOD_LAND_BLEND)
-		lodLandDiffuseColor += dirLightColor * saturate(dirLightAngle) * dirDetailShadow;
+		lodLandDiffuseColor += dirLightColor * saturate(dirLightAngle) * dirLightColorMultiplier * dirDetailShadow * parallaxShadow;
 #		endif
 #		if defined(WETNESS_EFFECTS)
 		if (waterRoughnessSpecular < 1.0)
-			specularColorPBR += PBR::GetWetnessDirectLightSpecularInput(wetnessNormal, worldSpaceViewDirection, normalizedDirLightDirectionWS, coatFinalLightColor, waterRoughnessSpecular);
+			specularColorPBR += PBR::GetWetnessDirectLightSpecularInput(wetnessNormal, worldSpaceViewDirection, normalizedDirLightDirectionWS, lightProperties.LinearCoatLightColor, waterRoughnessSpecular);
 #		endif
 	}
 #	else
+	dirDetailShadow *= parallaxShadow;
+	dirLightColor *= dirLightColorMultiplier;
 	float3 dirDiffuseColor = dirLightColor * saturate(dirLightAngle) * dirDetailShadow;
 
 #		if defined(SOFT_LIGHTING) || defined(RIM_LIGHTING) || defined(BACK_LIGHTING)
@@ -2021,8 +2011,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 		float3 normalizedLightDirection = normalize(lightDirection);
 
-		lightColor *= lightShadow;
-
 #			if defined(TRUE_PBR)
 		{
 			float3 pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor;
@@ -2031,14 +2019,15 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			{
 				refractedLightDirection = -refract(-normalizedLightDirection, coatModelNormal, eta);
 			}
-			float3 pbrLightColor = PBR::AdjustPointLightColor(lightColor);
-			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedLightDirection, normalizedLightDirection, pbrLightColor, pbrLightColor, pbrSurfaceProperties, tbnTr, uvOriginal);
+			PBR::LightProperties lightProperties = PBR::InitLightProperties(lightColor, lightShadow, 1);
+			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, modelNormal.xyz, coatModelNormal, refractedViewDirection, viewDirection, refractedLightDirection, normalizedLightDirection, lightProperties, pbrSurfaceProperties, tbnTr, uvOriginal);
 			lightsDiffuseColor += pointDiffuseColor;
 			coatLightsDiffuseColor += coatPointDiffuseColor;
 			transmissionColor += pointTransmissionColor;
 			specularColorPBR += pointSpecularColor;
 		}
 #			else
+		lightColor *= lightShadow;
 		float lightAngle = dot(modelNormal.xyz, normalizedLightDirection.xyz);
 		float3 lightDiffuseColor = lightColor * saturate(lightAngle.xxx);
 
@@ -2157,31 +2146,23 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 #			endif
 
-		float3 noParallaxShadowLightColor = lightColor * lightShadow;
-		lightColor = parallaxShadow * noParallaxShadowLightColor;
-		float3 fullShadowLightColor = lightColor * contactShadow;
-
 #			if defined(TRUE_PBR)
 		{
-			float3 mainLayerFinalLightColor = PBR::AdjustPointLightColor(fullShadowLightColor);
-			float3 coatFinalLightColor = mainLayerFinalLightColor;
-			[branch] if ((PBRFlags & TruePBR_InterlayerParallax) != 0)
-			{
-				coatFinalLightColor = PBR::AdjustPointLightColor(noParallaxShadowLightColor);
-			}
-
+			PBR::LightProperties lightProperties = PBR::InitLightProperties(lightColor, lightShadow * contactShadow, parallaxShadow);
 			float3 pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor;
-			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, mainLayerFinalLightColor, coatFinalLightColor, pbrSurfaceProperties, tbnTr, uvOriginal);
+			PBR::GetDirectLightInput(pointDiffuseColor, coatPointDiffuseColor, pointTransmissionColor, pointSpecularColor, worldSpaceNormal.xyz, coatWorldNormal, refractedViewDirectionWS, worldSpaceViewDirection, refractedLightDirection, normalizedLightDirection, lightProperties, pbrSurfaceProperties, tbnTr, uvOriginal);
 			lightsDiffuseColor += pointDiffuseColor;
 			coatLightsDiffuseColor += coatPointDiffuseColor;
 			transmissionColor += pointTransmissionColor;
 			specularColorPBR += pointSpecularColor;
 #				if defined(WETNESS_EFFECTS)
 			if (waterRoughnessSpecular < 1.0)
-				specularColorPBR += PBR::GetWetnessDirectLightSpecularInput(wetnessNormal, worldSpaceViewDirection, normalizedLightDirection, coatFinalLightColor, waterRoughnessSpecular);
+				specularColorPBR += PBR::GetWetnessDirectLightSpecularInput(wetnessNormal, worldSpaceViewDirection, normalizedLightDirection, lightProperties.LinearCoatLightColor, waterRoughnessSpecular);
 #				endif
 		}
 #			else
+		lightColor *= parallaxShadow * lightShadow;
+		
 		float3 lightDiffuseColor = lightColor * contactShadow * saturate(lightAngle.xxx);
 
 #				if defined(SOFT_LIGHTING)
@@ -2250,7 +2231,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 directionalAmbientColor = mul(DirectionalAmbient, modelNormal);
 #	if defined(TRUE_PBR)
-	directionalAmbientColor = PBR::AdjustAmbientLightColor(directionalAmbientColor);
+	directionalAmbientColor = directionalAmbientColor;
 #	endif
 
 	float3 reflectionDiffuseColor = diffuseColor + directionalAmbientColor;
@@ -2258,13 +2239,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(SKYLIGHTING)
 	float skylightingDiffuse = shFuncProductIntegral(skylightingSH, shEvaluateCosineLobe(skylightingSettings.DirectionalDiffuse ? worldSpaceNormal : float3(0, 0, 1))) / shPI;
 	skylightingDiffuse = Skylighting::mixDiffuse(skylightingSettings, skylightingDiffuse);
-#		if !defined(TRUE_PBR)
 	directionalAmbientColor = sRGB2Lin(directionalAmbientColor);
-#		endif
 	directionalAmbientColor *= skylightingDiffuse;
-#		if !defined(TRUE_PBR)
 	directionalAmbientColor = Lin2sRGB(directionalAmbientColor);
-#		endif
 #	endif
 
 #	if defined(TRUE_PBR) && defined(LOD_LAND_BLEND) && !defined(DEFERRED)
@@ -2381,7 +2358,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		endif
 
 #		if !defined(DYNAMIC_CUBEMAPS)
-	specularColorPBR += indirectSpecularLobeWeight * directionalAmbientColor;
+	specularColorPBR += indirectSpecularLobeWeight * sRGB2Lin(directionalAmbientColor);
 #		endif
 
 #		if !defined(DEFERRED)
@@ -2472,9 +2449,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if !defined(DEFERRED)
 	color.xyz += specularColor;
 #		endif
+#	endif
 
 	color.xyz = sRGB2Lin(color.xyz);
-#	endif
 
 #	if defined(WETNESS_EFFECTS) && !defined(TRUE_PBR)
 	color.xyz += wetnessSpecular * wetnessGlossinessSpecular;
@@ -2495,7 +2472,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(DEFERRED)
 		specularColorPBR = lerp(specularColorPBR, 0, lodLandBlendFactor);
-		indirectDiffuseLobeWeight = lerp(indirectDiffuseLobeWeight, sRGB2Lin(input.Color.xyz * lodLandColor * lodLandFadeFactor), lodLandBlendFactor);
+		indirectDiffuseLobeWeight = lerp(indirectDiffuseLobeWeight, input.Color.xyz * lodLandColor * lodLandFadeFactor, lodLandBlendFactor);
 		indirectSpecularLobeWeight = lerp(indirectSpecularLobeWeight, 0, lodLandBlendFactor);
 		pbrGlossiness = lerp(pbrGlossiness, 0, lodLandBlendFactor);
 #		endif
@@ -2642,7 +2619,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 outputAlbedo = baseColor.xyz * vertexColor;
 #		if defined(TRUE_PBR)
-	outputAlbedo = Lin2sRGB(indirectDiffuseLobeWeight);
+	outputAlbedo = indirectDiffuseLobeWeight;
 #		endif
 	psout.Albedo = float4(outputAlbedo, psout.Diffuse.w);
 
