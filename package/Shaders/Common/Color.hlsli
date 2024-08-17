@@ -17,10 +17,10 @@ float RGBToLuminance2(float3 color)
 
 float3 SkyrimGamma2Lin(float3 color)
 {
-	return pow(abs(color), 1.5);
+	return pow(abs(color), 1.48);
 }
 
 float3 Lin2SkyrimGamma(float3 color)
 {
-	return pow(abs(color), 1.0 / 1.5);
+	return pow(abs(color), 1.0 / 1.48);
 }

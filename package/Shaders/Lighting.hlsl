@@ -1640,6 +1640,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 screenSpaceNormal = normalize(WorldToView(worldSpaceNormal, false, eyeIndex));
 
 #	if defined(TRUE_PBR)
+	baseColor.xyz = SkyrimGamma2Lin(baseColor.xyz);
+
 	PBR::SurfaceProperties pbrSurfaceProperties = PBR::InitSurfaceProperties();
 
 	pbrSurfaceProperties.Roughness = saturate(rawRMAOS.x);
@@ -2392,7 +2394,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			directLightsDiffuseInput = lerp(directLightsDiffuseInput, pbrSurfaceProperties.CoatColor * coatLightsDiffuseColor, pbrSurfaceProperties.CoatStrength);
 		}
 
-		color.xyz += directLightsDiffuseInput;
+		color.xyz += Lin2SkyrimGamma(directLightsDiffuseInput);
 	}
 
 	float3 indirectDiffuseLobeWeight, indirectSpecularLobeWeight;
