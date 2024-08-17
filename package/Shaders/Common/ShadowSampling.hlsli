@@ -50,8 +50,8 @@ float3 Get3DFilteredShadow(float3 positionWS, float3 viewDirection, float2 scree
 			sincos(phi, sincos_phi.y, sincos_phi.x);
 			float3 sampleOffset = viewDirection * i * 32;
 			sampleOffset += float3(r * sin_theta * sincos_phi.x, r * sin_theta * sincos_phi.y, r * cos_theta) * 32;
-			
-			uint cascadeIndex = (sD.EndSplitDistances.x < (shadowMapDepth - 1000) + dot(sampleOffset, float2(1, 1))); // Stochastic cascade sampling
+
+			uint cascadeIndex = (sD.EndSplitDistances.x < (shadowMapDepth - 1000) + dot(sampleOffset, float2(1, 1)));  // Stochastic cascade sampling
 			float3 positionLS = mul(transpose(sD.ShadowMapProj[eyeIndex][cascadeIndex]), float4(positionWS + sampleOffset, 1));
 
 			float4 depths = SharedTexShadowMapSampler.GatherRed(LinearSampler, float3(saturate(positionLS.xy), cascadeIndex), 0);
@@ -60,7 +60,7 @@ float3 Get3DFilteredShadow(float3 positionWS, float3 viewDirection, float2 scree
 			shadow++;
 		}
 	}
-	
+
 	return lerp(1.0, shadow / 8.0, fadeFactor);
 }
 
@@ -168,7 +168,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 		return worldShadow;
 
 	float noise = InterleavedGradientNoise(screenPosition, FrameCount);
-	
+
 	float2 rotation;
 	sincos(M_2PI * noise, rotation.y, rotation.x);
 	float2x2 rotationMatrix = float2x2(rotation.x, rotation.y, -rotation.y, rotation.x);
@@ -191,7 +191,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 		float4x3 lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][0];
 		float shadowRange = sD.EndSplitDistances.x;
 
-		if (sD.EndSplitDistances.x < length(samplePositionWS) + 8.0 * dot(sampleOffset, float2(1, 1))) // Stochastic cascade sampling
+		if (sD.EndSplitDistances.x < length(samplePositionWS) + 8.0 * dot(sampleOffset, float2(1, 1)))  // Stochastic cascade sampling
 		{
 			lightProjectionMatrix = sD.ShadowMapProj[eyeIndex][1];
 			cascadeIndex = 1;
@@ -203,7 +203,7 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 		samplePositionLS.xy += nearFactor * 8.0 * sampleOffset * rcp(shadowRange);
 
 		float4 depths = SharedTexShadowMapSampler.GatherRed(LinearSampler, float3(saturate(samplePositionLS.xy), cascadeIndex), 0);
-		
+
 		vlShadow += dot(depths > samplePositionLS.z, 0.25);
 	}
 	return lerp(worldShadow, min(worldShadow, vlShadow * stepSize), nearFactor);
