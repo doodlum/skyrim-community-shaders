@@ -2394,7 +2394,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			directLightsDiffuseInput = lerp(directLightsDiffuseInput, pbrSurfaceProperties.CoatColor * coatLightsDiffuseColor, pbrSurfaceProperties.CoatStrength);
 		}
 
-		color.xyz += Lin2SkyrimGamma(directLightsDiffuseInput);
+		color.xyz += directLightsDiffuseInput;
 	}
 
 	float3 indirectDiffuseLobeWeight, indirectSpecularLobeWeight;
