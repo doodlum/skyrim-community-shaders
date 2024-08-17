@@ -592,7 +592,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				float lightAngle = dot(normal, normalizedLightDirection);
 
 				float shadows = 1;
-				
+
 				float3 normalizedLightDirectionVS = WorldToView(normalizedLightDirection, true, eyeIndex);
 				if (light.firstPersonShadow)
 					shadows *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, shadowQualityScale, 0.0, eyeIndex);
@@ -610,7 +610,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 				}
 #				else
 				lightColor *= shadows;
-				
+
 				float3 lightDiffuseColor = lightColor * saturate(lightAngle.xxx);
 
 				sss += lightColor * saturate(-lightAngle);
