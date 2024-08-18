@@ -572,8 +572,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		if (lightCount) {
 			uint lightOffset = lightGrid[clusterIndex].offset;
 
-			float shadowQualityScale = saturate(1.0 - (((float)lightCount * (float)lightCount) / 128.0));
-
 			[loop] for (uint i = 0; i < lightCount; i++)
 			{
 				uint light_index = lightList[lightOffset + i];
@@ -591,17 +589,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 				float lightAngle = dot(normal, normalizedLightDirection);
 
-				float shadows = 1;
-
-				float3 normalizedLightDirectionVS = WorldToView(normalizedLightDirection, true, eyeIndex);
-				if (light.firstPersonShadow)
-					shadows *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, shadowQualityScale, 0.0, eyeIndex);
-				else if (lightLimitFixSettings.EnableContactShadows)
-					shadows *= ContactShadows(viewPosition, screenUV, screenNoise, normalizedLightDirectionVS, shadowQualityScale, 0.0, eyeIndex);
-
 #				if defined(TRUE_PBR)
 				{
-					PBR::LightProperties lightProperties = PBR::InitLightProperties(lightColor * intensityMultiplier, shadows, 1);
+					PBR::LightProperties lightProperties = PBR::InitLightProperties(lightColor * intensityMultiplier, 1, 1);
 					float3 pointDiffuseColor, coatDirDiffuseColor, pointTransmissionColor, pointSpecularColor;
 					PBR::GetDirectLightInput(pointDiffuseColor, coatDirDiffuseColor, pointTransmissionColor, pointSpecularColor, normal, normal, viewDirection, viewDirection, normalizedLightDirection, normalizedLightDirection, lightProperties, pbrSurfaceProperties, tbn, input.TexCoord.xy);
 					lightsDiffuseColor += pointDiffuseColor;
@@ -609,8 +599,6 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 					specularColorPBR += pointSpecularColor;
 				}
 #				else
-				lightColor *= shadows;
-
 				float3 lightDiffuseColor = lightColor * saturate(lightAngle.xxx);
 
 				sss += lightColor * saturate(-lightAngle);
