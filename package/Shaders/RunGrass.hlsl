@@ -567,7 +567,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	uint clusterIndex = 0;
 	uint lightCount = 0;
 
-	if (GetClusterIndex(screenUV, viewPosition.z, clusterIndex)) {
+	if (LightLimitFix::GetClusterIndex(screenUV, viewPosition.z, clusterIndex)) {
 		lightCount = lightGrid[clusterIndex].lightCount;
 		if (lightCount) {
 			uint lightOffset = lightGrid[clusterIndex].offset;
@@ -657,11 +657,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			if defined(LIGHT_LIMIT_FIX) && defined(LLFDEBUG)
 	if (lightLimitFixSettings.EnableLightsVisualisation) {
 		if (lightLimitFixSettings.LightsVisualisationMode == 0) {
-			diffuseColor.xyz = TurboColormap(0);
+			diffuseColor.xyz = LightLimitFix::TurboColormap(0);
 		} else if (lightLimitFixSettings.LightsVisualisationMode == 1) {
-			diffuseColor.xyz = TurboColormap(0);
+			diffuseColor.xyz = LightLimitFix::TurboColormap(0);
 		} else {
-			diffuseColor.xyz = TurboColormap((float)lightCount / 128.0);
+			diffuseColor.xyz = LightLimitFix::TurboColormap((float)lightCount / 128.0);
 		}
 	} else {
 		psout.Diffuse = float4(diffuseColor, 1);

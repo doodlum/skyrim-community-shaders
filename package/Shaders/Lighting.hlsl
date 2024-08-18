@@ -2100,7 +2100,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	uint totalLightCount = strictLights[0].NumStrictLights;
 	uint clusterIndex = 0;
 	uint lightOffset = 0;
-	if (mainPass && GetClusterIndex(screenUV, viewPosition.z, clusterIndex)) {
+	if (mainPass && LightLimitFix::GetClusterIndex(screenUV, viewPosition.z, clusterIndex)) {
 		numClusteredLights = lightGrid[clusterIndex].lightCount;
 		totalLightCount += numClusteredLights;
 		lightOffset = lightGrid[clusterIndex].offset;
@@ -2143,7 +2143,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		[branch] if (mainPass && !FrameParams.z && lightLimitFixSettings.EnableContactShadows && shadowComponent != 0.0 && lightAngle > 0.0)
 		{
 			float3 normalizedLightDirectionVS = normalize(light.positionVS[eyeIndex].xyz - viewPosition.xyz);
-			contactShadow = ContactShadows(viewPosition, screenNoise, screenNoise3D, normalizedLightDirectionVS, contactShadowSteps, eyeIndex);
+			contactShadow = LightLimitFix::ContactShadows(viewPosition, screenNoise, screenNoise3D, normalizedLightDirectionVS, contactShadowSteps, eyeIndex);
 		}
 
 		float3 refractedLightDirection = normalizedLightDirection;
@@ -2591,11 +2591,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(LIGHT_LIMIT_FIX) && defined(LLFDEBUG)
 	if (lightLimitFixSettings.EnableLightsVisualisation) {
 		if (lightLimitFixSettings.LightsVisualisationMode == 0) {
-			psout.Diffuse.xyz = TurboColormap(strictLights[0].NumStrictLights >= 7.0);
+			psout.Diffuse.xyz = LightLimitFix::TurboColormap(strictLights[0].NumStrictLights >= 7.0);
 		} else if (lightLimitFixSettings.LightsVisualisationMode == 1) {
-			psout.Diffuse.xyz = TurboColormap((float)strictLights[0].NumStrictLights / 15.0);
+			psout.Diffuse.xyz = LightLimitFix::TurboColormap((float)strictLights[0].NumStrictLights / 15.0);
 		} else {
-			psout.Diffuse.xyz = TurboColormap((float)numClusteredLights / 128.0);
+			psout.Diffuse.xyz = LightLimitFix::TurboColormap((float)numClusteredLights / 128.0);
 		}
 		baseColor.xyz = 0.0;
 	} else {
