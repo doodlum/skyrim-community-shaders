@@ -404,8 +404,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 	State::GetSingleton()->BeginPerfEvent("PRECIPITATION MASK");
 	State::GetSingleton()->SetPerfMarker("PRECIPITATION MASK");
 
-	static bool doPrecip = false;
-
 	auto sky = RE::Sky::GetSingleton();
 	auto precip = sky->precip;
 
@@ -413,7 +411,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 	if (singleton->doOcclusion) {
 		{
-			doPrecip = false;
 
 			auto precipObject = precip->currentPrecip;
 			if (!precipObject) {
@@ -432,8 +429,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 		}
 
 		{
-			doPrecip = true;
-
 			std::chrono::time_point<std::chrono::system_clock> currentTimer = std::chrono::system_clock::now();
 			auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTimer - singleton->lastUpdateTimer).count();
 
