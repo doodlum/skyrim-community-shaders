@@ -152,6 +152,4 @@ struct Skylighting : Feature
 			return true;
 		}
 	};
-	
 };
-
