@@ -4,7 +4,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Skylighting::Settings,
 	DirectionalDiffuse,
 	MaxZenith,
-	MaxFrames,
 	MinDiffuseVisibility,
 	DiffusePower,
 	MinSpecularVisibility,
@@ -44,13 +43,10 @@ void Skylighting::DrawSettings()
 		auto& context = State::GetSingleton()->context;
 		UINT clr[1] = { 0 };
 		context->ClearUnorderedAccessViewUint(texAccumFramesArray->uav.get(), clr);
+		forceFrames = 255;
 	}
 	if (auto _tt = Util::HoverTooltipWrapper())
 		ImGui::Text("Changes below require rebuilding, a loading screen, or moving away from the current location to apply.");
-
-	ImGui::SliderInt("Update Frames", &settings.MaxFrames, 0, 255, "%d", ImGuiSliderFlags_AlwaysClamp);
-	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("Aggregating over how many frames to build up skylighting.");
 
 	ImGui::SliderAngle("Max Zenith Angle", &settings.MaxZenith, 0, 90);
 	if (auto _tt = Util::HoverTooltipWrapper())
@@ -229,7 +225,7 @@ void Skylighting::Prepass()
 				((int)cellID.x - probeArrayDims[0] / 2) % probeArrayDims[0],
 				((int)cellID.y - probeArrayDims[1] / 2) % probeArrayDims[1],
 				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2],
-				(uint)settings.MaxFrames },
+				255 },
 			.ValidMargin = { (int)cellIDDiff.x, (int)cellIDDiff.y, (int)cellIDDiff.z },
 			.MixParams = { settings.MinDiffuseVisibility, settings.DiffusePower, settings.MinSpecularVisibility, settings.SpecularPower },
 			.DirectionalDiffuse = settings.DirectionalDiffuse,
@@ -283,6 +279,7 @@ void Skylighting::PostPostLoad()
 	stl::write_thunk_call<Main_Precipitation_RenderOcclusion>(REL::RelocationID(35560, 36559).address() + REL::Relocate(0x3A1, 0x3A1, 0x2FA));
 	stl::write_thunk_call<SetViewFrustum>(REL::RelocationID(25643, 26185).address() + REL::Relocate(0x5D9, 0x59D, 0x5DC));
 	stl::write_vfunc<0x6, BSUtilityShader_SetupGeometry>(RE::VTABLE_BSUtilityShader[0]);
+	MenuOpenCloseEventHandler::Register();
 }
 
 //////////////////////////////////////////////////////////////
@@ -440,7 +437,8 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 			std::chrono::time_point<std::chrono::system_clock> currentTimer = std::chrono::system_clock::now();
 			auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTimer - singleton->lastUpdateTimer).count();
 
-			if (timePassed >= (1000.0f / 30.0f)) {
+			if (singleton->forceFrames || timePassed >= (1000.0f / 30.0f)) {
+				singleton->forceFrames--;
 				singleton->lastUpdateTimer = currentTimer;
 
 				auto renderer = RE::BSGraphics::Renderer::GetSingleton();
