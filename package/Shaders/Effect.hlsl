@@ -513,11 +513,6 @@ cbuffer PerGeometry : register(b2)
 #		include "TerrainOcclusion/TerrainOcclusion.hlsli"
 #	endif
 
-#	if defined(SKYLIGHTING)
-#		define SL_INCL_METHODS
-#		include "Skylighting/Skylighting.hlsli"
-#	endif
-
 #	if defined(CLOUD_SHADOWS)
 #		include "CloudShadows/CloudShadows.hlsli"
 #	endif
