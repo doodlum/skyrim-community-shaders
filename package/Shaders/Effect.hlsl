@@ -507,20 +507,20 @@ cbuffer PerGeometry : register(b2)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
 
-#define LinearSampler SampBaseSampler
+#	define LinearSampler SampBaseSampler
 
-#		if defined(TERRA_OCC)
-#			include "TerrainOcclusion/TerrainOcclusion.hlsli"
-#		endif
+#	if defined(TERRA_OCC)
+#		include "TerrainOcclusion/TerrainOcclusion.hlsli"
+#	endif
 
-#		if defined(SKYLIGHTING)
-#			define SL_INCL_METHODS
-#			include "Skylighting/Skylighting.hlsli"
-#		endif
+#	if defined(SKYLIGHTING)
+#		define SL_INCL_METHODS
+#		include "Skylighting/Skylighting.hlsli"
+#	endif
 
-#		if defined(CLOUD_SHADOWS)
-#			include "CloudShadows/CloudShadows.hlsli"
-#		endif
+#	if defined(CLOUD_SHADOWS)
+#		include "CloudShadows/CloudShadows.hlsli"
+#	endif
 
 #	include "Common/ShadowSampling.hlsli"
 
@@ -531,14 +531,13 @@ float3 GetLightingColor(float3 msPosition, float3 worldPosition, float4 screenPo
 	float4 lightFadeMul = 1.0.xxxx - saturate(PLightingRadiusInverseSquared * lightDistanceSquared);
 
 	float3 color = DLightColor.xyz;
-	if (!Interior && (PixelShaderDescriptor & _InWorld)) 
-	{
-		float3 viewDirection = normalize(worldPosition);	
+	if (!Interior && (PixelShaderDescriptor & _InWorld)) {
+		float3 viewDirection = normalize(worldPosition);
 		color = DirLightColorShared * GetEffectShadow(worldPosition, viewDirection, screenPosition, eyeIndex);
 
 		float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
 		color += directionalAmbientColor;
-    } else {
+	} else {
 		color = DirLightColorShared;
 
 		float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
