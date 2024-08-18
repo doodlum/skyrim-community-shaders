@@ -146,12 +146,10 @@ float3 GetWorldShadow(float3 positionWS, float depth, float3 offset, uint eyeInd
 
 float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosition, inout float shadow, uint eyeIndex)
 {
-	float3 worldDir = endPosWS - startPosWS;
-
 	float startDepth = length(startPosWS);
-	float depthDifference = length(worldDir);
 
-	normal *= depthDifference * 8;
+	// Simulate blurring world shadows on the surface
+	normal *= 8.0;
 
 	float worldShadow = GetWorldShadow(startPosWS, startDepth, normal, eyeIndex);
 
@@ -174,6 +172,10 @@ float GetVL(float3 startPosWS, float3 endPosWS, float3 normal, float2 screenPosi
 	float2x2 rotationMatrix = float2x2(rotation.x, rotation.y, -rotation.y, rotation.x);
 
 	float stepSize = rcp(sampleCount);
+
+	float3 worldDir = endPosWS - startPosWS;
+
+	// Offset starting position
 	startPosWS += worldDir * stepSize * noise;
 
 	PerGeometry sD = SharedPerShadow[0];
