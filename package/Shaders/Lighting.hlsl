@@ -1053,7 +1053,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	bool mainPass = PixelShaderDescriptor & _InWorld;
 
 #	if defined(TERRAIN_BLENDING)
-	float depthSampled = GetTerrainOffsetDepth(screenUV, eyeIndex);
+	float depthSampled = TerrainBlending::GetTerrainOffsetDepth(screenUV, eyeIndex);
 	float depthComp = input.Position.z - depthSampled;
 
 	float depthSampledLinear = GetScreenDepth(depthSampled);
