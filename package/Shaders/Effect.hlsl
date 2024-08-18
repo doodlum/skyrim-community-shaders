@@ -499,7 +499,7 @@ cbuffer PerGeometry : register(b2)
 #	endif
 };
 
-#	if defined(MEMBRANE) || !defined(LIGHTING)
+#	if !defined(LIGHTING)
 #		undef LIGHT_LIMIT_FIX
 #	endif
 
