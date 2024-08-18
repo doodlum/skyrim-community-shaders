@@ -222,7 +222,7 @@ PS_OUTPUT main(PS_INPUT input)
 	if (dirShadow > 0.0) {
 		float terrainShadow = 1;
 		float terrainAo = 1;
-		GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex], length(input.WorldPosition.xyz), SampDiffuse, terrainShadow, terrainAo);
+		TerrainOcclusion::GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex], length(input.WorldPosition.xyz), SampDiffuse, terrainShadow, terrainAo);
 		dirShadow = min(dirShadow, terrainShadow);
 	}
 #			endif

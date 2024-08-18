@@ -1948,7 +1948,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(TERRA_OCC)
 		float terrainShadow = 1;
 		float terrainAo = 1;
-		GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex].xyz, length(input.WorldPosition.xyz), SampColorSampler, terrainShadow, terrainAo);
+		TerrainOcclusion::GetTerrainOcclusion(input.WorldPosition.xyz + CameraPosAdjust[eyeIndex].xyz, length(input.WorldPosition.xyz), SampColorSampler, terrainShadow, terrainAo);
 		dirShadow *= terrainShadow;
 		inDirShadow = inDirShadow || dirShadow == 0.0;
 #	endif

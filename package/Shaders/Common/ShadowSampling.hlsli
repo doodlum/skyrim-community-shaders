@@ -136,7 +136,7 @@ float3 GetWorldShadow(float3 positionWS, float depth, float3 offset, uint eyeInd
 #if defined(TERRA_OCC)
 	float terrainShadow = 1.0;
 	float terrainAo = 1.0;
-	GetTerrainOcclusion(positionWS + offset + CameraPosAdjust[eyeIndex], depth, LinearSampler, terrainShadow, terrainAo);
+	TerrainOcclusion::GetTerrainOcclusion(positionWS + offset + CameraPosAdjust[eyeIndex], depth, LinearSampler, terrainShadow, terrainAo);
 	worldShadow = terrainShadow;
 	if (worldShadow == 0.0)
 		return 0.0;
