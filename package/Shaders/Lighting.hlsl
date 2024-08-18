@@ -1638,8 +1638,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	pbrSurfaceProperties.GlintDensityRandomization = glintParameters.w;
 
 	baseColor.xyz *= 1 - pbrSurfaceProperties.Metallic;
-	
-    baseColor.xyz = pow(baseColor.xyz, 1 / pbrSettings.BaseColorGamma);
+
+	baseColor.xyz = pow(baseColor.xyz, 1 / pbrSettings.BaseColorGamma);
 
 	pbrSurfaceProperties.BaseColor = baseColor.xyz;
 
@@ -1657,7 +1657,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			pbrSurfaceProperties.SubsurfaceColor *= sampledSubsurfaceProperties.xyz;
 			pbrSurfaceProperties.Thickness *= sampledSubsurfaceProperties.w;
 		}
-	
+
 		pbrSurfaceProperties.SubsurfaceColor = pow(pbrSurfaceProperties.SubsurfaceColor, 1 / pbrSettings.BaseColorGamma);
 	}
 	else if ((PBRFlags & TruePBR_TwoLayer) != 0)
@@ -1694,7 +1694,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			}
 #			endif
 		}
-	
+
 		pbrSurfaceProperties.CoatColor = pow(pbrSurfaceProperties.CoatColor, 1 / pbrSettings.BaseColorGamma);
 	}
 
@@ -2384,7 +2384,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	indirectDiffuseLobeWeight *= vertexColor;
 #		endif
 
-    color.xyz += pow(emitColor.xyz, 1 / pbrSettings.BaseColorGamma);
+	color.xyz += pow(emitColor.xyz, 1 / pbrSettings.BaseColorGamma);
 	color.xyz += transmissionColor;
 #	else
 	color.xyz += diffuseColor * baseColor.xyz;
