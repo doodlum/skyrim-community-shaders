@@ -438,7 +438,7 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 			auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTimer - singleton->lastUpdateTimer).count();
 
 			if (singleton->forceFrames || timePassed >= (1000.0f / 30.0f)) {
-				singleton->forceFrames--;
+				singleton->forceFrames = (uint)std::max(0, (int)singleton->forceFrames - 1);
 				singleton->lastUpdateTimer = currentTimer;
 
 				auto renderer = RE::BSGraphics::Renderer::GetSingleton();
