@@ -229,7 +229,7 @@ PS_OUTPUT main(PS_INPUT input)
 
 #			if defined(CLOUD_SHADOWS)
 	if (dirShadow > 0.0) {
-		dirShadow *= GetCloudShadowMult(input.WorldPosition, SampDiffuse);
+		dirShadow *= CloudShadows::GetCloudShadowMult(input.WorldPosition, SampDiffuse);
 	}
 #			endif
 

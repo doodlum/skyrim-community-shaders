@@ -1956,7 +1956,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(CLOUD_SHADOWS)
 	if (!inDirShadow) {
-		dirShadow *= GetCloudShadowMult(input.WorldPosition.xyz, SampColorSampler);
+		dirShadow *= CloudShadows::GetCloudShadowMult(input.WorldPosition.xyz, SampColorSampler);
 	}
 #	endif
 
