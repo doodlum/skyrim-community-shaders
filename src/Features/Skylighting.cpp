@@ -225,7 +225,7 @@ void Skylighting::Prepass()
 				((int)cellID.x - probeArrayDims[0] / 2) % probeArrayDims[0],
 				((int)cellID.y - probeArrayDims[1] / 2) % probeArrayDims[1],
 				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2],
-				255 },
+				64 },
 			.ValidMargin = { (int)cellIDDiff.x, (int)cellIDDiff.y, (int)cellIDDiff.z },
 			.MixParams = { settings.MinDiffuseVisibility, settings.DiffusePower, settings.MinSpecularVisibility, settings.SpecularPower },
 			.DirectionalDiffuse = settings.DirectionalDiffuse,
@@ -411,7 +411,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 	if (singleton->doOcclusion) {
 		{
-
 			auto precipObject = precip->currentPrecip;
 			if (!precipObject) {
 				precipObject = precip->lastPrecip;
