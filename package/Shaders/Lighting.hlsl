@@ -2324,7 +2324,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		F0 = lerp(F0, sRGB2Lin(complexSpecular), (float)complexMaterial);
 #			endif
 
-		envColor = GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, envRoughness, F0, diffuseColor, viewPosition.z) * envMask;
+		envColor = DynamicCubemaps::GetDynamicCubemap(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, envRoughness, F0, diffuseColor, viewPosition.z) * envMask;
 	}
 #		endif
 #	endif  // defined (ENVMAP) || defined (MULTI_LAYER_PARALLAX) || defined(EYE)
@@ -2393,7 +2393,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if !defined(DEFERRED)
 #			if defined(DYNAMIC_CUBEMAPS)
-	specularColorPBR += indirectSpecularLobeWeight * GetDynamicCubemapSpecularIrradiance(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, pbrSurfaceProperties.Roughness, viewPosition.z);
+	specularColorPBR += indirectSpecularLobeWeight * DynamicCubemaps::GetDynamicCubemapSpecularIrradiance(screenUV, worldSpaceNormal, worldSpaceVertexNormal, worldSpaceViewDirection, pbrSurfaceProperties.Roughness, viewPosition.z);
 #			endif
 #		else
 	indirectDiffuseLobeWeight *= vertexColor;
