@@ -499,10 +499,6 @@ cbuffer PerGeometry : register(b2)
 #	endif
 };
 
-#	if !defined(LIGHTING)
-#		undef LIGHT_LIMIT_FIX
-#	endif
-
 #	if defined(LIGHT_LIMIT_FIX)
 #		include "LightLimitFix/LightLimitFix.hlsli"
 #	endif
