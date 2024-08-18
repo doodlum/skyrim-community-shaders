@@ -411,7 +411,6 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 	if (singleton->doOcclusion) {
 		{
-
 			auto precipObject = precip->currentPrecip;
 			if (!precipObject) {
 				precipObject = precip->lastPrecip;
