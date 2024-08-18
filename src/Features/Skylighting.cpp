@@ -409,10 +409,8 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 	auto singleton = GetSingleton();
 
-	if (auto sky = RE::Sky::GetSingleton())
-	{
-		if (sky->mode.get() == RE::Sky::Mode::kFull && singleton->doOcclusion)
-		{
+	if (auto sky = RE::Sky::GetSingleton()) {
+		if (sky->mode.get() == RE::Sky::Mode::kFull && singleton->doOcclusion) {
 			static bool doPrecip = false;
 
 			auto precip = sky->precip;
