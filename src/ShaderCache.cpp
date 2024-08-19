@@ -1733,8 +1733,10 @@ namespace SIE
 				{ "BSImagespaceShaderISSAOBlurH", static_cast<uint32_t>(ISSAOBlurH) },
 				{ "BSImagespaceShaderISSAOBlurV", static_cast<uint32_t>(ISSAOBlurV) },
 				{ "BSImagespaceShaderISUnderwaterMask", static_cast<uint32_t>(ISUnderwaterMask) },
+				{ "BSImagespaceShaderISApplyVolumetricLighting", static_cast<uint32_t>(ISApplyVolumetricLighting) },
 
 				{ "BSImagespaceShaderVolumetricLightingRaymarchCS", 256 },
+				{ "BSImagespaceShaderVolumetricLightingGenerateCS", 257 },
 			};
 
 			auto it = descriptors.find(imagespaceShader.name);
