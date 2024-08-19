@@ -1592,7 +1592,7 @@ namespace SIE
 		}
 
 		std::unique_ptr<RE::BSGraphics::ComputeShader> CreateComputeShader([[maybe_unused]] ID3DBlob& shaderData,
-			[[maybe_unused]]const RE::BSShader& shader, uint32_t descriptor)
+			[[maybe_unused]] const RE::BSShader& shader, uint32_t descriptor)
 		{
 			auto newShader = std::make_unique<RE::BSGraphics::ComputeShader>();
 			newShader->id = descriptor;
