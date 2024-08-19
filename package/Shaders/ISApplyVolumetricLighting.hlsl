@@ -33,38 +33,34 @@ cbuffer PerGeometry : register(b2)
 PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
-    
+
 	float2 screenPosition = GetDynamicResolutionAdjustedScreenPosition(input.TexCoord);
-    float depth = DepthTex.Sample(DepthSampler, screenPosition).x;
-    float repartition = clamp(RepartitionTex.SampleLevel(RepartitionSampler, depth, 0).x, 0, 0.9999);
-    float vl = g_IntensityX_TemporalY.x * VLTex.SampleLevel(VLSampler, float3(input.TexCoord, repartition), 0).x;
-    
-    float noiseGrad = 0.03125 * NoiseGradSamplerTex.Sample(NoiseGradSamplerSampler, 0.125 * input.Position.xy).x;
-    
-    float adjustedVl = noiseGrad + vl - 0.0078125;
-    
-    if (0.001 < g_IntensityX_TemporalY.y)
-    {
-        float2 motionVector = MotionVectorsTex.Sample(MotionVectorsSampler, screenPosition).xy;
-        float2 previousTexCoord = input.TexCoord + motionVector;
-	    float2 previousScreenPosition = GetPreviousDynamicResolutionAdjustedScreenPosition(previousTexCoord);
-        float previousVl = PreviousFrameTex.Sample(PreviousFrameSampler, previousScreenPosition).x;
-        float previousDepth = PreviousDepthTex.Sample(PreviousDepthSampler, previousScreenPosition).x;
-        
-        float temporalContribution = g_IntensityX_TemporalY.y * (1 - smoothstep(0, 1, min(1, 100 * abs(depth - previousDepth))));
-        
-        float isValid = 0;
-        if (previousTexCoord.x >= 0 && previousTexCoord.x < 1 && previousTexCoord.y >= 0 && previousTexCoord.y < 1)
-        {
-            isValid = 1;
-        }
-        psout.VL = lerp(adjustedVl, previousVl, temporalContribution * isValid);
-    }
-    else
-    {
-        psout.VL = adjustedVl;
-    }
-    
+	float depth = DepthTex.Sample(DepthSampler, screenPosition).x;
+	float repartition = clamp(RepartitionTex.SampleLevel(RepartitionSampler, depth, 0).x, 0, 0.9999);
+	float vl = g_IntensityX_TemporalY.x * VLTex.SampleLevel(VLSampler, float3(input.TexCoord, repartition), 0).x;
+
+	float noiseGrad = 0.03125 * NoiseGradSamplerTex.Sample(NoiseGradSamplerSampler, 0.125 * input.Position.xy).x;
+
+	float adjustedVl = noiseGrad + vl - 0.0078125;
+
+	if (0.001 < g_IntensityX_TemporalY.y) {
+		float2 motionVector = MotionVectorsTex.Sample(MotionVectorsSampler, screenPosition).xy;
+		float2 previousTexCoord = input.TexCoord + motionVector;
+		float2 previousScreenPosition = GetPreviousDynamicResolutionAdjustedScreenPosition(previousTexCoord);
+		float previousVl = PreviousFrameTex.Sample(PreviousFrameSampler, previousScreenPosition).x;
+		float previousDepth = PreviousDepthTex.Sample(PreviousDepthSampler, previousScreenPosition).x;
+
+		float temporalContribution = g_IntensityX_TemporalY.y * (1 - smoothstep(0, 1, min(1, 100 * abs(depth - previousDepth))));
+
+		float isValid = 0;
+		if (previousTexCoord.x >= 0 && previousTexCoord.x < 1 && previousTexCoord.y >= 0 && previousTexCoord.y < 1) {
+			isValid = 1;
+		}
+		psout.VL = lerp(adjustedVl, previousVl, temporalContribution * isValid);
+	} else {
+		psout.VL = adjustedVl;
+	}
+
 	return psout;
 }
 #endif
