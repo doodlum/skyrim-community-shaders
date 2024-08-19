@@ -1,7 +1,7 @@
 #include "Common/Color.hlsli"
+#include "Common/DICETonemapper.hlsli"
 #include "Common/DummyVSTexCoord.hlsl"
 #include "Common/FrameBuffer.hlsli"
-#include "Common/DICETonemapper.hlsli"
 
 typedef VS_OUTPUT PS_INPUT;
 
@@ -57,19 +57,19 @@ float GetTonemapFactorHejlBurgessDawson(float luminance)
 float SafeDivision(float quotient, float dividend, int fallbackMode = 0)
 {
 	if (dividend == 0.0) {
-        if (fallbackMode == 0)
-          return 0;
-        if (fallbackMode == 1)
-          return sign(quotient);
-        return asfloat(0x7F7FFFFF) * sign(quotient);
-    }
-    return quotient / dividend;
+		if (fallbackMode == 0)
+			return 0;
+		if (fallbackMode == 1)
+			return sign(quotient);
+		return asfloat(0x7F7FFFFF) * sign(quotient);
+	}
+	return quotient / dividend;
 }
 
 // Returns 0, 1 or FLT_MAX if "dividend" is 0
 float3 SafeDivision(float3 quotient, float3 dividend, int fallbackMode = 0)
 {
-    return float3(SafeDivision(quotient.x, dividend.x, fallbackMode), SafeDivision(quotient.y, dividend.y, fallbackMode), SafeDivision(quotient.z, dividend.z, fallbackMode));
+	return float3(SafeDivision(quotient.x, dividend.x, fallbackMode), SafeDivision(quotient.y, dividend.y, fallbackMode), SafeDivision(quotient.z, dividend.z, fallbackMode));
 }
 
 // Takes any original color (before some post process is applied to it) and re-applies the same transformation the post process had applied to it on a different (but similar) color.
@@ -77,15 +77,15 @@ float3 SafeDivision(float3 quotient, float3 dividend, int fallbackMode = 0)
 // It can be used for example to apply any SDR LUT or SDR Color Correction on an HDR color.
 float3 RestorePostProcess(float3 NonPostProcessedTargetColor, float3 NonPostProcessedSourceColor, float3 PostProcessedSourceColor)
 {
-    static const float MaxShadowsColor = pow(1.0 / 3.0, 2.2);
-    const float3 PostProcessColorRatio = SafeDivision(PostProcessedSourceColor, NonPostProcessedSourceColor);
-    const float3 PostProcessColorOffset = PostProcessedSourceColor - NonPostProcessedSourceColor;
-    const float3 PostProcessedRatioColor = NonPostProcessedTargetColor * PostProcessColorRatio;
-    const float3 PostProcessedOffsetColor = NonPostProcessedTargetColor + PostProcessColorOffset;
-    // Near black, we prefer using the "offset" (sum) pp restoration method, as otherwise any raised black from post processing would not work to apply,
-    // for example if any zero was shifted to a more raised color, "PostProcessColorRatio" would not be able to replicate that shift due to a division by zero.
-    const float3 PostProcessedTargetColor = lerp(PostProcessedOffsetColor, PostProcessedRatioColor, max(saturate(abs(NonPostProcessedTargetColor) / MaxShadowsColor), saturate(abs(NonPostProcessedSourceColor) / MaxShadowsColor)));
-    return PostProcessedTargetColor;
+	static const float MaxShadowsColor = pow(1.0 / 3.0, 2.2);
+	const float3 PostProcessColorRatio = SafeDivision(PostProcessedSourceColor, NonPostProcessedSourceColor);
+	const float3 PostProcessColorOffset = PostProcessedSourceColor - NonPostProcessedSourceColor;
+	const float3 PostProcessedRatioColor = NonPostProcessedTargetColor * PostProcessColorRatio;
+	const float3 PostProcessedOffsetColor = NonPostProcessedTargetColor + PostProcessColorOffset;
+	// Near black, we prefer using the "offset" (sum) pp restoration method, as otherwise any raised black from post processing would not work to apply,
+	// for example if any zero was shifted to a more raised color, "PostProcessColorRatio" would not be able to replicate that shift due to a division by zero.
+	const float3 PostProcessedTargetColor = lerp(PostProcessedOffsetColor, PostProcessedRatioColor, max(saturate(abs(NonPostProcessedTargetColor) / MaxShadowsColor), saturate(abs(NonPostProcessedSourceColor) / MaxShadowsColor)));
+	return PostProcessedTargetColor;
 }
 
 PS_OUTPUT main(PS_INPUT input)
@@ -149,14 +149,14 @@ PS_OUTPUT main(PS_INPUT input)
 
 		float3 blendedColor = inputColor * (blendFactor / luminance);
 		blendedColor += saturate(Param.x - blendFactor) * bloomColor;
-		
+
 		gameSdrColor = blendedColor;
 
 		float blendedLuminance = RGBToLuminance(blendedColor);
 
 		float4 linearColor = lerp(avgValue.x,
 			Cinematic.w * lerp(lerp(blendedLuminance, float4(blendedColor, 1), Cinematic.x),
-							blendedLuminance * Tint, Tint.w),
+							  blendedLuminance * Tint, Tint.w),
 			Cinematic.z);
 
 		gameSdrColor = max(0, gameSdrColor);
@@ -165,7 +165,7 @@ PS_OUTPUT main(PS_INPUT input)
 
 	// Apply bloom directly to the HDR input
 	inputColor += saturate(Param.x - inputColor) * bloomColor;
-	
+
 	// Eye adaptation
 	inputColor *= avgValue.y / avgValue.x;
 
@@ -177,10 +177,10 @@ PS_OUTPUT main(PS_INPUT input)
 
 	// Map SDR post-processing data to HDR
 	inputColor = max(0, RestorePostProcess(inputColor, gameSdrColor, ppColor));
-	
+
 	// Tonemap HDR input which contains post-processing
 	float3 linearColor = max(0, ApplyHuePreservingShoulder(inputColor, lerp(0.25, 0.5, Param.z)));
-	
+
 	// Linear to gamma
 	float3 srgbColor = pow(linearColor, 1.0 / 2.2);
 
@@ -192,7 +192,7 @@ PS_OUTPUT main(PS_INPUT input)
 	srgbColor = ToSRGBColor(srgbColor);
 
 	psout.Color = float4(srgbColor, 1.0);
-	
+
 #	endif
 
 	return psout;
