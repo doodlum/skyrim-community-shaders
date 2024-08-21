@@ -430,13 +430,13 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 				}
 			}
 
-		{
-			std::chrono::time_point<std::chrono::system_clock> currentTimer = std::chrono::system_clock::now();
-			auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTimer - singleton->lastUpdateTimer).count();
+			{
+				std::chrono::time_point<std::chrono::system_clock> currentTimer = std::chrono::system_clock::now();
+				auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTimer - singleton->lastUpdateTimer).count();
 
-			if (singleton->forceFrames || timePassed >= (1000.0f / 30.0f)) {
-				singleton->forceFrames = (uint)std::max(0, (int)singleton->forceFrames - 1);
-				singleton->lastUpdateTimer = currentTimer;
+				if (singleton->forceFrames || timePassed >= (1000.0f / 30.0f)) {
+					singleton->forceFrames = (uint)std::max(0, (int)singleton->forceFrames - 1);
+					singleton->lastUpdateTimer = currentTimer;
 
 					auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 					auto& precipitation = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPRECIPITATION_OCCLUSION_MAP];
