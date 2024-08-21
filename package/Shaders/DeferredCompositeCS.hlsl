@@ -128,7 +128,7 @@ Texture2D<half4> SpecularSSGITexture : register(t9);
 
 		color += reflectance * finalIrradiance;
 	}
-	
+
 #endif
 
 	color = Lin2sRGB(color);
