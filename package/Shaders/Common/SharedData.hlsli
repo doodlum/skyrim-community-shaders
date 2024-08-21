@@ -122,7 +122,7 @@ struct SkylightingSettings
 	row_major float4x4 OcclusionViewProj;
 	float4 OcclusionDir;
 
-	float3 PosOffset;   // xyz: cell origin in camera model space
+	float3 PosOffset;  // xyz: cell origin in camera model space
 	uint pad0;
 	uint3 ArrayOrigin;  // xyz: array origin, w: max accum frames
 	uint pad1;

@@ -224,8 +224,7 @@ void Skylighting::Prepass()
 			.ArrayOrigin = {
 				((int)cellID.x - probeArrayDims[0] / 2) % probeArrayDims[0],
 				((int)cellID.y - probeArrayDims[1] / 2) % probeArrayDims[1],
-				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2]
-			},
+				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2] },
 			.ValidMargin = { (int)cellIDDiff.x, (int)cellIDDiff.y, (int)cellIDDiff.z },
 			.MixParams = { settings.MinDiffuseVisibility, settings.DiffusePower, settings.MinSpecularVisibility, settings.SpecularPower },
 			.DirectionalDiffuse = settings.DirectionalDiffuse,
