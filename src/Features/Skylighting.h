@@ -55,14 +55,15 @@ struct Skylighting : Feature
 		float4 OcclusionDir;
 
 		float3 PosOffset;  // cell origin in camera model space
-		float _pad0;
-		uint ArrayOrigin[4];  // xyz: array origin, w: max accum frames
+		uint _pad0;
+		uint ArrayOrigin[3];  // xyz: array origin, w: max accum frames
+		uint _pad1;
 		int ValidMargin[4];
 
 		float4 MixParams;  // x: min diffuse visibility, y: diffuse mult, z: min specular visibility, w: specular mult
 
 		uint DirectionalDiffuse;
-		float3 _pad1;
+		uint _pad2[3];
 	} cbData;
 	static_assert(sizeof(SkylightingCB) % 16 == 0);
 	eastl::unique_ptr<ConstantBuffer> skylightingCB = nullptr;
@@ -89,7 +90,7 @@ struct Skylighting : Feature
 	bool foliage = false;
 	REX::W32::XMFLOAT4X4 OcclusionTransform;
 	float4 OcclusionDir;
-	uint forceFrames = 255;
+	uint forceFrames = 255 * 4;
 
 	std::chrono::time_point<std::chrono::system_clock> lastUpdateTimer = std::chrono::system_clock::now();
 
@@ -129,7 +130,7 @@ struct Skylighting : Feature
 			// When entering a new cell through a loadscreen, update every frame until completion
 			if (a_event->menuName == RE::LoadingMenu::MENU_NAME) {
 				if (!a_event->opening)
-					Skylighting::GetSingleton()->forceFrames = 255;
+					Skylighting::GetSingleton()->forceFrames = 255 * 4;
 			}
 
 			return RE::BSEventNotifyControl::kContinue;

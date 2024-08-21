@@ -43,7 +43,7 @@ void Skylighting::DrawSettings()
 		auto& context = State::GetSingleton()->context;
 		UINT clr[1] = { 0 };
 		context->ClearUnorderedAccessViewUint(texAccumFramesArray->uav.get(), clr);
-		forceFrames = 255;
+		forceFrames = 255 * 4;
 	}
 	if (auto _tt = Util::HoverTooltipWrapper())
 		ImGui::Text("Changes below require rebuilding, a loading screen, or moving away from the current location to apply.");
@@ -224,8 +224,8 @@ void Skylighting::Prepass()
 			.ArrayOrigin = {
 				((int)cellID.x - probeArrayDims[0] / 2) % probeArrayDims[0],
 				((int)cellID.y - probeArrayDims[1] / 2) % probeArrayDims[1],
-				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2],
-				64 },
+				((int)cellID.z - probeArrayDims[2] / 2) % probeArrayDims[2]
+			},
 			.ValidMargin = { (int)cellIDDiff.x, (int)cellIDDiff.y, (int)cellIDDiff.z },
 			.MixParams = { settings.MinDiffuseVisibility, settings.DiffusePower, settings.MinSpecularVisibility, settings.SpecularPower },
 			.DirectionalDiffuse = settings.DirectionalDiffuse,
