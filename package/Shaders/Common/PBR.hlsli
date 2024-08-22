@@ -418,12 +418,12 @@ namespace PBR
 #if !defined(LANDSCAPE) && !defined(LODLANDSCAPE)
 		[branch] if ((PBRFlags & TruePBR_HairMarschner) != 0)
 		{
-			transmission += lightProperties.LinearLightColor* GetHairColorMarschner(N, V, L, NdotL, NdotV, VdotL, 0, 1, 0, surfaceProperties);
+			transmission += lightProperties.LinearLightColor * GetHairColorMarschner(N, V, L, NdotL, NdotV, VdotL, 0, 1, 0, surfaceProperties);
 		}
 		else
 #endif
 		{
-			diffuse += lightProperties.LinearLightColor* satNdotL * GetDiffuseDirectLightMultiplierLambert();
+			diffuse += lightProperties.LinearLightColor * satNdotL * GetDiffuseDirectLightMultiplierLambert();
 
 #if defined(GLINT)
 			GlintInput glintInput;
