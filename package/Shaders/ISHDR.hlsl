@@ -173,7 +173,6 @@ PS_OUTPUT main(PS_INPUT input)
 	inputColor = pow(inputColor, 2.2);
 	gameSdrColor = pow(gameSdrColor, 2.2);
 	ppColor = pow(ppColor, 2.2);
-	bloomColor = pow(bloomColor, 2.2);
 
 	// Map SDR post-processing data to HDR
 	inputColor = max(0, RestorePostProcess(inputColor, gameSdrColor, ppColor));
