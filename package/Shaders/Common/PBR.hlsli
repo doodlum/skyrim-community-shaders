@@ -599,7 +599,7 @@ namespace PBR
 			specularAO = MultiBounceAO(surfaceProperties.F0, specularAO.x).y;
 		}
 
-		diffuseLobeWeight *= diffuseAO;
+		diffuseLobeWeight *= diffuseAO / PI;
 		specularLobeWeight *= specularAO;
 	}
 

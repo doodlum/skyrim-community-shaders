@@ -2645,7 +2645,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 outputAlbedo = baseColor.xyz * vertexColor;
 #		if defined(TRUE_PBR)
-	outputAlbedo = Lin2sRGB(indirectDiffuseLobeWeight / PI);
+	outputAlbedo = Lin2sRGB(indirectDiffuseLobeWeight);
 #		endif
 	psout.Albedo = float4(outputAlbedo, psout.Diffuse.w);
 
