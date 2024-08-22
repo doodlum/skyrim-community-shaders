@@ -179,17 +179,14 @@ PS_OUTPUT main(PS_INPUT input)
 	inputColor = max(0, RestorePostProcess(inputColor, gameSdrColor, ppColor));
 
 	// Tonemap HDR input which contains post-processing
-	float3 linearColor = max(0, ApplyHuePreservingShoulder(inputColor, lerp(0.25, 0.5, Param.z)));
 
+	float3 linearColor = max(0, ApplyHuePreservingShoulder(inputColor, 1.0 - smoothstep(0.6, 1.4, FrameParams.x)));
 	// Linear to gamma
 	float3 srgbColor = pow(linearColor, 1.0 / 2.2);
 
 #		if defined(FADE)
 	srgbColor = lerp(srgbColor, Fade.xyz, Fade.w);
 #		endif
-
-	// Game brightness slider
-	srgbColor = ToSRGBColor(srgbColor);
 
 	psout.Color = float4(srgbColor, 1.0);
 
