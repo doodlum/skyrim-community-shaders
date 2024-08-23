@@ -86,10 +86,10 @@ namespace Skylighting
 
 			// https://handmade.network/p/75/monter/blog/p/7288-engine_work__global_illumination_with_irradiance_probes
 			// basic tangent checks
-			float tangentWeight = sqrt(saturate(dot(normalize(cellCentreMS - positionMSAdjusted), normalWS)));
-
+			float tangentWeight = dot(normalize(cellCentreMS - positionMSAdjusted), normalWS);
 			if (tangentWeight <= 0.0)
 				continue;
+			tangentWeight = sqrt(tangentWeight);
 
 			float3 trilinearWeights = 1 - abs(offset - trilinearPos);
 			float w = trilinearWeights.x * trilinearWeights.y * trilinearWeights.z * tangentWeight;
