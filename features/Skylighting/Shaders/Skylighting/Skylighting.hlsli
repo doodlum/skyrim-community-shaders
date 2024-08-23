@@ -73,32 +73,33 @@ namespace Skylighting
 		float wsum = 0;
 		[unroll] for (int i = 0; i < 2; i++)
 			[unroll] for (int j = 0; j < 2; j++)
-				[unroll] for (int k = 0; k < 2; k++) {
-					int3 offset = int3(i, j, k);
-					int3 cellID = cell000 + offset;
+				[unroll] for (int k = 0; k < 2; k++)
+		{
+			int3 offset = int3(i, j, k);
+			int3 cellID = cell000 + offset;
 
-					if (any(cellID < 0) || any(cellID >= ARRAY_DIM))
-						continue;
+			if (any(cellID < 0) || any(cellID >= ARRAY_DIM))
+				continue;
 
-					float3 cellCentreMS = cellID + 0.5 - ARRAY_DIM / 2;
-					cellCentreMS = cellCentreMS * CELL_SIZE;
+			float3 cellCentreMS = cellID + 0.5 - ARRAY_DIM / 2;
+			cellCentreMS = cellCentreMS * CELL_SIZE;
 
-					// https://handmade.network/p/75/monter/blog/p/7288-engine_work__global_illumination_with_irradiance_probes
-					// basic tangent checks
-					float tangentWeight = sqrt(saturate(dot(normalize(cellCentreMS - positionMSAdjusted), normalWS)));
-					
-					if (tangentWeight <= 0.0)
-						continue;
+			// https://handmade.network/p/75/monter/blog/p/7288-engine_work__global_illumination_with_irradiance_probes
+			// basic tangent checks
+			float tangentWeight = sqrt(saturate(dot(normalize(cellCentreMS - positionMSAdjusted), normalWS)));
 
-					float3 trilinearWeights = 1 - abs(offset - trilinearPos);
-					float w = trilinearWeights.x * trilinearWeights.y * trilinearWeights.z * tangentWeight;
+			if (tangentWeight <= 0.0)
+				continue;
 
-					uint3 cellTexID = (cellID + params.ArrayOrigin.xyz) % ARRAY_DIM;
-					sh2 probe = shScale(probeArray[cellTexID], w);
+			float3 trilinearWeights = 1 - abs(offset - trilinearPos);
+			float w = trilinearWeights.x * trilinearWeights.y * trilinearWeights.z * tangentWeight;
 
-					sum = shAdd(sum, probe);
-					wsum += w;
-				}
+			uint3 cellTexID = (cellID + params.ArrayOrigin.xyz) % ARRAY_DIM;
+			sh2 probe = shScale(probeArray[cellTexID], w);
+
+			sum = shAdd(sum, probe);
+			wsum += w;
+		}
 
 		sh2 result = shScale(sum, rcp(wsum + 1e-10));
 
