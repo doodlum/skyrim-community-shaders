@@ -726,12 +726,12 @@ namespace SIE
 				{ "SplitDistance", lightingPSConstants.SplitDistance },
 				{ "SSRParams", lightingPSConstants.SSRParams },
 				{ "WorldMapOverlayParametersPS", lightingPSConstants.WorldMapOverlayParametersPS },
-				{ "ShadowSampleParam", lightingPSConstants.ShadowSampleParam },  // VR only
-				{ "EndSplitDistances", lightingPSConstants.EndSplitDistances },                    // VR only
-				{ "StartSplitDistances", lightingPSConstants.StartSplitDistances },                  // VR only
-				{ "DephBiasParam", lightingPSConstants.DephBiasParam },                            // VR only
-				{ "ShadowLightParam", lightingPSConstants.ShadowLightParam },                         // VR only
-				{ "ShadowMapProj", lightingPSConstants.ShadowMapProj },                            // VR only
+				{ "ShadowSampleParam", lightingPSConstants.ShadowSampleParam },      // VR only
+				{ "EndSplitDistances", lightingPSConstants.EndSplitDistances },      // VR only
+				{ "StartSplitDistances", lightingPSConstants.StartSplitDistances },  // VR only
+				{ "DephBiasParam", lightingPSConstants.DephBiasParam },              // VR only
+				{ "ShadowLightParam", lightingPSConstants.ShadowLightParam },        // VR only
+				{ "ShadowMapProj", lightingPSConstants.ShadowMapProj },              // VR only
 				{ "AmbientColor", lightingPSConstants.AmbientColor },
 				{ "FogColor", lightingPSConstants.FogColor },
 				{ "ColourOutputClamp", lightingPSConstants.ColourOutputClamp },
@@ -750,7 +750,7 @@ namespace SIE
 				{ "LandscapeTexture5to6IsSpecPower", lightingPSConstants.LandscapeTexture5to6IsSpecPower },
 				{ "SnowRimLightParameters", lightingPSConstants.SnowRimLightParameters },
 				{ "CharacterLightParams", lightingPSConstants.CharacterLightParams },
-				{ "InvWorldMat", lightingPSConstants.InvWorldMat },                           // VR only
+				{ "InvWorldMat", lightingPSConstants.InvWorldMat },            // VR only
 				{ "PreviousWorldMat", lightingPSConstants.PreviousWorldMat },  // VR only
 
 				{ "PBRFlags", lightingPSConstants.PBRFlags },

@@ -125,7 +125,7 @@ namespace ShaderConstants
 		const int32_t LandscapeTexture4GlintParameters = 47;
 		const int32_t LandscapeTexture5GlintParameters = 48;
 		const int32_t LandscapeTexture6GlintParameters = 49;
-		
+
 		const int32_t ShadowSampleParam = -1;
 		const int32_t EndSplitDistances = -1;
 		const int32_t StartSplitDistances = -1;
