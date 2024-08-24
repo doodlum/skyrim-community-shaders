@@ -26,27 +26,28 @@ namespace ScreenSpaceShadows
 			float2(0.93997f, 0.362499f),
 			float2(0.347453f, 0.065981f)
 		};
-		
-		[unroll] for (uint i = 1; i < 4; i++) {
+
+		[unroll] for (uint i = 1; i < 4; i++)
+		{
 			float2 offset = mul(BlurOffsets[i - 1], rotationMatrix) * 0.0025;
 
 			float2 sampleUV = uv + offset;
 			sampleUV = saturate(sampleUV);
 
 			int3 sampleCoord = ConvertUVToSampleCoord(sampleUV, eyeIndex);
-			
+
 			depthSamples[i] = TexDepthSampler.Load(sampleCoord).x;
-			shadowSamples[i] = ScreenSpaceShadowsTexture.Load(sampleCoord);		
+			shadowSamples[i] = ScreenSpaceShadowsTexture.Load(sampleCoord);
 		}
 
 		depthSamples = GetScreenDepths(depthSamples);
 
 		float4 blurWeights = GetBlurWeights(depthSamples, viewPosition.z);
 		float shadow = dot(shadowSamples, blurWeights);
-  		
+
 		float blurWeightsTotal = dot(blurWeights, 1.0);
 		[flatten] if (blurWeightsTotal > 0.0)
-    		shadow = shadow / blurWeightsTotal;
+			shadow = shadow / blurWeightsTotal;
 
 		return shadow;
 	}
