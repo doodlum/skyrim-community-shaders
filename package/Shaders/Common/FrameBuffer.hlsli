@@ -54,7 +54,7 @@ float2 GetDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
 
 float2 GetDynamicResolutionUnadjustedScreenPosition(float2 screenPositionDR)
 {
-    return screenPositionDR * DynamicResolutionParams2.xy;
+	return screenPositionDR * DynamicResolutionParams2.xy;
 }
 
 float2 GetPreviousDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
