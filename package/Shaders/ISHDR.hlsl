@@ -93,7 +93,11 @@ PS_OUTPUT main(PS_INPUT input)
 	PS_OUTPUT psout;
 
 #	if defined(DOWNSAMPLE)
+#		if defined(VR)
 	float3 downsampledColor = float3(0, 9999999, -9999999);
+#		else
+	float3 downsampledColor = 0;
+#		endif
 	for (int sampleIndex = 0; sampleIndex < DOWNSAMPLE; ++sampleIndex) {
 		float2 texCoord = BlurOffsets[sampleIndex].xy * BlurScale.xy + input.TexCoord;
 		[branch] if (Flags.x > 0.5)
