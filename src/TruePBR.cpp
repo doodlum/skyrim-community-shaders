@@ -136,10 +136,8 @@ void TruePBR::DrawSettings()
 
 		if (ImGui::TreeNodeEx("Texture Set Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
 			if (ImGui::BeginCombo("Texture Set", selectedPbrTextureSetName.c_str())) {
-				for (auto& [textureSetName, textureSet] : pbrTextureSets)
-				{
-					if (ImGui::Selectable(textureSetName.c_str(), textureSetName == selectedPbrTextureSetName))
-					{
+				for (auto& [textureSetName, textureSet] : pbrTextureSets) {
+					if (ImGui::Selectable(textureSetName.c_str(), textureSetName == selectedPbrTextureSetName)) {
 						selectedPbrTextureSetName = textureSetName;
 						selectedPbrTextureSet = &textureSet;
 					}
@@ -386,8 +384,7 @@ void TruePBR::ReloadTextureSetData()
 
 	PNState::ReadPBRRecordConfigs("Data\\PBRTextureSets", [this](const std::string& editorId, const json& config) {
 		try {
-			if (auto it = pbrTextureSets.find(editorId); it != pbrTextureSets.cend())
-			{
+			if (auto it = pbrTextureSets.find(editorId); it != pbrTextureSets.cend()) {
 				it->second = config;
 			}
 		} catch (const std::exception& e) {
@@ -396,8 +393,7 @@ void TruePBR::ReloadTextureSetData()
 	});
 
 	for (const auto& [material, textureSets] : BSLightingShaderMaterialPBRLandscape::All) {
-		for (uint32_t textureSetIndex = 0; textureSetIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureSetIndex)
-		{
+		for (uint32_t textureSetIndex = 0; textureSetIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureSetIndex) {
 			SetupPBRLandscapeTextureParameters(*material, *textureSets[textureSetIndex], textureSetIndex);
 		}
 	}
