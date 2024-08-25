@@ -49,15 +49,15 @@ cbuffer PerFrame : register(b12)
 
 float2 GetDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
 {
-    float2 screenPositionDR = DynamicResolutionParams1.xy * screenPosition;
-    float2 minValue = 0;
-    float2 maxValue = float2(DynamicResolutionParams2.z, DynamicResolutionParams1.y);
+	float2 screenPositionDR = DynamicResolutionParams1.xy * screenPosition;
+	float2 minValue = 0;
+	float2 maxValue = float2(DynamicResolutionParams2.z, DynamicResolutionParams1.y);
 #if defined(VR)
-    bool isRight = screenPosition.x >= 0.5;
-    float minFactor = isRight ? 1 : 0;
-    minValue.x = 0.5 * (DynamicResolutionParams2.z * minFactor);
-    float maxFactor = isRight ? 2 : 1;
-    maxValue.x = 0.5 * (DynamicResolutionParams2.z * maxFactor);
+	bool isRight = screenPosition.x >= 0.5;
+	float minFactor = isRight ? 1 : 0;
+	minValue.x = 0.5 * (DynamicResolutionParams2.z * minFactor);
+	float maxFactor = isRight ? 2 : 1;
+	maxValue.x = 0.5 * (DynamicResolutionParams2.z * maxFactor);
 #endif
 	return clamp(screenPositionDR, minValue, maxValue);
 }
@@ -69,15 +69,15 @@ float2 GetDynamicResolutionUnadjustedScreenPosition(float2 screenPositionDR)
 
 float2 GetPreviousDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
 {
-    float2 screenPositionDR = DynamicResolutionParams1.zw * screenPosition;
-    float2 minValue = 0;
-    float2 maxValue = float2(DynamicResolutionParams2.w, DynamicResolutionParams1.w);
+	float2 screenPositionDR = DynamicResolutionParams1.zw * screenPosition;
+	float2 minValue = 0;
+	float2 maxValue = float2(DynamicResolutionParams2.w, DynamicResolutionParams1.w);
 #if defined(VR)
-    bool isRight = screenPosition.x >= 0.5;
-    float minFactor = isRight ? 1 : 0;
-    minValue.x = 0.5 * (DynamicResolutionParams2.w * minFactor);
-    float maxFactor = isRight ? 2 : 1;
-    maxValue.x = 0.5 * (DynamicResolutionParams2.w * maxFactor);
+	bool isRight = screenPosition.x >= 0.5;
+	float minFactor = isRight ? 1 : 0;
+	minValue.x = 0.5 * (DynamicResolutionParams2.w * minFactor);
+	float maxFactor = isRight ? 2 : 1;
+	maxValue.x = 0.5 * (DynamicResolutionParams2.w * maxFactor);
 #endif
 	return clamp(screenPositionDR, minValue, maxValue);
 }

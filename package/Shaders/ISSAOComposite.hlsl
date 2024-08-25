@@ -173,7 +173,7 @@ PS_OUTPUT main(PS_INPUT input)
 		composedColor.xyz = FogNearColor.w * lerp(composedColor.xyz, fogColor, fogFactor);
 	}
 #	endif
-	
+
 #	if !defined(VR)
 	float sparklesInput = 0;
 	if (EyePosition.w != 0 && snowMask != 0 && 1e-5 < SparklesParameters2.z) {
