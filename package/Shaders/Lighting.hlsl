@@ -1240,11 +1240,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			input.LandBlendWeights2.y = weights[5];
 		}
 		if (extendedMaterialSettings.EnableShadows && parallaxShadowQuality > 0.0f) {
-#if defined(TRUE_PBR)
+#			if defined(TRUE_PBR)
 			sh0 = ExtendedMaterials::GetTerrainHeight(input, uv, mipLevels, displacementParams, parallaxShadowQuality, input.LandBlendWeights1, input.LandBlendWeights2, weights);
-#else
+#			else
 			sh0 = ExtendedMaterials::GetTerrainHeight(input, uv, mipLevels, displacementParams, parallaxShadowQuality, weights);
-#endif
+#			endif
 		}
 	}
 #		endif  // EMAT
