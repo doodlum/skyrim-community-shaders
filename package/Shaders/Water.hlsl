@@ -837,8 +837,7 @@ PS_OUTPUT main(PS_INPUT input)
 
 #				if defined(UNDERWATER)
 	float3 finalSpecularColor = lerp(ShallowColor.xyz, specularColor, 0.5);
-	float3 finalColor = saturate(1 - input.WPosition.w * 0.002) * ((1 - fresnel) * (sRGB2Lin(diffuseColor) - sRGB2Lin(finalSpecularColor))) + sRGB2Lin(finalSpecularColor);
-	finalColor = Lin2sRGB(finalColor);
+	float3 finalColor = saturate(1 - input.WPosition.w * 0.002) * ((1 - fresnel) * (diffuseColor - finalSpecularColor)) + finalSpecularColor;
 #				else
 	float3 sunColor = GetSunColor(normal, viewDirection);
 
