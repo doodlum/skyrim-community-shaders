@@ -47,6 +47,7 @@ PS_OUTPUT main(PS_INPUT input)
 #	include "Common/MotionBlur.hlsli"
 #	include "Common/Permutation.hlsli"
 #	include "Common/Random.hlsli"
+#	include "Common/Color.hlsli"
 
 #	define WATER
 
@@ -836,7 +837,8 @@ PS_OUTPUT main(PS_INPUT input)
 
 #				if defined(UNDERWATER)
 	float3 finalSpecularColor = lerp(ShallowColor.xyz, specularColor, 0.5);
-	float3 finalColor = saturate(1 - input.WPosition.w * 0.002) * ((1 - fresnel) * (diffuseColor - finalSpecularColor)) + finalSpecularColor;
+	float3 finalColor = saturate(1 - input.WPosition.w * 0.002) * ((1 - fresnel) * (sRGB2Lin(diffuseColor) - sRGB2Lin(finalSpecularColor))) + sRGB2Lin(finalSpecularColor);
+	finalColor = Lin2sRGB(finalColor);
 #				else
 	float3 sunColor = GetSunColor(normal, viewDirection);
 
@@ -855,8 +857,8 @@ PS_OUTPUT main(PS_INPUT input)
 	}
 
 	float specularFraction = lerp(1, fresnel * depthControl.x, distanceFactor);
-	float3 finalColorPreFog = lerp(diffuseColor, specularColor, specularFraction) + sunColor * depthControl.w;
-
+	float3 finalColorPreFog = lerp(sRGB2Lin(diffuseColor), sRGB2Lin(specularColor), specularFraction) + sRGB2Lin(sunColor) * depthControl.w;
+	finalColorPreFog = Lin2sRGB(finalColorPreFog);
 	float3 finalColor = lerp(finalColorPreFog, input.FogParam.xyz, input.FogParam.w);
 #				endif
 #			endif
