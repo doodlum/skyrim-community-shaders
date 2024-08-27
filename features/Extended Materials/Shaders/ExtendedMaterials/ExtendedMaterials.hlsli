@@ -61,7 +61,7 @@ namespace ExtendedMaterials
 
 #if defined(LANDSCAPE)
 #	if defined(TRUE_PBR)
-#	define HEIGHT_POWER 20
+#		define HEIGHT_POWER 20
 	float GetTerrainHeight(PS_INPUT input, float2 coords, float mipLevels[6], DisplacementParams params[6], float blendFactor, float4 w1, float2 w2, out float weights[6])
 	{
 		float heightBlend = 1 + blendFactor * HEIGHT_POWER;
