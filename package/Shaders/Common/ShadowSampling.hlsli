@@ -80,9 +80,9 @@ float3 Get2DFilteredShadowCascade(float noise, float2x2 rotationMatrix, float sa
 
 	float visibility = 0;
 
-#	if defined(WATER)
+#if defined(WATER)
 	sampleOffsetScale *= 8;
-#	endif
+#endif
 
 	for (int sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
 		float2 sampleOffset = mul(SpiralSampleOffsets8[sampleIndex], rotationMatrix);
@@ -100,10 +100,10 @@ float3 Get2DFilteredShadow(float noise, float2x2 rotationMatrix, float3 position
 {
 	PerGeometry sD = SharedPerShadow[0];
 
-   	float4 positionCSShifted = mul(transpose(CameraViewProj[eyeIndex]), float4(positionWS, 1));
-    positionCSShifted /= positionCSShifted.w;
+	float4 positionCSShifted = mul(transpose(CameraViewProj[eyeIndex]), float4(positionWS, 1));
+	positionCSShifted /= positionCSShifted.w;
 
-    float shadowMapDepth = positionCSShifted.z;
+	float shadowMapDepth = positionCSShifted.z;
 
 	if (sD.EndSplitDistances.z >= shadowMapDepth) {
 		float fadeFactor = 1 - pow(saturate(dot(positionWS.xyz, positionWS.xyz) / sD.ShadowLightParam.z), 8);
@@ -248,7 +248,7 @@ float3 GetWaterShadow(float noise, float3 worldPosition, uint eyeIndex)
 		float2 rotation;
 		sincos(M_2PI * noise, rotation.y, rotation.x);
 		float2x2 rotationMatrix = float2x2(rotation.x, rotation.y, -rotation.y, rotation.x);
-		float shadow = Get2DFilteredShadow(noise, rotationMatrix, worldPosition, eyeIndex);		
+		float shadow = Get2DFilteredShadow(noise, rotationMatrix, worldPosition, eyeIndex);
 		return shadow;
 	}
 

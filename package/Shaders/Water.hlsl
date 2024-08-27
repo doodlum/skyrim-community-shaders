@@ -547,41 +547,41 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 #			if defined(DYNAMIC_CUBEMAPS)
 #				if defined(SKYLIGHTING)
 #					if defined(VR)
-		float3 positionMSSkylight = input.WPosition.xyz + CameraPosAdjust[eyeIndex].xyz - CameraPosAdjust[0].xyz;
+			float3 positionMSSkylight = input.WPosition.xyz + CameraPosAdjust[eyeIndex].xyz - CameraPosAdjust[0].xyz;
 #					else
-		float3 positionMSSkylight = input.WPosition.xyz;
+			float3 positionMSSkylight = input.WPosition.xyz;
 #					endif
 
-		sh2 skylighting = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, normal);
-		sh2 specularLobe = Skylighting::fauxSpecularLobeSH(normal, -viewDirection, 0.0);
+			sh2 skylighting = Skylighting::sample(skylightingSettings, SkylightingProbeArray, positionMSSkylight, normal);
+			sh2 specularLobe = Skylighting::fauxSpecularLobeSH(normal, -viewDirection, 0.0);
 
-		float skylightingSpecular = shFuncProductIntegral(skylighting, specularLobe);
-		skylightingSpecular = Skylighting::mixSpecular(skylightingSettings, skylightingSpecular);
+			float skylightingSpecular = shFuncProductIntegral(skylighting, specularLobe);
+			skylightingSpecular = Skylighting::mixSpecular(skylightingSettings, skylightingSpecular);
 
-		float3 specularIrradiance = 1;
+			float3 specularIrradiance = 1;
 
-		if (skylightingSpecular < 1.0) {
-			specularIrradiance = specularTextureNoReflections.SampleLevel(CubeMapSampler, R, 0).xyz;
-			specularIrradiance = sRGB2Lin(specularIrradiance);
-		}
+			if (skylightingSpecular < 1.0) {
+				specularIrradiance = specularTextureNoReflections.SampleLevel(CubeMapSampler, R, 0).xyz;
+				specularIrradiance = sRGB2Lin(specularIrradiance);
+			}
 
-		float3 specularIrradianceReflections = 1.0;
+			float3 specularIrradianceReflections = 1.0;
 
-		if (skylightingSpecular > 0.0) {
-			specularIrradianceReflections = specularTexture.SampleLevel(CubeMapSampler, R, 0).xyz;
-			specularIrradianceReflections = sRGB2Lin(specularIrradianceReflections);
-		}
+			if (skylightingSpecular > 0.0) {
+				specularIrradianceReflections = specularTexture.SampleLevel(CubeMapSampler, R, 0).xyz;
+				specularIrradianceReflections = sRGB2Lin(specularIrradianceReflections);
+			}
 
-		float3 dynamicCubemap = Lin2sRGB(lerp(specularIrradiance, specularIrradianceReflections, skylightingSpecular));
+			float3 dynamicCubemap = Lin2sRGB(lerp(specularIrradiance, specularIrradianceReflections, skylightingSpecular));
 #				else
-		float3 dynamicCubemap = specularTexture.SampleLevel(CubeMapSampler, R, 0);
+			float3 dynamicCubemap = specularTexture.SampleLevel(CubeMapSampler, R, 0);
 #				endif
 
 			reflectionColor =
 #				if defined(VR)  // use stencil to ignore player character
 				GetStencil(R.xy) == 0 ? CubeMapTex.SampleLevel(CubeMapSampler, R, 0).xyz :
 #				endif
-												lerp(dynamicCubemap.xyz, CubeMapTex.SampleLevel(CubeMapSampler, R, 0).xyz, saturate(length(input.WPosition.xyz) * 0.0001));
+										lerp(dynamicCubemap.xyz, CubeMapTex.SampleLevel(CubeMapSampler, R, 0).xyz, saturate(length(input.WPosition.xyz) * 0.0001));
 #			else
 			reflectionColor = CubeMapTex.SampleLevel(CubeMapSampler, R, 0).xyz;
 #			endif
@@ -697,7 +697,7 @@ float3 GetWaterDiffuseColor(PS_INPUT input, float3 normal, float3 viewDirection,
 	float3 refractionColor = RefractionTex.Sample(RefractionSampler, refractionUV).xyz;
 	float3 refractionDiffuseColor = lerp(ShallowColor.xyz, DeepColor.xyz, distanceMul.y);
 
-	if (!(PixelShaderDescriptor & _Interior)) {		
+	if (!(PixelShaderDescriptor & _Interior)) {
 #				if defined(SKYLIGHTING)
 		float3 skylightingPosition = lerp(input.WPosition.xyz, refractionWorldPosition.xyz, noise);
 
@@ -828,7 +828,7 @@ PS_OUTPUT main(PS_INPUT input)
 #			else
 
 	float shadow = 1;
-	
+
 	float screenNoise = InterleavedGradientNoise(input.HPosition.xy, FrameCount);
 
 	float3 specularColor = GetWaterSpecularColor(input, normal, viewDirection, distanceFactor, depthControl.y, eyeIndex);
