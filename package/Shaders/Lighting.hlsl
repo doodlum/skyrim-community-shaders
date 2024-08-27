@@ -1144,7 +1144,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(TRUE_PBR) && !defined(LANDSCAPE) && !defined(LODLANDSCAPE)
 	bool PBRParallax = false;
-	[branch] if ((PBRFlags & TruePBR_HasDisplacement) != 0)
+	[branch] if (extendedMaterialSettings.EnableParallax && (PBRFlags & TruePBR_HasDisplacement) != 0)
 	{
 		PBRParallax = true;
 		displacementParams.HeightScale = PBRParams1.y;
@@ -1922,20 +1922,20 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 #	if defined(EMAT) && (defined(SKINNED) || !defined(MODELSPACENORMALS))
-		[branch] if (!inDirShadow)
+		[branch] if (!inDirShadow && extendedMaterialSettings.EnableShadows)
 		{
 			float3 dirLightDirectionTS = mul(refractedDirLightDirection, tbn).xyz;
 #		if defined(LANDSCAPE)
-			[branch] if (extendedMaterialSettings.EnableTerrainParallax && extendedMaterialSettings.EnableShadows)
+			[branch] if (extendedMaterialSettings.EnableTerrainParallax)
 				parallaxShadow = ExtendedMaterials::GetParallaxSoftShadowMultiplierTerrain(input, uv, mipLevels, dirLightDirectionTS, sh0, parallaxShadowQuality, screenNoise, displacementParams);
 #		elif defined(PARALLAX)
-			[branch] if (extendedMaterialSettings.EnableParallax && extendedMaterialSettings.EnableShadows)
+			[branch] if (extendedMaterialSettings.EnableParallax)
 				parallaxShadow = ExtendedMaterials::GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexParallaxSampler, SampParallaxSampler, 0, parallaxShadowQuality, screenNoise, displacementParams);
 #		elif defined(ENVMAP)
-			[branch] if (complexMaterialParallax && extendedMaterialSettings.EnableShadows)
+			[branch] if (complexMaterialParallax)
 				parallaxShadow = ExtendedMaterials::GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexEnvMaskSampler, SampEnvMaskSampler, 3, parallaxShadowQuality, screenNoise, displacementParams);
 #		elif defined(TRUE_PBR) && !defined(LODLANDSCAPE)
-			[branch] if (PBRParallax && extendedMaterialSettings.EnableShadows)
+			[branch] if (PBRParallax)
 				parallaxShadow = ExtendedMaterials::GetParallaxSoftShadowMultiplier(uv, mipLevel, dirLightDirectionTS, sh0, TexParallaxSampler, SampParallaxSampler, 0, parallaxShadowQuality, screenNoise, displacementParams);
 #		endif  // LANDSCAPE
 		}
@@ -2167,7 +2167,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			[branch] if (complexMaterialParallax)
 				parallaxShadow = ExtendedMaterials::GetParallaxSoftShadowMultiplier(uv, mipLevel, lightDirectionTS, sh0, TexEnvMaskSampler, SampEnvMaskSampler, 3, parallaxShadowQuality, screenNoise, displacementParams);
 #				elif defined(TRUE_PBR) && !defined(LODLANDSCAPE)
-			[branch] if (PBRParallax && extendedMaterialSettings.EnableShadows)
+			[branch] if (PBRParallax)
 				parallaxShadow = ExtendedMaterials::GetParallaxSoftShadowMultiplier(uv, mipLevel, lightDirectionTS, sh0, TexParallaxSampler, SampParallaxSampler, 0, parallaxShadowQuality, screenNoise, displacementParams);
 #				endif
 		}
