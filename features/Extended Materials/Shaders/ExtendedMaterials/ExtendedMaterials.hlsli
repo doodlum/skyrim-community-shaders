@@ -14,10 +14,12 @@ struct DisplacementParams
 
 namespace ExtendedMaterials
 {
+
 	float ScaleDisplacement(float displacement, DisplacementParams params)
 	{
 		return (displacement - 0.5) * params.HeightScale;
 	}
+
 	float AdjustDisplacementNormalized(float displacement, DisplacementParams params)
 	{
 		return (displacement - 0.5) * params.DisplacementScale + 0.5 + params.DisplacementOffset;
