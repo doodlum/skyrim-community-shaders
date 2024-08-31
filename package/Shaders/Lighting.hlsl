@@ -2232,7 +2232,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
 		float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightProjNoiseSampler.Sample(SampCharacterLightProjNoiseSampler, baseShadowUV).x));
 #		if defined(TRUE_PBR)
-		charLightColor = PBR::AdjustPointLightColor(charLightColor);
+		charLightColor = GammaToLinear(charLightColor);
 #		endif
 		diffuseColor += (charLightMul * charLightColor).xxx;
 	}

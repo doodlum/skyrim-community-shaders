@@ -92,48 +92,6 @@ void SetupPBRLandscapeTextureParameters(BSLightingShaderMaterialPBRLandscape& ma
 void TruePBR::DrawSettings()
 {
 	if (ImGui::TreeNodeEx("PBR", ImGuiTreeNodeFlags_DefaultOpen)) {
-		if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
-			if (const auto* currentCell = player->GetParentCell()) {
-				if (currentCell->IsInteriorCell()) {
-					if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
-						if (ImGui::TreeNodeEx("Lighting Template Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-							const auto* editorId = lightingTemplate->GetFormEditorID();
-							ImGui::Text(std::format("Current Lighting Template : {}", editorId).c_str());
-
-							auto& pbrData = pbrLightingTemplates[editorId];
-
-							ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
-							ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
-
-							if (ImGui::Button("Save")) {
-								SavePBRLightingTemplateData(editorId);
-							}
-
-							ImGui::TreePop();
-						}
-					}
-				} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
-					if (const auto* weather = sky->currentWeather) {
-						if (ImGui::TreeNodeEx("Weather Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-							const auto* editorId = weather->GetFormEditorID();
-							ImGui::Text(std::format("Current Weather : {}", editorId).c_str());
-
-							auto& pbrData = pbrWeathers[editorId];
-
-							ImGui::SliderFloat("Directional Light Scale", &pbrData.directionalLightColorScale, 0.f, 5.f);
-							ImGui::SliderFloat("Directional Ambient Light Scale", &pbrData.directionalAmbientLightColorScale, 0.f, 5.f);
-
-							if (ImGui::Button("Save")) {
-								SavePBRWeatherData(editorId);
-							}
-
-							ImGui::TreePop();
-						}
-					}
-				}
-			}
-		}
-
 		if (ImGui::TreeNodeEx("Texture Set Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
 			if (ImGui::BeginCombo("Texture Set", selectedPbrTextureSetName.c_str())) {
 				for (auto& [textureSetName, textureSet] : pbrTextureSets) {
@@ -294,10 +252,6 @@ void TruePBR::DrawSettings()
 			settings.useMultiBounceAO = useMultiBounceAO;
 		}
 
-		ImGui::SliderFloat("Base Color Gamma", &settings.baseColorGamma, 1.f, 3.f, "%.3f");
-
-		ImGui::SliderFloat("Direct Light Color Multiplier", &globalPBRDirectLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
-		ImGui::SliderFloat("Ambient Light Color Multiplier", &globalPBRAmbientLightColorMultiplier, 1e-3f, 1e2f, "%.3f", ImGuiSliderFlags_Logarithmic);
 		ImGui::TreePop();
 	}
 }
@@ -306,8 +260,6 @@ void TruePBR::SetupResources()
 {
 	SetupTextureSetData();
 	SetupMaterialObjectData();
-	SetupLightingTemplateData();
-	SetupWeatherData();
 }
 
 void TruePBR::LoadSettings(json& o_json)
@@ -318,26 +270,12 @@ void TruePBR::LoadSettings(json& o_json)
 	if (o_json["Use Multi-bounce AO"].is_boolean()) {
 		settings.useMultiBounceAO = o_json["Use Multi-bounce AO"];
 	}
-
-	if (o_json["Base Color Gamma"].is_number_float()) {
-		settings.baseColorGamma = o_json["Base Color Gamma"];
-	}
-	if (o_json["Direct Light Color Multiplier"].is_number_float()) {
-		globalPBRDirectLightColorMultiplier = o_json["Direct Light Color Multiplier"];
-	}
-	if (o_json["Ambient Light Color Multiplier"].is_number_float()) {
-		globalPBRAmbientLightColorMultiplier = o_json["Ambient Light Color Multiplier"];
-	}
 }
 
 void TruePBR::SaveSettings(json& o_json)
 {
 	o_json["Use Multiple Scattering"] = (bool)settings.useMultipleScattering;
 	o_json["Use Multi-bounce AO"] = (bool)settings.useMultiBounceAO;
-
-	o_json["Base Color Gamma"] = settings.baseColorGamma;
-	o_json["Direct Light Color Multiplier"] = globalPBRDirectLightColorMultiplier;
-	o_json["Ambient Light Color Multiplier"] = globalPBRAmbientLightColorMultiplier;
 }
 
 void TruePBR::PrePass()
@@ -421,37 +359,6 @@ void TruePBR::SetupGlintsTexture()
 
 void TruePBR::SetupFrame()
 {
-	float newDirectionalLightScale = 1.f;
-	float newDirectionalAmbientLightScale = 1.f;
-
-	if (const auto* player = RE::PlayerCharacter::GetSingleton()) {
-		if (const auto* currentCell = player->GetParentCell()) {
-			if (currentCell->IsInteriorCell()) {
-				if (const auto* lightingTemplate = currentCell->GetRuntimeData().lightingTemplate) {
-					const auto* editorId = lightingTemplate->GetFormEditorID();
-					if (auto it = pbrLightingTemplates.find(editorId); it != pbrLightingTemplates.cend()) {
-						newDirectionalLightScale = it->second.directionalLightColorScale;
-						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
-					}
-				}
-			} else if (RE::Sky* sky = RE::Sky::GetSingleton()) {
-				if (const auto* weather = sky->currentWeather) {
-					const auto* editorId = weather->GetFormEditorID();
-					if (auto it = pbrWeathers.find(editorId); it != pbrWeathers.cend()) {
-						newDirectionalLightScale = it->second.directionalLightColorScale;
-						newDirectionalAmbientLightScale = it->second.directionalAmbientLightColorScale;
-					}
-				}
-			}
-		}
-	}
-
-	weatherPBRDirectionalLightColorMultiplier = newDirectionalLightScale;
-	weatherPBRDirectionalAmbientLightColorMultiplier = newDirectionalAmbientLightScale;
-
-	settings.directionalLightColorMultiplier = globalPBRDirectLightColorMultiplier * weatherPBRDirectionalLightColorMultiplier;
-	settings.pointLightColorMultiplier = globalPBRDirectLightColorMultiplier;
-	settings.ambientLightColorMultiplier = globalPBRAmbientLightColorMultiplier * weatherPBRDirectionalAmbientLightColorMultiplier;
 }
 
 void TruePBR::SetupTextureSetData()
@@ -539,92 +446,6 @@ TruePBR::PBRMaterialObjectData* TruePBR::GetPBRMaterialObjectData(const RE::TESF
 bool TruePBR::IsPBRMaterialObject(const RE::TESForm* materialObject)
 {
 	return GetPBRMaterialObjectData(materialObject) != nullptr;
-}
-
-void TruePBR::SetupLightingTemplateData()
-{
-	logger::info("[TruePBR] loading PBR lighting template configs");
-
-	pbrLightingTemplates.clear();
-
-	PNState::ReadPBRRecordConfigs("Data\\PBRLightingTemplates", [this](const std::string& editorId, const json& config) {
-		try {
-			pbrLightingTemplates.insert_or_assign(editorId, config);
-		} catch (const std::exception& e) {
-			logger::error("Failed to deserialize config for {}: {}.", editorId, e.what());
-		}
-	});
-}
-
-TruePBR::PBRLightingTemplateData* TruePBR::GetPBRLightingTemplateData(const RE::TESForm* lightingTemplate)
-{
-	if (lightingTemplate == nullptr) {
-		return nullptr;
-	}
-
-	auto it = pbrLightingTemplates.find(lightingTemplate->GetFormEditorID());
-	if (it == pbrLightingTemplates.end()) {
-		return nullptr;
-	}
-	return &it->second;
-}
-
-bool TruePBR::IsPBRLightingTemplate(const RE::TESForm* lightingTemplate)
-{
-	return GetPBRLightingTemplateData(lightingTemplate) != nullptr;
-}
-
-void TruePBR::SavePBRLightingTemplateData(const std::string& editorId)
-{
-	const auto& pbrLightingTemplateData = pbrLightingTemplates[editorId];
-	try {
-		PNState::SavePBRRecordConfig("Data\\PBRLightingTemplates\\", editorId, pbrLightingTemplateData);
-	} catch (const std::exception& e) {
-		logger::error("Failed to serialize config for {}: {}.", editorId, e.what());
-	}
-}
-
-void TruePBR::SetupWeatherData()
-{
-	logger::info("[TruePBR] loading PBR weather configs");
-
-	pbrWeathers.clear();
-
-	PNState::ReadPBRRecordConfigs("Data\\PBRWeathers", [this](const std::string& editorId, const json& config) {
-		try {
-			pbrWeathers.insert_or_assign(editorId, config);
-		} catch (const std::exception& e) {
-			logger::error("Failed to deserialize config for {}: {}.", editorId, e.what());
-		}
-	});
-}
-
-TruePBR::PBRWeatherData* TruePBR::GetPBRWeatherData(const RE::TESForm* weather)
-{
-	if (weather == nullptr) {
-		return nullptr;
-	}
-
-	auto it = pbrWeathers.find(weather->GetFormEditorID());
-	if (it == pbrWeathers.end()) {
-		return nullptr;
-	}
-	return &it->second;
-}
-
-bool TruePBR::IsPBRWeather(const RE::TESForm* weather)
-{
-	return GetPBRWeatherData(weather) != nullptr;
-}
-
-void TruePBR::SavePBRWeatherData(const std::string& editorId)
-{
-	const auto& pbrWeatherData = pbrWeathers[editorId];
-	try {
-		PNState::SavePBRRecordConfig("Data\\PBRWeathers\\", editorId, pbrWeatherData);
-	} catch (const std::exception& e) {
-		logger::error("Failed to serialize config for {}: {}.", editorId, e.what());
-	}
 }
 
 namespace Permutations

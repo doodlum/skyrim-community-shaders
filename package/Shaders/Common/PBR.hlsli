@@ -107,21 +107,6 @@ namespace PBR
 		return result;
 	}
 
-	float3 AdjustDirectionalLightColor(float3 lightColor)
-	{
-		return pbrSettings.DirectionalLightColorMultiplier * GammaToLinear(lightColor);
-	}
-
-	float3 AdjustPointLightColor(float3 lightColor)
-	{
-		return pbrSettings.PointLightColorMultiplier * GammaToLinear(lightColor);
-	}
-
-	float3 AdjustAmbientLightColor(float3 lightColor)
-	{
-		return pbrSettings.AmbientLightColorMultiplier * GammaToLinear(lightColor);
-	}
-
 	// [Jimenez et al. 2016, "Practical Realtime Strategies for Accurate Indirect Occlusion"]
 	float3 MultiBounceAO(float3 baseColor, float ao)
 	{
