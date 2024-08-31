@@ -1334,7 +1334,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		rawRMAOS = TexRMAOSSampler.Sample(SampRMAOSSampler, diffuseUv) * float4(PBRParams1.x, 1, 1, PBRParams1.z);
 		if ((PBRFlags & TruePBR_Glint) != 0) {
 			glintParameters = MultiLayerParallaxData;
-		}	
+		}
 #		endif
 #	endif
 
