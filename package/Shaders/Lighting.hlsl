@@ -1334,7 +1334,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		rawRMAOS = TexRMAOSSampler.Sample(SampRMAOSSampler, diffuseUv) * float4(PBRParams1.x, 1, 1, PBRParams1.z);
 		if ((PBRFlags & TruePBR_Glint) != 0) {
 			glintParameters = MultiLayerParallaxData;
-		}
+		}	
 #		endif
 #	endif
 
@@ -1596,6 +1596,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			if defined(TRUE_PBR)
 		projBaseColor = saturate(EnvmapData.xyz * projBaseColor);
 		rawRMAOS.xyw = lerp(rawRMAOS.xyw, float3(ParallaxOccData.x, 0, ParallaxOccData.y), projBlendWeight);
+		if ((PBRFlags & TruePBR_ProjectedGlint) != 0) {
+			glintParameters = lerp(glintParameters, SparkleParams, projBlendWeight);
+		}
 #			endif
 		normal.xyz = lerp(normal.xyz, finalProjNormal, projBlendWeight);
 		baseColor.xyz = lerp(baseColor.xyz, projBaseColor, projBlendWeight);
@@ -1623,7 +1626,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			endif  // SPECULAR
 #		endif      // SPARKLE
 
-#	elif defined(SNOW) && !defined(TRUE_PBR)
+#	elif defined(SNOW)
 #		if defined(LANDSCAPE)
 	psout.Parameters.y = landSnowMask;
 #		else
@@ -2610,6 +2613,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(SNOW)
 #		if defined(TRUE_PBR)
 	psout.Parameters.x = RGBToLuminanceAlternative(specularColorPBR);
+	psout.Parameters.y = 0;
 #		else
 	psout.Parameters.x = RGBToLuminanceAlternative(lightsSpecularColor);
 #		endif

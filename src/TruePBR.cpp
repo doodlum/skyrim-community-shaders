@@ -156,7 +156,35 @@ void TruePBR::DrawSettings()
 				if (ImGui::SliderFloat("Specular Level", &selectedPbrTextureSet->specularLevel, 0.f, 3.f, "%.3f")) {
 					wasEdited = true;
 				}
-				if (ImGui::TreeNodeEx("Glint", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::TreeNodeEx("Subsurface")) {
+					if (ImGui::ColorPicker3("Subsurface Color", &selectedPbrTextureSet->subsurfaceColor.red)) {
+						wasEdited = true;
+					}
+					if (ImGui::SliderFloat("Subsurface Opacity", &selectedPbrTextureSet->subsurfaceOpacity, 0.f, 1.f, "%.3f")) {
+						wasEdited = true;
+					}
+
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNodeEx("Coat")) {
+					if (ImGui::ColorPicker3("Coat Color", &selectedPbrTextureSet->coatColor.red)) {
+						wasEdited = true;
+					}
+					if (ImGui::SliderFloat("Coat Strength", &selectedPbrTextureSet->coatStrength, 0.f, 1.f, "%.3f")) {
+						wasEdited = true;
+					}
+					if (ImGui::SliderFloat("Coat Roughness", &selectedPbrTextureSet->coatRoughness, 0.f, 1.f, "%.3f")) {
+						wasEdited = true;
+					}
+					if (ImGui::SliderFloat("Coat Specular Level", &selectedPbrTextureSet->coatSpecularLevel, 0.f, 1.f, "%.3f")) {
+						wasEdited = true;
+					}
+					if (ImGui::SliderFloat("Inner Layer Displacement Offset", &selectedPbrTextureSet->innerLayerDisplacementOffset, 0.f, 3.f, "%.3f")) {
+						wasEdited = true;
+					}
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNodeEx("Glint")) {
 					if (ImGui::Checkbox("Enabled", &selectedPbrTextureSet->glintParameters.enabled)) {
 						wasEdited = true;
 					}
@@ -177,6 +205,11 @@ void TruePBR::DrawSettings()
 					ImGui::TreePop();
 				}
 				if (wasEdited) {
+					for (auto& [material, extensions] : BSLightingShaderMaterialPBR::All) {
+						if (extensions.textureSetData == selectedPbrTextureSet) {
+							material->ApplyTextureSetData(*extensions.textureSetData);
+						}
+					}
 					for (auto& [material, textureSets] : BSLightingShaderMaterialPBRLandscape::All) {
 						for (uint32_t textureSetIndex = 0; textureSetIndex < BSLightingShaderMaterialPBRLandscape::NumTiles; ++textureSetIndex) {
 							if (textureSets[textureSetIndex] == selectedPbrTextureSet) {
@@ -190,8 +223,66 @@ void TruePBR::DrawSettings()
 						PNState::SavePBRRecordConfig("Data\\PBRTextureSets", selectedPbrTextureSetName, *selectedPbrTextureSet);
 					}
 				}
-				ImGui::TreePop();
 			}
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNodeEx("Material Object Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (ImGui::BeginCombo("Material Object", selectedPbrMaterialObjectName.c_str())) {
+				for (auto& [materialObjectName, materialObject] : pbrMaterialObjects) {
+					if (ImGui::Selectable(materialObjectName.c_str(), materialObjectName == selectedPbrMaterialObjectName)) {
+						selectedPbrMaterialObjectName = materialObjectName;
+						selectedPbrMaterialObject = &materialObject;
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			if (selectedPbrMaterialObject != nullptr) {
+				bool wasEdited = false;
+				if (ImGui::SliderFloat3("Base Color Scale", selectedPbrMaterialObject->baseColorScale.data(), 0.f, 10.f, "%.3f")) {
+					wasEdited = true;
+				}
+				if (ImGui::SliderFloat("Roughness", &selectedPbrMaterialObject->roughness, 0.f, 1.f, "%.3f")) {
+					wasEdited = true;
+				}
+				if (ImGui::SliderFloat("Specular Level", &selectedPbrMaterialObject->specularLevel, 0.f, 1.f, "%.3f")) {
+					wasEdited = true;
+				}
+				if (ImGui::TreeNodeEx("Glint")) {
+					if (ImGui::Checkbox("Enabled", &selectedPbrMaterialObject->glintParameters.enabled)) {
+						wasEdited = true;
+					}
+					if (selectedPbrMaterialObject->glintParameters.enabled) {
+						if (ImGui::SliderFloat("Screenspace Scale", &selectedPbrMaterialObject->glintParameters.screenSpaceScale, 0.f, 3.f, "%.3f")) {
+							wasEdited = true;
+						}
+						if (ImGui::SliderFloat("Log Microfacet Density", &selectedPbrMaterialObject->glintParameters.logMicrofacetDensity, 0.f, 40.f, "%.3f")) {
+							wasEdited = true;
+						}
+						if (ImGui::SliderFloat("Microfacet Roughness", &selectedPbrMaterialObject->glintParameters.microfacetRoughness, 0.f, 1.f, "%.3f")) {
+							wasEdited = true;
+						}
+						if (ImGui::SliderFloat("Density Randomization", &selectedPbrMaterialObject->glintParameters.densityRandomization, 0.f, 5.f, "%.3f")) {
+							wasEdited = true;
+						}
+					}
+					ImGui::TreePop();
+				}
+				if (wasEdited) {
+					for (auto& [material, extensions] : BSLightingShaderMaterialPBR::All) {
+						if (extensions.materialObjectData == selectedPbrMaterialObject) {
+							material->ApplyMaterialObjectData(*extensions.materialObjectData);
+						}
+					}
+				}
+				if (selectedPbrMaterialObject != nullptr) {
+					if (ImGui::Button("Save")) {
+						PNState::SavePBRRecordConfig("Data\\PBRMaterialObjects", selectedPbrMaterialObjectName, *selectedPbrMaterialObject);
+					}
+				}
+			}
+			ImGui::TreePop();
 		}
 
 		bool useMultipleScattering = settings.useMultipleScattering;
@@ -789,7 +880,6 @@ struct BSLightingShaderProperty_LoadBinary
 				if (property->flags.any(kSoftLighting)) {
 					pbrMaterial->pbrFlags.set(PBRFlags::Fuzz);
 				} else if (property->flags.any(kFitSlope)) {
-					pbrMaterial->pbrFlags.set(PBRFlags::Glint);
 					pbrMaterial->glintParameters.enabled = true;
 				}
 			}
@@ -832,7 +922,7 @@ struct BSLightingShaderProperty_GetRenderPasses
 						}
 					} else {
 						auto* material = static_cast<BSLightingShaderMaterialPBR*>(property->material);
-						if (material->pbrFlags.any(PBRFlags::Glint)) {
+						if (material->glintParameters.enabled || (property->flags.any(RE::BSShaderProperty::EShaderPropertyFlag::kProjectedUV) && material->projectedMaterialGlintParameters.enabled)) {
 							lightingFlags |= static_cast<uint32_t>(SIE::ShaderCache::LightingShaderFlags::AnisoLighting);
 						}
 					}
@@ -1010,15 +1100,27 @@ struct BSLightingShader_SetupMaterial
 						PBRParams3[2] = pbrMaterial->GetFuzzColor().blue;
 						PBRParams3[3] = pbrMaterial->GetFuzzWeight();
 						shadowState->SetPSConstant(PBRParams3, RE::BSGraphics::ConstantGroupLevel::PerMaterial, lightingPSConstants.MultiLayerParallaxData);
-					} else if (pbrMaterial->pbrFlags.any(PBRFlags::Glint)) {
-						shaderFlags.set(PBRShaderFlags::Glint);
+					} else {
+						if (pbrMaterial->GetGlintParameters().enabled) {
+							shaderFlags.set(PBRShaderFlags::Glint);
 
-						std::array<float, 4> GlintParameters;
-						GlintParameters[0] = pbrMaterial->GetGlintParameters().screenSpaceScale;
-						GlintParameters[0] = 40.f - pbrMaterial->GetGlintParameters().logMicrofacetDensity;
-						GlintParameters[0] = pbrMaterial->GetGlintParameters().microfacetRoughness;
-						GlintParameters[0] = pbrMaterial->GetGlintParameters().densityRandomization;
-						shadowState->SetPSConstant(GlintParameters, RE::BSGraphics::ConstantGroupLevel::PerMaterial, lightingPSConstants.MultiLayerParallaxData);
+							std::array<float, 4> GlintParameters;
+							GlintParameters[0] = pbrMaterial->GetGlintParameters().screenSpaceScale;
+							GlintParameters[1] = 40.f - pbrMaterial->GetGlintParameters().logMicrofacetDensity;
+							GlintParameters[2] = pbrMaterial->GetGlintParameters().microfacetRoughness;
+							GlintParameters[3] = pbrMaterial->GetGlintParameters().densityRandomization;
+							shadowState->SetPSConstant(GlintParameters, RE::BSGraphics::ConstantGroupLevel::PerMaterial, lightingPSConstants.MultiLayerParallaxData);
+						}
+						if ((lightingFlags & static_cast<uint32_t>(SIE::ShaderCache::LightingShaderFlags::ProjectedUV)) != 0 && pbrMaterial->GetProjectedMaterialGlintParameters().enabled) {
+							shaderFlags.set(PBRShaderFlags::ProjectedGlint);
+
+							std::array<float, 4> ProjectedGlintParameters;
+							ProjectedGlintParameters[0] = pbrMaterial->GetProjectedMaterialGlintParameters().screenSpaceScale;
+							ProjectedGlintParameters[1] = 40.f - pbrMaterial->GetProjectedMaterialGlintParameters().logMicrofacetDensity;
+							ProjectedGlintParameters[2] = pbrMaterial->GetProjectedMaterialGlintParameters().microfacetRoughness;
+							ProjectedGlintParameters[3] = pbrMaterial->GetProjectedMaterialGlintParameters().densityRandomization;
+							shadowState->SetPSConstant(ProjectedGlintParameters, RE::BSGraphics::ConstantGroupLevel::PerMaterial, lightingPSConstants.SparkleParams);
+						}
 					}
 				}
 
@@ -1612,9 +1714,8 @@ struct TESBoundObject_Clone3D
 							if (shaderProperty->GetMaterialType() == RE::BSShaderMaterial::Type::kLighting &&
 								shaderProperty->flags.any(RE::BSShaderProperty::EShaderPropertyFlag::kVertexLighting)) {
 								if (auto* material = static_cast<BSLightingShaderMaterialPBR*>(shaderProperty->material)) {
-									material->projectedMaterialBaseColorScale = pbrData->baseColorScale;
-									material->projectedMaterialRoughness = pbrData->roughness;
-									material->projectedMaterialSpecularLevel = pbrData->specularLevel;
+									material->ApplyMaterialObjectData(*pbrData);
+									BSLightingShaderMaterialPBR::All[material].materialObjectData = pbrData;
 								}
 							}
 						}

@@ -10,6 +10,7 @@
 #define TruePBR_Fuzz (1 << 9)
 #define TruePBR_HairMarschner (1 << 10)
 #define TruePBR_Glint (1 << 11)
+#define TruePBR_ProjectedGlint (1 << 12)
 
 #define TruePBR_LandTile0PBR (1 << 0)
 #define TruePBR_LandTile1PBR (1 << 1)

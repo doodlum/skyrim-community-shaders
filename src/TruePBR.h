@@ -108,7 +108,9 @@ public:
 		float roughness = 1.f;
 		float specularLevel = 1.f;
 
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(PBRMaterialObjectData, baseColorScale, roughness, specularLevel);
+		GlintParameters glintParameters;
+
+		NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(PBRMaterialObjectData, baseColorScale, roughness, specularLevel, glintParameters);
 	};
 
 	void SetupMaterialObjectData();
@@ -116,6 +118,8 @@ public:
 	bool IsPBRMaterialObject(const RE::TESForm* materialObject);
 
 	std::unordered_map<std::string, PBRMaterialObjectData> pbrMaterialObjects;
+	std::string selectedPbrMaterialObjectName;
+	PBRMaterialObjectData* selectedPbrMaterialObject = nullptr;
 
 	struct PBRLightingTemplateData
 	{
