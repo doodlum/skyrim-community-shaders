@@ -312,9 +312,9 @@ namespace ExtendedMaterials
 	}
 
 #if defined(TRUE_PBR)
-static const float shadowIntensity = 1.0;
+	static const float shadowIntensity = 1.0;
 #else
-static const float shadowIntensity = 2.0;
+	static const float shadowIntensity = 2.0;
 #endif
 
 	// https://advances.realtimerendering.com/s2006/Tatarchuk-POM.pdf
