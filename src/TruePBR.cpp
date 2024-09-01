@@ -1369,7 +1369,7 @@ struct BSGrassShaderProperty_ctor
 				BSLightingShaderMaterialPBR srcMaterial;
 				grassProperty->LinkMaterial(&srcMaterial, true);
 
-				// Since grass actually uses kVertexLighting flag we need to switch to some flag which it does not 
+				// Since grass actually uses kVertexLighting flag we need to switch to some flag which it does not
 				// use, specifically kMenuScreen.
 				grassProperty->SetFlags(RE::BSShaderProperty::EShaderPropertyFlag8::kMenuScreen, true);
 
