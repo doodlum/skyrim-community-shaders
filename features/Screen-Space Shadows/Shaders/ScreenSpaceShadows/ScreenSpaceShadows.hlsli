@@ -11,6 +11,10 @@ namespace ScreenSpaceShadows
 
 	float GetScreenSpaceShadow(float3 screenPosition, float2 uv, float noise, float3 viewPosition, uint eyeIndex)
 	{
+		if (screenPosition.z > 0.9999) {
+			// do not process very far shadows
+			return 1.0;
+		}
 		noise *= 2.0 * M_PI;
 
 		half2x2 rotationMatrix = half2x2(cos(noise), sin(noise), -sin(noise), cos(noise));
@@ -46,8 +50,9 @@ namespace ScreenSpaceShadows
 		float shadow = dot(shadowSamples, blurWeights);
 
 		float blurWeightsTotal = dot(blurWeights, 1.0);
-		[flatten] if (blurWeightsTotal > 0.0)
+		[flatten] if (blurWeightsTotal > 1e-5)
 			shadow = shadow / blurWeightsTotal;
+		else shadow = ScreenSpaceShadowsTexture.Load(ConvertUVToSampleCoord(uv, eyeIndex)).x;
 
 		return shadow;
 	}
