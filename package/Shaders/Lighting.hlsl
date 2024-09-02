@@ -1547,8 +1547,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float2 shadowUV = GetDynamicResolutionAdjustedScreenPosition(adjustedShadowUV);
 		shadowColor = TexShadowMaskSampler.Sample(SampShadowMaskSampler, shadowUV);
 	}
-	
-    float projectedMaterialWeight = 0;
+
+	float projectedMaterialWeight = 0;
 
 	float projWeight = 0;
 
@@ -1669,8 +1669,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			pbrSurfaceProperties.SubsurfaceColor *= sampledSubsurfaceProperties.xyz;
 			pbrSurfaceProperties.Thickness *= sampledSubsurfaceProperties.w;
 		}
-        pbrSurfaceProperties.Thickness = lerp(pbrSurfaceProperties.Thickness, 1, projectedMaterialWeight);
-    }
+		pbrSurfaceProperties.Thickness = lerp(pbrSurfaceProperties.Thickness, 1, projectedMaterialWeight);
+	}
 	else if ((PBRFlags & TruePBR_TwoLayer) != 0)
 	{
 		pbrSurfaceProperties.CoatColor = PBRParams2.xyz;
@@ -1705,7 +1705,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			}
 #			endif
 		}
-        pbrSurfaceProperties.CoatStrength = lerp(pbrSurfaceProperties.CoatStrength, 0, projectedMaterialWeight);
+		pbrSurfaceProperties.CoatStrength = lerp(pbrSurfaceProperties.CoatStrength, 0, projectedMaterialWeight);
 	}
 
 	[branch] if ((PBRFlags & TruePBR_Fuzz) != 0)
@@ -1718,7 +1718,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			pbrSurfaceProperties.FuzzColor *= sampledFuzzProperties.xyz;
 			pbrSurfaceProperties.FuzzWeight *= sampledFuzzProperties.w;
 		}
-        pbrSurfaceProperties.FuzzWeight = lerp(pbrSurfaceProperties.FuzzWeight, 0, projectedMaterialWeight);
+		pbrSurfaceProperties.FuzzWeight = lerp(pbrSurfaceProperties.FuzzWeight, 0, projectedMaterialWeight);
 	}
 #		endif
 

@@ -527,8 +527,8 @@ namespace PBR
 #if !defined(LANDSCAPE) && !defined(LODLANDSCAPE)
 			[branch] if ((PBRFlags & TruePBR_Subsurface) != 0)
 			{
-                diffuseLobeWeight += surfaceProperties.SubsurfaceColor * (1 - surfaceProperties.Thickness) / PI;
-            }
+				diffuseLobeWeight += surfaceProperties.SubsurfaceColor * (1 - surfaceProperties.Thickness) / PI;
+			}
 			[branch] if ((PBRFlags & TruePBR_Fuzz) != 0)
 			{
 				diffuseLobeWeight += surfaceProperties.FuzzColor * surfaceProperties.FuzzWeight;
