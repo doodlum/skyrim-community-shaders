@@ -1,5 +1,7 @@
+#include "Common/Constants.hlsli"
 #include "Common/DummyVSTexCoord.hlsl"
 #include "Common/FrameBuffer.hlsli"
+#include "Common/VR.hlsli"
 
 typedef VS_OUTPUT PS_INPUT;
 
@@ -53,6 +55,7 @@ PS_OUTPUT main(PS_INPUT input)
 	PS_OUTPUT psout;
 	psout.Color = 0;
 
+	uint eyeIndex = input.TexCoord >= 0.5;
 	float2 uvStart = input.TexCoord;
 	float2 uvStartDR = GetDynamicResolutionAdjustedScreenPosition(uvStart);
 
@@ -78,14 +81,15 @@ PS_OUTPUT main(PS_INPUT input)
 	float4 normal = float4(lerp(decodedNormal, DefaultNormal, isDefaultNormal), 0);
 
 	float3 uvDepthStart = float3(uvStart, depthStart);
+	uvDepthStart.xy = ConvertFromStereoUV(uvStart.xy, eyeIndex, 0);
 	float3 vsStart = UVDepthToView(uvDepthStart);
 
-	float4 csStart = mul(CameraProjInverse[0], float4(vsStart, 1));
+	float4 csStart = mul(CameraProjInverse[eyeIndex], float4(vsStart, 1));
 	csStart /= csStart.w;
 	float4 viewDirection = float4(normalize(-csStart.xyz), 0);
 	float4 reflectedDirection = reflect(-viewDirection, normal);
 	float4 csFinish = csStart + reflectedDirection;
-	float4 vsFinish = mul(CameraProj[0], csFinish);
+	float4 vsFinish = mul(CameraProj[eyeIndex], csFinish);
 	vsFinish.xyz /= vsFinish.w;
 
 	float3 uvDepthFinish = ViewToUVDepth(vsFinish.xyz);
@@ -93,6 +97,10 @@ PS_OUTPUT main(PS_INPUT input)
 
 	float3 uvDepthFinishDR = uvDepthStart + deltaUvDepth * (SSRParams.x * rcp(length(deltaUvDepth.xy)));
 	uvDepthFinishDR.xy = GetDynamicResolutionAdjustedScreenPosition(uvDepthFinishDR.xy);
+
+#		ifdef VR
+	uvStartDR.xy = GetDynamicResolutionAdjustedScreenPosition(uvDepthStart.xy);
+#		endif
 
 	float3 uvDepthStartDR = float3(uvStartDR, vsStart.z);
 	float3 deltaUvDepthDR = uvDepthFinishDR - uvDepthStartDR;
@@ -103,7 +111,8 @@ PS_OUTPUT main(PS_INPUT input)
 	float iterationIndex = 1;
 	for (; iterationIndex < 16; iterationIndex += 1) {
 		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / 16) * deltaUvDepthDR;
-		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthDR.xy, 0).x;
+		float3 iterationUvDepthSample = ConvertToStereoUV(iterationUvDepthDR, eyeIndex);
+		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
 		if (iterationDepth < iterationUvDepthDR.z) {
@@ -119,7 +128,8 @@ PS_OUTPUT main(PS_INPUT input)
 		[unroll] for (; iterationIndex < 16; iterationIndex += 1)
 		{
 			uvDepthFinalDR = lerp(uvDepthPreResultDR, uvDepthResultDR, iterationIndex / 16);
-			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalDR.xy, 0).x;
+			float3 uvDepthFinalSample = ConvertToStereoUV(uvDepthFinalDR, eyeIndex);
+			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalSample.xy, 0).x;
 			if (subIterationDepth < uvDepthFinalDR.z && uvDepthFinalDR.z < subIterationDepth + SSRParams.y) {
 				break;
 			}
@@ -127,7 +137,7 @@ PS_OUTPUT main(PS_INPUT input)
 	}
 
 	float2 uvFinal = GetDynamicResolutionUnadjustedScreenPosition(uvDepthFinalDR.xy);
-
+	uvFinal = ConvertToStereoUV(uvFinal, eyeIndex);
 	float2 previousUvFinalDR = GetPreviousDynamicResolutionAdjustedScreenPosition(uvFinal);
 	float3 alpha = AlphaTex.Sample(AlphaSampler, previousUvFinalDR).xyz;
 
