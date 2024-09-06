@@ -33,6 +33,18 @@ float2 ConvertToStereoUV(float2 uv, uint a_eyeIndex, uint a_invertY = 0)
 	return uv;
 }
 
+float3 ConvertToStereoUV(float3 uv, uint a_eyeIndex, uint a_invertY = 0)
+{
+    uv.xy = ConvertToStereoUV(uv.xy, a_eyeIndex, a_invertY);
+    return uv;
+}
+
+float4 ConvertToStereoUV(float4 uv, uint a_eyeIndex, uint a_invertY = 0)
+{
+    uv.xy = ConvertToStereoUV(uv.xy, a_eyeIndex, a_invertY);
+    return uv;
+}
+
 /**
 Converts from eye specific uv to general uv [0,1].
 In VR, texture buffers include the left and right eye in the same buffer. 
@@ -54,6 +66,18 @@ float2 ConvertFromStereoUV(float2 uv, uint a_eyeIndex, uint a_invertY = 0)
 	return uv;
 }
 
+float3 ConvertFromStereoUV(float3 uv, uint a_eyeIndex, uint a_invertY = 0)
+{
+    uv.xy = ConvertFromStereoUV(uv.xy, a_eyeIndex, a_invertY);
+    return uv;
+}
+
+float4 ConvertFromStereoUV(float4 uv, uint a_eyeIndex, uint a_invertY = 0)
+{
+    uv.xy = ConvertFromStereoUV(uv.xy, a_eyeIndex, a_invertY);
+    return uv;
+}
+
 /**
 Converts to the eye specific screenposition [0,Resolution].
 In VR, texture buffers include the left and right eye in the same buffer. Flat only has a single camera for the entire width.
@@ -66,8 +90,23 @@ This returns the adjusted value
 */
 float2 ConvertToStereoSP(float2 screenPosition, uint a_eyeIndex, float2 a_resolution)
 {
-	screenPosition.x /= a_resolution.x;
-	return ConvertToStereoUV(screenPosition, a_eyeIndex) * a_resolution;
+    screenPosition.x /= a_resolution.x;
+    float2 stereoUV = ConvertToStereoUV(screenPosition, a_eyeIndex);
+    return stereoUV * a_resolution;
+}
+
+float3 ConvertToStereoSP(float3 screenPosition, uint a_eyeIndex, float2 a_resolution)
+{
+    float2 xy = screenPosition.xy / a_resolution;
+    xy = ConvertToStereoUV(xy, a_eyeIndex);
+    return float3(xy * a_resolution, screenPosition.z);
+}
+
+float4 ConvertToStereoSP(float4 screenPosition, uint a_eyeIndex, float2 a_resolution)
+{
+    float2 xy = screenPosition.xy / a_resolution;
+    xy = ConvertToStereoUV(xy, a_eyeIndex);
+    return float4(xy * a_resolution, screenPosition.zw);
 }
 
 #ifdef PSHADER
