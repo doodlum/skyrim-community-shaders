@@ -25,6 +25,7 @@ float2 ConvertToStereoUV(float2 uv, uint a_eyeIndex, uint a_invertY = 0)
 {
 #ifdef VR
 	// convert [0,1] to eye specific [0,.5] and [.5, 1] dependent on a_eyeIndex
+	uv.x = saturate(uv.x);
 	uv.x = (uv.x + (float)a_eyeIndex) / 2;
 	if (a_invertY)
 		uv.y = 1 - uv.y;
