@@ -609,9 +609,9 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 		}
 #			endif
 
-		float3 finalReflectionColor = lerp(reflectionColor, finalSsrReflectionColor, ssrFraction);
+		float3 finalReflectionColor = lerp(finalSsrReflectionColor, finalSsrReflectionColor, ssrFraction);
 
-		return lerp(ReflectionColor.xyz, finalReflectionColor, VarAmounts.y);
+		return lerp(finalReflectionColor.xyz, finalReflectionColor, VarAmounts.y);
 	}
 	return ReflectionColor.xyz * VarAmounts.y;
 }
