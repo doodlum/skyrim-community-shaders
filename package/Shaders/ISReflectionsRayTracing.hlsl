@@ -118,9 +118,14 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 uvDepthPreResultDR = uvDepthStartDR;
 	float3 uvDepthResultDR = float3(uvDepthStartDR.xy, depthStart);
 
+	float dynamicStepSize = length(deltaUvDepthDR.xy) * SSRParams.w;
+	dynamicStepSize = max(dynamicStepSize, 1e-3);
+
 	float iterationIndex = 1;
-	for (; iterationIndex < 16; iterationIndex += 1) {
-		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / 16) * deltaUvDepthDR;
+	const int maxIterations = 32;  // Adjust based on performance/quality tradeoff
+
+	for (; iterationIndex < maxIterations; iterationIndex++) {
+		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex * dynamicStepSize) * deltaUvDepthDR;
 		float3 iterationUvDepthSample = ConvertToStereoUV(iterationUvDepthDR, eyeIndex);
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
@@ -128,16 +133,21 @@ PS_OUTPUT main(PS_INPUT input)
 		if (iterationDepth < iterationUvDepthDR.z) {
 			break;
 		}
+		// Reduce step size less aggressively if the scene is less complex
+		dynamicStepSize *= 0.9;
 	}
 
+	// Handling the final result
 	float3 uvDepthFinalDR = uvDepthResultDR;
 
-	if (iterationIndex < 16) {
+	if (iterationIndex < maxIterations) {
+		dynamicStepSize = length(deltaUvDepthDR.xy) * SSRParams.w;
+		dynamicStepSize = max(dynamicStepSize, 1e-3);
 		iterationIndex = 0;
 		uvDepthFinalDR = uvDepthPreResultDR;
-		[unroll] for (; iterationIndex < 16; iterationIndex += 1)
+		[unroll] for (; iterationIndex < maxIterations; iterationIndex++)
 		{
-			uvDepthFinalDR = lerp(uvDepthPreResultDR, uvDepthResultDR, iterationIndex / 16);
+			uvDepthFinalDR = lerp(uvDepthPreResultDR, uvDepthResultDR, iterationIndex / float(maxIterations));
 			float3 uvDepthFinalSample = ConvertToStereoUV(uvDepthFinalDR, eyeIndex);
 			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalSample.xy, 0).x;
 			if (subIterationDepth < uvDepthFinalDR.z && uvDepthFinalDR.z < subIterationDepth + SSRParams.y) {
@@ -172,7 +182,7 @@ PS_OUTPUT main(PS_INPUT input)
 		return psout;
 	}
 
-	[branch] if (iterationIndex == 16)
+	[branch] if (iterationIndex == maxIterations)
 	{
 		return psout;
 	}
