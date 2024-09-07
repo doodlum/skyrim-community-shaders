@@ -184,10 +184,14 @@ PS_OUTPUT main(PS_INPUT input)
 
 	[branch] if (iterationIndex == maxIterations)
 	{
-		return psout;
+		float3 originalColor = ColorTex.Sample(ColorSampler, uvStartDR).rgb;
+		float fallbackBlendFactor = .25;
+		psout.Color.rgb = lerp(originalColor, ssrColor, fallbackBlendFactor);
 	}
-
-	psout.Color.rgb = ssrColor;
+	else
+	{
+		psout.Color.rgb = ssrColor;
+	}
 
 	float2 deltaUv = uvFinal - uvStart;
 	float ssrMarchingRadiusFadeFactor = 1 - length(deltaUv) * SSRParams.w;
