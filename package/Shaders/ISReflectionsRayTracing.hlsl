@@ -50,6 +50,14 @@ float3 ViewToUVDepth(float3 view)
 	return float3(0.5 * view.x + 0.5, 0.5 - 0.5 * view.y, view.z);
 }
 
+// Simple hash function for generating a pseudo-random float
+float hash(float2 p)
+{
+	p = frac(p * float2(0.1031, 0.1030));      // Random values for perturbation
+	p *= dot(p, p.xy + float2(33.33, 33.33));  // Mix values
+	return frac(p.x * p.y * float2(0.5, 0.5).x);
+}
+
 PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
@@ -88,6 +96,8 @@ PS_OUTPUT main(PS_INPUT input)
 	csStart /= csStart.w;
 	float4 viewDirection = float4(normalize(-csStart.xyz), 0);
 	float4 reflectedDirection = reflect(-viewDirection, normal);
+	float2 jitter = hash(input.TexCoord) * SSRParams.xy;  // Small offset
+	reflectedDirection.xy += jitter;
 	float4 csFinish = csStart + reflectedDirection;
 	float4 vsFinish = mul(CameraProj[eyeIndex], csFinish);
 	vsFinish.xyz /= vsFinish.w;
