@@ -63,7 +63,11 @@ PS_OUTPUT main(PS_INPUT input)
 	PS_OUTPUT psout;
 	psout.Color = 0;
 
+#	ifdef VR
 	uint eyeIndex = input.TexCoord >= 0.5;
+#	else
+	uint eyeIndex = 0;
+#	endif
 	float2 uvStart = input.TexCoord;
 	float2 uvStartDR = GetDynamicResolutionAdjustedScreenPosition(uvStart);
 
