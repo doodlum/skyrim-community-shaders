@@ -2110,10 +2110,9 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		} else {
 			uint clusteredLightIndex = lightList[lightOffset + (lightIndex - strictLights[0].NumStrictLights)];
 			light = lights[clusteredLightIndex];
-			
-            if (LightLimitFix::IsLightIgnored(light))
-			{
-			    continue;
+
+			if (LightLimitFix::IsLightIgnored(light)) {
+				continue;
 			}
 		}
 

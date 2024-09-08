@@ -301,7 +301,7 @@ void LightLimitFix::BSLightingShader_SetupGeometry_GeometrySetupConstantPointLig
 {
 	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 	bool inWorld = accumulator->GetRuntimeData().activeShadowSceneNode == RE::BSShaderManager::State::GetSingleton().shadowSceneNode[0];
-	
+
 	strictLightDataTemp.NumStrictLights = inWorld ? a_pass->numShadowLights : (a_pass->numLights - 1);
 
 	for (uint32_t i = 0; i < strictLightDataTemp.NumStrictLights; i++) {

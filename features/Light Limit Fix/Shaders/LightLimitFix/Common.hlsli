@@ -24,7 +24,7 @@ struct StructuredLight
 	float radius;
 	float4 positionWS[2];
 	float4 positionVS[2];
-    uint4 roomFlags;
-    bool isPortalStrictLight;
-    float pad0[3];
+	uint4 roomFlags;
+	bool isPortalStrictLight;
+	float pad0[3];
 };
