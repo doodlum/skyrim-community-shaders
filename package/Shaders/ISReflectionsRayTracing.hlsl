@@ -168,6 +168,13 @@ PS_OUTPUT main(PS_INPUT input)
 	float2 uvFinalDR = GetDynamicResolutionAdjustedScreenPosition(uvFinal);
 	float3 color = ColorTex.Sample(ColorSampler, uvFinalDR).xyz;
 
+#		ifdef VR
+	const bool useAlpha = false;
+	// Because alpha is based on the prior frame, there will be a lag for showing clouds.
+	// This is very obvious in VR. Hide clouds for now.
+	alpha = useAlpha ? alpha : float3(0, 0, 0);
+#		endif
+
 	float3 ssrColor = SSRParams.z * alpha + color;
 
 	[branch] if (isSsrDisabled)
