@@ -129,15 +129,14 @@ PS_OUTPUT main(PS_INPUT input)
 	const int maxIterations = 32;  // Adjust based on performance/quality tradeoff
 
 	for (; iterationIndex < maxIterations; iterationIndex++) {
-		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex * dynamicStepSize) * deltaUvDepthDR;
+		float3 iterationUvDepthDR = uvDepthStartDR + (dynamicStepSize * deltaUvDepthDR);
 		float3 iterationUvDepthSample = ConvertToStereoUV(iterationUvDepthDR, eyeIndex);
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
-		if (iterationDepth < iterationUvDepthDR.z) {
+		if (iterationDepth < iterationUvDepthDR.z) {  // ray intersection detected
 			break;
 		}
-		// Reduce step size less aggressively if the scene is less complex
 		dynamicStepSize *= 0.9;
 	}
 
@@ -145,8 +144,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 uvDepthFinalDR = uvDepthResultDR;
 
 	if (iterationIndex < maxIterations) {
-		dynamicStepSize = length(deltaUvDepthDR.xy) * SSRParams.w;
-		dynamicStepSize = max(dynamicStepSize, 1e-3);
+		// refine the hit by searching between the start and hit boundary
 		iterationIndex = 0;
 		uvDepthFinalDR = uvDepthPreResultDR;
 		[unroll] for (; iterationIndex < maxIterations; iterationIndex++)
