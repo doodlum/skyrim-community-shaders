@@ -2108,8 +2108,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		if (lightIndex < strictLights[0].NumStrictLights) {
 			light = strictLights[0].StrictLights[lightIndex];
 		} else {
-			uint clusterIndex = lightList[lightOffset + (lightIndex - strictLights[0].NumStrictLights)];
-			light = lights[clusterIndex];
+			uint clusteredLightIndex = lightList[lightOffset + (lightIndex - strictLights[0].NumStrictLights)];
+			light = lights[clusteredLightIndex];
+			
+            if (LightLimitFix::IsLightIgnored(light))
+			{
+			    continue;
+			}
 		}
 
 		float3 lightDirection = light.positionWS[eyeIndex].xyz - input.WorldPosition.xyz;
