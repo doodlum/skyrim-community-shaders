@@ -147,13 +147,20 @@ PS_OUTPUT main(PS_INPUT input)
 		// refine the hit by searching between the start and hit boundary
 		iterationIndex = 0;
 		uvDepthFinalDR = uvDepthPreResultDR;
-		[unroll] for (; iterationIndex < maxIterations; iterationIndex++)
+		for (; iterationIndex < maxIterations; iterationIndex++)
 		{
-			uvDepthFinalDR = lerp(uvDepthPreResultDR, uvDepthResultDR, iterationIndex / float(maxIterations));
+			uvDepthFinalDR = (uvDepthPreResultDR + uvDepthResultDR) * 0.5;
 			float3 uvDepthFinalSample = ConvertToStereoUV(uvDepthFinalDR, eyeIndex);
 			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalSample.xy, 0).x;
 			if (subIterationDepth < uvDepthFinalDR.z && uvDepthFinalDR.z < subIterationDepth + SSRParams.y) {
 				break;
+			}
+			if (subIterationDepth < uvDepthFinalDR.z) {
+				// If intersection is closer, move towards uvDepthPreResultDR (lower half)
+				uvDepthResultDR = uvDepthFinalDR;
+			} else {
+				// Otherwise, move towards uvDepthResultDR (uppser half)
+				uvDepthPreResultDR = uvDepthFinalDR;
 			}
 		}
 	}
