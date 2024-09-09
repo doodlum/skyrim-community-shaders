@@ -102,7 +102,6 @@ void DynamicCubemaps::DrawSettings()
 					}
 
 					if (defaultDynamicCubeMapSavePathSafe) {
-
 						std::filesystem::path DynamicCubeMapSavePath = defaultDynamicCubeMapSavePath;
 						std::filesystem::path filename(std::format("R{:03d}G{:03d}B{:03d}A{:03d}.dds", colorPixel.r, colorPixel.g, colorPixel.b, colorPixel.a));
 						DynamicCubeMapSavePath /= filename;
