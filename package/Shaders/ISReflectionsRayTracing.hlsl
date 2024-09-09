@@ -99,9 +99,10 @@ PS_OUTPUT main(PS_INPUT input)
 	float4 csStart = mul(CameraProjInverse[eyeIndex], float4(vsStart, 1));
 	csStart /= csStart.w;
 	float4 viewDirection = float4(normalize(-csStart.xyz), 0);
-	float4 reflectedDirection = reflect(-viewDirection, normal);
-	float2 jitter = hash(input.TexCoord) * SSRParams.xy;  // Small offset
-	reflectedDirection.xy += jitter;
+	// Apply jitter to view direction
+	float2 jitter = hash(input.TexCoord) * SSRParams.xy;
+	float4 jitteredViewDirection = float4(normalize(viewDirection.xyz + float3(jitter, 0.0)), 0.0);
+	float4 reflectedDirection = normalize(reflect(-jitteredViewDirection, normal));
 	float4 csFinish = csStart + reflectedDirection;
 	float4 vsFinish = mul(CameraProj[eyeIndex], csFinish);
 	vsFinish.xyz /= vsFinish.w;
