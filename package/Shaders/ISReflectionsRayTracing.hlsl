@@ -193,9 +193,6 @@ PS_OUTPUT main(PS_INPUT input)
 
 	[branch] if (iterationIndex == maxIterations)
 	{
-		float3 originalColor = ColorTex.Sample(ColorSampler, uvStartDR).rgb;
-		float fallbackBlendFactor = .25;
-		psout.Color.rgb = lerp(originalColor, ssrColor, fallbackBlendFactor);
 		return psout;
 	}
 	else
