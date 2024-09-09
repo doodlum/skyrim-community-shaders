@@ -142,6 +142,42 @@ uint GetEyeIndexFromTexCoord(float2 texCoord)
 	return 0;
 }
 
+/**
+ * @brief Adjusts UV coordinates for VR stereo rendering when transitioning between eyes or handling boundary conditions.
+ *
+ * This is intended to be used in a raymarch to check the next uv coordinate.
+ * This function checks if the current UV coordinates are outside the frame. If so, it transitions the UV coordinates to the other eye
+ * and adjusts them if they are within the frame of the other eye. If the UV coordinates are outside the frame of both eyes, it will return
+ * the adjusted UV coordinates for the current eye.
+ *
+ * The function ensures that the UV coordinates are correctly adjusted for stereo rendering, taking into account the boundary conditions
+ * and preserving accurate reflections.  
+ * Based on concepts from https://cuteloong.github.io/publications/scssr24/
+ * Wu, X., Xu, Y., & Wang, L. (2024). Stereo-consistent Screen Space Reflection. Computer Graphics Forum, 43(4).
+ *
+ * We do not have a backface depth so we may be ray marching even though
+ * the ray is in an object.
+ * @param[in] monoUV Current UV coordinates with depth information.
+ * @param[in] eyeIndex Index of the current eye (0 or 1).
+ * 
+ * @return Adjusted UV coordinates for stereo rendering.
+ */
+float3 ConvertStereoRayMarchUV(float3 monoUV, uint eyeIndex)
+{
+	float3 resultUV = ConvertToStereoUV(monoUV, eyeIndex);
+
+#ifdef VR
+	if (isOutsideFrame(resultUV.xy)) {
+		// Transition to the other eye
+		float3 otherEyeUV = ConvertMonoUVToOtherEye(resultUV, 1 - eyeIndex);
+		if (!isOutsideFrame(otherEyeUV.xy)) {
+			resultUV = ConvertToStereoUV(otherEyeUV, 1 - eyeIndex);
+		}
+	}
+#endif
+	return resultUV;
+}
+
 struct VR_OUTPUT
 {
 	float4 VRPosition;

@@ -102,3 +102,29 @@ float2 ViewToUV(float3 x, bool is_position = true, uint a_eyeIndex = 0)
 	float4 uv = mul(CameraProj[a_eyeIndex], newPosition);
 	return (uv.xy / uv.w) * float2(0.5f, -0.5f) + 0.5f;
 }
+
+bool isOutsideFrame(float2 uv)
+{
+	bool result = uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1;
+	return result;
+}
+
+// Convert from mono UV of one eye to the corresponding mono UV of the other eye
+float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex)
+{
+	// Step 1: Convert UV to Clip Space
+	float4 clipPos = float4(monoUV.xy * float2(2, -2) - float2(1, -1), monoUV.z, 1);
+
+	// Step 2: Convert Clip Space to View Space for the current eye
+	float4 viewPosCurrentEye = mul(CameraProjInverse[eyeIndex], clipPos);
+	viewPosCurrentEye /= viewPosCurrentEye.w;
+
+	// Step 3: Convert View Space to Clip Space for the other eye
+	float4 clipPosOtherEye = mul(CameraProj[1 - eyeIndex], viewPosCurrentEye);
+	clipPosOtherEye /= clipPosOtherEye.w;
+
+	// Step 4: Convert Clip Space to UV
+	float3 monoUVOtherEye = float3((clipPosOtherEye.xy * 0.5f) + 0.5f, clipPosOtherEye.z);
+
+	return monoUVOtherEye;
+}

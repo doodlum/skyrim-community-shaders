@@ -124,11 +124,11 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 uvDepthResultDR = float3(uvDepthStartDR.xy, depthStart);
 
 	int iterationIndex = 1;
-	const int maxIterations = 16; // Adjust based on performance/quality tradeoff
+	const int maxIterations = 16;  // Adjust based on performance/quality tradeoff
 
 	for (; iterationIndex < maxIterations; iterationIndex++) {
 		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / 16.0) * deltaUvDepthDR;
-		float3 iterationUvDepthSample = ConvertToStereoUV(iterationUvDepthDR, eyeIndex);
+		float3 iterationUvDepthSample = ConvertStereoRayMarchUV(iterationUvDepthDR, eyeIndex);
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
@@ -144,10 +144,9 @@ PS_OUTPUT main(PS_INPUT input)
 		// refine the hit by searching between the start and hit boundary
 		iterationIndex = 0;
 		uvDepthFinalDR = uvDepthPreResultDR;
-		for (; iterationIndex < maxIterations; iterationIndex++)
-		{
+		for (; iterationIndex < maxIterations; iterationIndex++) {
 			uvDepthFinalDR = (uvDepthPreResultDR + uvDepthResultDR) * 0.5;
-			float3 uvDepthFinalSample = ConvertToStereoUV(uvDepthFinalDR, eyeIndex);
+			float3 uvDepthFinalSample = ConvertStereoRayMarchUV(uvDepthFinalDR, eyeIndex);
 			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalSample.xy, 0).x;
 			if (subIterationDepth < uvDepthFinalDR.z && uvDepthFinalDR.z < subIterationDepth + SSRParams.y) {
 				break;
@@ -213,6 +212,14 @@ PS_OUTPUT main(PS_INPUT input)
 	// Screen Center Distance Fade Factor
 	float2 uvResultScreenCenterOffset = uvFinal - 0.5;
 	float centerDistance = min(1, 2 * length(uvResultScreenCenterOffset));
+
+#		ifdef VR
+	// Make VR fades consistent by taking the closer of the two eyes
+	// Based on concepts from https://cuteloong.github.io/publications/scssr24/
+	float2 otherEyeUvResultScreenCenterOffset = ConvertMonoUVToOtherEye(uvDepthFinalDR, eyeIndex).xy - 0.5;
+	centerDistance = min(centerDistance, 2 * length(otherEyeUvResultScreenCenterOffset));
+#		endif
+
 	float centerDistanceFadeFactor = 1 - centerDistance * centerDistance;
 
 	// Final alpha calculation
