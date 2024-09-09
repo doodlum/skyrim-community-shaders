@@ -204,13 +204,18 @@ PS_OUTPUT main(PS_INPUT input)
 		psout.Color.rgb = ssrColor;
 	}
 
+	// Fade Calculations
+
+	// SSR Marching Radius Fade Factor (based on ray distance)
 	float2 deltaUv = uvFinal - uvStart;
 	float ssrMarchingRadiusFadeFactor = 1 - length(deltaUv) * SSRParams.w;
 
+	// Screen Center Distance Fade Factor
 	float2 uvResultScreenCenterOffset = uvFinal - 0.5;
 	float centerDistance = min(1, 2 * length(uvResultScreenCenterOffset));
 	float centerDistanceFadeFactor = 1 - centerDistance * centerDistance;
 
+	// Final alpha calculation
 	psout.Color.a = ssrPower * ssrMarchingRadiusFadeFactor * centerDistanceFadeFactor;
 #	endif
 
