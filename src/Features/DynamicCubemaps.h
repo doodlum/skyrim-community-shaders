@@ -98,6 +98,7 @@ public:
 
 	virtual void DrawSettings() override;
 	virtual void DataLoaded() override;
+	virtual void PostPostLoad() override;
 
 	std::map<std::string, gameSetting> iniVRCubeMapSettings{
 		{ "bAutoWaterSilhouetteReflections:Water", { "Auto Water Silhouette Reflections", "Automatically reflects silhouettes on water surfaces.", 0, true, false, true } },

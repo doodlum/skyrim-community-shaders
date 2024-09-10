@@ -115,6 +115,24 @@ void DynamicCubemaps::DataLoaded()
 	MenuOpenCloseEventHandler::Register();
 }
 
+void DynamicCubemaps::PostPostLoad()
+{
+	if (REL::Module::IsVR()) {
+		std::map<std::string, uintptr_t> earlyhiddenVRCubeMapSettings{
+			{ "bScreenSpaceReflectionEnabled:Display", 0x1ED5BC0 },
+		};
+		for (const auto& settingPair : earlyhiddenVRCubeMapSettings) {
+			const auto& settingName = settingPair.first;
+			const auto address = REL::Offset{ settingPair.second }.address();
+			bool* setting = reinterpret_cast<bool*>(address);
+			if (!*setting) {
+				logger::info("[PostPostLoad] Changing {} from {} to {} to support Dynamic Cubemaps", settingName, *setting, true);
+				*setting = true;
+			}
+		}
+	}
+}
+
 RE::BSEventNotifyControl MenuOpenCloseEventHandler::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
 {
 	// When entering a new cell, reset the capture
