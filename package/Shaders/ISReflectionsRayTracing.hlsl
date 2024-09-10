@@ -127,7 +127,7 @@ PS_OUTPUT main(PS_INPUT input)
 	const int maxIterations = 16;  // Adjust based on performance/quality tradeoff
 
 	for (; iterationIndex < maxIterations; iterationIndex++) {
-		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / 16.0) * deltaUvDepthDR;
+		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / (float)maxIterations) * deltaUvDepthDR;
 		float3 iterationUvDepthSample = ConvertStereoRayMarchUV(iterationUvDepthDR, eyeIndex);
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
