@@ -95,6 +95,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 					}
 				}
 			}
+
 			break;
 		}
 	case SKSE::MessagingInterface::kDataLoaded:
