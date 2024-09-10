@@ -137,6 +137,45 @@ PS_OUTPUT main(PS_INPUT input)
 		}
 	}
 
+#		ifdef DEBUG_SSR_RAYMARCH_ITERATIONS
+	// Visualize the number of raymarch iterations used for each pixel. This is for the initial
+	// attempt to find the intersection using linear search.
+	// Blue = 0, Red = max, should move through purple
+	float iterationColor = float(iterationIndex) / float(maxIterations);
+	psout.Color = float4(iterationColor, 0, 1 - iterationColor, 1);
+	return psout;
+#		endif
+
+#		ifdef DEBUG_SSR_RAYMARCH_FIRST_HIT
+	// Visualize the position of the first hit for each pixel during raymarching.
+	// This shows where the initial intersection was found in the linear search.
+	// Red intensity represents the depth of the hit:
+	// Dark red = hit close to the camera (small number of iterations)
+	// Bright red = hit far from the camera (large number of iterations)
+	// Black = no hit found within max iterations
+	float hitDepth = (float)iterationIndex / (float)maxIterations;
+	psout.Color = float4(hitDepth, 0, 0, 1);
+	return psout;
+#		endif
+
+#		ifdef DEBUG_SSR_RAYMARCH_DETAILED
+	// Visualize the start and end positions of the reflection ray
+	// Red channel: start position X
+	// Green channel: start position Y
+	// Blue channel: end position X
+	// Alpha channel: end position Y
+
+	// Color interpretation:
+	// - Start position dominant (yellow/greenish-yellow): shorter ray or less travel
+	// - End position dominant (blue/purple): longer ray or more travel
+	// - Equal mix (brown/gray): medium-length ray
+	// - Brighter colors: stronger reflection or more direct hit
+	// - Darker colors: weaker reflection or more glancing hit
+
+	psout.Color = float4(uvDepthStartDR.xy, uvDepthFinishDR.xy);
+	return psout;
+#		endif
+
 	// Handling the final result
 	float3 uvDepthFinalDR = uvDepthResultDR;
 
@@ -167,6 +206,52 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 alpha = AlphaTex.Sample(AlphaSampler, previousUvFinalDR).xyz;
 
 	float2 uvFinalDR = GetDynamicResolutionAdjustedScreenPosition(uvFinal);
+
+#		ifdef DEBUG_SSR_UV
+	// This helps identify whether the UV coordinates are being properly transformed, and whether they
+	// are behaving as expected across the screen when the camera pitch changes.
+	// When you run this, you should see a gradient across the screen, with colors changing smoothly from
+	// one corner of the screen to the other.
+	// Look for areas where the UVs become incorrect or discontinuous, especially as you tilt the camera
+	// downwards. If the UVs start to distort or shift, this can explain why reflections are moving in
+	// unexpected ways.
+	psout.Color = float4(uvFinalDR, 0, 1);
+	return psout;
+#		endif
+
+#		ifdef DEBUG_SSR_DEPTH
+	// Sample depth at the current UV and return it as a grayscale value
+	// Helps determine if the depth values are sampled correctly at each UV position.
+	// You should see smooth gradients of depth across the screen. If the depth values
+	// suddenly shift, it could explain why reflections are appearing in the wrong places.
+	float depth = DepthTex.Sample(DepthSampler, uvFinalDR).x;
+
+	// Output the depth as a grayscale color (depth values are expected to be between 0 and 1)
+	psout.Color = float4(depth, depth, depth, 1);
+	return psout;
+#		endif
+
+#		ifdef DEBUG_SSR_REFINE_ITERATIONS
+	// Visualize the number of iterations used for each pixel in the refinement step
+	// This is the second for loop using binary search
+	// Blue = 0, Red = max, should move through purple
+	float iterationColor = float(iterationIndex) / float(maxIterations);
+	psout.Color = float4(iterationColor, 0, 1 - iterationColor, 1);
+	return psout;
+#		endif
+
+#		ifdef DEBUG_SSR_REFINE_FIRST_HIT
+	// Visualize the position of the first hit for each pixel during refinement.
+	// This shows where the initial intersection was found in the binary search.
+	// Red intensity represents the depth of the hit:
+	// Dark red = hit close to the camera (small number of iterations)
+	// Bright red = hit far from the camera (large number of iterations)
+	// Black = no hit found within max iterations
+	float hitDepth = (float)iterationIndex / (float)maxIterations;
+	psout.Color = float4(hitDepth, 0, 0, 1);
+	return psout;
+#		endif
+
 	float3 color = ColorTex.Sample(ColorSampler, uvFinalDR).xyz;
 
 #		ifdef VR
