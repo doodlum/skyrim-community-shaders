@@ -124,7 +124,13 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 uvDepthResultDR = float3(uvDepthStartDR.xy, depthStart);
 
 	int iterationIndex = 1;
-	const int maxIterations = 16;  // Adjust based on performance/quality tradeoff
+	const int maxIterations =
+#		ifndef VR
+		16
+#		else
+		48
+#		endif
+		;  // Adjust based on performance/quality tradeoff
 
 	for (; iterationIndex < maxIterations; iterationIndex++) {
 		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / (float)maxIterations) * deltaUvDepthDR;
