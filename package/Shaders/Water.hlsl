@@ -602,10 +602,16 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			float2 ssrReflectionUv = GetDynamicResolutionAdjustedScreenPosition((DynamicResolutionParams2.xy * input.HPosition.xy) * SSRParams.zw + SSRParams2.x * normal.xy);
 			float4 ssrReflectionColor1 = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUv);
 			float4 ssrReflectionColor2 = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUv);
-			float4 ssrReflectionColor = lerp(ssrReflectionColor2, ssrReflectionColor1, SSRParams.y);
+			float epsilon = 0.001;  // Define a small tolerance value
+			if (dot(ssrReflectionColor2.xyz, ssrReflectionColor2.xyz) < epsilon * epsilon) {  // check for bad ssr values and use only cubemap
+				finalSsrReflectionColor = reflectionColor.xyz;
+				ssrFraction = 0.f;
+			} else {
+				float4 ssrReflectionColor = lerp(ssrReflectionColor2, ssrReflectionColor1, SSRParams.y);
 
-			finalSsrReflectionColor = max(0, ssrReflectionColor.xyz);
-			ssrFraction = saturate(ssrReflectionColor.w * SSRParams.x * distanceFactor);
+				finalSsrReflectionColor = max(0, ssrReflectionColor.xyz);
+				ssrFraction = saturate(ssrReflectionColor.w * SSRParams.x * distanceFactor);
+			}
 		}
 #			endif
 
