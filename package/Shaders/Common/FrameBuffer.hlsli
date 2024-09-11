@@ -65,9 +65,19 @@ float2 GetDynamicResolutionAdjustedScreenPosition(float2 screenPosition, uint st
 	return clamp(screenPositionDR, minValue, maxValue);
 }
 
+float3 GetDynamicResolutionAdjustedScreenPosition(float3 screenPositionDR, uint stereo = 1)
+{
+	return float3(GetDynamicResolutionAdjustedScreenPosition(screenPositionDR.xy, stereo), screenPositionDR.z);
+}
+
 float2 GetDynamicResolutionUnadjustedScreenPosition(float2 screenPositionDR)
 {
 	return screenPositionDR * DynamicResolutionParams2.xy;
+}
+
+float3 GetDynamicResolutionUnadjustedScreenPosition(float3 screenPositionDR)
+{
+	return float3(GetDynamicResolutionUnadjustedScreenPosition(screenPositionDR.xy), screenPositionDR.z);
 }
 
 float2 GetPreviousDynamicResolutionAdjustedScreenPosition(float2 screenPosition)
