@@ -113,15 +113,40 @@ float2 ViewToUV(float3 x, bool is_position = true, uint a_eyeIndex = 0)
 	return (uv.xy / uv.w) * float2(0.5f, -0.5f) + 0.5f;
 }
 
-bool isOutsideFrame(float2 uv)
+/**
+ * @brief Checks if the UV coordinates are outside the frame, considering dynamic resolution if specified.
+ *
+ * This function is used to determine whether the provided UV coordinates lie outside the valid range of [0,1].
+ * If dynamic resolution is enabled, it adjusts the range according to dynamic resolution parameters.
+ *
+ * @param[in] uv The UV coordinates to check.
+ * @param[in] dynamicres Optional flag indicating whether dynamic resolution is applied. Default is false.
+ * @return True if the UV coordinates are outside the frame, false otherwise.
+ */
+bool isOutsideFrame(float2 uv, bool dynamicres = false)
 {
-	bool result = uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1;
-	return result;
+	float2 max = dynamicres ? DynamicResolutionParams1.xy : float2(1, 1);
+	return any(uv < float2(0, 0) || uv > max.xy);
 }
 
-// Convert from mono UV of one eye to the corresponding mono UV of the other eye
-float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex)
+/**
+ * @brief Converts mono UV coordinates from one eye to the corresponding mono UV coordinates of the other eye.
+ *
+ * This function is used to transition UV coordinates from one eye's perspective to the other eye in a stereo rendering setup.
+ * It works by converting the mono UV to clip space, transforming it into view space, and then reprojecting it into the other eye's
+ * clip space before converting back to UV coordinates. It also supports dynamic resolution.
+ *
+ * @param[in] monoUV The UV coordinates and depth value (Z component) for the current eye, in the range [0,1].
+ * @param[in] eyeIndex Index of the current eye (0 or 1).
+ * @param[in] dynamicres Optional flag indicating whether dynamic resolution is applied. Default is false.
+ * @return UV coordinates adjusted to the other eye, with depth.
+ */
+float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex, bool dynamicres = false)
 {
+	// Convert from dynamic res to true UV space
+	if (dynamicres)
+		monoUV.xy *= DynamicResolutionParams2.xy;
+
 	// Step 1: Convert UV to Clip Space
 	float4 clipPos = float4(monoUV.xy * float2(2, -2) - float2(1, -1), monoUV.z, 1);
 
@@ -135,6 +160,10 @@ float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex)
 
 	// Step 4: Convert Clip Space to UV
 	float3 monoUVOtherEye = float3((clipPosOtherEye.xy * 0.5f) + 0.5f, clipPosOtherEye.z);
+
+	// Convert back to dynamic res space if necessary
+	if (dynamicres)
+		monoUVOtherEye.xy *= DynamicResolutionParams1.xy;
 
 	return monoUVOtherEye;
 }

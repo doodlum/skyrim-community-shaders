@@ -131,6 +131,9 @@ PS_OUTPUT main(PS_INPUT input)
 	float3 uvDepthResultDR = float3(uvDepthStartDR.xy, depthStart);
 
 	int iterationIndex = 1;
+#		ifdef VR
+	bool fromOtherEye = false;
+#		endif
 	const int maxIterations =
 #		ifndef VR
 		16
@@ -147,7 +150,8 @@ PS_OUTPUT main(PS_INPUT input)
 			GetDynamicResolutionAdjustedScreenPosition(
 				ConvertStereoRayMarchUV(
 					GetDynamicResolutionUnadjustedScreenPosition(iterationUvDepthDR),
-					eyeIndex));
+					eyeIndex,
+					fromOtherEye));
 #		else
 			// No VR adjustments, just use the raw UV coordinates
 			iterationUvDepthDR;
@@ -155,6 +159,16 @@ PS_OUTPUT main(PS_INPUT input)
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
+		if (isOutsideFrame(iterationUvDepthDR)
+#		ifdef VR
+				// In VR, it could be coming from the other eye
+				&& !fromOtherEye ||
+			(fromOtherEye && isOutsideFrame(ConvertMonoUVToOtherEye(iterationUvDepthDR, 1 - eyeIndex, true), true))
+#		endif
+		) {
+			// out of screen, no ray ssr possible
+			return psout;
+		}
 		if (iterationDepth < iterationUvDepthDR.z) {  // ray intersection detected
 			break;
 		}
@@ -214,8 +228,8 @@ PS_OUTPUT main(PS_INPUT input)
 				GetDynamicResolutionAdjustedScreenPosition(
 					ConvertStereoRayMarchUV(
 						GetDynamicResolutionUnadjustedScreenPosition(uvDepthFinalDR),
-						eyeIndex));
-
+						eyeIndex,
+						fromOtherEye));
 #		else
 				// No VR adjustments, just use the raw UV coordinates
 				uvDepthFinalDR;

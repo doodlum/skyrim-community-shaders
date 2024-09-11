@@ -145,33 +145,39 @@ uint GetEyeIndexFromTexCoord(float2 texCoord)
 /**
  * @brief Adjusts UV coordinates for VR stereo rendering when transitioning between eyes or handling boundary conditions.
  *
- * This is intended to be used in a raymarch to check the next uv coordinate.
- * This function checks if the current UV coordinates are outside the frame. If so, it transitions the UV coordinates to the other eye
- * and adjusts them if they are within the frame of the other eye. If the UV coordinates are outside the frame of both eyes, it will return
- * the adjusted UV coordinates for the current eye.
+ * This function is used in raymarching to check the next UV coordinate. It checks if the current UV coordinates are outside
+ * the frame. If so, it transitions the UV coordinates to the other eye and adjusts them if they are within the frame of the other eye.
+ * If the UV coordinates are outside the frame of both eyes, it returns the adjusted UV coordinates for the current eye.
  *
- * The function ensures that the UV coordinates are correctly adjusted for stereo rendering, taking into account the boundary conditions
+ * The function ensures that the UV coordinates are correctly adjusted for stereo rendering, taking into account boundary conditions
  * and preserving accurate reflections.  
  * Based on concepts from https://cuteloong.github.io/publications/scssr24/
  * Wu, X., Xu, Y., & Wang, L. (2024). Stereo-consistent Screen Space Reflection. Computer Graphics Forum, 43(4).
  *
- * We do not have a backface depth so we may be ray marching even though
- * the ray is in an object.
- * @param[in] monoUV Current UV coordinates with depth information.
+ * We do not have a backface depth so we may be ray marching even though the ray is in an object.
+ 
+ * @param[in] monoUV Current UV coordinates with depth information, [0-1]. Must not be dynamic resolution adjusted.
  * @param[in] eyeIndex Index of the current eye (0 or 1).
- * 
- * @return Adjusted UV coordinates for stereo rendering.
+ * @param[out] fromOtherEye Boolean indicating if the result UV coordinates are from the other eye.
+ *
+ * @return Adjusted UV coordinates for stereo rendering, [0-1]. Must be dynamic resolution adjusted later.
  */
-float3 ConvertStereoRayMarchUV(float3 monoUV, uint eyeIndex)
+float3 ConvertStereoRayMarchUV(float3 monoUV, uint eyeIndex, out bool fromOtherEye)
 {
+	fromOtherEye = false;
+	// Convert to stereo UV coordinates
 	float3 resultUV = ConvertToStereoUV(monoUV, eyeIndex);
 
 #ifdef VR
-	if (isOutsideFrame(resultUV.xy)) {
+	// Check if the UV coordinates are outside the frame
+	if (isOutsideFrame(resultUV.xy, false)) {
 		// Transition to the other eye
 		float3 otherEyeUV = ConvertMonoUVToOtherEye(resultUV, 1 - eyeIndex);
-		if (!isOutsideFrame(otherEyeUV.xy)) {
+
+		// Check if the other eye's UV coordinates are within the frame
+		if (!isOutsideFrame(otherEyeUV.xy, false)) {
 			resultUV = ConvertToStereoUV(otherEyeUV, 1 - eyeIndex);
+			fromOtherEye = true;  // Indicate that the result is from the other eye
 		}
 	}
 #endif
