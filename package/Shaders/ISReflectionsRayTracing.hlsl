@@ -75,6 +75,13 @@ PS_OUTPUT main(PS_INPUT input)
 
 	float depthStart = DepthTex.SampleLevel(DepthSampler, uvStartDR, 0).x;
 
+#	ifdef VR
+	[branch] if (depthStart == 0.0f)  // in VR mask
+	{
+		return psout;
+	}
+#	endif
+
 	bool isDefaultNormal = srcNormal.z >= 1e-5;
 	float ssrPower = max(srcNormal.z >= 1e-5, srcNormal.w);
 	bool isSsrDisabled = ssrPower < 1e-5;
