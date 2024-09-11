@@ -144,7 +144,7 @@ PS_OUTPUT main(PS_INPUT input)
 
 	for (; iterationIndex < maxIterations; iterationIndex++) {
 		float3 iterationUvDepthDR = uvDepthStartDR + (iterationIndex / (float)maxIterations) * deltaUvDepthDR;
-		float3 iterationUvDepthSample =
+		float3 iterationUvDepthSampleDR =
 #		ifdef VR
 			// Apply dynamic resolution adjustments and stereo UV conversions
 			GetDynamicResolutionAdjustedScreenPosition(
@@ -156,7 +156,7 @@ PS_OUTPUT main(PS_INPUT input)
 			// No VR adjustments, just use the raw UV coordinates
 			iterationUvDepthDR;
 #		endif
-		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSample.xy, 0).x;
+		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSampleDR.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
 		if (isOutsideFrame(iterationUvDepthDR)
@@ -222,7 +222,7 @@ PS_OUTPUT main(PS_INPUT input)
 		uvDepthFinalDR = uvDepthPreResultDR;
 		for (; iterationIndex < maxIterations; iterationIndex++) {
 			uvDepthFinalDR = (uvDepthPreResultDR + uvDepthResultDR) * 0.5;
-			float3 uvDepthFinalSample =
+			float3 uvDepthFinalSampleDR =
 #		ifdef VR
 				// Apply dynamic resolution adjustments and stereo UV conversions
 				GetDynamicResolutionAdjustedScreenPosition(
@@ -234,7 +234,7 @@ PS_OUTPUT main(PS_INPUT input)
 				// No VR adjustments, just use the raw UV coordinates
 				uvDepthFinalDR;
 #		endif
-			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalSample.xy, 0).x;
+			float subIterationDepth = DepthTex.SampleLevel(DepthSampler, uvDepthFinalSampleDR.xy, 0).x;
 			if (subIterationDepth < uvDepthFinalDR.z && uvDepthFinalDR.z < subIterationDepth + SSRParams.y) {
 				break;
 			}
