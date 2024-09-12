@@ -64,6 +64,17 @@ When using custom preset you can call BuildRelease.bat with an parameter to spec
 
 When switching between different presets you might need to remove the build folder
 
+### Build with Docker
+For those who prefer to not install Visual Studio or other build dependencies on their machine, this encapsulates it. This uses Windows Containers, so no WSL for now.  
+1. Install [Docker](https://www.docker.com/products/docker-desktop/) first if not already there. 
+2. In a shell of your choice run:
+```pwsh
+docker context use windows; `
+docker build -t skyrim-community-shaders .; `
+docker run -it --rm -v .:C:/skyrim-community-shaders skyrim-community-shaders:latest
+```
+3. Retrieve the generated build files from the `build/aio` folder.
+
 ## License
 
 ### Default
