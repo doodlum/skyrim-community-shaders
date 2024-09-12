@@ -31,6 +31,11 @@ SKSE core plugin for community-driven advanced graphics modifications.
 - Run `cmake`
 - Close the cmd window
 
+Or, in powershell run:
+```pwsh
+& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+```
+
 ## Clone and Build
 Open terminal (e.g., PowerShell) and run the following commands:
 
