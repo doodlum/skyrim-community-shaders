@@ -67,13 +67,17 @@ When switching between different presets you might need to remove the build fold
 ### Build with Docker
 For those who prefer to not install Visual Studio or other build dependencies on their machine, this encapsulates it. This uses Windows Containers, so no WSL for now.  
 1. Install [Docker](https://www.docker.com/products/docker-desktop/) first if not already there. 
-2. In a shell of your choice run:
+2. In a shell of your choice run to switch to Windows containers and create the build container:
 ```pwsh
 docker context use windows; `
-docker build -t skyrim-community-shaders .; `
+docker build -t skyrim-community-shaders .
+```
+3. Then run the build: 
+```pwsh
 docker run -it --rm -v .:C:/skyrim-community-shaders skyrim-community-shaders:latest
 ```
-3. Retrieve the generated build files from the `build/aio` folder.
+4. Retrieve the generated build files from the `build/aio` folder.
+5. In subsequent builds only run the build step (3.)
 
 ## License
 
