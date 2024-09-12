@@ -74,7 +74,7 @@ For those who prefer to not install Visual Studio or other build dependencies on
 1. Install [Docker](https://www.docker.com/products/docker-desktop/) first if not already there. 
 2. In a shell of your choice run to switch to Windows containers and create the build container:
 ```pwsh
-docker context use desktop-windows; `
+& 'C:\Program Files\Docker\Docker\DockerCli.exe' -SwitchWindowsEngine; `
 docker build -t skyrim-community-shaders .
 ```
 3. Then run the build: 
