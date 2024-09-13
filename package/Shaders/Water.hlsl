@@ -619,17 +619,25 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			float2 ssrReflectionUvDR = GetDynamicResolutionAdjustedScreenPosition(ssrReflectionUv);
 			float4 ssrReflectionColorBlurred = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUvDR);
 			float4 ssrReflectionColorRaw = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUvDR);
+
+			// calculate blur on reflection
+			float depth = DepthTex.Load(int3(ssrReflectionUvDR * BufferDim.xy, 0)).g;
+			float fogDensity = 1 - pow(saturate((-depth * FogParam.z + FogParam.z) / FogParam.w), FogNearColor.w);
+			float3 fogColor = lerp(FogNearColor.xyz, FogFarColor.xyz, fogDensity);
+
 			bool validSSRMask = IsValidSSRMask(ssrReflectionColorRaw);
 			if (validSSRMask) {
-				float4 ssrReflectionColor = lerp(ssrReflectionColorRaw, ssrReflectionColorBlurred, SSRParams.y);
+				float effectiveBlurFactor = saturate(SSRParams.y * (1.0 + fogDensity));
+				float4 ssrReflectionColor = lerp(ssrReflectionColorRaw, ssrReflectionColorBlurred, effectiveBlurFactor);
 
 				finalSsrReflectionColor = max(0, ssrReflectionColor.xyz);
 				ssrFraction = saturate(ssrReflectionColor.w * SSRParams.x * distanceFactor);
 			} else {
 				// Use reflectionColor info only
 				finalSsrReflectionColor = reflectionColor.xyz;
-				ssrFraction = 0.f;
+				ssrFraction = 1.f;
 			}
+			finalSsrReflectionColor = lerp(finalSsrReflectionColor, fogColor, fogDensity);
 		}
 #			endif
 
