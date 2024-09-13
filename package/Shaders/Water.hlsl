@@ -379,6 +379,22 @@ cbuffer PerGeometry : register(b2)
 #		endif  //VR
 }
 
+/**
+ * @brief Checks if the SSR reflection mask is invalid by testing if the reflection color is close to zero.
+ *
+ * This function evaluates whether the screen-space reflection (SSR) mask represents an invalid reflection by
+ * checking if the reflection color is essentially black (close to zero). It uses a small epsilon value to
+ * allow for floating point imprecision.
+ *
+ * @param[in] ssrColor The SSR reflection color sampled from a texture.
+ * @param[in] epsilon Small tolerance value used to determine if the color is close to zero.
+ * @return True if the SSR mask is considered invalid (color is close to zero), otherwise false.
+ */
+bool IsValidSSRMask(float4 ssrColor, float epsilon = 0.001)
+{
+	return !dot(ssrColor.xyz, ssrColor.xyz) < epsilon * epsilon;
+}
+
 #		ifdef VR
 float GetStencil(float2 uv)
 {
@@ -599,18 +615,20 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 
 #			if !defined(LOD) && NUM_SPECULAR_LIGHTS == 0
 		if (PixelShaderDescriptor & _Cubemap) {
-			float2 ssrReflectionUv = GetDynamicResolutionAdjustedScreenPosition((DynamicResolutionParams2.xy * input.HPosition.xy) * SSRParams.zw + SSRParams2.x * normal.xy);
-			float4 ssrReflectionColor1 = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUv);
-			float4 ssrReflectionColor2 = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUv);
-			float epsilon = 0.001;                                                            // Define a small tolerance value
-			if (dot(ssrReflectionColor2.xyz, ssrReflectionColor2.xyz) < epsilon * epsilon) {  // check for bad ssr values and use only cubemap
-				finalSsrReflectionColor = reflectionColor.xyz;
-				ssrFraction = 0.f;
-			} else {
-				float4 ssrReflectionColor = lerp(ssrReflectionColor2, ssrReflectionColor1, SSRParams.y);
+			float2 ssrReflectionUv = (DynamicResolutionParams2.xy * input.HPosition.xy) * SSRParams.zw + SSRParams2.x * normal.xy;
+			float2 ssrReflectionUvDR = GetDynamicResolutionAdjustedScreenPosition(ssrReflectionUv);
+			float4 ssrReflectionColorBlurred = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUvDR);
+			float4 ssrReflectionColorRaw = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUvDR);
+			bool validSSRMask = IsValidSSRMask(ssrReflectionColorRaw);
+			if (validSSRMask) {
+				float4 ssrReflectionColor = lerp(ssrReflectionColorRaw, ssrReflectionColorBlurred, SSRParams.y);
 
 				finalSsrReflectionColor = max(0, ssrReflectionColor.xyz);
 				ssrFraction = saturate(ssrReflectionColor.w * SSRParams.x * distanceFactor);
+			} else {
+				// Use reflectionColor info only
+				finalSsrReflectionColor = reflectionColor.xyz;
+				ssrFraction = 0.f;
 			}
 		}
 #			endif
