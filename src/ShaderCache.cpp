@@ -1223,7 +1223,7 @@ namespace SIE
 									if (variableArrayIndex != -1) {
 										constantOffsets[variableArrayIndex] = static_cast<int8_t>(varDesc.StartOffset / 4);
 									} else {
-										logger::error("Unknown variable name {} in {} shader {}::{}",
+										logger::debug("Unknown variable name {} in {} shader {}::{}",
 											arrayName, magic_enum::enum_name(shaderClass),
 											magic_enum::enum_name(shader.shaderType.get()), descriptor);
 									}
@@ -1239,7 +1239,7 @@ namespace SIE
 											constantOffsets[variableArrayElementIndex] =
 												static_cast<int8_t>((varDesc.StartOffset + elementSize * arrayIndex) / 4);
 										} else {
-											logger::error(
+											logger::debug(
 												"Unknown variable name {} in {} shader {}::{}", varName,
 												magic_enum::enum_name(shaderClass),
 												magic_enum::enum_name(shader.shaderType.get()),
