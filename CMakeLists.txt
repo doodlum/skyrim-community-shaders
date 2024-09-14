@@ -149,7 +149,6 @@ endif()
 # # Automatic deployment
 # #######################################################################################################################
 file(GLOB FEATURE_PATHS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/features/*)
-string(TIMESTAMP UTC_NOW "%Y-%m-%dT%H-%MZ" UTC)
 
 if(AUTO_PLUGIN_DEPLOYMENT OR AIO_ZIP_TO_DIST)
 	set(AIO_DIR "${CMAKE_CURRENT_BINARY_DIR}/aio")
@@ -163,43 +162,53 @@ if(AUTO_PLUGIN_DEPLOYMENT OR AIO_ZIP_TO_DIST)
 		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${AIO_DIR}/SKSE/Plugins/"
 	)
 
+	# Generate timestamps for shader files
+	file(GLOB_RECURSE HLSL_FILES "${CMAKE_SOURCE_DIR}/package/*.hlsl*" "${FEATURE_PATHS}/*.hlsl*")
+	file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/shader_timestamps)
+
+	foreach(file IN LISTS HLSL_FILES)
+		get_filename_component(FILE_NAME ${file} NAME)
+		set(TIMESTAMP_FILE "${CMAKE_BINARY_DIR}/shader_timestamps/${FILE_NAME}.timestamp")
+		file(TIMESTAMP ${file} FILE_TIMESTAMP)
+		file(WRITE "${TIMESTAMP_FILE}" "${FILE_TIMESTAMP}")
+	endforeach()
+
+	# Create a stamp file to track timestamp changes
 	add_custom_command(
-		OUTPUT copy_shaders.stamp
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/package "${AIO_DIR}"
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${FEATURE_PATHS} "${AIO_DIR}"
-		COMMAND ${CMAKE_COMMAND} -E touch copy_shaders.stamp
+		OUTPUT ${CMAKE_BINARY_DIR}/shaders_timestamp.stamp
+		COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/shaders_timestamp.stamp
 		DEPENDS ${HLSL_FILES}
 	)
-
 endif()
 
 # Automatic deployment to CommunityShaders output directory.
 if(AUTO_PLUGIN_DEPLOYMENT)
 	foreach(DEPLOY_TARGET $ENV{CommunityShadersOutputDir})
 		message("Copying AIO to ${DEPLOY_TARGET}")
+
+		# Copy AIO directory
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_directory ${AIO_DIR} "${DEPLOY_TARGET}"
 		)
 
-		string(MD5 DEPLOY_TARGET_HASH ${DEPLOY_TARGET})
+		# Copy Shaders with timestamp
+		get_filename_component(TARGET_DIR ${DEPLOY_TARGET} NAME)
+		set(TARGET_TIMESTAMP_FILE "${CMAKE_BINARY_DIR}/shader_timestamps/${TARGET_DIR}_timestamp.stamp")
 
 		add_custom_command(
-			OUTPUT ${DEPLOY_TARGET_HASH}.stamp
+			OUTPUT ${TARGET_TIMESTAMP_FILE}
 			COMMAND ${CMAKE_COMMAND} -E copy_directory "${AIO_DIR}/Shaders" "${DEPLOY_TARGET}/Shaders"
-			COMMAND ${CMAKE_COMMAND} -E touch ${DEPLOY_TARGET_HASH}.stamp
-			DEPENDS copy_shaders.stamp
+			COMMAND ${CMAKE_COMMAND} -E touch ${TARGET_TIMESTAMP_FILE}
+			DEPENDS ${CMAKE_BINARY_DIR}/shaders_timestamp.stamp
 		)
 
-		list(APPEND DEPLOY_TARGET_HASHES ${DEPLOY_TARGET_HASH}.stamp)
-
+		list(APPEND DEPLOY_TARGET_TIMESTAMP_FILES ${TARGET_TIMESTAMP_FILE})
 	endforeach()
 
 	add_custom_target(COPY_SHADERS ALL
-		DEPENDS
-			copy_shaders.stamp
-			${DEPLOY_TARGET_HASHES}
+		DEPENDS ${DEPLOY_TARGET_TIMESTAMP_FILES}
 	)
-	
+
 	if(NOT DEFINED ENV{CommunityShadersOutputDir})
 		message("When using AUTO_PLUGIN_DEPLOYMENT option, you need to set environment variable 'CommunityShadersOutputDir'")
 	endif()
