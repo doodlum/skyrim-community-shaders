@@ -33,7 +33,7 @@ PS_OUTPUT main(PS_INPUT input)
 {
 	PS_OUTPUT psout;
 #	ifdef VR
-	uint eyeIndex = input.TexCoord >= 0.5;
+	uint eyeIndex = input.TexCoord.x >= 0.5;
 #	else
 	uint eyeIndex = 0;
 #	endif

@@ -64,7 +64,7 @@ PS_OUTPUT main(PS_INPUT input)
 	psout.Color = 0;
 
 #	ifdef VR
-	uint eyeIndex = input.TexCoord >= 0.5;
+	uint eyeIndex = input.TexCoord.x >= 0.5;
 #	else
 	uint eyeIndex = 0;
 #	endif
@@ -159,11 +159,11 @@ PS_OUTPUT main(PS_INPUT input)
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSampleDR.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
-		if (isOutsideFrame(iterationUvDepthDR)
+		if (isOutsideFrame(iterationUvDepthDR.xy)
 #		ifdef VR
 				// In VR, it could be coming from the other eye
 				&& !fromOtherEye ||
-			(fromOtherEye && isOutsideFrame(ConvertMonoUVToOtherEye(iterationUvDepthDR, 1 - eyeIndex, true), true))
+			(fromOtherEye && isOutsideFrame(ConvertMonoUVToOtherEye(iterationUvDepthDR, 1 - eyeIndex, true).xy, true))
 #		endif
 		) {
 			// out of screen, no ray ssr possible
