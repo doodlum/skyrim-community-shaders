@@ -149,7 +149,7 @@ endif()
 # # Automatic deployment
 # #######################################################################################################################
 file(GLOB FEATURE_PATHS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/features/*)
-
+string(TIMESTAMP UTC_NOW "%Y-%m-%dT%H-%MZ" UTC)
 if(AUTO_PLUGIN_DEPLOYMENT OR AIO_ZIP_TO_DIST)
 	set(AIO_DIR "${CMAKE_CURRENT_BINARY_DIR}/aio")
 	message("Copying package folder with dll/pdb with all features to ${AIO_DIR}")
