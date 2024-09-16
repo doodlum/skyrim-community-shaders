@@ -629,11 +629,11 @@ namespace SIE
 		std::mutex computeShadersMutex;
 		CompilationSet compilationSet;
 		std::unordered_map<std::string, ShaderCacheResult> shaderMap{};
-		std::mutex mapMutex;
+		std::mutex mapMutex;                                                            // guard for shaderMap
 		std::unordered_map<std::string, system_clock::time_point> modifiedShaderMap{};  // hashmap when a shader source file last modified
-		std::unordered_map<std::string, std::set<hlslRecord>> hlslToShaderMap{};       // hashmap linking specific hlsl files to shader keys in shaderMap
-
-		std::mutex modifiedMapMutex;
+		std::mutex modifiedMapMutex;                                                    // guard for modifiedShaderMap
+		std::unordered_map<std::string, std::set<hlslRecord>> hlslToShaderMap{};        // hashmap linking specific hlsl files to shader keys in shaderMap
+		std::mutex hlslMapMutex;                                                        // guard for hlslToShaderMap
 
 		// efsw file watcher
 		efsw::FileWatcher* fileWatcher = nullptr;

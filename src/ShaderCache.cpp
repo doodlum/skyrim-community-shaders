@@ -1861,8 +1861,8 @@ namespace SIE
 
 	void ShaderCache::Clear()
 	{
-		std::lock_guard lockGuardV(vertexShadersMutex);
 		{
+			std::lock_guard lockGuardV(vertexShadersMutex);
 			for (auto& shaders : vertexShaders) {
 				for (auto& [id, shader] : shaders) {
 					shader->shader->Release();
@@ -1870,8 +1870,8 @@ namespace SIE
 				shaders.clear();
 			}
 		}
-		std::lock_guard lockGuardP(pixelShadersMutex);
 		{
+			std::lock_guard lockGuardP(pixelShadersMutex);
 			for (auto& shaders : pixelShaders) {
 				for (auto& [id, shader] : shaders) {
 					shader->shader->Release();
@@ -1879,8 +1879,8 @@ namespace SIE
 				shaders.clear();
 			}
 		}
-		std::lock_guard lockGuardC(computeShadersMutex);
 		{
+			std::lock_guard lockGuardC(computeShadersMutex);
 			for (auto& shaders : computeShaders) {
 				for (auto& [id, shader] : shaders) {
 					shader->shader->Release();
@@ -1888,10 +1888,15 @@ namespace SIE
 				shaders.clear();
 			}
 		}
+		{
+			std::unique_lock lockM{ mapMutex };
+			shaderMap.clear();
+		}
+		{
+			std::unique_lock lockH{ hlslMapMutex };
+			hlslToShaderMap.clear();
+		}
 		compilationSet.Clear();
-		std::unique_lock lock{ mapMutex };
-		shaderMap.clear();
-		hlslToShaderMap.clear();
 	}
 
 	template <typename ShaderType, typename MutexType>
@@ -1916,34 +1921,49 @@ namespace SIE
 	{
 		std::string lowerFilePath = Util::FixFilePath(a_path);
 
-		std::unique_lock lock{ mapMutex };
-		auto it = hlslToShaderMap.find(lowerFilePath);
+		// Step 1: Lock hlslMapMutex to find and copy the relevant entries
+		std::set<hlslRecord> entries;
+		{
+			std::unique_lock lockH{ hlslMapMutex };
+			auto it = hlslToShaderMap.find(lowerFilePath);
 
-		if (it != hlslToShaderMap.end()) {
-			auto& entries = it->second;
+			if (it == hlslToShaderMap.end()) {
+				return false;
+			}
 
-			for (auto& entry : entries) {
-				// Remove shader key from the map
+			entries = it->second;  // Copy the entries
+			hlslToShaderMap.erase(it);
+		}
+
+		// Step 2: Process the copied entries without holding hlslMapMutex
+		for (auto& entry : entries) {
+			// Remove shader key from shaderMap
+			{
+				std::unique_lock lockM{ mapMutex };
 				shaderMap.erase(entry.key);
+			}
 
-				// Handle vertex, pixel, and compute shaders using the templated function
-				switch (entry.shaderClass) {
-				case SIE::ShaderClass::Vertex:
-					ReleaseShader(vertexShaders, vertexShadersMutex, entry.type, entry.descriptor);
-					break;
-				case SIE::ShaderClass::Pixel:
-					ReleaseShader(pixelShaders, pixelShadersMutex, entry.type, entry.descriptor);
-					break;
-				case SIE::ShaderClass::Compute:
-					ReleaseShader(computeShaders, computeShadersMutex, entry.type, entry.descriptor);
-					break;
-				default:
-					// Handle unexpected shader classes if necessary
-					logger::warn("Unexpected shader class: {}", static_cast<int>(entry.shaderClass));
-					break;
-				}
-				const auto& filePath = entry.diskPath;
-				const auto& filePathString = Util::WStringToString(filePath);
+			// Handle vertex, pixel, and compute shaders (each will lock)
+			switch (entry.shaderClass) {
+			case SIE::ShaderClass::Vertex:
+				ReleaseShader(vertexShaders, vertexShadersMutex, entry.type, entry.descriptor);
+				break;
+			case SIE::ShaderClass::Pixel:
+				ReleaseShader(pixelShaders, pixelShadersMutex, entry.type, entry.descriptor);
+				break;
+			case SIE::ShaderClass::Compute:
+				ReleaseShader(computeShaders, computeShadersMutex, entry.type, entry.descriptor);
+				break;
+			default:
+				logger::warn("Unexpected shader class: {}", static_cast<int>(entry.shaderClass));
+				break;
+			}
+
+			// Delete the associated file
+			const auto& filePath = entry.diskPath;
+			const auto& filePathString = Util::WStringToString(filePath);
+			{
+				std::scoped_lock lockD{ compilationSet.compilationMutex };
 				try {
 					if (std::filesystem::exists(filePath)) {
 						std::filesystem::remove(filePath);
@@ -1954,22 +1974,17 @@ namespace SIE
 				} catch (...) {
 					logger::warn("An unknown error occurred while trying to delete file '{}'", filePathString);
 				}
-				compilationSet.Clear();
-				// Log that the shader is marked for recompile
-				logger::debug("Marking recompile for shader: {}", entry.key);
 			}
 
-			if (!entries.empty()) {
-				logger::debug("Marked {} entries for recompile due to change to {}", entries.size(), a_path);
-			}
-
-			// Clear the entries after marking them for recompile
-			entries.clear();
-
-			return true;
+			logger::debug("Marking recompile for shader: {}", entry.key);
 		}
 
-		return false;
+		if (!entries.empty()) {
+			logger::debug("Marked {} entries for recompile due to change to {}", entries.size(), a_path);
+			compilationSet.Clear();
+		}
+
+		return true;
 	}
 
 	void ShaderCache::Clear(RE::BSShader::Type a_type)
@@ -2003,30 +2018,35 @@ namespace SIE
 	{
 		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
 		auto status = a_blob ? ShaderCompilationTask::Status::Completed : ShaderCompilationTask::Status::Failed;
-		std::unique_lock lock{ mapMutex };
 		logger::debug("Adding {} shader to map: {}", magic_enum ::enum_name(status), key);
-		shaderMap.insert_or_assign(key, ShaderCacheResult{ a_blob, status, system_clock::now() });
+		{
+			std::unique_lock lockM{ mapMutex };
+			shaderMap.insert_or_assign(key, ShaderCacheResult{ a_blob, status, system_clock::now() });
+		}
 		if (!a_path.empty()) {
 			std::string lowerFilePath = Util::FixFilePath(a_path);
-			auto it = hlslToShaderMap.find(lowerFilePath);
-			hlslRecord newRecord{ key, shader.shaderType.get(), descriptor, shaderClass, SIE::SShaderCache::GetDiskPath(shader.fxpFilename, descriptor, shaderClass) };
+			{
+				std::unique_lock lockH{ hlslMapMutex };
+				auto it = hlslToShaderMap.find(lowerFilePath);
+				hlslRecord newRecord{ key, shader.shaderType.get(), descriptor, shaderClass, SIE::SShaderCache::GetDiskPath(shader.fxpFilename, descriptor, shaderClass) };
 
-			if (it != hlslToShaderMap.end()) {
-				auto& entries = it->second;
+				if (it != hlslToShaderMap.end()) {
+					auto& entries = it->second;
 
-				// Find and remove existing record with the same key
-				auto existingRecord = std::find_if(entries.begin(), entries.end(),
-					[&](const hlslRecord& r) { return r.key == key; });
+					// Find and remove existing record with the same key
+					auto existingRecord = std::find_if(entries.begin(), entries.end(),
+						[&](const hlslRecord& r) { return r.key == key; });
 
-				if (existingRecord != entries.end()) {
-					entries.erase(existingRecord);  // Remove the old record
+					if (existingRecord != entries.end()) {
+						entries.erase(existingRecord);  // Remove the old record
+					}
+
+					// Insert the new or updated record
+					entries.insert(newRecord);
+				} else {
+					// Create a new entry in hlslToShaderMap for this file path
+					hlslToShaderMap.emplace(lowerFilePath, std::set<hlslRecord>{ newRecord });
 				}
-
-				// Insert the new or updated record
-				entries.insert(newRecord);
-			} else {
-				// Create a new entry in hlslToShaderMap for this file path
-				hlslToShaderMap.emplace(lowerFilePath, std::set<hlslRecord>{ newRecord });
 			}
 		}
 
@@ -2037,7 +2057,7 @@ namespace SIE
 	{
 		std::string type = SIE::SShaderCache::GetTypeFromShaderString(a_key);
 		UpdateShaderModifiedTime(type);
-		std::scoped_lock lock{ mapMutex };
+		std::scoped_lock lockM{ mapMutex };
 		if (!shaderMap.empty() && shaderMap.contains(a_key)) {
 			if (ShaderModifiedSince(type, shaderMap.at(a_key).compileTime)) {
 				logger::debug("Shader {} compiled {} before changes at {}",
@@ -2068,7 +2088,7 @@ namespace SIE
 
 	ShaderCompilationTask::Status ShaderCache::GetShaderStatus(const std::string& a_key)
 	{
-		std::scoped_lock lock{ mapMutex };
+		std::scoped_lock lockM{ mapMutex };
 		if (!shaderMap.empty() && shaderMap.contains(a_key)) {
 			return shaderMap.at(a_key).status;
 		}
@@ -2430,7 +2450,7 @@ namespace SIE
 
 	void ShaderCache::IterateShaderBlock(bool a_forward)
 	{
-		std::scoped_lock lock{ mapMutex };
+		std::scoped_lock lockM{ mapMutex };
 		auto targetIndex = a_forward ? 0 : shaderMap.size() - 1;           // default start or last element
 		if (blockedKeyIndex >= 0 && shaderMap.size() > blockedKeyIndex) {  // grab next element
 			targetIndex = (blockedKeyIndex + (a_forward ? 1 : -1)) % shaderMap.size();
