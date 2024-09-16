@@ -63,6 +63,10 @@ PS_OUTPUT main(PS_INPUT input)
 	PS_OUTPUT psout;
 	psout.Color = 0;
 
+#	ifndef ENABLESSR
+	// Disable SSR raymarch
+	return psout;
+#	endif
 #	ifdef VR
 	uint eyeIndex = input.TexCoord.x >= 0.5;
 #	else
@@ -135,10 +139,10 @@ PS_OUTPUT main(PS_INPUT input)
 	bool fromOtherEye = false;
 #		endif
 	const int maxIterations =
-#		ifndef VR
-		16
+#		ifdef MAX_ITERATIONS
+		MAX_ITERATIONS
 #		else
-		48
+		16
 #		endif
 		;  // Adjust based on performance/quality tradeoff
 
