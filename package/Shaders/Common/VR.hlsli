@@ -1,8 +1,10 @@
 #ifndef __VR_DEPENDENCY_HLSL__
 #define __VR_DEPENDENCY_HLSL__
 #ifdef VR
-#	include "Common\Constants.hlsli"
-#	include "Common\FrameBuffer.hlsli"
+#	ifndef COMPUTESHADER
+#		include "Common\Constants.hlsli"
+#		include "Common\FrameBuffer.hlsli"
+#	endif
 cbuffer VRValues : register(b13)
 {
 	float AlphaTestRefRS : packoffset(c0);
