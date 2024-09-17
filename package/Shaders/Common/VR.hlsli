@@ -225,6 +225,36 @@ float3 ConvertStereoRayMarchUV(float3 monoUV, uint eyeIndex, out bool fromOtherE
 	return resultUV;
 }
 
+/**
+ * @brief Converts stereo UV coordinates from one eye to the corresponding stereo UV coordinates of the other eye.
+ *
+ * This function is used to transition UV coordinates from one eye's perspective to the other eye in a stereo rendering setup.
+ * It works by converting the stereo UV to mono UV, then to clip space, transforming it into view space, and then reprojecting it into the other eye's
+ * clip space before converting back to stereo UV coordinates. It also supports dynamic resolution.
+ *
+ * @param[in] stereoUV The UV coordinates and depth value (Z component) for the current eye, in the range [0,1].
+ * @param[in] eyeIndex Index of the current eye (0 or 1).
+ * @param[in] dynamicres Optional flag indicating whether dynamic resolution is applied. Default is false.
+ * @return UV coordinates adjusted to the other eye, with depth.
+ */
+float3 ConvertStereoUVToOtherEyeStereoUV(float3 stereoUV, uint eyeIndex, bool dynamicres = false)
+{
+	// Convert from dynamic res to true UV space
+	if (dynamicres)
+		stereoUV.xy *= DynamicResolutionParams2.xy;
+
+	stereoUV.xy = ConvertFromStereoUV(stereoUV.xy, eyeIndex, true);  // for some reason, the uv.y needs to be inverted before conversion?
+	// Swap eyes
+	stereoUV.xyz = ConvertMonoUVToOtherEye(stereoUV.xyz, eyeIndex);
+
+	stereoUV.xy = ConvertToStereoUV(stereoUV.xy, 1 - eyeIndex, false);
+
+	// Convert back to dynamic res space if necessary
+	if (dynamicres)
+		stereoUV.xy *= DynamicResolutionParams1.xy;
+	return stereoUV;
+}
+
 struct VR_OUTPUT
 {
 	float4 VRPosition;
