@@ -163,11 +163,11 @@ PS_OUTPUT main(PS_INPUT input)
 		float iterationDepth = DepthTex.SampleLevel(DepthSampler, iterationUvDepthSampleDR.xy, 0).x;
 		uvDepthPreResultDR = uvDepthResultDR;
 		uvDepthResultDR = iterationUvDepthDR;
-		if (isOutsideFrame(iterationUvDepthDR.xy)
+		if (isOutsideFrame(iterationUvDepthDR.xy, true)
 #		ifdef VR
 				// In VR, it could be coming from the other eye
 				&& !fromOtherEye ||
-			(fromOtherEye && isOutsideFrame(ConvertMonoUVToOtherEye(iterationUvDepthDR, 1 - eyeIndex, true).xy, true))
+			(fromOtherEye && isOutsideFrame(ConvertMonoUVToOtherEye(iterationUvDepthDR, eyeIndex, true).xy, true))
 #		endif
 		) {
 			// out of screen, no ray ssr possible
@@ -353,7 +353,7 @@ PS_OUTPUT main(PS_INPUT input)
 #		ifdef VR
 	// Make VR fades consistent by taking the closer of the two eyes
 	// Based on concepts from https://cuteloong.github.io/publications/scssr24/
-	float2 otherEyeUvResultScreenCenterOffset = ConvertMonoUVToOtherEye(uvDepthFinalDR, eyeIndex).xy - 0.5;
+	float2 otherEyeUvResultScreenCenterOffset = ConvertMonoUVToOtherEye(uvDepthFinalDR, eyeIndex, true).xy - 0.5;
 	centerDistance = min(centerDistance, 2 * length(otherEyeUvResultScreenCenterOffset));
 #		endif
 

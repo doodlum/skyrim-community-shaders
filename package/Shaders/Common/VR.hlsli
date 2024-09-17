@@ -152,7 +152,7 @@ uint GetEyeIndexFromTexCoord(float2 texCoord)
  * clip space before converting back to UV coordinates. It also supports dynamic resolution.
  *
  * @param[in] monoUV The UV coordinates and depth value (Z component) for the current eye, in the range [0,1].
- * @param[in] eyeIndex Index of the current eye (0 or 1).
+ * @param[in] eyeIndex Index of the source/current eye (0 or 1).
  * @param[in] dynamicres Optional flag indicating whether dynamic resolution is applied. Default is false.
  * @return UV coordinates adjusted to the other eye, with depth.
  */
@@ -183,7 +183,6 @@ float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex, bool dynamicres = f
 	return monoUVOtherEye;
 }
 
-
 /**
  * @brief Adjusts UV coordinates for VR stereo rendering when transitioning between eyes or handling boundary conditions.
  *
@@ -207,20 +206,20 @@ float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex, bool dynamicres = f
 float3 ConvertStereoRayMarchUV(float3 monoUV, uint eyeIndex, out bool fromOtherEye)
 {
 	fromOtherEye = false;
-	// Convert to stereo UV coordinates
-	float3 resultUV = ConvertToStereoUV(monoUV, eyeIndex);
-
+	float3 resultUV = monoUV;
 #ifdef VR
 	// Check if the UV coordinates are outside the frame
 	if (isOutsideFrame(resultUV.xy, false)) {
 		// Transition to the other eye
-		float3 otherEyeUV = ConvertMonoUVToOtherEye(resultUV, 1 - eyeIndex);
+		float3 otherEyeUV = ConvertMonoUVToOtherEye(resultUV, eyeIndex);
 
 		// Check if the other eye's UV coordinates are within the frame
 		if (!isOutsideFrame(otherEyeUV.xy, false)) {
 			resultUV = ConvertToStereoUV(otherEyeUV, 1 - eyeIndex);
 			fromOtherEye = true;  // Indicate that the result is from the other eye
 		}
+	} else {
+		resultUV = ConvertToStereoUV(resultUV, eyeIndex);
 	}
 #endif
 	return resultUV;
