@@ -45,7 +45,6 @@ struct ScreenSpaceGI : Feature
 	struct Settings
 	{
 		bool Enabled = true;
-		bool UseBitmask = true;
 		bool EnableGI = true;
 		bool EnableSpecularGI = false;
 		// performance/quality
