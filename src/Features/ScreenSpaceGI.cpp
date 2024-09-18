@@ -18,7 +18,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	NumSlices,
 	NumSteps,
 	DepthMIPSamplingOffset,
-	EffectRadius,
+	AORadius,
+	GIRadius,
 	Thickness,
 	DepthFadeRange,
 	BackfaceStrength,
@@ -209,9 +210,17 @@ void ScreenSpaceGI::DrawSettings()
 
 	ImGui::Separator();
 
-	ImGui::SliderFloat("Effect radius", &settings.EffectRadius, 10.f, 800.0f, "%.1f game units");
+	ImGui::SliderFloat("AO radius", &settings.AORadius, 10.f, 800.0f, "%.1f game units");
 	if (auto _tt = Util::HoverTooltipWrapper())
-		ImGui::Text("World (viewspace) effect radius. Depends on the scene & requirements");
+		ImGui::Text("A smaller radius produces tighter AO.");
+
+	{
+		auto _ = DisableGuard(!settings.EnableGI);
+
+		ImGui::SliderFloat("IL radius", &settings.GIRadius, 10.f, 800.0f, "%.1f game units");
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text("A larger radius produces wider IL.");
+	}
 
 	ImGui::SliderFloat2("Depth Fade Range", &settings.DepthFadeRange.x, 1e4, 5e4, "%.0f game units");
 
@@ -604,9 +613,9 @@ void ScreenSpaceGI::UpdateSB()
 		data.NumSteps = settings.NumSteps;
 		data.DepthMIPSamplingOffset = settings.DepthMIPSamplingOffset;
 
-		data.EffectRadius = settings.EffectRadius;
-		data.EffectFalloffRange = settings.EffectFalloffRange;
-		data.ThinOccluderCompensation = settings.ThinOccluderCompensation;
+		data.EffectRadius = std::max(settings.AORadius, settings.GIRadius);
+		data.AORadius = settings.AORadius / data.EffectRadius;
+		data.GIRadius = settings.GIRadius / data.EffectRadius;
 		data.Thickness = settings.Thickness;
 		data.DepthFadeRange = settings.DepthFadeRange;
 		data.DepthFadeScaleConst = 1 / (settings.DepthFadeRange.y - settings.DepthFadeRange.x);
@@ -614,7 +623,7 @@ void ScreenSpaceGI::UpdateSB()
 		data.BackfaceStrength = settings.BackfaceStrength;
 		data.GIBounceFade = settings.GIBounceFade;
 		data.GIDistanceCompensation = settings.GIDistanceCompensation;
-		data.GICompensationMaxDist = settings.EffectRadius;
+		data.GICompensationMaxDist = settings.AORadius;
 
 		data.AOPower = settings.AOPower;
 		data.GIStrength = settings.GIStrength;

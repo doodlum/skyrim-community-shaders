@@ -170,7 +170,7 @@ void CalculateGI(
 				angleRange = smoothstep(0, 1, (angleRange + n) * RCP_PI + .5);  // https://discord.com/channels/586242553746030596/586245736413528082/1102228968247144570
 
 				uint2 bitsRange = uint2(round(angleRange.x * 32u), round((angleRange.y - angleRange.x) * 32u));
-				uint maskedBits = ((1 << bitsRange.y) - 1) << bitsRange.x;
+				uint maskedBits = s < AORadius ? ((1 << bitsRange.y) - 1) << bitsRange.x : 0;
 
 #ifdef GI
 				float3 sampleBackPosGI = samplePos - viewVec * 300;
@@ -192,13 +192,13 @@ void CalculateGI(
 				// angleRangeSpecular = saturate((angleRangeSpecular * specularSigns) * 0.5 + 0.5);
 
 				uint2 bitsRangeGISpecular = uint2(round(angleRangeSpecular.x * 32u), round((angleRangeSpecular.y - angleRangeSpecular.x) * 32u));
-				uint maskedBitsGISpecular = ((1 << bitsRangeGISpecular.y) - 1) << bitsRangeGISpecular.x;
+				uint maskedBitsGISpecular = s < GIRadius ? ((1 << bitsRangeGISpecular.y) - 1) << bitsRangeGISpecular.x : 0;
 #	endif
 
 				angleRangeGI = smoothstep(0, 1, (angleRangeGI + n) * RCP_PI + .5);  // https://discord.com/channels/586242553746030596/586245736413528082/1102228968247144570
 
 				uint2 bitsRangeGI = uint2(round(angleRangeGI.x * 32u), round((angleRangeGI.y - angleRangeGI.x) * 32u));
-				uint maskedBitsGI = ((1 << bitsRangeGI.y) - 1) << bitsRangeGI.x;
+				uint maskedBitsGI = s < GIRadius ? ((1 << bitsRangeGI.y) - 1) << bitsRangeGI.x : 0;
 
 				uint overlappedBits = maskedBitsGI & ~bitmaskGI;
 				bool checkGI = overlappedBits;
