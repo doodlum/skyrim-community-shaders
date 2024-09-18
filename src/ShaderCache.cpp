@@ -1441,7 +1441,7 @@ namespace SIE
 					logger::debug("Saved shader to {}", Util::WStringToString(diskPath));
 				}
 			}
-			cache.AddCompletedShader(shaderClass, shader, descriptor, shaderBlob, pathString);
+			cache.AddCompletedShader(shaderClass, shader, descriptor, shaderBlob);
 			return shaderBlob;
 		}
 
@@ -2016,7 +2016,7 @@ namespace SIE
 		compilationSet.Clear();
 	}
 
-	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob, const std::string& a_path)
+	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob)
 	{
 		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
 		auto status = a_blob ? ShaderCompilationTask::Status::Completed : ShaderCompilationTask::Status::Failed;
