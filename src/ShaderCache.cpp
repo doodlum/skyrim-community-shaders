@@ -1439,7 +1439,7 @@ namespace SIE
 					logger::debug("Saved shader to {}", Util::WStringToString(diskPath));
 				}
 			}
-			cache.AddCompletedShader(shaderClass, shader, descriptor, shaderBlob, pathString);
+			cache.AddCompletedShader(shaderClass, shader, descriptor, shaderBlob);
 			return shaderBlob;
 		}
 
@@ -2014,7 +2014,7 @@ namespace SIE
 		compilationSet.Clear();
 	}
 
-	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob, const std::string& a_path)
+	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob)
 	{
 		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
 		auto status = a_blob ? ShaderCompilationTask::Status::Completed : ShaderCompilationTask::Status::Failed;
@@ -2023,8 +2023,13 @@ namespace SIE
 			std::unique_lock lockM{ mapMutex };
 			shaderMap.insert_or_assign(key, ShaderCacheResult{ a_blob, status, system_clock::now() });
 		}
-		if (!a_path.empty()) {
-			std::string lowerFilePath = Util::FixFilePath(a_path);
+		const std::wstring path = SIE::SShaderCache::GetShaderPath(
+			shader.shaderType == RE::BSShader::Type::ImageSpace ?
+				static_cast<const RE::BSImagespaceShader&>(shader).originalShaderName :
+				shader.fxpFilename);
+		auto pathString = Util::WStringToString(path);
+		if (a_blob) {  // only create hlsl record if successful
+			std::string lowerFilePath = Util::FixFilePath(pathString);
 			{
 				std::unique_lock lockH{ hlslMapMutex };
 				auto it = hlslToShaderMap.find(lowerFilePath);
