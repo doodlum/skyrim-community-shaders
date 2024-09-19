@@ -35,7 +35,7 @@ public:
 	{
 		float4 Sample[SSSS_N_SAMPLES];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(Kernel);
 	struct alignas(16) BlurCB
 	{
 		Kernel BaseKernel;
@@ -45,6 +45,7 @@ public:
 		float SSSS_FOVY;
 		uint pad[3];
 	};
+	STATIC_ASSERT_ALIGNAS_16(BlurCB);
 
 	ConstantBuffer* blurCB = nullptr;
 	BlurCB blurCBData{};

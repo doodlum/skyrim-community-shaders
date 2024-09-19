@@ -128,7 +128,7 @@ public:
 		uint ExtraShaderDescriptor;
 		uint pad0[1];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(PermutationCB);
 	ConstantBuffer* permutationCB = nullptr;
 
 	struct alignas(16) SharedDataCB
@@ -144,7 +144,7 @@ public:
 		uint InInterior;
 		uint InMapMenu;
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(SharedDataCB);
 	ConstantBuffer* sharedDataCB = nullptr;
 	ConstantBuffer* featureDataCB = nullptr;
 

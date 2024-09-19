@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Buffer.h"
 #include "Feature.h"
 
 struct GrassLighting : Feature
@@ -24,7 +25,7 @@ struct GrassLighting : Feature
 		float BasicGrassBrightness = 1.0f;
 		uint pad[3];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(Settings);
 	Settings settings;
 
 	virtual void DrawSettings() override;

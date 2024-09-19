@@ -55,6 +55,7 @@ struct TerrainShadows : public Feature
 		float2 ZRange;
 		float2 Offset;
 	};
+	STATIC_ASSERT_ALIGNAS_16(PerFrame);
 
 	PerFrame GetCommonBufferData();
 

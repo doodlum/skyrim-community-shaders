@@ -117,6 +117,7 @@ struct ScreenSpaceGI : Feature
 
 		float pad[2];
 	};
+	STATIC_ASSERT_ALIGNAS_16(SSGICB);
 	eastl::unique_ptr<ConstantBuffer> ssgiCB;
 
 	eastl::unique_ptr<Texture2D> texNoise = nullptr;
