@@ -379,22 +379,6 @@ cbuffer PerGeometry : register(b2)
 #		endif  //VR
 }
 
-/**
- * @brief Checks if the SSR reflection mask is invalid by testing if the reflection color is close to zero.
- *
- * This function evaluates whether the screen-space reflection (SSR) mask represents an invalid reflection by
- * checking if the reflection color is essentially black (close to zero). It uses a small epsilon value to
- * allow for floating point imprecision.
- *
- * @param[in] ssrColor The SSR reflection color sampled from a texture.
- * @param[in] epsilon Small tolerance value used to determine if the color is close to zero.
- * @return True if the SSR mask is considered invalid (color is close to zero), otherwise false.
- */
-bool IsValidSSRMask(float4 ssrColor, float epsilon = 0.001)
-{
-	return !dot(ssrColor.xyz, ssrColor.xyz) < epsilon * epsilon;
-}
-
 #		ifdef VR
 float GetStencil(float2 uv)
 {
@@ -625,19 +609,17 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			float fogDensity = 1 - pow(saturate((-depth * FogParam.z + FogParam.z) / FogParam.w), FogNearColor.w);
 			float3 fogColor = lerp(FogNearColor.xyz, FogFarColor.xyz, fogDensity);
 
-			bool validSSRMask = IsValidSSRMask(ssrReflectionColorRaw);
+			bool validSSRMask = IsNonZeroColor(ssrReflectionColorRaw);
 
 #				ifdef VR
-			if (!validSSRMask) {
-				// Check the other eye's mask to see if we have better information to use
-				float3 otherEyeUV = ConvertStereoUVToOtherEyeStereoUV(float3(ssrReflectionUv, input.HPosition.z), a_eyeIndex, false);
-				float2 otherEyeUVDR = GetDynamicResolutionAdjustedScreenPosition(otherEyeUV.xy);
-				ssrReflectionColorRaw = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, otherEyeUVDR);
-				validSSRMask = IsValidSSRMask(ssrReflectionColorRaw);
-				if (validSSRMask && !isOutsideFrame(otherEyeUV.xy)) {
-					ssrReflectionColorBlurred = SSRReflectionTex.Sample(SSRReflectionSampler, otherEyeUVDR);
-				}
-			}
+			float3 otherEyeUV = ConvertStereoUVToOtherEyeStereoUV(float3(ssrReflectionUv, input.HPosition.z), a_eyeIndex, false);
+			float2 otherEyeUVDR = GetDynamicResolutionAdjustedScreenPosition(otherEyeUV.xy);
+
+			float4 otherEyeSSRColorRaw = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, otherEyeUVDR);
+			float4 otherEyeSSRColorBlurred = SSRReflectionTex.Sample(SSRReflectionSampler, otherEyeUVDR);
+
+			ssrReflectionColorRaw = BlendEyeColors(ssrReflectionUvDR, ssrReflectionColorRaw, otherEyeUVDR, otherEyeSSRColorRaw, true);
+			ssrReflectionColorBlurred = BlendEyeColors(ssrReflectionUvDR, ssrReflectionColorBlurred, otherEyeUVDR, otherEyeSSRColorBlurred, true);
 #				endif
 
 			if (validSSRMask) {

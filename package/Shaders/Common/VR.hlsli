@@ -257,6 +257,71 @@ float3 ConvertStereoUVToOtherEyeStereoUV(float3 stereoUV, uint eyeIndex, bool dy
 	return stereoUV;
 }
 
+/**
+ * @brief Checks if the color is non zero by testing if the color is greater than 0 by epsilon.
+ *
+ * This function check is a color is non black. It uses a small epsilon value to allow for 
+ * floating point imprecision.
+ *
+ * For screen-space reflection (SSR), this acts as a mask and checks for an invalid reflection by
+ * checking if the reflection color is essentially black (close to zero). 
+ *
+ * @param[in] ssrColor The color to check.
+ * @param[in] epsilon Small tolerance value used to determine if the color is close to zero.
+ * @return True if color is non zero, otherwise false.
+ */
+bool IsNonZeroColor(float4 ssrColor, float epsilon = 0.001)
+{
+	return !dot(ssrColor.xyz, ssrColor.xyz) < epsilon * epsilon;
+}
+
+/**
+ * @brief Blends color data from two eyes based on their UV coordinates and validity.
+ *
+ * This function checks the validity of the colors based on their UV coordinates and
+ * alpha values. It blends the colors while ensuring proper handling of transparency.
+ *
+ * @param uv1 UV coordinates for the first eye.
+ * @param color1 Color from the first eye.
+ * @param uv2 UV coordinates for the second eye.
+ * @param color2 Color from the second eye.
+ * @param dynamicres Whether the uvs have dynamic resolution applied
+ * @return Blended color, including the maximum alpha from both inputs.
+ */
+float4 BlendEyeColors(
+	float3 uv1,
+	float4 color1,
+	float3 uv2,
+	float4 color2,
+	bool dynamicres = false)
+{
+	// Check validity for color1
+	bool validColor1 = IsNonZeroColor(color1) && !isOutsideFrame(uv1.xy, dynamicres);
+	// Check validity for color2
+	bool validColor2 = IsNonZeroColor(color2) && !isOutsideFrame(uv2.xy, dynamicres);
+
+	// Calculate alpha values
+	float alpha1 = validColor1 ? color1.a : 0.0f;
+	float alpha2 = validColor2 ? color2.a : 0.0f;
+
+	// Total alpha
+	float totalAlpha = alpha1 + alpha2;
+
+	// Blend based on higher alpha
+	float4 blendedColor = (validColor1 ? color1 * (alpha1 / max(totalAlpha, 1e-5)) : float4(0, 0, 0, 0)) +
+	                      (validColor2 ? color2 * (alpha2 / max(totalAlpha, 1e-5)) : float4(0, 0, 0, 0));
+
+	// Final alpha determination
+	blendedColor.a = max(color1.a, color2.a);
+
+	return blendedColor;
+}
+
+float4 BlendEyeColors(float2 uv1, float4 color1, float2 uv2, float4 color2, bool dynamicres = false)
+{
+	return BlendEyeColors(float3(uv1, 0), color1, float3(uv2, 0), color2, dynamicres);
+}
+
 struct VR_OUTPUT
 {
 	float4 VRPosition;
