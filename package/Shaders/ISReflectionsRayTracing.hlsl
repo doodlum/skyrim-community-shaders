@@ -311,6 +311,10 @@ PS_OUTPUT main(PS_INPUT input)
 	// Because alpha is based on the prior frame, there will be a lag for showing clouds.
 	// This is very obvious in VR. Hide clouds for now.
 	alpha = useAlpha ? alpha : float3(0, 0, 0);
+
+	// for fade calculation from eye center, need to adjust to monoUV
+	uvFinal = ConvertFromStereoUV(uvFinal, eyeIndex);
+	uvStart = ConvertFromStereoUV(uvStart, eyeIndex);
 #		endif
 
 	float3 ssrColor = SSRParams.z * alpha + color;
@@ -353,7 +357,7 @@ PS_OUTPUT main(PS_INPUT input)
 #		ifdef VR
 	// Make VR fades consistent by taking the closer of the two eyes
 	// Based on concepts from https://cuteloong.github.io/publications/scssr24/
-	float2 otherEyeUvResultScreenCenterOffset = ConvertMonoUVToOtherEye(uvDepthFinalDR, eyeIndex, true).xy - 0.5;
+	float2 otherEyeUvResultScreenCenterOffset = ConvertMonoUVToOtherEye(GetDynamicResolutionUnadjustedScreenPosition(uvDepthFinalDR), eyeIndex).xy - 0.5;
 	centerDistance = min(centerDistance, 2 * length(otherEyeUvResultScreenCenterOffset));
 #		endif
 
