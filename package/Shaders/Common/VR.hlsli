@@ -272,7 +272,7 @@ float3 ConvertStereoUVToOtherEyeStereoUV(float3 stereoUV, uint eyeIndex, bool dy
  */
 bool IsNonZeroColor(float4 ssrColor, float epsilon = 0.001)
 {
-	return !dot(ssrColor.xyz, ssrColor.xyz) < epsilon * epsilon;
+	return dot(ssrColor.xyz, ssrColor.xyz) > epsilon * epsilon;
 }
 
 /**

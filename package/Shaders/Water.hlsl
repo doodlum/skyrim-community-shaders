@@ -604,9 +604,9 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 			float4 ssrReflectionColorBlurred = SSRReflectionTex.Sample(SSRReflectionSampler, ssrReflectionUvDR);
 			float4 ssrReflectionColorRaw = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, ssrReflectionUvDR);
 
-			// calculate blur on reflection
+			// calculate fog on reflection
 			float depth = DepthTex.Load(int3(ssrReflectionUvDR * BufferDim.xy, 0));
-			float fogDensity = 1 - pow(saturate((-depth * FogParam.z + FogParam.z) / FogParam.w), FogNearColor.w);
+			float fogDensity = depth == 0 ? 0.f : pow(saturate((-depth * FogParam.z + FogParam.z) / FogParam.w), FogNearColor.w);
 			float3 fogColor = lerp(FogNearColor.xyz, FogFarColor.xyz, fogDensity);
 
 			bool validSSRMask = IsNonZeroColor(ssrReflectionColorRaw);
@@ -623,6 +623,7 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 #				endif
 
 			if (validSSRMask) {
+				// calculate blur on reflection
 				float effectiveBlurFactor = saturate(SSRParams.y * (1.0 + fogDensity));
 				float4 ssrReflectionColor = lerp(ssrReflectionColorRaw, ssrReflectionColorBlurred, effectiveBlurFactor);
 
@@ -633,7 +634,7 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 				finalSsrReflectionColor = reflectionColor.xyz;
 				ssrFraction = 1.f;
 			}
-			finalSsrReflectionColor = lerp(fogColor, finalSsrReflectionColor, fogDensity);
+			finalSsrReflectionColor = lerp(finalSsrReflectionColor, fogColor, fogDensity);
 		}
 #			endif
 
