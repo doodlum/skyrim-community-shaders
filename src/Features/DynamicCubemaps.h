@@ -87,7 +87,7 @@ public:
 
 	Settings settings;
 	std::string maxIterationsString = "";  // required to avoid string going out of scope for defines
-
+	bool enabledAtBoot = false;
 	void UpdateCubemap();
 
 	void PostDeferred();

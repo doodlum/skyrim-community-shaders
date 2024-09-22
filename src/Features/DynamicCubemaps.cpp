@@ -35,6 +35,13 @@ void DynamicCubemaps::DrawSettings()
 			recompileFlag |= ImGui::Checkbox("Enable Screen Space Reflections", reinterpret_cast<bool*>(&settings.EnabledSSR));
 			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::Text("Enable Screen Space Reflections on Water");
+				if (REL::Module::IsVR() && !enabledAtBoot) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+					ImGui::Text(
+						"A restart is required to enable in VR. "
+						"Save Settings after enabling and restart the game.");
+					ImGui::PopStyleColor();
+				}
 			}
 			if (settings.EnabledSSR) {
 				recompileFlag |= ImGui::SliderInt("Max Iterations", reinterpret_cast<int*>(&settings.MaxIterations), 1, 128);
@@ -185,7 +192,7 @@ void DynamicCubemaps::DataLoaded()
 
 void DynamicCubemaps::PostPostLoad()
 {
-	if (REL::Module::IsVR()) {
+	if (REL::Module::IsVR() && settings.EnabledSSR) {
 		std::map<std::string, uintptr_t> earlyhiddenVRCubeMapSettings{
 			{ "bScreenSpaceReflectionEnabled:Display", 0x1ED5BC0 },
 		};
@@ -198,6 +205,7 @@ void DynamicCubemaps::PostPostLoad()
 				*setting = true;
 			}
 		}
+		enabledAtBoot = true;
 	}
 }
 
