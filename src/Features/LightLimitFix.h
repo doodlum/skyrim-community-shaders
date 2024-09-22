@@ -39,7 +39,7 @@ public:
 		PositionOpt positionVS[2];
 		uint128_t roomFlags = uint32_t(0);
 		int isPortalStrictLight = 0;
-		float pad[3];
+		float pad0[3];
 	};
 
 	struct ClusterAABB
@@ -57,10 +57,9 @@ public:
 
 	struct alignas(16) LightBuildingCB
 	{
-		float4x4 InvProjMatrix[2];
 		float LightsNear;
 		float LightsFar;
-		float pad[2];
+		uint pad0[2];
 	};
 
 	struct alignas(16) LightCullingCB

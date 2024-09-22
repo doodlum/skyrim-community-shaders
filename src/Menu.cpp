@@ -17,7 +17,7 @@
 #include "Deferred.h"
 #include "TruePBR.h"
 
-#include "VariableRateShading.h"
+#include "Streamline.h"
 
 #define SETTING_MENU_TOGGLEKEY "Toggle Key"
 #define SETTING_MENU_SKIPKEY "Skip Compilation Key"
@@ -166,7 +166,6 @@ void Menu::DrawSettings()
 			if (ImGui::Button("Clear Shader Cache", { -1, 0 })) {
 				shaderCache.Clear();
 				Deferred::GetSingleton()->ClearShaderCache();
-				VariableRateShading::GetSingleton()->ClearShaderCache();
 				for (auto* feature : Feature::GetFeatureList()) {
 					if (feature->loaded) {
 						feature->ClearShaderCache();
@@ -332,6 +331,18 @@ void Menu::DrawSettings()
 			if (ImGui::InputText("Shader Defines", &shaderDefines)) {
 				State::GetSingleton()->SetDefines(shaderDefines);
 			}
+			if (ImGui::IsItemDeactivatedAfterEdit() || (ImGui::IsItemActive() &&
+														   (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)) ||
+															   ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_KeypadEnter))))) {
+				State::GetSingleton()->SetDefines(shaderDefines);
+				shaderCache.Clear();
+				Deferred::GetSingleton()->ClearShaderCache();
+				for (auto* feature : Feature::GetFeatureList()) {
+					if (feature->loaded) {
+						feature->ClearShaderCache();
+					}
+				}
+			}
 			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::Text("Defines for Shader Compiler. Semicolon \";\" separated. Clear with space. Rebuild shaders after making change. Compute Shaders require a restart to recompile.");
 			}
@@ -454,6 +465,10 @@ void Menu::DrawSettings()
 				ImGui::EndTable();
 			}
 		}
+
+		ImGui::Separator();
+
+		Streamline::GetSingleton()->DrawSettings();
 
 		ImGui::Separator();
 

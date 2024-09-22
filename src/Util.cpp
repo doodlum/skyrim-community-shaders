@@ -238,6 +238,34 @@ namespace Util
 		return result;
 	}
 
+	std::string FixFilePath(const std::string& a_path)
+	{
+		std::string lowerFilePath = a_path;
+
+		// Replace all backslashes with forward slashes
+		std::replace(lowerFilePath.begin(), lowerFilePath.end(), '\\', '/');
+
+		// Remove consecutive forward slashes
+		std::string::iterator newEnd = std::unique(lowerFilePath.begin(), lowerFilePath.end(),
+			[](char a, char b) { return a == '/' && b == '/'; });
+		lowerFilePath.erase(newEnd, lowerFilePath.end());
+
+		// Convert all characters to lowercase
+		std::transform(lowerFilePath.begin(), lowerFilePath.end(), lowerFilePath.begin(),
+			[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+		return lowerFilePath;
+	}
+
+	std::string WStringToString(const std::wstring& wideString)
+	{
+		std::string result;
+		std::transform(wideString.begin(), wideString.end(), std::back_inserter(result), [](wchar_t c) {
+			return (char)c;
+		});
+		return result;
+	}
+
 	float4 TryGetWaterData(float offsetX, float offsetY)
 	{
 		if (RE::BSGraphics::RendererShadowState::GetSingleton()) {
@@ -357,6 +385,17 @@ namespace Util
 	{
 		auto imageSpaceManager = RE::ImageSpaceManager::GetSingleton();
 		return (!REL::Module::IsVR() ? imageSpaceManager->GetRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled : imageSpaceManager->GetVRRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled) || State::GetSingleton()->upscalerLoaded;
+	}
+
+	// https://github.com/PureDark/Skyrim-Upscaler/blob/fa057bb088cf399e1112c1eaba714590c881e462/src/SkyrimUpscaler.cpp#L88
+	float GetVerticalFOVRad()
+	{
+		static float& fac = (*(float*)(REL::RelocationID(513786, 388785).address()));
+		const auto base = fac;
+		const auto x = base / 1.30322540f;
+		auto state = State::GetSingleton();
+		const auto vFOV = 2 * atan(x / (state->screenSize.x / state->screenSize.y));
+		return vFOV;
 	}
 
 	HoverTooltipWrapper::HoverTooltipWrapper()

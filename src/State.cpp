@@ -14,7 +14,7 @@
 #include "Features/TerrainBlending.h"
 #include "TruePBR.h"
 
-#include "VariableRateShading.h"
+#include "Streamline.h"
 
 void State::Draw()
 {
@@ -38,7 +38,6 @@ void State::Draw()
 				}
 			}
 
-			VariableRateShading::GetSingleton()->UpdateViews(type != RE::BSShader::Type::ImageSpace && type != RE::BSShader::Type::Sky && type != RE::BSShader::Type::Water);
 			if (type > 0 && type < RE::BSShader::Type::Total) {
 				if (enabledClasses[type - 1]) {
 					// Only check against non-shader bits
@@ -51,7 +50,7 @@ void State::Draw()
 						}
 					}
 
-					if (currentPixelDescriptor != lastPixelDescriptor || currentExtraDescriptor != lastExtraDescriptor) {
+					if (forceUpdatePermutationBuffer || currentPixelDescriptor != lastPixelDescriptor || currentExtraDescriptor != lastExtraDescriptor) {
 						PermutationCB data{};
 						data.VertexShaderDescriptor = currentVertexDescriptor;
 						data.PixelShaderDescriptor = currentPixelDescriptor;
@@ -62,6 +61,8 @@ void State::Draw()
 						lastVertexDescriptor = currentVertexDescriptor;
 						lastPixelDescriptor = currentPixelDescriptor;
 						lastExtraDescriptor = currentExtraDescriptor;
+
+						forceUpdatePermutationBuffer = false;
 					}
 
 					currentExtraDescriptor = 0;
@@ -91,12 +92,12 @@ void State::Reset()
 			feature->Reset();
 	if (!RE::UI::GetSingleton()->GameIsPaused())
 		timer += RE::GetSecondsSinceLastFrame();
-	VariableRateShading::GetSingleton()->UpdateVRS();
 	lastModifiedPixelDescriptor = 0;
 	lastModifiedVertexDescriptor = 0;
 	lastPixelDescriptor = 0;
 	lastVertexDescriptor = 0;
 	initialized = false;
+	forceUpdatePermutationBuffer = true;
 }
 
 void State::Setup()
@@ -107,9 +108,9 @@ void State::Setup()
 		if (feature->loaded)
 			feature->SetupResources();
 	Deferred::GetSingleton()->SetupResources();
+	Streamline::GetSingleton()->SetupFrameGeneration();
 	if (initialized)
 		return;
-	VariableRateShading::GetSingleton()->Setup();
 	initialized = true;
 }
 
@@ -130,35 +131,45 @@ void State::Load(ConfigMode a_configMode)
 {
 	ConfigMode configMode = a_configMode;
 	auto& shaderCache = SIE::ShaderCache::Instance();
+	json settings;
+
+	// Attempt to load the config file
+	auto tryLoadConfig = [&](const std::string& path) {
+		std::ifstream i(path);
+		if (!i.is_open()) {
+			return false;
+		}
+		try {
+			i >> settings;
+			i.close();  // Close the file after reading
+			return true;
+		} catch (const nlohmann::json::parse_error& e) {
+			logger::warn("Error parsing json config file ({}) : {}\n", path, e.what());
+			i.close();  // Ensure the file is closed even on error
+			return false;
+		}
+	};
 
 	std::string configPath = GetConfigPath(configMode);
-	std::ifstream i(configPath);
-	if (!i.is_open()) {
+	if (!tryLoadConfig(configPath)) {
 		logger::info("Unable to open user config file ({}); trying default ({})", configPath, defaultConfigPath);
 		configMode = ConfigMode::DEFAULT;
 		configPath = GetConfigPath(configMode);
-		i.open(configPath);
-		if (!i.is_open()) {
+
+		if (!tryLoadConfig(configPath)) {
 			logger::info("No default config ({}), generating new one", configPath);
 			std::fill(enabledClasses, enabledClasses + RE::BSShader::Type::Total - 1, true);
 			Save(configMode);
-			i.open(configPath);
-			if (!i.is_open()) {
-				logger::error("Error opening config file ({})\n", configPath);
-				return;
+			// Attempt to load the newly created config
+			configPath = GetConfigPath(configMode);
+			if (!tryLoadConfig(configPath)) {
+				logger::error("Error opening newly created config file ({})\n", configPath);
+				return;  // Exit if the new config can't be opened
 			}
 		}
 	}
-	logger::info("Loading config file ({})", configPath);
 
-	json settings;
-	try {
-		i >> settings;
-	} catch (const nlohmann::json::parse_error& e) {
-		logger::error("Error parsing json config file ({}) : {}\n", configPath, e.what());
-		return;
-	}
-
+	// Proceed with loading settings from the loaded configuration
 	if (settings["Menu"].is_object()) {
 		Menu::GetSingleton()->Load(settings["Menu"]);
 	}
@@ -212,7 +223,7 @@ void State::Load(ConfigMode a_configMode)
 
 	for (auto* feature : Feature::GetFeatureList())
 		feature->Load(settings);
-	i.close();
+
 	if (settings["Version"].is_string() && settings["Version"].get<std::string>() != Plugin::VERSION.string()) {
 		logger::info("Found older config for version {}; upgrading to {}", (std::string)settings["Version"], Plugin::VERSION.string());
 		Save(configMode);
@@ -273,6 +284,7 @@ void State::PostPostLoad()
 		logger::info("Skyrim Upscaler not detected");
 	Deferred::Hooks::Install();
 	TruePBR::GetSingleton()->PostPostLoad();
+	Streamline::InstallHooks();
 }
 
 bool State::ValidateCache(CSimpleIniA& a_ini)
