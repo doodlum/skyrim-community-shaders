@@ -57,20 +57,23 @@ void Streamline::Initialize_preDevice()
 
 	sl::Preferences pref;
 
-	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS_G, sl::kFeatureReflex };
+	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
+	// sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
 	pref.featuresToLoad = featuresToLoad;
 	pref.numFeaturesToLoad = _countof(featuresToLoad);
 
-	pref.logLevel = sl::LogLevel::eOff;
+	pref.logLevel = sl::LogLevel::eVerbose;
 	pref.logMessageCallback = LoggingCallback;
+	pref.showConsole = true;
 
-	const wchar_t* pathsToPlugins[] = { L"Data/SKSE/Plugins/Streamline" };
-	pref.pathsToPlugins = pathsToPlugins;
-	pref.numPathsToPlugins = _countof(pathsToPlugins);
+	// const wchar_t* pathsToPlugins[] = { L"Data/SKSE/Plugins/Streamline" };
+	// pref.pathsToPlugins = pathsToPlugins;
+	// pref.numPathsToPlugins = _countof(pathsToPlugins);
 
 	pref.engine = sl::EngineType::eCustom;
 	pref.engineVersion = "1.0.0";
 	pref.projectId = "f8776929-c969-43bd-ac2b-294b4de58aac";
+	pref.flags |= sl::PreferenceFlags::eUseManualHooking;
 
 	pref.renderAPI = sl::RenderAPI::eD3D11;
 
@@ -107,6 +110,10 @@ void Streamline::Initialize_preDevice()
 void Streamline::Initialize_postDevice()
 {
 	// Hook up all of the feature functions using the sl function slGetFeatureFunction
+	slGetFeatureFunction(sl::kFeatureDLSS, "slDLSSGetOptimalSettings", (void*&)slDLSSGetOptimalSettings);
+	slGetFeatureFunction(sl::kFeatureDLSS, "slDLSSGetState", (void*&)slDLSSGetState);
+	slGetFeatureFunction(sl::kFeatureDLSS, "slDLSSSetOptions", (void*&)slDLSSSetOptions);
+
 	slGetFeatureFunction(sl::kFeatureDLSS_G, "slDLSSGGetState", (void*&)slDLSSGGetState);
 	slGetFeatureFunction(sl::kFeatureDLSS_G, "slDLSSGSetOptions", (void*&)slDLSSGSetOptions);
 
@@ -126,6 +133,25 @@ void Streamline::Initialize_postDevice()
 		logger::error("[Streamline] Failed to set reflex options");
 	} else {
 		logger::info("[Streamline] Sucessfully set reflex options");
+	}
+
+	sl::DLSSOptimalSettings dlssSettings;
+	sl::DLSSOptions dlssOptions;
+	// These are populated based on user selection in the UI
+	dlssOptions.mode = sl::DLSSMode::eBalanced;  //myUI->getDLSSMode();              // e.g. sl::eDLSSModeBalanced;
+	dlssOptions.outputWidth = 1920;              // e.g 1920;
+	dlssOptions.outputHeight = 1080;             // e.g. 1080;
+	// Now let's check what should our rendering resolution be
+	if (SL_FAILED(result, slDLSSGetOptimalSettings(dlssOptions, dlssSettings))) {
+		logger::error("[Streamline] Failed to get optimal DLSS options");
+	} else {
+		logger::error("[Streamline] Sucessfully fetched optimal DLSS options");
+	}
+
+	if (SL_FAILED(result, slDLSSSetOptions(viewport, dlssOptions))) {
+		logger::error("[Streamline] Could not enable DLSS");
+	} else {
+		logger::error("[Streamline] Successfully enabled DLSS");
 	}
 }
 
@@ -164,7 +190,21 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 		return S_OK;
 	}
 
-	bool featureLoaded = false;
+	bool dlssLoaded = false;
+	slIsFeatureLoaded(sl::kFeatureDLSS, dlssLoaded);
+	if (dlssLoaded) {
+		logger::info("[Streamline] DLSS feature is loaded");
+	} else {
+		logger::info("[Streamline] DLSS feature is not loaded");
+
+		sl::FeatureRequirements dlss_requirements;
+		sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS, dlss_requirements);
+		if (result != sl::Result::eOk) {
+			logger::info("[Streamline] DLSS feature failed to load due to: {}", magic_enum::enum_name(result));
+		}
+	}
+
+	bool featureLoaded = true;
 	slIsFeatureLoaded(sl::kFeatureDLSS_G, featureLoaded);
 
 	if (featureLoaded) {
@@ -186,6 +226,12 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 	sl::AdapterInfo adapterInfo;
 	adapterInfo.deviceLUID = (uint8_t*)&adapterDesc.AdapterLuid;
 	adapterInfo.deviceLUIDSizeInBytes = sizeof(LUID);
+
+	if (slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo) == sl::Result::eOk) {
+		logger::info("[Streamline] DLSS is supported on this adapter");
+	} else {
+		logger::info("[Streamline] DLSS is not supported on this adapter");
+	}
 
 	if (slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk) {
 		logger::info("[Streamline] Frame generation is supported on this adapter");
