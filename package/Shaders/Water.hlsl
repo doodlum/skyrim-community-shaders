@@ -611,17 +611,6 @@ float3 GetWaterSpecularColor(PS_INPUT input, float3 normal, float3 viewDirection
 
 			bool validSSRMask = IsNonZeroColor(ssrReflectionColorRaw);
 
-#				ifdef VR
-			float3 otherEyeUV = ConvertStereoUVToOtherEyeStereoUV(float3(ssrReflectionUv, input.HPosition.z), a_eyeIndex, false);
-			float2 otherEyeUVDR = GetDynamicResolutionAdjustedScreenPosition(otherEyeUV.xy);
-
-			float4 otherEyeSSRColorRaw = RawSSRReflectionTex.Sample(RawSSRReflectionSampler, otherEyeUVDR);
-			float4 otherEyeSSRColorBlurred = SSRReflectionTex.Sample(SSRReflectionSampler, otherEyeUVDR);
-
-			ssrReflectionColorRaw = BlendEyeColors(ssrReflectionUvDR, ssrReflectionColorRaw, otherEyeUVDR, otherEyeSSRColorRaw, true);
-			ssrReflectionColorBlurred = BlendEyeColors(ssrReflectionUvDR, ssrReflectionColorBlurred, otherEyeUVDR, otherEyeSSRColorBlurred, true);
-#				endif
-
 			if (validSSRMask) {
 				// calculate blur on reflection
 				float effectiveBlurFactor = saturate(SSRParams.y * (1.0 + fogDensity));
