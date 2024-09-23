@@ -3,6 +3,7 @@
 #include "Buffer.h"
 #include "State.h"
 
+#define NV_WINDOWS
 #include <sl.h>
 #include <sl_consts.h>
 #include <sl_dlss.h>
@@ -47,6 +48,11 @@ public:
 	PFun_slGetFeatureFunction* slGetFeatureFunction{};
 	PFun_slGetNewFrameToken* slGetNewFrameToken{};
 	PFun_slSetD3DDevice* slSetD3DDevice{};
+
+	// DLSS specific functions
+	PFun_slDLSSGetOptimalSettings* slDLSSGetOptimalSettings{};
+	PFun_slDLSSGetState* slDLSSGetState{};
+	PFun_slDLSSSetOptions* slDLSSSetOptions{};
 
 	// DLSSG specific functions
 	PFun_slDLSSGGetState* slDLSSGGetState{};
