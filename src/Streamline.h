@@ -29,7 +29,13 @@ public:
 	sl::ViewportHandle viewport{ 0 };
 	sl::FrameToken* frameToken;
 
-	bool enableDLAA = true;
+	enum class AAMode
+	{
+		kTAA,
+		kDLAA
+	};
+
+	AAMode aaMode = AAMode::kDLAA;
 	float sharpness = 0.5f;
 
 	sl::DLSSGMode frameGenerationMode = sl::DLSSGMode::eAuto;
@@ -145,7 +151,7 @@ public:
 		static void thunk(RE::BSImagespaceShaderISTemporalAA* a_shader, RE::BSTriShape* a_null)
 		{
 			auto singleton = GetSingleton();
-			if (singleton->enableDLAA && singleton->validTaaPass)
+			if (singleton->featureDLSS && singleton->aaMode == AAMode::kDLAA && singleton->validTaaPass)
 				singleton->Upscale();
 			else
 				func(a_shader, a_null);

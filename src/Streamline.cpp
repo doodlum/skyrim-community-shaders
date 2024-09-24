@@ -65,9 +65,21 @@ void Streamline::DrawSettings()
 				ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
 			}
 
-			ImGui::Checkbox("DLAA", &enableDLAA);
-			ImGui::SliderFloat("Sharpness", &sharpness, 0.0f, 1.0f, "%.1f");
-			sharpness = std::clamp(sharpness, 0.0f, 1.0f);
+			if (featureDLSS) {
+				ImGui::Text("Anti-Aliasing always defaults to DLAA");
+				ImGui::Text("To disable DLAA, disable it in your mod manager");
+				
+				const char* aaModes[] = { "TAA", "DLAA"};
+				ImGui::SliderInt("Anti-Aliasing", (int*)&aaMode, 0, 1, std::format("{}", aaModes[(uint)aaMode]).c_str());
+				aaMode = (AAMode)std::min(1u, (uint)aaMode);
+
+				if (aaMode == AAMode::kDLAA) {
+					ImGui::SliderFloat("Sharpness", &sharpness, 0.0f, 1.0f, "%.1f");
+					sharpness = std::clamp(sharpness, 0.0f, 1.0f);
+				}
+			} else {
+				ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
+			}
 		}
 	}
 }
