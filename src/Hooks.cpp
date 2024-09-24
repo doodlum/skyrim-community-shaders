@@ -455,26 +455,6 @@ namespace Hooks
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
-	struct CreateRenderTarget_ImagespaceTempCopy
-	{
-		static void thunk(RE::BSGraphics::Renderer* This, RE::RENDER_TARGETS::RENDER_TARGET a_target, RE::BSGraphics::RenderTargetProperties* a_properties)
-		{
-			State::GetSingleton()->ModifyRenderTarget(a_target, a_properties);
-			func(This, a_target, a_properties);
-		}
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
-
-	struct CreateRenderTarget_ImagespaceTempCopy2
-	{
-		static void thunk(RE::BSGraphics::Renderer* This, RE::RENDER_TARGETS::RENDER_TARGET a_target, RE::BSGraphics::RenderTargetProperties* a_properties)
-		{
-			State::GetSingleton()->ModifyRenderTarget(a_target, a_properties);
-			func(This, a_target, a_properties);
-		}
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
-
 #ifdef TRACY_ENABLE
 	struct Main_Update
 	{
@@ -607,9 +587,6 @@ namespace Hooks
 		stl::write_thunk_call<CreateRenderTarget_Snow>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x406, 0x409, 0x55e));
 		stl::write_thunk_call<CreateDepthStencil_PrecipitationMask>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x1245, 0x123B, 0x1917));
 		stl::write_thunk_call<CreateCubemapRenderTarget_Reflections>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0xA25, 0xA25, 0xCD2));
-
-		stl::write_thunk_call<CreateRenderTarget_ImagespaceTempCopy>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x62F, 0x45B, 0x5B0));
-		stl::write_thunk_call<CreateRenderTarget_ImagespaceTempCopy2>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x642, 0x46E, 0x5C3));
 
 #ifdef TRACY_ENABLE
 		stl::write_thunk_call<Main_Update>(REL::RelocationID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
