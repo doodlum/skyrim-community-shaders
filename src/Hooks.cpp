@@ -214,11 +214,7 @@ HRESULT WINAPI hk_D3D11CreateDeviceAndSwapChain(
 	D3D_FEATURE_LEVEL* pFeatureLevel,
 	ID3D11DeviceContext** ppImmediateContext)
 {
-	//Flags |= D3D11_CREATE_DEVICE_DEBUG;
-
-	bool streamlineProxy = false;
-
-	auto hr = Streamline::GetSingleton()->CreateDeviceAndSwapChain(
+	return Streamline::GetSingleton()->CreateDeviceAndSwapChain(
 		pAdapter,
 		DriverType,
 		Software,
@@ -230,26 +226,7 @@ HRESULT WINAPI hk_D3D11CreateDeviceAndSwapChain(
 		ppSwapChain,
 		ppDevice,
 		pFeatureLevel,
-		ppImmediateContext,
-		streamlineProxy);
-
-	if (!streamlineProxy) {
-		hr = (*ptrD3D11CreateDeviceAndSwapChain)(
-			pAdapter,
-			DriverType,
-			Software,
-			Flags,
-			pFeatureLevels,
-			FeatureLevels,
-			SDKVersion,
-			pSwapChainDesc,
-			ppSwapChain,
-			ppDevice,
-			pFeatureLevel,
-			ppImmediateContext);
-	}
-
-	return hr;
+		ppImmediateContext);
 }
 
 void hk_BSShaderRenderTargets_Create();
@@ -478,6 +455,36 @@ namespace Hooks
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
+	struct CreateRenderTarget_ImagespaceTempCopy
+	{
+		static void thunk(RE::BSGraphics::Renderer* This, RE::RENDER_TARGETS::RENDER_TARGET a_target, RE::BSGraphics::RenderTargetProperties* a_properties)
+		{
+			State::GetSingleton()->ModifyRenderTarget(a_target, a_properties);
+			func(This, a_target, a_properties);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct CreateRenderTarget_ImagespaceTempCopy2
+	{
+		static void thunk(RE::BSGraphics::Renderer* This, RE::RENDER_TARGETS::RENDER_TARGET a_target, RE::BSGraphics::RenderTargetProperties* a_properties)
+		{
+			State::GetSingleton()->ModifyRenderTarget(a_target, a_properties);
+			func(This, a_target, a_properties);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct CreateRenderTarget_MotionVectors
+	{
+		static void thunk(RE::BSGraphics::Renderer* This, RE::RENDER_TARGETS::RENDER_TARGET a_target, RE::BSGraphics::RenderTargetProperties* a_properties)
+		{
+		//	a_properties->format = RE::BSGraphics::Format::kR16G16_SNORM;
+			func(This, a_target, a_properties);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
 #ifdef TRACY_ENABLE
 	struct Main_Update
 	{
@@ -598,7 +605,7 @@ namespace Hooks
 		stl::write_thunk_call<BSGraphics_Renderer_Init_InitD3D>(REL::RelocationID(75595, 77226).address() + REL::Relocate(0x50, 0x2BC));
 
 		logger::info("Hooking WndProcHandler");
-		stl::write_thunk_call_6<RegisterClassA_Hook>(REL::VariantID(75591, 77226, 0xDC4B90).address() + REL::VariantOffset(0x8E, 0x15C, 0x99).offset());
+	//	stl::write_thunk_call_6<RegisterClassA_Hook>(REL::VariantID(75591, 77226, 0xDC4B90).address() + REL::VariantOffset(0x8E, 0x15C, 0x99).offset());
 
 		logger::info("Hooking BSShaderRenderTargets::Create");
 		*(uintptr_t*)&ptr_BSShaderRenderTargets_Create = Detours::X64::DetourFunction(REL::RelocationID(100458, 107175).address(), (uintptr_t)&hk_BSShaderRenderTargets_Create);
@@ -610,6 +617,10 @@ namespace Hooks
 		stl::write_thunk_call<CreateRenderTarget_Snow>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x406, 0x409, 0x55e));
 		stl::write_thunk_call<CreateDepthStencil_PrecipitationMask>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x1245, 0x123B, 0x1917));
 		stl::write_thunk_call<CreateCubemapRenderTarget_Reflections>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0xA25, 0xA25, 0xCD2));
+
+		stl::write_thunk_call<CreateRenderTarget_ImagespaceTempCopy>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x62F, 0x45B, 0x5B0));
+		stl::write_thunk_call<CreateRenderTarget_ImagespaceTempCopy2>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x642, 0x46E, 0x5C3));
+		stl::write_thunk_call<CreateRenderTarget_MotionVectors>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x4F0, 0x46E, 0x5C3));
 
 #ifdef TRACY_ENABLE
 		stl::write_thunk_call<Main_Update>(REL::RelocationID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));

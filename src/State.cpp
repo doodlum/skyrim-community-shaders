@@ -108,7 +108,7 @@ void State::Setup()
 		if (feature->loaded)
 			feature->SetupResources();
 	Deferred::GetSingleton()->SetupResources();
-	Streamline::GetSingleton()->SetupFrameGeneration();
+	Streamline::GetSingleton()->SetupResources();
 	if (initialized)
 		return;
 	initialized = true;
