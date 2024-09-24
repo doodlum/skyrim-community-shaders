@@ -375,7 +375,7 @@ namespace Util
 	DispatchCount GetScreenDispatchCount(bool a_dynamic)
 	{
 		float2 resolution = State::GetSingleton()->screenSize;
-		
+
 		if (a_dynamic)
 			ConvertToDynamic(resolution);
 

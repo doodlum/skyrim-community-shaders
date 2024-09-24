@@ -23,8 +23,7 @@ ID3D11ComputeShader* Streamline::GetRCASComputeShader()
 {
 	static auto currentSharpness = sharpness;
 
-	if (currentSharpness != sharpness)
-	{
+	if (currentSharpness != sharpness) {
 		currentSharpness = sharpness;
 
 		if (rcasCS) {
@@ -369,7 +368,7 @@ void Streamline::SetupResources()
 		colorBufferShared = new Texture2D(texDesc);
 		colorBufferShared->CreateSRV(srvDesc);
 		colorBufferShared->CreateRTV(rtvDesc);
-		colorBufferShared->CreateUAV(uavDesc);		
+		colorBufferShared->CreateUAV(uavDesc);
 	}
 }
 
@@ -537,7 +536,7 @@ void Streamline::Upscale()
 
 	ID3D11Resource* outputTextureResource;
 	outputTextureRTV->GetResource(&outputTextureResource);
-	
+
 	{
 		sl::DLSSOptions dlssOptions{};
 		dlssOptions.mode = sl::DLSSMode::eMaxQuality;
@@ -574,11 +573,11 @@ void Streamline::Upscale()
 		sl::ResourceTag resourceTags[] = { colorInTag, colorOutTag, depthTag, mvecTag, transparencyMaskTag };
 		slSetTag(viewport, resourceTags, _countof(resourceTags), state->context);
 	}
-		
+
 	sl::ViewportHandle view(viewport);
 	const sl::BaseStructure* inputs[] = { &view };
 	slEvaluateFeature(sl::kFeatureDLSS, *frameToken, inputs, _countof(inputs), state->context);
-	
+
 	context->CopyResource(inputTextureResource, colorBufferShared->resource.get());
 
 	state->EndPerfEvent();
@@ -646,7 +645,7 @@ void Streamline::UpdateConstants()
 	slConstants.cameraFar = (*(float*)(REL::RelocationID(517032, 403540).address() + 0x44));
 	slConstants.cameraMotionIncluded = sl::Boolean::eTrue;
 	slConstants.cameraNear = (*(float*)(REL::RelocationID(517032, 403540).address() + 0x40));
-	slConstants.cameraPinholeOffset = { 0.f, 0.f };  
+	slConstants.cameraPinholeOffset = { 0.f, 0.f };
 	slConstants.cameraPos = *(sl::float3*)&eyePosition;
 	slConstants.cameraFwd = *(sl::float3*)&cameraData.viewForward;
 	slConstants.cameraUp = *(sl::float3*)&cameraData.viewUp;
