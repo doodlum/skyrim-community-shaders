@@ -69,7 +69,7 @@ namespace Util
 		return shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex);
 	}
 
-	float2 ConvertToDynamic(float2 size);
+	float2 ConvertToDynamic(float2 a_size);
 
 	struct DispatchCount
 	{
@@ -77,7 +77,7 @@ namespace Util
 		uint y;
 	};
 
-	DispatchCount GetScreenDispatchCount();
+	DispatchCount GetScreenDispatchCount(bool a_dynamic = true);
 
 	/**
 	 * Usage:
