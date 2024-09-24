@@ -475,16 +475,6 @@ namespace Hooks
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
-	struct CreateRenderTarget_MotionVectors
-	{
-		static void thunk(RE::BSGraphics::Renderer* This, RE::RENDER_TARGETS::RENDER_TARGET a_target, RE::BSGraphics::RenderTargetProperties* a_properties)
-		{
-			//	a_properties->format = RE::BSGraphics::Format::kR16G16_SNORM;
-			func(This, a_target, a_properties);
-		}
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
-
 #ifdef TRACY_ENABLE
 	struct Main_Update
 	{
@@ -620,7 +610,6 @@ namespace Hooks
 
 		stl::write_thunk_call<CreateRenderTarget_ImagespaceTempCopy>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x62F, 0x45B, 0x5B0));
 		stl::write_thunk_call<CreateRenderTarget_ImagespaceTempCopy2>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x642, 0x46E, 0x5C3));
-		stl::write_thunk_call<CreateRenderTarget_MotionVectors>(REL::RelocationID(100458, 107175).address() + REL::Relocate(0x4F0, 0x46E, 0x5C3));
 
 #ifdef TRACY_ENABLE
 		stl::write_thunk_call<Main_Update>(REL::RelocationID(35551, 36544).address() + REL::Relocate(0x11F, 0x160));
