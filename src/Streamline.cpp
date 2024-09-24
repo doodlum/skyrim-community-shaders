@@ -67,8 +67,8 @@ void Streamline::DrawSettings()
 			if (featureDLSS) {
 				ImGui::Text("Anti-Aliasing always defaults to DLAA");
 				ImGui::Text("To disable DLAA, disable it in your mod manager");
-				
-				const char* aaModes[] = { "TAA", "DLAA"};
+
+				const char* aaModes[] = { "TAA", "DLAA" };
 				ImGui::SliderInt("Anti-Aliasing", (int*)&aaMode, 0, 1, std::format("{}", aaModes[(uint)aaMode]).c_str());
 				aaMode = (AAMode)std::min(1u, (uint)aaMode);
 
