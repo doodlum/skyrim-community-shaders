@@ -119,9 +119,15 @@ void Streamline::PreDevice()
 
 	sl::Preferences pref;
 
-	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
-	pref.featuresToLoad = featuresToLoad;
-	pref.numFeaturesToLoad = _countof(featuresToLoad);
+	if (REL::Module::IsVR()) {
+		sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
+		pref.featuresToLoad = featuresToLoad;
+		pref.numFeaturesToLoad = _countof(featuresToLoad);
+	} else {
+		sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
+		pref.featuresToLoad = featuresToLoad;
+		pref.numFeaturesToLoad = _countof(featuresToLoad);
+	}
 
 	pref.logLevel = sl::LogLevel::eOff;
 	pref.logMessageCallback = LoggingCallback;
