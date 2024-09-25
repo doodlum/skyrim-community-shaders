@@ -128,7 +128,7 @@ void Streamline::Initialize()
 	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
 	pref.featuresToLoad = featuresToLoad;
 	pref.numFeaturesToLoad = _countof(featuresToLoad);
-	
+
 	pref.logLevel = sl::LogLevel::eOff;
 	pref.logMessageCallback = LoggingCallback;
 	pref.showConsole = false;
