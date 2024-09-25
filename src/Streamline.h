@@ -36,7 +36,7 @@ public:
 	Settings settings;
 
 	bool enabledAtBoot = false;
-	bool initialized = false;
+	bool streamlineActive = false;
 
 	bool featureDLSS = false;
 	bool featureDLSSG = false;

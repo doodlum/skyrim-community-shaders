@@ -40,7 +40,7 @@ ID3D11ComputeShader* Streamline::GetRCASComputeShader()
 
 	if (!rcasCS) {
 		logger::debug("Compiling Utility.hlsl");
-		rcasCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\RCAS\\RCAS.hlsl", { { "SHARPNESS", std::format("{}", settings.sharpness).c_str() } }, "cs_5_0");
+		rcasCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\Streamline\\RCAS\\RCAS.hlsl", { { "SHARPNESS", std::format("{}", settings.sharpness).c_str() } }, "cs_5_0");
 	}
 	return rcasCS;
 }
@@ -72,24 +72,6 @@ void Streamline::DrawSettings()
 {
 	auto state = State::GetSingleton();
 	if (ImGui::CollapsingHeader("NVIDIA DLSS", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
-		if (auto _tt = Util::HoverTooltipWrapper()) {
-			ImGui::Text(
-				"Enable Frame Generation. "
-				"This uses AI to generate new frames for games based on rendered frames.");
-		}
-
-		if (featureDLSSG) {
-			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
-			ImGui::Text("Frame Generation always defaults to Auto");
-			ImGui::Text("To disable Frame Generation, disable it in your mod manager");
-
-			const char* frameGenerationModes[] = { "Off", "On", "Auto" };
-			ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
-			frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
-		} else if (!state->isVR) {
-			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
-			ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
-		}
 
 		if (featureDLSS) {
 			const char* aaModes[] = { "TAA", "DLAA" };
@@ -106,6 +88,19 @@ void Streamline::DrawSettings()
 		} else {
 			ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
 		}
+
+		if (featureDLSSG) {
+			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
+			ImGui::Text("Frame Generation always defaults to Auto");
+			ImGui::Text("To disable Frame Generation, disable it in your mod manager");
+
+			const char* frameGenerationModes[] = { "Off", "On", "Auto" };
+			ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
+			frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
+		} else if (!state->isVR) {
+			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
+			ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
+		}
 	}
 }
 
@@ -116,9 +111,10 @@ void Streamline::PreDevice()
 	interposer = LoadLibraryW(L"Data/SKSE/Plugins/Streamline/sl.interposer.dll");
 	if (interposer == nullptr) {
 		DWORD errorCode = GetLastError();
-		logger::debug("[Streamline] Failed to load interposer: Error Code {0:x}", errorCode);
+		logger::info("[Streamline] Failed to load interposer: Error Code {0:x}", errorCode);
+		return;
 	} else {
-		logger::debug("[Streamline] Interposer loaded at address: {0:p}", static_cast<void*>(interposer));
+		logger::info("[Streamline] Interposer loaded at address: {0:p}", static_cast<void*>(interposer));
 	}
 
 	sl::Preferences pref;
@@ -160,7 +156,7 @@ void Streamline::PreDevice()
 	if (SL_FAILED(res, slInit(pref, sl::kSDKVersion))) {
 		logger::critical("[Streamline] Failed to initialize Streamline");
 	} else {
-		initialized = true;
+		streamlineActive = true;
 		logger::info("[Streamline] Sucessfully initialized Streamline");
 	}
 }
@@ -190,10 +186,10 @@ void Streamline::PostDevice()
 
 HRESULT Streamline::CreateDXGIFactory(REFIID riid, void** ppFactory)
 {
-	if (!initialized)
+	if (!streamlineActive)
 		PreDevice();
 
-	if (initialized) {
+	if (streamlineActive) {
 		logger::info("[Streamline] Proxying CreateDXGIFactory");
 		auto slCreateDXGIFactory1 = reinterpret_cast<decltype(&CreateDXGIFactory1)>(GetProcAddress(interposer, "CreateDXGIFactory1"));
 		return slCreateDXGIFactory1(riid, ppFactory);
@@ -218,6 +214,23 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 	D3D_FEATURE_LEVEL* pFeatureLevel,
 	ID3D11DeviceContext** ppImmediateContext)
 {
+	if (!streamlineActive)
+	{
+		return ptrD3D11CreateDeviceAndSwapChain(
+			pAdapter,
+			DriverType,
+			Software,
+			Flags,
+			pFeatureLevels,
+			FeatureLevels,
+			SDKVersion,
+			pSwapChainDesc,
+			ppSwapChain,
+			ppDevice,
+			pFeatureLevel,
+			ppImmediateContext);
+	}
+
 	DXGI_ADAPTER_DESC adapterDesc;
 	pAdapter->GetDesc(&adapterDesc);
 
