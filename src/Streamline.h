@@ -20,6 +20,8 @@ public:
 		return &singleton;
 	}
 
+	inline std::string GetShortName() { return "Streamline"; }
+
 	enum class AAMode
 	{
 		kTAA,

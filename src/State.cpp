@@ -221,6 +221,11 @@ void State::Load(ConfigMode a_configMode)
 	if (pbrJson.is_object())
 		truePBR->LoadSettings(pbrJson);
 
+	auto streamline = Streamline::GetSingleton();
+	auto& streamlineJson = settings[streamline->GetShortName()];
+	if (streamlineJson.is_object())
+		streamline->LoadSettings(streamlineJson);
+
 	for (auto* feature : Feature::GetFeatureList())
 		feature->Load(settings);
 
@@ -259,6 +264,10 @@ void State::Save(ConfigMode a_configMode)
 	auto truePBR = TruePBR::GetSingleton();
 	auto& pbrJson = settings[truePBR->GetShortName()];
 	truePBR->SaveSettings(pbrJson);
+	
+	auto streamline = Streamline::GetSingleton();
+	auto& streamlineJson = settings[streamline->GetShortName()];
+	streamline->SaveSettings(streamlineJson);
 
 	json originalShaders;
 	for (int classIndex = 0; classIndex < RE::BSShader::Type::Total - 1; ++classIndex) {
