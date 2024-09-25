@@ -410,7 +410,8 @@ void Streamline::CopyResourcesToSharedBuffers()
 	auto& context = State::GetSingleton()->context;
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 
-	if (RE::UI::GetSingleton()->GameIsPaused()) {
+	// Fix motion vectors not resetting when the game is paused
+	if (RE::UI::GetSingleton()->GameIsPaused() && !(featureDLSS && settings.aaMode == (uint)AAMode::kDLAA)) {
 		float clearColor[4] = { 0, 0, 0, 0 };
 		auto& motionVectorsBuffer = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::RENDER_TARGET::kMOTION_VECTOR];
 		context->ClearRenderTargetView(motionVectorsBuffer.RTV, clearColor);
@@ -560,6 +561,13 @@ void Streamline::Upscale()
 	auto& depthTexture = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
 	auto& motionVectorsTexture = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMOTION_VECTOR];
 	auto& transparencyMaskTexture = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kTEMPORAL_AA_MASK];
+
+	// Fix motion vectors not resetting when the game is paused
+	if (RE::UI::GetSingleton()->GameIsPaused()) {
+		float clearColor[4] = { 0, 0, 0, 0 };
+		auto& motionVectorsBuffer = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::RENDER_TARGET::kMOTION_VECTOR];
+		context->ClearRenderTargetView(motionVectorsBuffer.RTV, clearColor);
+	}
 
 	ID3D11Resource* inputTextureResource;
 	inputTextureSRV->GetResource(&inputTextureResource);
