@@ -20,12 +20,17 @@ public:
 		return &singleton;
 	}
 
+	enum class AAMode
+	{
+		kTAA,
+		kDLAA
+	};
+
 	struct Settings
 	{
-		uint Enabled = true;
-		uint DLSSAA = true;
-		uint DLSSG = REL::Relocate(true, true, false);
-		uint Reflex = true;
+		uint aaMode = (uint)AAMode::kDLAA;
+		uint dlaaPreset = (uint)sl::DLSSPreset::ePresetC;
+		float sharpness = 0.5f;
 	};
 
 	Settings settings;
@@ -39,15 +44,6 @@ public:
 
 	sl::ViewportHandle viewport{ 0 };
 	sl::FrameToken* frameToken;
-
-	enum class AAMode
-	{
-		kTAA,
-		kDLAA
-	};
-
-	AAMode aaMode = AAMode::kDLAA;
-	float sharpness = 0.5f;
 
 	sl::DLSSGMode frameGenerationMode = sl::DLSSGMode::eAuto;
 
@@ -101,8 +97,8 @@ public:
 	void RestoreDefaultSettings();
 	void DrawSettings();
 
-	void Initialize_preDevice();
-	void Initialize_postDevice();
+	void PreDevice();
+	void PostDevice();
 
 	HRESULT CreateDXGIFactory(REFIID riid, void** ppFactory);
 
@@ -165,7 +161,7 @@ public:
 		static void thunk(RE::BSImagespaceShaderISTemporalAA* a_shader, RE::BSTriShape* a_null)
 		{
 			auto singleton = GetSingleton();
-			if (singleton->featureDLSS && singleton->aaMode == AAMode::kDLAA && singleton->validTaaPass)
+			if (singleton->featureDLSS && singleton->settings.aaMode == (uint)AAMode::kDLAA && singleton->validTaaPass)
 				singleton->Upscale();
 			else
 				func(a_shader, a_null);

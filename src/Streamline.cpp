@@ -6,10 +6,9 @@
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Streamline::Settings,
-	Enabled,
-	DLSSAA,
-	DLSSG,
-	Reflex);
+	aaMode,
+	dlaaPreset,
+	sharpness);
 
 void LoggingCallback(sl::LogType type, const char* msg)
 {
@@ -28,10 +27,10 @@ void LoggingCallback(sl::LogType type, const char* msg)
 
 ID3D11ComputeShader* Streamline::GetRCASComputeShader()
 {
-	static auto currentSharpness = sharpness;
+	static auto currentSharpness = settings.sharpness;
 
-	if (currentSharpness != sharpness) {
-		currentSharpness = sharpness;
+	if (currentSharpness != settings.sharpness) {
+		currentSharpness = settings.sharpness;
 
 		if (rcasCS) {
 			rcasCS->Release();
@@ -41,7 +40,7 @@ ID3D11ComputeShader* Streamline::GetRCASComputeShader()
 
 	if (!rcasCS) {
 		logger::debug("Compiling Utility.hlsl");
-		rcasCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\RCAS\\RCAS.hlsl", { { "SHARPNESS", std::format("{}", sharpness).c_str() } }, "cs_5_0");
+		rcasCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\RCAS\\RCAS.hlsl", { { "SHARPNESS", std::format("{}", settings.sharpness).c_str() } }, "cs_5_0");
 	}
 	return rcasCS;
 }
@@ -73,69 +72,44 @@ void Streamline::DrawSettings()
 {
 	auto state = State::GetSingleton();
 	if (ImGui::CollapsingHeader("NVIDIA DLSS", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
-		ImGui::Checkbox("Enable DLSS", reinterpret_cast<bool*>(&settings.Enabled));
 		if (auto _tt = Util::HoverTooltipWrapper()) {
-			ImGui::Text("Enable DLSS Features");
-			if (!enabledAtBoot) {
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-				ImGui::Text(
-					"A restart is required to enable or disable all features. "
-					"Save Settings after enabling and restart the game.");
-				ImGui::PopStyleColor();
-			}
+			ImGui::Text(
+				"Enable Frame Generation. "
+				"This uses AI to generate new frames for games based on rendered frames.");
 		}
 
-		if (settings.Enabled) {
-			ImGui::Checkbox("Enable DLSS-FG", reinterpret_cast<bool*>(&settings.DLSSG));
-			if (auto _tt = Util::HoverTooltipWrapper()) {
-				ImGui::Text(
-					"Enable Frame Generation. "
-					"This uses AI to generate new frames for games based on rendered frames.");
-			}
-			if (settings.DLSSG && featureDLSSG) {
-				ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
-				ImGui::Text("Frame Generation always defaults to Auto");
-				ImGui::Text("To disable Frame Generation, disable it in your mod manager");
+		if (featureDLSSG) {
+			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
+			ImGui::Text("Frame Generation always defaults to Auto");
+			ImGui::Text("To disable Frame Generation, disable it in your mod manager");
 
-				const char* frameGenerationModes[] = { "Off", "On", "Auto" };
-				ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
-				frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
-			} else if (!state->isVR) {
-				ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
-				ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
-			}
+			const char* frameGenerationModes[] = { "Off", "On", "Auto" };
+			ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
+			frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
+		} else if (!state->isVR) {
+			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
+			ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
+		}
 
-			ImGui::Checkbox("Enable DLSS-AA", reinterpret_cast<bool*>(&settings.DLSSAA));
-			if (auto _tt = Util::HoverTooltipWrapper()) {
-				ImGui::Text(
-					"Enable DLSS Anti-Aliasing. "
-					"This uses AI to perform anti-aliasing.");
-			}
-			if (settings.DLSSAA && featureDLSS) {
-				ImGui::Text("Anti-Aliasing always defaults to DLAA");
-				ImGui::Text("To disable DLAA, disable it in your mod manager");
+		if (featureDLSS) {
+			const char* aaModes[] = { "TAA", "DLAA" };
+			ImGui::SliderInt("Anti-Aliasing", (int*)&settings.aaMode, 0, 1, std::format("{}", aaModes[(uint)settings.aaMode]).c_str());
+			settings.aaMode = std::min(1u, (uint)settings.aaMode);
 
-				const char* aaModes[] = { "TAA", "DLAA" };
-				ImGui::SliderInt("Anti-Aliasing", (int*)&aaMode, 0, 1, std::format("{}", aaModes[(uint)aaMode]).c_str());
-				aaMode = (AAMode)std::min(1u, (uint)aaMode);
-
-				if (aaMode == AAMode::kDLAA) {
-					ImGui::SliderFloat("Sharpness", &sharpness, 0.0f, 1.0f, "%.1f");
-					sharpness = std::clamp(sharpness, 0.0f, 1.0f);
-				}
-			} else {
-				ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
+			if (settings.aaMode == (uint)AAMode::kDLAA) {
+				ImGui::SliderFloat("Sharpness", &settings.sharpness, 0.0f, 1.0f, "%.1f");
+				settings.sharpness = std::clamp(settings.sharpness, 0.0f, 1.0f);
+				const char* dlaaPresets[] = { "Default", "Preset A", "Preset B", "Preset C", "Preset D","Preset E","Preset F" };
+				ImGui::SliderInt("DLAA Preset", (int*)&settings.dlaaPreset, 0, 6, std::format("{}", dlaaPresets[(uint)settings.dlaaPreset]).c_str());
+				settings.dlaaPreset = std::min(6u, (uint)settings.dlaaPreset);
 			}
-			ImGui::Checkbox("Enable DLSS-Reflex", reinterpret_cast<bool*>(&settings.Reflex));
-			if (auto _tt = Util::HoverTooltipWrapper()) {
-				ImGui::Text(
-					"Enable Reflex.");
-			}
+		} else {
+			ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
 		}
 	}
 }
 
-void Streamline::Initialize_preDevice()
+void Streamline::PreDevice()
 {
 	logger::info("[Streamline] Initializing Streamline");
 
@@ -191,7 +165,7 @@ void Streamline::Initialize_preDevice()
 	}
 }
 
-void Streamline::Initialize_postDevice()
+void Streamline::PostDevice()
 {
 	// Hook up all of the feature functions using the sl function slGetFeatureFunction
 
@@ -217,7 +191,7 @@ void Streamline::Initialize_postDevice()
 HRESULT Streamline::CreateDXGIFactory(REFIID riid, void** ppFactory)
 {
 	if (!initialized)
-		Initialize_preDevice();
+		PreDevice();
 
 	if (initialized) {
 		logger::info("[Streamline] Proxying CreateDXGIFactory");
@@ -251,58 +225,51 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 	adapterInfo.deviceLUID = (uint8_t*)&adapterDesc.AdapterLuid;
 	adapterInfo.deviceLUIDSizeInBytes = sizeof(LUID);
 
-	if (slIsFeatureLoaded) {
-		slIsFeatureLoaded(sl::kFeatureDLSS, featureDLSS);
-		if (featureDLSS) {
-			logger::info("[Streamline] DLSS feature is loaded");
-			featureDLSS = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo) == sl::Result::eOk;
-		} else {
-			logger::info("[Streamline] DLSS feature is not loaded");
-			sl::FeatureRequirements featureRequirements;
-			sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS, featureRequirements);
-			if (result != sl::Result::eOk) {
-				logger::info("[Streamline] DLSS feature failed to load due to: {}", magic_enum::enum_name(result));
-			}
-		}
-
-		slIsFeatureLoaded(sl::kFeatureDLSS_G, featureDLSSG);
-		if (featureDLSSG && settings.DLSSG) {
-			logger::info("[Streamline] DLSSG feature is loaded");
-			featureDLSSG = slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk;
-		} else {
-			logger::info("[Streamline] DLSSG feature is not loaded");
-			sl::FeatureRequirements featureRequirements;
-			sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS_G, featureRequirements);
-			if (result != sl::Result::eOk) {
-				logger::info("[Streamline] DLSSG feature failed to load due to: {}", magic_enum::enum_name(result));
-			}
-		}
-
-		slIsFeatureLoaded(sl::kFeatureReflex, featureReflex);
-		if (featureReflex && settings.Reflex) {
-			logger::info("[Streamline] Reflex feature is loaded");
-			featureReflex = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
-		} else {
-			logger::info("[Streamline] Reflex feature is not loaded");
-			sl::FeatureRequirements featureRequirements;
-			sl::Result result = slGetFeatureRequirements(sl::kFeatureReflex, featureRequirements);
-			if (result != sl::Result::eOk) {
-				logger::info("[Streamline] Reflex feature failed to load due to: {}", magic_enum::enum_name(result));
-			}
-		}
+	slIsFeatureLoaded(sl::kFeatureDLSS, featureDLSS);
+	if (featureDLSS) {
+		logger::info("[Streamline] DLSS feature is loaded");
+		featureDLSS = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo) == sl::Result::eOk;
 	} else {
-		logger::info("[Streamline] DLSS slIsFeatureLoaded is nullptr; unable to query features");
+		logger::info("[Streamline] DLSS feature is not loaded");
+		sl::FeatureRequirements featureRequirements;
+		sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS, featureRequirements);
+		if (result != sl::Result::eOk) {
+			logger::info("[Streamline] DLSS feature failed to load due to: {}", magic_enum::enum_name(result));
+		}
+	}
+
+	slIsFeatureLoaded(sl::kFeatureDLSS_G, featureDLSSG);
+	if (featureDLSSG) {
+		logger::info("[Streamline] DLSSG feature is loaded");
+		featureDLSSG = slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk;
+	} else {
+		logger::info("[Streamline] DLSSG feature is not loaded");
+		sl::FeatureRequirements featureRequirements;
+		sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS_G, featureRequirements);
+		if (result != sl::Result::eOk) {
+			logger::info("[Streamline] DLSSG feature failed to load due to: {}", magic_enum::enum_name(result));
+		}
+	}
+
+	slIsFeatureLoaded(sl::kFeatureReflex, featureReflex);
+	if (featureReflex) {
+		logger::info("[Streamline] Reflex feature is loaded");
+		featureReflex = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
+	} else {
+		logger::info("[Streamline] Reflex feature is not loaded");
+		sl::FeatureRequirements featureRequirements;
+		sl::Result result = slGetFeatureRequirements(sl::kFeatureReflex, featureRequirements);
+		if (result != sl::Result::eOk) {
+			logger::info("[Streamline] Reflex feature failed to load due to: {}", magic_enum::enum_name(result));
+		}
 	}
 
 	logger::info("[Streamline] DLSS {} available", featureDLSS ? "is" : "is not");
 	logger::info("[Streamline] DLSSG {} available", featureDLSSG ? "is" : "is not");
 	logger::info("[Streamline] Reflex {} available", featureReflex ? "is" : "is not");
 
-	HRESULT hr = 0;
+	HRESULT hr = S_OK;
 
-	featureDLSSG &= static_cast<bool>(settings.DLSSG);
-	featureDLSS &= static_cast<bool>(settings.DLSSAA);
-	featureReflex &= static_cast<bool>(settings.Reflex);
 	if (featureDLSSG) {
 		logger::info("[Streamline] Proxying D3D11CreateDeviceAndSwapChain to add D3D12 swapchain");
 
@@ -339,9 +306,7 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 		slSetD3DDevice(*ppDevice);
 	}
 
-	if (slIsFeatureLoaded) {
-		Initialize_postDevice();
-	}
+	PostDevice();
 
 	return hr;
 }
@@ -358,11 +323,7 @@ void Streamline::SetupResources()
 		dlssOptions.colorBuffersHDR = sl::Boolean::eFalse;
 		dlssOptions.preExposure = 1.0f;
 		dlssOptions.sharpness = 0.0f;
-		dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.balancedPreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.qualityPreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.performancePreset = sl::DLSSPreset::ePresetE;
+		dlssOptions.dlaaPreset = (sl::DLSSPreset)settings.dlaaPreset;
 
 		if (SL_FAILED(result, slDLSSSetOptions(viewport, dlssOptions))) {
 			logger::critical("[Streamline] Could not enable DLSS");
@@ -614,12 +575,7 @@ void Streamline::Upscale()
 		dlssOptions.colorBuffersHDR = sl::Boolean::eFalse;
 		dlssOptions.preExposure = 1.0f;
 		dlssOptions.sharpness = 0.0f;
-		dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.balancedPreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.qualityPreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetE;
-		dlssOptions.performancePreset = sl::DLSSPreset::ePresetE;
-
+		dlssOptions.dlaaPreset = (sl::DLSSPreset)settings.dlaaPreset;
 		slDLSSSetOptions(viewport, dlssOptions);
 	}
 
