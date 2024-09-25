@@ -75,60 +75,32 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, 
 
 void MessageHandler(SKSE::MessagingInterface::Message* message)
 {
-	switch (message->type) {
-	case SKSE::MessagingInterface::kPostPostLoad:
-		{
-			if (errors.empty()) {
-				State::GetSingleton()->PostPostLoad();
-				Hooks::Install();
-				FrameAnnotations::OnPostPostLoad();
-
-				auto& shaderCache = SIE::ShaderCache::Instance();
-
-				shaderCache.ValidateDiskCache();
-
-				if (shaderCache.UseFileWatcher())
-					shaderCache.StartFileWatcher();
-
-				for (auto* feature : Feature::GetFeatureList()) {
-					if (feature->loaded) {
-						feature->PostPostLoad();
-					}
-				}
-			}
-
-			break;
+	if (message->type == SKSE::MessagingInterface::kDataLoaded) {	
+		for (auto it = errors.begin(); it != errors.end(); ++it) {
+			auto& errorMessage = *it;
+			RE::DebugMessageBox(std::format("Community Shaders\n{}, will disable all hooks and features", errorMessage).c_str());
 		}
-	case SKSE::MessagingInterface::kDataLoaded:
-		{
-			for (auto it = errors.begin(); it != errors.end(); ++it) {
-				auto& errorMessage = *it;
-				RE::DebugMessageBox(std::format("Community Shaders\n{}, will disable all hooks and features", errorMessage).c_str());
+
+		if (errors.empty()) {
+			FrameAnnotations::OnDataLoaded();
+
+			auto& shaderCache = SIE::ShaderCache::Instance();
+			shaderCache.menuLoaded = true;
+			while (shaderCache.IsCompiling() && !shaderCache.backgroundCompilation) {
+				std::this_thread::sleep_for(100ms);
 			}
 
-			if (errors.empty()) {
-				FrameAnnotations::OnDataLoaded();
-
-				auto& shaderCache = SIE::ShaderCache::Instance();
-				shaderCache.menuLoaded = true;
-				while (shaderCache.IsCompiling() && !shaderCache.backgroundCompilation) {
-					std::this_thread::sleep_for(100ms);
-				}
-
-				if (shaderCache.IsDiskCache()) {
-					shaderCache.WriteDiskCacheInfo();
-				}
-
-				TruePBR::GetSingleton()->DataLoaded();
-				for (auto* feature : Feature::GetFeatureList()) {
-					if (feature->loaded) {
-						feature->DataLoaded();
-					}
-				}
+			if (shaderCache.IsDiskCache()) {
+				shaderCache.WriteDiskCacheInfo();
 			}
 
-			break;
-		}
+			TruePBR::GetSingleton()->DataLoaded();
+			for (auto* feature : Feature::GetFeatureList()) {
+				if (feature->loaded) {
+					feature->DataLoaded();
+				}
+			}
+		}	
 	}
 }
 
@@ -164,9 +136,27 @@ bool Load()
 		}
 	}
 
-	if (errors.empty() && Streamline::GetSingleton()->settings.Enabled) {
-		Streamline::GetSingleton()->enabledAtBoot = true;
+	if (errors.empty()) {
+		State::GetSingleton()->PostPostLoad();
+
+		Hooks::Install();
 		Hooks::InstallD3DHooks();
+
+		FrameAnnotations::OnPostPostLoad();
+
+		auto& shaderCache = SIE::ShaderCache::Instance();
+
+		shaderCache.ValidateDiskCache();
+
+		if (shaderCache.UseFileWatcher())
+			shaderCache.StartFileWatcher();
+
+		for (auto* feature : Feature::GetFeatureList()) {
+			if (feature->loaded) {
+				feature->PostPostLoad();
+			}
+		}
 	}
+	
 	return true;
 }
