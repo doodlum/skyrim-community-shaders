@@ -99,7 +99,7 @@ void Streamline::DrawSettings()
 			if (settings.aaMode == (uint)AAMode::kDLAA) {
 				ImGui::SliderFloat("Sharpness", &settings.sharpness, 0.0f, 1.0f, "%.1f");
 				settings.sharpness = std::clamp(settings.sharpness, 0.0f, 1.0f);
-				const char* dlaaPresets[] = { "Default", "Preset A", "Preset B", "Preset C", "Preset D","Preset E","Preset F" };
+				const char* dlaaPresets[] = { "Default", "Preset A", "Preset B", "Preset C", "Preset D", "Preset E", "Preset F" };
 				ImGui::SliderInt("DLAA Preset", (int*)&settings.dlaaPreset, 0, 6, std::format("{}", dlaaPresets[(uint)settings.dlaaPreset]).c_str());
 				settings.dlaaPreset = std::min(6u, (uint)settings.dlaaPreset);
 			}
