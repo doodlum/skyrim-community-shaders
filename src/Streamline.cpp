@@ -125,16 +125,10 @@ void Streamline::Initialize()
 
 	sl::Preferences pref;
 
-	if (REL::Module::IsVR()) {
-		sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
-		pref.featuresToLoad = featuresToLoad;
-		pref.numFeaturesToLoad = _countof(featuresToLoad);
-	} else {
-		sl::Feature featuresToLoad[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
-		pref.featuresToLoad = featuresToLoad;
-		pref.numFeaturesToLoad = _countof(featuresToLoad);
-	}
-
+	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
+	pref.featuresToLoad = featuresToLoad;
+	pref.numFeaturesToLoad = _countof(featuresToLoad);
+	
 	pref.logLevel = sl::LogLevel::eOff;
 	pref.logMessageCallback = LoggingCallback;
 	pref.showConsole = false;
@@ -238,29 +232,31 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 		}
 	}
 
-	slIsFeatureLoaded(sl::kFeatureDLSS_G, featureDLSSG);
-	if (featureDLSSG) {
-		logger::info("[Streamline] DLSSG feature is loaded");
-		featureDLSSG = slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk;
-	} else {
-		logger::info("[Streamline] DLSSG feature is not loaded");
-		sl::FeatureRequirements featureRequirements;
-		sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS_G, featureRequirements);
-		if (result != sl::Result::eOk) {
-			logger::info("[Streamline] DLSSG feature failed to load due to: {}", magic_enum::enum_name(result));
+	if (!REL::Module::IsVR()) {
+		slIsFeatureLoaded(sl::kFeatureDLSS_G, featureDLSSG);
+		if (featureDLSSG) {
+			logger::info("[Streamline] DLSSG feature is loaded");
+			featureDLSSG = slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk;
+		} else {
+			logger::info("[Streamline] DLSSG feature is not loaded");
+			sl::FeatureRequirements featureRequirements;
+			sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS_G, featureRequirements);
+			if (result != sl::Result::eOk) {
+				logger::info("[Streamline] DLSSG feature failed to load due to: {}", magic_enum::enum_name(result));
+			}
 		}
-	}
 
-	slIsFeatureLoaded(sl::kFeatureReflex, featureReflex);
-	if (featureReflex) {
-		logger::info("[Streamline] Reflex feature is loaded");
-		featureReflex = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
-	} else {
-		logger::info("[Streamline] Reflex feature is not loaded");
-		sl::FeatureRequirements featureRequirements;
-		sl::Result result = slGetFeatureRequirements(sl::kFeatureReflex, featureRequirements);
-		if (result != sl::Result::eOk) {
-			logger::info("[Streamline] Reflex feature failed to load due to: {}", magic_enum::enum_name(result));
+		slIsFeatureLoaded(sl::kFeatureReflex, featureReflex);
+		if (featureReflex) {
+			logger::info("[Streamline] Reflex feature is loaded");
+			featureReflex = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
+		} else {
+			logger::info("[Streamline] Reflex feature is not loaded");
+			sl::FeatureRequirements featureRequirements;
+			sl::Result result = slGetFeatureRequirements(sl::kFeatureReflex, featureRequirements);
+			if (result != sl::Result::eOk) {
+				logger::info("[Streamline] Reflex feature failed to load due to: {}", magic_enum::enum_name(result));
+			}
 		}
 	}
 
