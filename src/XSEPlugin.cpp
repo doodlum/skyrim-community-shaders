@@ -75,7 +75,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, 
 
 void MessageHandler(SKSE::MessagingInterface::Message* message)
 {
-	if (message->type == SKSE::MessagingInterface::kDataLoaded) {	
+	if (message->type == SKSE::MessagingInterface::kDataLoaded) {
 		for (auto it = errors.begin(); it != errors.end(); ++it) {
 			auto& errorMessage = *it;
 			RE::DebugMessageBox(std::format("Community Shaders\n{}, will disable all hooks and features", errorMessage).c_str());
@@ -100,7 +100,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 					feature->DataLoaded();
 				}
 			}
-		}	
+		}
 	}
 }
 
@@ -157,6 +157,6 @@ bool Load()
 			}
 		}
 	}
-	
+
 	return true;
 }
