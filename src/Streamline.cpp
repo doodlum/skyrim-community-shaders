@@ -72,7 +72,6 @@ void Streamline::DrawSettings()
 {
 	auto state = State::GetSingleton();
 	if (ImGui::CollapsingHeader("NVIDIA DLSS", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
-
 		if (featureDLSS) {
 			const char* aaModes[] = { "TAA", "DLAA" };
 			ImGui::SliderInt("Anti-Aliasing", (int*)&settings.aaMode, 0, 1, std::format("{}", aaModes[(uint)settings.aaMode]).c_str());
@@ -220,8 +219,7 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 	D3D_FEATURE_LEVEL* pFeatureLevel,
 	ID3D11DeviceContext** ppImmediateContext)
 {
-	if (!streamlineActive)
-	{
+	if (!streamlineActive) {
 		return ptrD3D11CreateDeviceAndSwapChain(
 			pAdapter,
 			DriverType,
