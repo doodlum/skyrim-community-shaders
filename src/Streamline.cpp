@@ -71,33 +71,41 @@ void Streamline::RestoreDefaultSettings()
 void Streamline::DrawSettings()
 {
 	auto state = State::GetSingleton();
-	if (ImGui::CollapsingHeader("NVIDIA DLSS", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
-		if (featureDLSS) {
-			const char* aaModes[] = { "TAA", "DLAA" };
-			ImGui::SliderInt("Anti-Aliasing", (int*)&settings.aaMode, 0, 1, std::format("{}", aaModes[(uint)settings.aaMode]).c_str());
-			settings.aaMode = std::min(1u, (uint)settings.aaMode);
+	if (ImGui::CollapsingHeader("Streamline", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
+		if (ImGui::TreeNodeEx("NVIDIA DLAA", ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (featureDLSS) {
+				const char* aaModes[] = { "TAA", "DLAA" };
+				ImGui::SliderInt("Anti-Aliasing", (int*)&settings.aaMode, 0, 1, std::format("{}", aaModes[(uint)settings.aaMode]).c_str());
+				settings.aaMode = std::min(1u, (uint)settings.aaMode);
 
-			if (settings.aaMode == (uint)AAMode::kDLAA) {
-				ImGui::SliderFloat("DLAA Sharpness", &settings.sharpness, 0.0f, 1.0f, "%.1f");
-				settings.sharpness = std::clamp(settings.sharpness, 0.0f, 1.0f);
-				const char* dlaaPresets[] = { "Default", "Preset A", "Preset B", "Preset C", "Preset D", "Preset E", "Preset F" };
-				ImGui::SliderInt("DLAA Preset", (int*)&settings.dlaaPreset, 0, 6, std::format("{}", dlaaPresets[(uint)settings.dlaaPreset]).c_str());
-				settings.dlaaPreset = std::min(6u, (uint)settings.dlaaPreset);
+				if (settings.aaMode == (uint)AAMode::kDLAA) {
+					ImGui::SliderFloat("DLAA Sharpness", &settings.sharpness, 0.0f, 1.0f, "%.1f");
+					settings.sharpness = std::clamp(settings.sharpness, 0.0f, 1.0f);
+					const char* dlaaPresets[] = { "Default", "Preset A", "Preset B", "Preset C", "Preset D", "Preset E", "Preset F" };
+					ImGui::SliderInt("DLAA Preset", (int*)&settings.dlaaPreset, 0, 6, std::format("{}", dlaaPresets[(uint)settings.dlaaPreset]).c_str());
+					settings.dlaaPreset = std::min(6u, (uint)settings.dlaaPreset);
+				}
+			} else {
+				ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
 			}
-		} else {
-			ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
+			ImGui::TreePop();
 		}
 
-		if (featureDLSSG) {
-			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
-			ImGui::Text("Therefore Frame Generation can only be disabled in the mod manager");
+		if (!state->isVR) {
+			if (ImGui::TreeNodeEx("NVIDIA DLSS Frame Generation", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (featureDLSSG) {
+					ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
+					ImGui::Text("Therefore Frame Generation can only be disabled in the mod manager");
 
-			const char* frameGenerationModes[] = { "Off", "On", "Auto" };
-			ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
-			frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
-		} else if (!state->isVR) {
-			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
-			ImGui::Text("Therefore Frame Generation can only be enabled in the mod manager and requires a compatible GPU");
+					const char* frameGenerationModes[] = { "Off", "On", "Auto" };
+					ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
+					frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
+				} else {
+					ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
+					ImGui::Text("Therefore Frame Generation can only be enabled in the mod manager and requires a compatible GPU");
+				}
+				ImGui::TreePop();\
+			}
 		}
 	}
 }
