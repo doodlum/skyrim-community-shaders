@@ -264,7 +264,7 @@ void State::Save(ConfigMode a_configMode)
 	auto truePBR = TruePBR::GetSingleton();
 	auto& pbrJson = settings[truePBR->GetShortName()];
 	truePBR->SaveSettings(pbrJson);
-	
+
 	auto streamline = Streamline::GetSingleton();
 	auto& streamlineJson = settings[streamline->GetShortName()];
 	streamline->SaveSettings(streamlineJson);
