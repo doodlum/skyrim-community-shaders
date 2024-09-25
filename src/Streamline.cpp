@@ -104,7 +104,7 @@ void Streamline::DrawSettings()
 					ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
 					ImGui::Text("Therefore Frame Generation can only be enabled in the mod manager and requires a compatible GPU");
 				}
-				ImGui::TreePop();\
+				ImGui::TreePop();
 			}
 		}
 	}
