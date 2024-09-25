@@ -4,6 +4,13 @@
 
 #include "Util.h"
 
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+	Streamline::Settings,
+	Enabled,
+	DLSSAA,
+	DLSSG,
+	Reflex);
+
 void LoggingCallback(sl::LogType type, const char* msg)
 {
 	switch (type) {
@@ -47,11 +54,45 @@ void Streamline::ClearShaderCache()
 	}
 }
 
+void Streamline::LoadSettings(json& o_json)
+{
+	settings = o_json;
+}
+
+void Streamline::SaveSettings(json& o_json)
+{
+	o_json = settings;
+}
+
+void Streamline::RestoreDefaultSettings()
+{
+	settings = {};
+}
+
 void Streamline::DrawSettings()
 {
-	if (!REL::Module::IsVR()) {
-		if (ImGui::CollapsingHeader("NVIDIA DLSS", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
-			if (featureDLSSG) {
+	auto state = State::GetSingleton();
+	if (ImGui::CollapsingHeader("NVIDIA DLSS", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
+		ImGui::Checkbox("Enable DLSS", reinterpret_cast<bool*>(&settings.Enabled));
+		if (auto _tt = Util::HoverTooltipWrapper()) {
+			ImGui::Text("Enable DLSS Features");
+			if (!enabledAtBoot) {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+				ImGui::Text(
+					"A restart is required to enable or disable all features. "
+					"Save Settings after enabling and restart the game.");
+				ImGui::PopStyleColor();
+			}
+		}
+
+		if (settings.Enabled) {
+			ImGui::Checkbox("Enable DLSS-FG", reinterpret_cast<bool*>(&settings.DLSSG));
+			if (auto _tt = Util::HoverTooltipWrapper()) {
+				ImGui::Text(
+					"Enable Frame Generation. "
+					"This uses AI to generate new frames for games based on rendered frames.");
+			}
+			if (settings.DLSSG && featureDLSSG) {
 				ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
 				ImGui::Text("Frame Generation always defaults to Auto");
 				ImGui::Text("To disable Frame Generation, disable it in your mod manager");
@@ -59,12 +100,18 @@ void Streamline::DrawSettings()
 				const char* frameGenerationModes[] = { "Off", "On", "Auto" };
 				ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
 				frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
-			} else {
+			} else if (!state->isVR) {
 				ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
 				ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
 			}
 
-			if (featureDLSS) {
+			ImGui::Checkbox("Enable DLSS-AA", reinterpret_cast<bool*>(&settings.DLSSAA));
+			if (auto _tt = Util::HoverTooltipWrapper()) {
+				ImGui::Text(
+					"Enable DLSS Anti-Aliasing. "
+					"This uses AI to perform anti-aliasing.");
+			}
+			if (settings.DLSSAA && featureDLSS) {
 				ImGui::Text("Anti-Aliasing always defaults to DLAA");
 				ImGui::Text("To disable DLAA, disable it in your mod manager");
 
@@ -78,6 +125,11 @@ void Streamline::DrawSettings()
 				}
 			} else {
 				ImGui::Text("To enable DLAA, enable it in your mod manager and use a compatible GPU");
+			}
+			ImGui::Checkbox("Enable DLSS-Reflex", reinterpret_cast<bool*>(&settings.Reflex));
+			if (auto _tt = Util::HoverTooltipWrapper()) {
+				ImGui::Text(
+					"Enable Reflex.");
 			}
 		}
 	}
@@ -236,6 +288,9 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 
 	HRESULT hr = 0;
 
+	featureDLSSG &= static_cast<bool>(settings.DLSSG);
+	featureDLSS &= static_cast<bool>(settings.DLSSAA);
+	featureReflex &= static_cast<bool>(settings.Reflex);
 	if (featureDLSSG) {
 		logger::info("[Streamline] Proxying D3D11CreateDeviceAndSwapChain to add D3D12 swapchain");
 

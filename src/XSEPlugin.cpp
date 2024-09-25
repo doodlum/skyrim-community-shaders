@@ -4,6 +4,7 @@
 #include "Menu.h"
 #include "ShaderCache.h"
 #include "State.h"
+#include "Streamline.h"
 #include "TruePBR.h"
 
 #include "ENB/ENBSeriesAPI.h"
@@ -163,7 +164,8 @@ bool Load()
 		}
 	}
 
-	if (errors.empty() && !REL::Module::IsVR())
+	if (errors.empty() && Streamline::GetSingleton()->settings.Enabled)
+		Streamline::GetSingleton()->enabledAtBoot = true;
 		Hooks::InstallD3DHooks();
 
 	return true;
