@@ -111,15 +111,15 @@ bool Load()
 		return true;
 	}
 
-	if (REL::Module::IsVR()) {
+	if (REL::Module::IsVR())
 		REL::IDDatabase::get().IsVRAddressLibraryAtLeastVersion("0.146.0", true);
-	}
 
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener("SKSE", MessageHandler);
 
 	auto state = State::GetSingleton();
 	state->Load();
+
 	auto log = spdlog::default_logger();
 	log->set_level(state->GetLogLevel());
 
