@@ -164,9 +164,9 @@ bool Load()
 		}
 	}
 
-	if (errors.empty() && Streamline::GetSingleton()->settings.Enabled)
+	if (errors.empty() && Streamline::GetSingleton()->settings.Enabled){
 		Streamline::GetSingleton()->enabledAtBoot = true;
 		Hooks::InstallD3DHooks();
-
+	}
 	return true;
 }
