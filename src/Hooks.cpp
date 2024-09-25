@@ -191,14 +191,9 @@ HRESULT STDMETHODCALLTYPE hk_CreatePixelShader(ID3D11Device* This, const void* p
 
 decltype(&CreateDXGIFactory) ptrCreateDXGIFactory;
 
-HRESULT WINAPI hk_CreateDXGIFactory(REFIID riid, void** ppFactory)
+HRESULT WINAPI hk_CreateDXGIFactory(REFIID, void** ppFactory)
 {
-	logger::info("Creating DXGI factory");
-	auto result = Streamline::GetSingleton()->CreateDXGIFactory(__uuidof(IDXGIFactory1), ppFactory);
-	if (SUCCEEDED(result)) {
-		return result;
-	}
-	return ptrCreateDXGIFactory(riid, ppFactory);
+	return Streamline::GetSingleton()->CreateDXGIFactory(__uuidof(IDXGIFactory1), ppFactory);
 }
 
 decltype(&D3D11CreateDeviceAndSwapChain) ptrD3D11CreateDeviceAndSwapChain;
@@ -621,10 +616,18 @@ namespace Hooks
 	}
 	void InstallD3DHooks()
 	{
-		logger::info("Hooking D3D11CreateDeviceAndSwapChain");
-		*(uintptr_t*)&ptrD3D11CreateDeviceAndSwapChain = SKSE::PatchIAT(hk_D3D11CreateDeviceAndSwapChain, "d3d11.dll", "D3D11CreateDeviceAndSwapChain");
+		auto streamline = Streamline::GetSingleton();
 
-		logger::info("Hooking CreateDXGIFactory");
-		*(uintptr_t*)&ptrCreateDXGIFactory = SKSE::PatchIAT(hk_CreateDXGIFactory, "dxgi.dll", !REL::Module::IsVR() ? "CreateDXGIFactory" : "CreateDXGIFactory1");
+		streamline->Initialize();
+
+		if (streamline->initialized) {
+			Streamline::InstallHooks();
+
+			logger::info("Hooking D3D11CreateDeviceAndSwapChain");
+			*(uintptr_t*)&ptrD3D11CreateDeviceAndSwapChain = SKSE::PatchIAT(hk_D3D11CreateDeviceAndSwapChain, "d3d11.dll", "D3D11CreateDeviceAndSwapChain");
+
+			logger::info("Hooking CreateDXGIFactory");
+			*(uintptr_t*)&ptrCreateDXGIFactory = SKSE::PatchIAT(hk_CreateDXGIFactory, "dxgi.dll", !REL::Module::IsVR() ? "CreateDXGIFactory" : "CreateDXGIFactory1");
+		}
 	}
 }

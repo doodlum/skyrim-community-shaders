@@ -78,7 +78,7 @@ void Streamline::DrawSettings()
 			settings.aaMode = std::min(1u, (uint)settings.aaMode);
 
 			if (settings.aaMode == (uint)AAMode::kDLAA) {
-				ImGui::SliderFloat("Sharpness", &settings.sharpness, 0.0f, 1.0f, "%.1f");
+				ImGui::SliderFloat("DLAA Sharpness", &settings.sharpness, 0.0f, 1.0f, "%.1f");
 				settings.sharpness = std::clamp(settings.sharpness, 0.0f, 1.0f);
 				const char* dlaaPresets[] = { "Default", "Preset A", "Preset B", "Preset C", "Preset D", "Preset E", "Preset F" };
 				ImGui::SliderInt("DLAA Preset", (int*)&settings.dlaaPreset, 0, 6, std::format("{}", dlaaPresets[(uint)settings.dlaaPreset]).c_str());
@@ -89,21 +89,20 @@ void Streamline::DrawSettings()
 		}
 
 		if (featureDLSSG) {
-			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
-			ImGui::Text("Frame Generation always defaults to Auto");
-			ImGui::Text("To disable Frame Generation, disable it in your mod manager");
+			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
+			ImGui::Text("Therefore Frame Generation can only be disabled in the mod manager");
 
 			const char* frameGenerationModes[] = { "Off", "On", "Auto" };
 			ImGui::SliderInt("Frame Generation", (int*)&frameGenerationMode, 0, 2, std::format("{}", frameGenerationModes[(uint)frameGenerationMode]).c_str());
 			frameGenerationMode = (sl::DLSSGMode)std::min(2u, (uint)frameGenerationMode);
 		} else if (!state->isVR) {
-			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy");
-			ImGui::Text("To enable Frame Generation, enable it in your mod manager and use a compatible GPU");
+			ImGui::Text("Frame Generation uses a D3D11 to D3D12 proxy which can create compatibility issues");
+			ImGui::Text("Therefore Frame Generation can only be enabled in the mod manager and requires a compatible GPU");
 		}
 	}
 }
 
-void Streamline::PreDevice()
+void Streamline::Initialize()
 {
 	logger::info("[Streamline] Initializing Streamline");
 
@@ -123,7 +122,7 @@ void Streamline::PreDevice()
 		pref.featuresToLoad = featuresToLoad;
 		pref.numFeaturesToLoad = _countof(featuresToLoad);
 	} else {
-		sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
+		sl::Feature featuresToLoad[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
 		pref.featuresToLoad = featuresToLoad;
 		pref.numFeaturesToLoad = _countof(featuresToLoad);
 	}
@@ -161,7 +160,7 @@ void Streamline::PreDevice()
 	if (SL_FAILED(res, slInit(pref, sl::kSDKVersion))) {
 		logger::critical("[Streamline] Failed to initialize Streamline");
 	} else {
-		streamlineActive = true;
+		initialized = true;
 		logger::info("[Streamline] Sucessfully initialized Streamline");
 	}
 }
@@ -191,17 +190,9 @@ void Streamline::PostDevice()
 
 HRESULT Streamline::CreateDXGIFactory(REFIID riid, void** ppFactory)
 {
-	if (!streamlineActive)
-		PreDevice();
-
-	if (streamlineActive) {
-		logger::info("[Streamline] Proxying CreateDXGIFactory");
-		auto slCreateDXGIFactory1 = reinterpret_cast<decltype(&CreateDXGIFactory1)>(GetProcAddress(interposer, "CreateDXGIFactory1"));
-		return slCreateDXGIFactory1(riid, ppFactory);
-	} else {
-		logger::info("[Streamline] Failed to proxy CreateDXGIFactory1 in interposer");
-		return E_FAIL;  // Return an error if the interposer function is not available
-	}
+	logger::info("[Streamline] Proxying CreateDXGIFactory");
+	auto slCreateDXGIFactory1 = reinterpret_cast<decltype(&CreateDXGIFactory1)>(GetProcAddress(interposer, "CreateDXGIFactory1"));
+	return slCreateDXGIFactory1(riid, ppFactory);
 }
 
 extern decltype(&D3D11CreateDeviceAndSwapChain) ptrD3D11CreateDeviceAndSwapChain;
@@ -219,22 +210,6 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 	D3D_FEATURE_LEVEL* pFeatureLevel,
 	ID3D11DeviceContext** ppImmediateContext)
 {
-	if (!streamlineActive) {
-		return ptrD3D11CreateDeviceAndSwapChain(
-			pAdapter,
-			DriverType,
-			Software,
-			Flags,
-			pFeatureLevels,
-			FeatureLevels,
-			SDKVersion,
-			pSwapChainDesc,
-			ppSwapChain,
-			ppDevice,
-			pFeatureLevel,
-			ppImmediateContext);
-	}
-
 	DXGI_ADAPTER_DESC adapterDesc;
 	pAdapter->GetDesc(&adapterDesc);
 

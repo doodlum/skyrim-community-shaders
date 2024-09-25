@@ -38,7 +38,7 @@ public:
 	Settings settings;
 
 	bool enabledAtBoot = false;
-	bool streamlineActive = false;
+	bool initialized = false;
 
 	bool featureDLSS = false;
 	bool featureDLSSG = false;
@@ -99,7 +99,7 @@ public:
 	void RestoreDefaultSettings();
 	void DrawSettings();
 
-	void PreDevice();
+	void Initialize();
 	void PostDevice();
 
 	HRESULT CreateDXGIFactory(REFIID riid, void** ppFactory);
