@@ -140,6 +140,12 @@ void Streamline::Initialize_preDevice()
 	logger::info("[Streamline] Initializing Streamline");
 
 	interposer = LoadLibraryW(L"Data/SKSE/Plugins/Streamline/sl.interposer.dll");
+	if (interposer == nullptr) {
+		DWORD errorCode = GetLastError();
+		logger::debug("[Streamline] Failed to load interposer: Error Code {0:x}", errorCode);
+	} else {
+		logger::debug("[Streamline] Interposer loaded at address: {0:p}", static_cast<void*>(interposer));
+	}
 
 	sl::Preferences pref;
 
@@ -180,10 +186,9 @@ void Streamline::Initialize_preDevice()
 	if (SL_FAILED(res, slInit(pref, sl::kSDKVersion))) {
 		logger::critical("[Streamline] Failed to initialize Streamline");
 	} else {
+		initialized = true;
 		logger::info("[Streamline] Sucessfully initialized Streamline");
 	}
-
-	initialized = true;
 }
 
 void Streamline::Initialize_postDevice()
@@ -214,11 +219,14 @@ HRESULT Streamline::CreateDXGIFactory(REFIID riid, void** ppFactory)
 	if (!initialized)
 		Initialize_preDevice();
 
-	logger::info("[Streamline] Proxying CreateDXGIFactory");
-
-	auto slCreateDXGIFactory1 = reinterpret_cast<decltype(&CreateDXGIFactory1)>(GetProcAddress(interposer, "CreateDXGIFactory1"));
-
-	return slCreateDXGIFactory1(riid, ppFactory);
+	if (initialized) {
+		logger::info("[Streamline] Proxying CreateDXGIFactory");
+		auto slCreateDXGIFactory1 = reinterpret_cast<decltype(&CreateDXGIFactory1)>(GetProcAddress(interposer, "CreateDXGIFactory1"));
+		return slCreateDXGIFactory1(riid, ppFactory);
+	} else {
+		logger::info("[Streamline] Failed to proxy CreateDXGIFactory1 in interposer");
+		return E_FAIL;  // Return an error if the interposer function is not available
+	}
 }
 
 extern decltype(&D3D11CreateDeviceAndSwapChain) ptrD3D11CreateDeviceAndSwapChain;
@@ -243,43 +251,47 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 	adapterInfo.deviceLUID = (uint8_t*)&adapterDesc.AdapterLuid;
 	adapterInfo.deviceLUIDSizeInBytes = sizeof(LUID);
 
-	slIsFeatureLoaded(sl::kFeatureDLSS, featureDLSS);
-	if (featureDLSS) {
-		logger::info("[Streamline] DLSS feature is loaded");
-		featureDLSS = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo) == sl::Result::eOk;
-	} else {
-		logger::info("[Streamline] DLSS feature is not loaded");
-		sl::FeatureRequirements featureRequirements;
-		sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS, featureRequirements);
-		if (result != sl::Result::eOk) {
-			logger::info("[Streamline] DLSS feature failed to load due to: {}", magic_enum::enum_name(result));
+	if (slIsFeatureLoaded) {
+		slIsFeatureLoaded(sl::kFeatureDLSS, featureDLSS);
+		if (featureDLSS) {
+			logger::info("[Streamline] DLSS feature is loaded");
+			featureDLSS = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo) == sl::Result::eOk;
+		} else {
+			logger::info("[Streamline] DLSS feature is not loaded");
+			sl::FeatureRequirements featureRequirements;
+			sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS, featureRequirements);
+			if (result != sl::Result::eOk) {
+				logger::info("[Streamline] DLSS feature failed to load due to: {}", magic_enum::enum_name(result));
+			}
 		}
-	}
 
-	slIsFeatureLoaded(sl::kFeatureDLSS_G, featureDLSSG);
-	if (featureDLSSG) {
-		logger::info("[Streamline] DLSSG feature is loaded");
-		featureDLSSG = slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk;
-	} else {
-		logger::info("[Streamline] DLSSG feature is not loaded");
-		sl::FeatureRequirements featureRequirements;
-		sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS_G, featureRequirements);
-		if (result != sl::Result::eOk) {
-			logger::info("[Streamline] DLSSG feature failed to load due to: {}", magic_enum::enum_name(result));
+		slIsFeatureLoaded(sl::kFeatureDLSS_G, featureDLSSG);
+		if (featureDLSSG && settings.DLSSG) {
+			logger::info("[Streamline] DLSSG feature is loaded");
+			featureDLSSG = slIsFeatureSupported(sl::kFeatureDLSS_G, adapterInfo) == sl::Result::eOk;
+		} else {
+			logger::info("[Streamline] DLSSG feature is not loaded");
+			sl::FeatureRequirements featureRequirements;
+			sl::Result result = slGetFeatureRequirements(sl::kFeatureDLSS_G, featureRequirements);
+			if (result != sl::Result::eOk) {
+				logger::info("[Streamline] DLSSG feature failed to load due to: {}", magic_enum::enum_name(result));
+			}
 		}
-	}
 
-	slIsFeatureLoaded(sl::kFeatureReflex, featureReflex);
-	if (featureReflex) {
-		logger::info("[Streamline] Reflex feature is loaded");
-		featureReflex = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
-	} else {
-		logger::info("[Streamline] Reflex feature is not loaded");
-		sl::FeatureRequirements featureRequirements;
-		sl::Result result = slGetFeatureRequirements(sl::kFeatureReflex, featureRequirements);
-		if (result != sl::Result::eOk) {
-			logger::info("[Streamline] Reflex feature failed to load due to: {}", magic_enum::enum_name(result));
+		slIsFeatureLoaded(sl::kFeatureReflex, featureReflex);
+		if (featureReflex && settings.Reflex) {
+			logger::info("[Streamline] Reflex feature is loaded");
+			featureReflex = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
+		} else {
+			logger::info("[Streamline] Reflex feature is not loaded");
+			sl::FeatureRequirements featureRequirements;
+			sl::Result result = slGetFeatureRequirements(sl::kFeatureReflex, featureRequirements);
+			if (result != sl::Result::eOk) {
+				logger::info("[Streamline] Reflex feature failed to load due to: {}", magic_enum::enum_name(result));
+			}
 		}
+	} else {
+		logger::info("[Streamline] DLSS slIsFeatureLoaded is nullptr; unable to query features");
 	}
 
 	logger::info("[Streamline] DLSS {} available", featureDLSS ? "is" : "is not");
@@ -327,7 +339,9 @@ HRESULT Streamline::CreateDeviceAndSwapChain(IDXGIAdapter* pAdapter,
 		slSetD3DDevice(*ppDevice);
 	}
 
-	Initialize_postDevice();
+	if (slIsFeatureLoaded) {
+		Initialize_postDevice();
+	}
 
 	return hr;
 }
@@ -379,7 +393,7 @@ void Streamline::SetupResources()
 		if (SL_FAILED(res, slReflexSetOptions(reflexOptions))) {
 			logger::error("[Streamline] Failed to set reflex options");
 		} else {
-			logger::info("[Streamline] Sucessfully set reflex options");
+			logger::info("[Streamline] Successfully set reflex options");
 		}
 	}
 

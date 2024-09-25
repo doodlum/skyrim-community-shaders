@@ -191,11 +191,14 @@ HRESULT STDMETHODCALLTYPE hk_CreatePixelShader(ID3D11Device* This, const void* p
 
 decltype(&CreateDXGIFactory) ptrCreateDXGIFactory;
 
-HRESULT WINAPI hk_CreateDXGIFactory(REFIID, void** ppFactory)
+HRESULT WINAPI hk_CreateDXGIFactory(REFIID riid, void** ppFactory)
 {
 	logger::info("Creating DXGI factory");
-
-	return Streamline::GetSingleton()->CreateDXGIFactory(__uuidof(IDXGIFactory1), ppFactory);
+	auto result = Streamline::GetSingleton()->CreateDXGIFactory(__uuidof(IDXGIFactory1), ppFactory);
+	if (SUCCEEDED(result)) {
+		return result;
+	}
+	return ptrCreateDXGIFactory(riid, ppFactory);
 }
 
 decltype(&D3D11CreateDeviceAndSwapChain) ptrD3D11CreateDeviceAndSwapChain;
@@ -214,8 +217,23 @@ HRESULT WINAPI hk_D3D11CreateDeviceAndSwapChain(
 	D3D_FEATURE_LEVEL* pFeatureLevel,
 	ID3D11DeviceContext** ppImmediateContext)
 {
-	return Streamline::GetSingleton()->CreateDeviceAndSwapChain(
+	auto result = Streamline::GetSingleton()->CreateDeviceAndSwapChain(
 		pAdapter,
+		DriverType,
+		Software,
+		Flags,
+		pFeatureLevels,
+		FeatureLevels,
+		SDKVersion,
+		pSwapChainDesc,
+		ppSwapChain,
+		ppDevice,
+		pFeatureLevel,
+		ppImmediateContext);
+	if (SUCCEEDED(result)) {
+		return result;
+	}
+	return ptrD3D11CreateDeviceAndSwapChain(pAdapter,
 		DriverType,
 		Software,
 		Flags,
