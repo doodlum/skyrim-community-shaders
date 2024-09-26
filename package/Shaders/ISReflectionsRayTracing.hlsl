@@ -67,11 +67,7 @@ PS_OUTPUT main(PS_INPUT input)
 	// Disable SSR raymarch
 	return psout;
 #	endif
-#	ifdef VR
-	uint eyeIndex = input.TexCoord.x >= 0.5;
-#	else
-	uint eyeIndex = 0;
-#	endif
+	uint eyeIndex = GetEyeIndexFromTexCoord(input.TexCoord);
 	float2 uvStart = input.TexCoord;
 	float2 uvStartDR = GetDynamicResolutionAdjustedScreenPosition(uvStart);
 
