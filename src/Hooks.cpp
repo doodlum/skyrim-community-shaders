@@ -618,18 +618,16 @@ namespace Hooks
 	{
 		auto streamline = Streamline::GetSingleton();
 
-		streamline->Initialize();
+		streamline->LoadInterposer();
 
-		if (streamline->initialized) {
+		if (streamline->interposer) {
 			Streamline::InstallHooks();
 
 			logger::info("Hooking D3D11CreateDeviceAndSwapChain");
 			*(uintptr_t*)&ptrD3D11CreateDeviceAndSwapChain = SKSE::PatchIAT(hk_D3D11CreateDeviceAndSwapChain, "d3d11.dll", "D3D11CreateDeviceAndSwapChain");
 
-			if (!REL::Module::IsVR()) {
-				logger::info("Hooking CreateDXGIFactory");
-				*(uintptr_t*)&ptrCreateDXGIFactory = SKSE::PatchIAT(hk_CreateDXGIFactory, "dxgi.dll", !REL::Module::IsVR() ? "CreateDXGIFactory" : "CreateDXGIFactory1");
-			}
+			logger::info("Hooking CreateDXGIFactory");
+			*(uintptr_t*)&ptrCreateDXGIFactory = SKSE::PatchIAT(hk_CreateDXGIFactory, "dxgi.dll", !REL::Module::IsVR() ? "CreateDXGIFactory" : "CreateDXGIFactory1");	
 		}
 	}
 }

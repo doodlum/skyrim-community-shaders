@@ -99,6 +99,7 @@ public:
 	void RestoreDefaultSettings();
 	void DrawSettings();
 
+	void LoadInterposer();
 	void Initialize();
 	void PostDevice();
 

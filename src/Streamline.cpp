@@ -110,18 +110,20 @@ void Streamline::DrawSettings()
 	}
 }
 
-void Streamline::Initialize()
+void Streamline::LoadInterposer()
 {
-	logger::info("[Streamline] Initializing Streamline");
-
 	interposer = LoadLibraryW(L"Data/SKSE/Plugins/Streamline/sl.interposer.dll");
 	if (interposer == nullptr) {
 		DWORD errorCode = GetLastError();
 		logger::info("[Streamline] Failed to load interposer: Error Code {0:x}", errorCode);
-		return;
 	} else {
 		logger::info("[Streamline] Interposer loaded at address: {0:p}", static_cast<void*>(interposer));
 	}
+}
+
+void Streamline::Initialize()
+{
+	logger::info("[Streamline] Initializing Streamline");
 
 	sl::Preferences pref;
 
@@ -192,6 +194,7 @@ void Streamline::PostDevice()
 
 HRESULT Streamline::CreateDXGIFactory(REFIID riid, void** ppFactory)
 {
+	Initialize();
 	logger::info("[Streamline] Proxying CreateDXGIFactory");
 	auto slCreateDXGIFactory1 = reinterpret_cast<decltype(&CreateDXGIFactory1)>(GetProcAddress(interposer, "CreateDXGIFactory1"));
 	return slCreateDXGIFactory1(riid, ppFactory);
