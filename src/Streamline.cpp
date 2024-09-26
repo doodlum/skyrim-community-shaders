@@ -686,8 +686,8 @@ void Streamline::UpdateConstants()
 	slConstants.clipToCameraView = *(sl::float4x4*)&clipToCameraView;
 	slConstants.clipToPrevClip = *(sl::float4x4*)&cameraToPrevCamera;
 	slConstants.depthInverted = sl::Boolean::eFalse;
-	slConstants.jitterOffset = { gameViewport->projectionPosScaleX, gameViewport->projectionPosScaleY };
-	slConstants.mvecScale = { 1, 1 };
+	slConstants.jitterOffset = { gameViewport->projectionPosScaleX * (state->isVR ? 0.5f : 1.0f), gameViewport->projectionPosScaleY };
+	slConstants.mvecScale = { (state->isVR ? 0.5f : 1.0f), 1 };
 	slConstants.prevClipToClip = *(sl::float4x4*)&prevCameraToCamera;
 	slConstants.reset = sl::Boolean::eFalse;
 	slConstants.motionVectors3D = sl::Boolean::eTrue;
