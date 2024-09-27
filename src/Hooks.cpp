@@ -616,7 +616,7 @@ namespace Hooks
 	}
 	void InstallD3DHooks()
 	{
-		if (!REL::Module::VR()){
+		if (!REL::Module::VR()) {
 			auto streamline = Streamline::GetSingleton();
 
 			streamline->LoadInterposer();
