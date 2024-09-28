@@ -61,6 +61,7 @@ public:
 
 	bool activeReflections = false;
 	bool resetCapture = true;
+	bool recompileFlag = false;
 
 	enum class NextTask
 	{
@@ -77,13 +78,16 @@ public:
 
 	struct Settings
 	{
-		uint Enabled = false;
-		uint pad0[3]{};
+		uint EnabledCreator = false;
+		uint EnabledSSR = true;
+		uint MaxIterations = static_cast<uint>(REL::Relocate(16, 16, 48));
+		uint pad0{};
 		float4 CubemapColor{ 1.0f, 1.0f, 1.0f, 0.0f };
 	};
 
 	Settings settings;
-
+	std::string maxIterationsString = "";  // required to avoid string going out of scope for defines
+	bool enabledAtBoot = false;
 	void UpdateCubemap();
 
 	void PostDeferred();
@@ -91,26 +95,39 @@ public:
 	virtual inline std::string GetName() override { return "Dynamic Cubemaps"; }
 	virtual inline std::string GetShortName() override { return "DynamicCubemaps"; }
 	virtual inline std::string_view GetShaderDefineName() override { return "DYNAMIC_CUBEMAPS"; }
+	virtual inline std::vector<std::pair<std::string_view, std::string_view>> GetShaderDefineOptions() override;
+
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
 	virtual void SetupResources() override;
 	virtual void Reset() override;
 
+	virtual void SaveSettings(json&) override;
+	virtual void LoadSettings(json&) override;
+	virtual void RestoreDefaultSettings() override;
 	virtual void DrawSettings() override;
 	virtual void DataLoaded() override;
+	virtual void PostPostLoad() override;
 
-	std::vector<std::string> iniVRCubeMapSettings{
-		{ "bAutoWaterSilhouetteReflections:Water" },  //IniSettings 0x1eaa018
-		{ "bForceHighDetailReflections:Water" },      //IniSettings 0x1eaa030
+	std::map<std::string, gameSetting> SSRSettings{
+		{ "fWaterSSRNormalPerturbationScale:Display", { "Water Normal Perturbation Scale", "Controls the scale of normal perturbations for Screen Space Reflections (SSR) on water surfaces.", 0, 0.05f, 0.f, 1.f } },
+		{ "fWaterSSRBlurAmount:Display", { "Water SSR Blur Amount", "Defines the amount of blur applied to Screen Space Reflections on water surfaces.", 0, 0.3f, 0.f, 1.f } },
+		{ "fWaterSSRIntensity:Display", { "Water SSR Intensity", "Adjusts the intensity or strength of Screen Space Reflections on water.", 0, 1.3f, 0.f, 5.f } },
+		{ "bDownSampleNormalSSR:Display", { "Down Sample Normal SSR", "Enables or disables downsampling of normals for SSR to improve performance.", 0, true, false, true } }
 	};
 
-	std::map<std::string, uintptr_t> hiddenVRCubeMapSettings{
-		{ "bReflectExplosions:Water", 0x1eaa000 },
-		{ "bReflectLODLand:Water", 0x1eaa060 },
-		{ "bReflectLODObjects:Water", 0x1eaa078 },
-		{ "bReflectLODTrees:Water", 0x1eaa090 },
-		{ "bReflectSky:Water", 0x1eaa0a8 },
-		{ "bUseWaterRefractions:Water", 0x1eaa0c0 },
+	std::map<std::string, gameSetting> iniVRCubeMapSettings{
+		{ "bAutoWaterSilhouetteReflections:Water", { "Auto Water Silhouette Reflections", "Automatically reflects silhouettes on water surfaces.", 0, true, false, true } },
+		{ "bForceHighDetailReflections:Water", { "Force High Detail Reflections", "Forces the use of high-detail reflections on water surfaces.", 0, true, false, true } }
+	};
+
+	std::map<std::string, gameSetting> hiddenVRCubeMapSettings{
+		{ "bReflectExplosions:Water", { "Reflect Explosions", "Enables reflection of explosions on water surfaces.", 0x1eaa000, true, false, true } },
+		{ "bReflectLODLand:Water", { "Reflect LOD Land", "Enables reflection of low-detail (LOD) terrain on water surfaces.", 0x1eaa060, true, false, true } },
+		{ "bReflectLODObjects:Water", { "Reflect LOD Objects", "Enables reflection of low-detail (LOD) objects on water surfaces.", 0x1eaa078, true, false, true } },
+		{ "bReflectLODTrees:Water", { "Reflect LOD Trees", "Enables reflection of low-detail (LOD) trees on water surfaces.", 0x1eaa090, true, false, true } },
+		{ "bReflectSky:Water", { "Reflect Sky", "Enables reflection of the sky on water surfaces.", 0x1eaa0a8, true, false, true } },
+		{ "bUseWaterRefractions:Water", { "Use Water Refractions", "Enables refractions for water surfaces, affecting how light bends through water.", 0x1eaa0c0, true, false, true } }
 	};
 
 	virtual void ClearShaderCache() override;

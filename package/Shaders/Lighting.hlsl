@@ -1258,7 +1258,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	if defined(TRUE_PBR) && defined(LANDSCAPE)
 		[branch] if ((PBRFlags & TruePBR_LandTile0PBR) == 0)
 		{
-			rawBaseColor.rgb = GammaToLinear(rawBaseColor.rgb) * PI;
+			rawBaseColor.rgb = GammaToLinear(rawBaseColor.rgb) / AlbedoPreMult;
 		}
 #	endif
 		baseColor = rawBaseColor;
@@ -1368,7 +1368,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			landColor2.rgb = GammaToLinear(landColor2.rgb) * PI;
+			landColor2.rgb = GammaToLinear(landColor2.rgb) / AlbedoPreMult;
 			rawRMAOS += input.LandBlendWeights1.y * float4(1 - landNormal2.w, 0, 1, 0.04);
 		}
 #		endif
@@ -1396,7 +1396,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			landColor3.rgb = GammaToLinear(landColor3.rgb) * PI;
+			landColor3.rgb = GammaToLinear(landColor3.rgb) / AlbedoPreMult;
 			rawRMAOS += input.LandBlendWeights1.z * float4(1 - landNormal3.w, 0, 1, 0.04);
 		}
 #		endif
@@ -1424,7 +1424,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			landColor4.rgb = GammaToLinear(landColor4.rgb) * PI;
+			landColor4.rgb = GammaToLinear(landColor4.rgb) / AlbedoPreMult;
 			rawRMAOS += input.LandBlendWeights1.w * float4(1 - landNormal4.w, 0, 1, 0.04);
 		}
 #		endif
@@ -1452,7 +1452,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			landColor5.rgb = GammaToLinear(landColor5.rgb) * PI;
+			landColor5.rgb = GammaToLinear(landColor5.rgb) / AlbedoPreMult;
 			rawRMAOS += input.LandBlendWeights2.x * float4(1 - landNormal5.w, 0, 1, 0.04);
 		}
 #		endif
@@ -1480,7 +1480,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		}
 		else
 		{
-			landColor6.rgb = GammaToLinear(landColor6.rgb) * PI;
+			landColor6.rgb = GammaToLinear(landColor6.rgb) / AlbedoPreMult;
 			rawRMAOS += input.LandBlendWeights2.y * float4(1 - landNormal6.w, 0, 1, 0.04);
 		}
 #		endif
@@ -1915,7 +1915,13 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
 		if (dirLightAngle > 0.0)
 #		endif
+		{
 			dirDetailShadow = ScreenSpaceShadows::GetScreenSpaceShadow(input.Position, screenUV, screenNoise, viewPosition, eyeIndex);
+#		if defined(TREE_ANIM)
+			PerGeometry sD = SharedPerShadow[0];
+			dirDetailShadow = lerp(1.0, dirDetailShadow, saturate(viewPosition.z / sqrt(sD.ShadowLightParam.z)));
+#		endif
+		}
 #	endif
 
 #	if defined(EMAT) && (defined(SKINNED) || !defined(MODELSPACENORMALS))
@@ -2015,7 +2021,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(WETNESS_EFFECTS)
 	if (waterRoughnessSpecular < 1.0)
-		wetnessSpecular += WetnessEffects::GetWetnessSpecular(wetnessNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, GammaToLinear(dirLightColor * dirDetailShadow), waterRoughnessSpecular);
+		wetnessSpecular += WetnessEffects::GetWetnessSpecular(wetnessNormal, normalizedDirLightDirectionWS, worldSpaceViewDirection, GammaToLinear(dirLightColor * dirDetailShadow) / LightPreMult, waterRoughnessSpecular);
 #		endif
 #	endif
 
@@ -2212,7 +2218,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #			if defined(WETNESS_EFFECTS)
 		if (waterRoughnessSpecular < 1.0)
-			wetnessSpecular += WetnessEffects::GetWetnessSpecular(wetnessNormal, normalizedLightDirection, worldSpaceViewDirection, GammaToLinear(lightColor), waterRoughnessSpecular);
+			wetnessSpecular += WetnessEffects::GetWetnessSpecular(wetnessNormal, normalizedLightDirection, worldSpaceViewDirection, GammaToLinear(lightColor) / LightPreMult, waterRoughnessSpecular);
 #			endif
 	}
 #		endif
@@ -2228,7 +2234,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 			CharacterLightParams.y * saturate(dot(float2(0.164398998, -0.986393988), modelNormal.yz));
 		float charLightColor = min(CharacterLightParams.w, max(0, CharacterLightParams.z * TexCharacterLightProjNoiseSampler.Sample(SampCharacterLightProjNoiseSampler, baseShadowUV).x));
 #		if defined(TRUE_PBR)
-		charLightColor = GammaToLinear(charLightColor);
+		charLightColor = GammaToLinear(charLightColor) / LightPreMult;
 #		endif
 		diffuseColor += (charLightMul * charLightColor).xxx;
 	}
@@ -2257,7 +2263,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 directionalAmbientColor = mul(DirectionalAmbient, modelNormal);
 #	if defined(TRUE_PBR)
-	directionalAmbientColor = GammaToLinear(directionalAmbientColor);
+	directionalAmbientColor = GammaToLinear(directionalAmbientColor) / LightPreMult;
 #	endif
 
 	float3 reflectionDiffuseColor = diffuseColor + directionalAmbientColor;
@@ -2267,11 +2273,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	skylightingDiffuse = lerp(1.0, skylightingDiffuse, Skylighting::getFadeOutFactor(input.WorldPosition));
 	skylightingDiffuse = Skylighting::mixDiffuse(skylightingSettings, skylightingDiffuse);
 #		if !defined(TRUE_PBR)
-	directionalAmbientColor = GammaToLinear(directionalAmbientColor);
+	directionalAmbientColor = GammaToLinear(directionalAmbientColor) / LightPreMult;
 #		endif
 	directionalAmbientColor *= skylightingDiffuse;
 #		if !defined(TRUE_PBR)
-	directionalAmbientColor = LinearToGamma(directionalAmbientColor);
+	directionalAmbientColor = LinearToGamma(directionalAmbientColor * LightPreMult);
 #		endif
 #	endif
 
@@ -2302,7 +2308,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		dynamicCubemap = true;
 		envColorBase = TexEnvSampler.SampleLevel(SampEnvSampler, float3(1.0, 0.0, 0.0), 0);
 		if (envColorBase.a < 1.0) {
-			F0 = GammaToLinear(envColorBase.rgb) + GammaToLinear(baseColor.rgb);
+			F0 = (GammaToLinear(envColorBase.rgb) + GammaToLinear(baseColor.rgb)) / AlbedoPreMult;
 			envRoughness = envColorBase.a;
 		} else {
 			F0 = 1.0;
@@ -2313,7 +2319,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #			if defined(CREATOR)
 	if (cubemapCreatorSettings.Enabled) {
 		dynamicCubemap = true;
-		F0 = GammaToLinear(cubemapCreatorSettings.CubemapColor.rgb) + GammaToLinear(baseColor.xyz);
+		F0 = (GammaToLinear(cubemapCreatorSettings.CubemapColor.rgb) + GammaToLinear(baseColor.xyz)) / AlbedoPreMult;
 		envRoughness = cubemapCreatorSettings.CubemapColor.a;
 	}
 #			endif
@@ -2362,6 +2368,8 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #	if defined(HAIR)
 	float3 vertexColor = lerp(1, TintColor.xyz, input.Color.y);
+#	elif defined(TREE_ANIM) && defined(SKYLIGHTING)
+	float3 vertexColor = 1.0;
 #	else
 	float3 vertexColor = input.Color.xyz;
 #	endif  // defined (HAIR)
@@ -2421,7 +2429,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 layerColor = TexLayerSampler.Sample(SampLayerSampler, layerUv).xyz;
 
 	float mlpBlendFactor = saturate(viewNormalAngle) * (1.0 - baseColor.w);
+
+#		if defined(DEFERRED) && defined(SSGI)
+	color.xyz = lerp(color.xyz, (diffuseColor + directionalAmbientColor) * vertexColor * layerColor, mlpBlendFactor);
+#		else
 	color.xyz = lerp(color.xyz, diffuseColor * vertexColor * layerColor, mlpBlendFactor);
+#		endif
 
 #		if defined(DEFERRED)
 	baseColor.xyz *= 1.0 - mlpBlendFactor;
@@ -2504,7 +2517,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #		if defined(DEFERRED)
 		specularColorPBR = lerp(specularColorPBR, 0, lodLandBlendFactor);
-		indirectDiffuseLobeWeight = lerp(indirectDiffuseLobeWeight, GammaToLinear(input.Color.xyz * lodLandColor * lodLandFadeFactor), lodLandBlendFactor);
+		indirectDiffuseLobeWeight = lerp(indirectDiffuseLobeWeight, GammaToLinear(input.Color.xyz * lodLandColor * lodLandFadeFactor) / AlbedoPreMult, lodLandBlendFactor);
 		indirectSpecularLobeWeight = lerp(indirectSpecularLobeWeight, 0, lodLandBlendFactor);
 		pbrGlossiness = lerp(pbrGlossiness, 0, lodLandBlendFactor);
 #		endif
@@ -2652,7 +2665,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 	float3 outputAlbedo = baseColor.xyz * vertexColor;
 #		if defined(TRUE_PBR)
-	outputAlbedo = LinearToGamma(indirectDiffuseLobeWeight);
+	outputAlbedo = LinearToGamma(indirectDiffuseLobeWeight * AlbedoPreMult);
 #		endif
 	psout.Albedo = float4(outputAlbedo, psout.Diffuse.w);
 

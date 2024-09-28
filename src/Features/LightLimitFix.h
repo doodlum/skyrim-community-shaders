@@ -28,7 +28,7 @@ public:
 	struct PositionOpt
 	{
 		float3 data;
-		float pad0;
+		uint pad0;
 	};
 
 	struct alignas(16) LightData
@@ -52,11 +52,12 @@ public:
 	{
 		uint offset;
 		uint lightCount;
-		float pad0[2];
+		uint pad0[2];
 	};
 
 	struct alignas(16) LightBuildingCB
 	{
+		float4x4 InvProjMatrix[2];
 		float LightsNear;
 		float LightsFar;
 		uint pad0[2];
@@ -65,7 +66,7 @@ public:
 	struct alignas(16) LightCullingCB
 	{
 		uint LightCount;
-		float pad[3];
+		uint pad[3];
 	};
 
 	struct alignas(16) PerFrame
@@ -74,7 +75,6 @@ public:
 		uint EnableLightsVisualisation;
 		uint LightsVisualisationMode;
 		uint pad0;
-
 		uint ClusterSize[4];
 	};
 
@@ -168,9 +168,6 @@ public:
 		bool EnableParticleLightsOptimization = true;
 		uint ParticleLightsOptimisationClusterRadius = 32;
 	};
-
-	float lightsNear = 0.0f;
-	float lightsFar = 16384.0f;
 
 	uint clusterSize[3] = { 16 };
 
