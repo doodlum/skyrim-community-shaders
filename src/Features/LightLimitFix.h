@@ -319,6 +319,30 @@ public:
 			static inline REL::Relocation<decltype(thunk)> func;
 		};
 
+		struct BSLightingShaderProperty_GetRenderPasses
+		{
+			static RE::BSShaderProperty::RenderPassArray* thunk(RE::BSLightingShaderProperty* property, RE::BSGeometry* geometry, std::uint32_t renderFlags, RE::BSShaderAccumulator* accumulator)
+			{
+				auto renderPasses = func(property, geometry, renderFlags, accumulator);
+				if (renderPasses == nullptr) {
+					return renderPasses;
+				}
+
+				auto currentPass = renderPasses->head;
+				while (currentPass != nullptr) {
+					if (currentPass->shader->shaderType == RE::BSShader::Type::Lighting) {
+						constexpr uint32_t LightingTechniqueStart = 0x4800002D;
+						// So that we always have shadow mask bound.
+						currentPass->passEnum = ((currentPass->passEnum - LightingTechniqueStart) | static_cast<uint32_t>(SIE::ShaderCache::LightingShaderFlags::DefShadow)) + LightingTechniqueStart;
+					}
+					currentPass = currentPass->next;
+				}
+
+				return renderPasses;
+			}
+			static inline REL::Relocation<decltype(thunk)> func;
+		};
+
 		static void Install()
 		{
 			stl::write_thunk_call<ValidLight1>(REL::RelocationID(100994, 107781).address() + 0x92);
@@ -330,6 +354,8 @@ public:
 			stl::write_thunk_call<BSBatchRenderer__RenderPassImmediately3>(REL::RelocationID(100871, 107667).address() + REL::Relocate(0xEE, 0xED));
 
 			stl::write_thunk_call<AIProcess_CalculateLightValue_GetLuminance>(REL::RelocationID(38900, 39946).address() + REL::Relocate(0x1C9, 0x1D3));
+
+			stl::write_vfunc<0x2A, BSLightingShaderProperty_GetRenderPasses>(RE::VTABLE_BSLightingShaderProperty[0]);
 
 			stl::write_vfunc<0x6, BSLightingShader_SetupGeometry>(RE::VTABLE_BSLightingShader[0]);
 			stl::write_vfunc<0x6, BSEffectShader_SetupGeometry>(RE::VTABLE_BSEffectShader[0]);
