@@ -2131,11 +2131,10 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float lightShadow = 1.f;
 
 		float shadowComponent = 1.0;
-		if (PixelShaderDescriptor & _DefShadow) {
-			if (lightIndex < numShadowLights) {
-				shadowComponent = shadowColor[ShadowLightMaskSelect[lightIndex]];
-				lightShadow *= shadowComponent;
-			}
+        if ((PixelShaderDescriptor & _DefShadow) && (light.lightFlags & Llf_ShadowLight))
+        {
+			shadowComponent = shadowColor[light.shadowLightIndex];
+			lightShadow *= shadowComponent;
 		}
 
 		float3 normalizedLightDirection = normalize(lightDirection);

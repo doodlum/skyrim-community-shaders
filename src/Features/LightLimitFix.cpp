@@ -303,7 +303,7 @@ void LightLimitFix::BSLightingShader_SetupGeometry_GeometrySetupConstantPointLig
 	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
 	bool inWorld = accumulator->GetRuntimeData().activeShadowSceneNode == RE::BSShaderManager::State::GetSingleton().shadowSceneNode[0];
 
-	strictLightDataTemp.NumStrictLights = inWorld ? a_pass->numShadowLights : (a_pass->numLights - 1);
+	strictLightDataTemp.NumStrictLights = inWorld ? 0 : (a_pass->numLights - 1);
 
 	for (uint32_t i = 0; i < strictLightDataTemp.NumStrictLights; i++) {
 		auto bsLight = a_pass->sceneLights[i + 1];
@@ -319,6 +319,12 @@ void LightLimitFix::BSLightingShader_SetupGeometry_GeometrySetupConstantPointLig
 		light.radius = runtimeData.radius.x;
 
 		SetLightPosition(light, niLight->world.translate, inWorld);
+
+		if (bsLight->IsShadowLight()) {
+			auto* shadowLight = static_cast<RE::BSShadowLight*>(bsLight);
+			light.shadowMaskIndex = shadowLight->shadowLightIndex;
+			light.lightFlags.set(LightFlags::Shadow);
+		}
 
 		strictLightDataTemp.StrictLights[i] = light;
 	}
@@ -692,10 +698,10 @@ void LightLimitFix::UpdateLights()
 		light.roomFlags.SetBit(roomIndex, 1);
 	};
 
-	for (auto& e : shadowSceneNode->GetRuntimeData().activeLights) {
+	auto addLight = [&](const RE::NiPointer<RE::BSLight>& e) {
 		if (auto bsLight = e.get()) {
 			if (auto niLight = bsLight->light.get()) {
-				if (IsValidLight(bsLight) && !bsLight->IsShadowLight()) {
+				if (IsValidLight(bsLight)) {
 					auto& runtimeData = niLight->GetLightRuntimeData();
 
 					LightData light{};
@@ -714,7 +720,13 @@ void LightLimitFix::UpdateLights()
 						for (const auto& portalSharedNodePtr : bsLight->unk108) {
 							addRoom(portalSharedNodePtr, light);
 						}
-						light.isPortalStrictLight = static_cast<int>(true);
+						light.lightFlags.set(LightFlags::PortalStrict);
+					}
+
+					if (bsLight->IsShadowLight()) {
+						auto* shadowLight = static_cast<RE::BSShadowLight*>(bsLight);
+						light.shadowMaskIndex = shadowLight->shadowLightIndex;
+						light.lightFlags.set(LightFlags::Shadow);
 					}
 
 					SetLightPosition(light, niLight->world.translate);
@@ -745,6 +757,13 @@ void LightLimitFix::UpdateLights()
 				}
 			}
 		}
+	};
+
+	for (auto& e : shadowSceneNode->GetRuntimeData().activeLights) {
+		addLight(e);
+	}
+	for (auto& e : shadowSceneNode->GetRuntimeData().activeShadowLights) {
+		addLight(e);
 	}
 
 	{

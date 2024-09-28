@@ -25,6 +25,12 @@ public:
 
 	bool HasShaderDefine(RE::BSShader::Type) override { return true; };
 
+	enum class LightFlags : std::uint32_t
+	{
+		PortalStrict = (1 << 0),
+		Shadow = (1 << 1),
+	};
+
 	struct PositionOpt
 	{
 		float3 data;
@@ -38,8 +44,9 @@ public:
 		PositionOpt positionWS[2];
 		PositionOpt positionVS[2];
 		uint128_t roomFlags = uint32_t(0);
-		int isPortalStrictLight = 0;
-		float pad0[3];
+		stl::enumeration<LightFlags> lightFlags;
+		uint32_t shadowMaskIndex = 0;
+		float pad0[2];
 	};
 
 	struct ClusterAABB
