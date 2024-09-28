@@ -2132,8 +2132,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		float lightShadow = 1.f;
 
 		float shadowComponent = 1.0;
-        if ((PixelShaderDescriptor & _DefShadow) && (light.lightFlags & Llf_ShadowLight))
-        {
+		if ((PixelShaderDescriptor & _DefShadow) && (light.lightFlags & Llf_ShadowLight)) {
 			shadowComponent = shadowColor[light.shadowLightIndex];
 			lightShadow *= shadowComponent;
 		}

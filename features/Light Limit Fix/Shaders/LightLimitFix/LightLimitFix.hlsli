@@ -110,7 +110,7 @@ namespace LightLimitFix
 	bool IsLightIgnored(StructuredLight light)
 	{
 		bool lightIgnored = false;
-        if ((light.lightFlags & Llf_PortalStrictLight)  && strictLights[0].RoomIndex >= 0) {
+		if ((light.lightFlags & Llf_PortalStrictLight) && strictLights[0].RoomIndex >= 0) {
 			lightIgnored = true;
 			int roomIndex = strictLights[0].RoomIndex;
 			[unroll] for (int flagsIndex = 0; flagsIndex < 4; ++flagsIndex)

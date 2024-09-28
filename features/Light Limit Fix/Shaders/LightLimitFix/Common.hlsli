@@ -31,7 +31,7 @@ struct StructuredLight
 	float4 positionVS[2];
 	uint4 roomFlags;
 	uint lightFlags;
-    uint shadowLightIndex;
+	uint shadowLightIndex;
 	float pad0[2];
 };
 
