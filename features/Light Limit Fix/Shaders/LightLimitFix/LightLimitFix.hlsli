@@ -20,7 +20,7 @@ namespace LightLimitFix
 		if (z < CameraData.y || z > CameraData.x)
 			return false;
 
-		float clampedZ = clamp(z, CameraData.y , CameraData.x);
+		float clampedZ = clamp(z, CameraData.y, CameraData.x);
 		uint clusterZ = uint(max((log2(z) - log2(CameraData.y)) * clusterSize.z / log2(CameraData.x / CameraData.y), 0.0));
 		uint3 cluster = uint3(uint2(uv * clusterSize.xy), clusterZ);
 
