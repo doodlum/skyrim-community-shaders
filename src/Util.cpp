@@ -333,33 +333,38 @@ namespace Util
 
 	void DumpSettingsOptions()
 	{
+		// List of INI setting collections to iterate over
 		std::vector<RE::SettingCollectionList<RE::Setting>*> collections = {
 			RE::INISettingCollection::GetSingleton(),
 			RE::INIPrefSettingCollection::GetSingleton(),
 		};
-		auto count = 0;
+
+		// Iterate over each collection and log the settings
 		for (const auto& collection : collections) {
-			for (const auto set : collection->settings)
-				logger::info("Setting[{}] {}", count, set->GetName());
-			count++;
+			const std::string collectionName = typeid(*collection).name();  // Get the collection name
+			for (const auto set : collection->settings) {
+				logger::info("Setting [{}] {}", collectionName, set->GetName());
+			}
 		}
+
+		// Retrieve and log settings from the GameSettingCollection
 		auto game = RE::GameSettingCollection::GetSingleton();
 		for (const auto& set : game->settings) {
-			logger::info("Game Setting {} {}", set.first, set.second->GetName());
+			logger::info("Game Setting {}", set.second->GetName());
 		}
 	}
 
 	float4 GetCameraData()
 	{
+		static float& cameraNear = (*(float*)(REL::RelocationID(517032, 403540).address() + 0x40));
+		static float& cameraFar = (*(float*)(REL::RelocationID(517032, 403540).address() + 0x44));
+
 		float4 cameraData{};
-		if (auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator()) {
-			if (accumulator->kCamera) {
-				cameraData.x = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar;
-				cameraData.y = accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
-				cameraData.z = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar - accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
-				cameraData.w = accumulator->kCamera->GetRuntimeData2().viewFrustum.fFar * accumulator->kCamera->GetRuntimeData2().viewFrustum.fNear;
-			}
-		}
+		cameraData.x = cameraFar;
+		cameraData.y = cameraNear;
+		cameraData.z = cameraFar - cameraNear;
+		cameraData.w = cameraFar * cameraNear;
+
 		return cameraData;
 	}
 
