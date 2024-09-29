@@ -2,8 +2,8 @@
 
 #include <dxgi.h>
 
-#include "Util.h"
 #include "Hooks.h"
+#include "Util.h"
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Streamline::Settings,
