@@ -46,7 +46,7 @@ PS_OUTPUT main(PS_INPUT input)
 	}
 #	endif
 	float repartition = clamp(RepartitionTex.SampleLevel(RepartitionSampler, depth, 0).x, 0, 0.9999);
-	float vl = g_IntensityX_TemporalY.x * VLTex.SampleLevel(VLSampler, float3(ConvertFromStereoUV(input.TexCoord, eyeIndex), repartition), 0).x;
+	float vl = g_IntensityX_TemporalY.x * VLTex.SampleLevel(VLSampler, float3(input.TexCoord, repartition), 0).x;
 
 	float noiseGrad = 0.03125 * NoiseGradSamplerTex.Sample(NoiseGradSamplerSampler, 0.125 * input.Position.xy).x;
 
@@ -54,8 +54,8 @@ PS_OUTPUT main(PS_INPUT input)
 
 	if (0.001 < g_IntensityX_TemporalY.y) {
 		float2 motionVector = MotionVectorsTex.Sample(MotionVectorsSampler, screenPosition).xy;
-		float2 previousTexCoord = VR::ConvertFromStereoUV(input.TexCoord, eyeIndex) + motionVector;
-		float2 previousScreenPosition = FrameBuffer::GetPreviousDynamicResolutionAdjustedScreenPosition(VR::ConvertToStereoUV(previousTexCoord, eyeIndex));
+		float2 previousTexCoord = input.TexCoord + motionVector;
+		float2 previousScreenPosition = FrameBuffer::GetPreviousDynamicResolutionAdjustedScreenPosition(previousTexCoord);
 		float previousVl = PreviousFrameTex.Sample(PreviousFrameSampler, previousScreenPosition).x;
 		float previousDepth = PreviousDepthTex.Sample(PreviousDepthSampler, previousScreenPosition).x;
 
