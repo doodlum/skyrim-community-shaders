@@ -46,7 +46,7 @@ PS_OUTPUT main(PS_INPUT input)
 	}
 #	endif
 	float repartition = clamp(RepartitionTex.SampleLevel(RepartitionSampler, depth, 0).x, 0, 0.9999);
-	float vl = g_IntensityX_TemporalY.x * VLTex.SampleLevel(VLSampler, float3(input.TexCoord, repartition), 0).x;
+	float vl = g_IntensityX_TemporalY.x * VLTex.SampleLevel(VLSampler, float3(ConvertFromStereoUV(input.TexCoord, eyeIndex), repartition), 0).x;
 
 	float noiseGrad = 0.03125 * NoiseGradSamplerTex.Sample(NoiseGradSamplerSampler, 0.125 * input.Position.xy).x;
 
