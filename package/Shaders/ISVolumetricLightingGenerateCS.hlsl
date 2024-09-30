@@ -118,7 +118,7 @@ cbuffer PerTechnique : register(b0)
 		}
 	}
 
-	float3 noiseUv = 0.0125 * (InverseDensityScale * (positionWS.xyz + WindInput[0]));
+	float3 noiseUv = 0.0125 * (InverseDensityScale * (positionWS.xyz + WindInput[eyeIndex]));
 	float noise = NoiseTex.SampleLevel(NoiseSampler, noiseUv, 0).x;
 	float densityFactor = noise * (1 - 0.75 * smoothstep(0, 1, saturate(2 * positionWS.z / 300)));
 	float densityContribution = lerp(1, densityFactor, DensityContribution);
