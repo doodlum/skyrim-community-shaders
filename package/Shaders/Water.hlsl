@@ -565,7 +565,7 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 	float3 rippleNormal = normalize(raindropInfo.xyz);
 	finalNormal = WetnessEffects::ReorientNormal(rippleNormal, finalNormal);
 #			endif
-	
+
 	return finalNormal;
 }
 

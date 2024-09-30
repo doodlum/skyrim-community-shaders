@@ -52,7 +52,7 @@ namespace WetnessEffects
 	}
 
 	// xyz - ripple normal, w - splotches
-    float4 GetRainDrops(float3 worldPos, float t, float3 normal, float rippleStrengthModifier = 1)
+	float4 GetRainDrops(float3 worldPos, float t, float3 normal, float rippleStrengthModifier = 1)
 	{
 		const static float uintToFloat = rcp(4294967295.0);
 		const float rippleBreadthRcp = rcp(wetnessEffectsSettings.RippleBreadth);
