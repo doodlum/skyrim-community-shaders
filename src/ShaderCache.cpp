@@ -1647,6 +1647,8 @@ namespace SIE
 
 				{ "BSImagespaceShaderVolumetricLightingRaymarchCS", 256 },
 				{ "BSImagespaceShaderVolumetricLightingGenerateCS", 257 },
+				{ "BSImagespaceShaderISFullScreenVR", 129 },
+
 			};
 
 			auto it = descriptors.find(imagespaceShader.name);
