@@ -98,7 +98,7 @@ public:
 			// ISApplyVolumetricLighting because it clobbers a properly scaled kMAIN_COPY.
 			// The kMAIN_COPY does not appear to be used in the remaining frame after
 			// ISApplyVolumetricLighting except for IsFullScreenVR.
-			// But, the copy might have to be done manually later after IsFullScreenVR is
+			// But, the copy might have to be done manually later after IsFullScreenVR if
 			// used in the next frame.
 
 			auto* singleton = GetSingleton();
