@@ -57,7 +57,17 @@ PS_OUTPUT main(PS_INPUT input)
 		float2 previousTexCoord = input.TexCoord + motionVector;
 		float2 previousScreenPosition = FrameBuffer::GetPreviousDynamicResolutionAdjustedScreenPosition(previousTexCoord);
 		float previousVl = PreviousFrameTex.Sample(PreviousFrameSampler, previousScreenPosition).x;
-		float previousDepth = PreviousDepthTex.Sample(PreviousDepthSampler, previousScreenPosition).x;
+		float previousDepth = PreviousDepthTex.Sample(PreviousDepthSampler,
+#	ifndef VR
+												  previousScreenPosition
+#	else
+												  // In VR with dynamic resolution enabled, there's a bug with the depth stencil.
+												  // The depth stencil from ISDepthBufferCopy is actually full size and not scaled.
+												  // Thus there's never a need to scale it down.
+												  previousTexCoord
+#	endif
+												  )
+		                          .x;
 
 		float temporalContribution = g_IntensityX_TemporalY.y * (1 - smoothstep(0, 1, min(1, 100 * abs(depth - previousDepth))));
 
