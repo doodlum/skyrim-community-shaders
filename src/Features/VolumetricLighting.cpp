@@ -51,16 +51,17 @@ void VolumetricLighting::RestoreDefaultSettings()
 
 void VolumetricLighting::DataLoaded()
 {
-	// if (REL::Module::IsVR() && settings.EnabledVL) {
-	// 	EnableBooleanSettings(hiddenVRSettings, GetName());
-	// 	enabledAtBoot = true;
-	// }
 }
 
 void VolumetricLighting::PostPostLoad()
 {
-	if (REL::Module::IsVR() && settings.EnabledVL) {
-		EnableBooleanSettings(hiddenVRSettings, GetName());
+	if (REL::Module::IsVR()) {
+		if (settings.EnabledVL)
+			EnableBooleanSettings(hiddenVRSettings, GetName());
+		auto address = REL::RelocationID(100475, 0).address() + 0x45b;
+		logger::info("[{}] Hooking CopyResource at {:x}", GetName(), address);
+		REL::safe_fill(address, REL::NOP, 7);
+		stl::write_thunk_call<CopyResource, 6>(address);  // AE not needed, VR only hook
 	}
 }
 

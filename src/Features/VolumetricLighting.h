@@ -2,6 +2,7 @@
 
 #include "Buffer.h"
 #include "Feature.h"
+#include "State.h"
 
 struct VolumetricLighting : Feature
 {
@@ -67,21 +68,46 @@ public:
 	};
 
 	std::map<std::string, gameSetting> hiddenVRSettings{
-		{ "bEnableVolumetricLighting:Display", { "Enable Volumetric Lighting Shaders (INI) ",
+		{ "bEnableVolumetricLighting:Display", { "Enable VL Shaders (INI) ",
 												   "Enables volumetric lighting effects by creating shaders. "
 												   "Needed at startup. ",
 												   0x1ed63d8, true, false, true } },
-		{ "bVolumetricLightingEnable:Display", { "Enable Volumetric Lighting (INI))", "Enables volumetric lighting. ", 0x3485360, true, false, true } },
+		{ "bVolumetricLightingEnable:Display", { "Enable VL (INI))", "Enables volumetric lighting. ", 0x3485360, true, false, true } },
 		{ "bVolumetricLightingUpdateWeather:Display", { "Enable Volumetric Lighting (Weather) (INI) ",
 														  "Enables volumetric lighting for weather. "
 														  "Only used during startup and used to set bVLWeatherUpdate.",
 														  0x3485361, true, false, true } },
-		{ "bVLWeatherUpdate", { "Enable Volumetric Lighting (Weather)", "Enables volumetric lighting for weather.", 0x3485363, true, false, true } },
-		{ "bVolumetricLightingEnabled_143232EF0", { "Enable Volumetric Lighting (Papyrus) ",
+		{ "bVLWeatherUpdate", { "Enable VL (Weather)", "Enables volumetric lighting for weather.", 0x3485363, true, false, true } },
+		{ "bVolumetricLightingEnabled_143232EF0", { "Enable VL (Papyrus) ",
 													  "Enables volumetric lighting. "
 													  "This is the Papyrus command. ",
 													  REL::Relocate<uintptr_t>(0x3232ef0, 0, 0x3485362), true, false, true } },
 	};
 
 	virtual bool SupportsVR() override { return true; };
+
+	// hooks
+
+	struct CopyResource
+	{
+		static void thunk(REX::W32::ID3D11DeviceContext* a_this, ID3D11Texture2D* a_renderTarget, ID3D11Texture2D* a_renderTargetSource)
+		{
+			// In VR with dynamic resolution enabled, there's a bug with the depth stencil.
+			// The depth stencil passed to IsFullScreenVR is scaled down incorrectly.
+			// The fix is to stop a CopyResource from replacing kMAIN_COPY with kMAIN after
+			// ISApplyVolumetricLighting because it clobbers a properly scaled kMAIN_COPY.
+			// The kMAIN_COPY does not appear to be used in the remaining frame after
+			// ISApplyVolumetricLighting except for IsFullScreenVR.
+			// But, the copy might have to be done manually later after IsFullScreenVR is
+			// used in the next frame.
+
+			auto* singleton = GetSingleton();
+			auto* state = State::GetSingleton();
+
+			if (singleton && state && state->dynamicResolutionEnabled && !singleton->settings.EnabledVL) {
+				func(a_this, a_renderTarget, a_renderTargetSource);
+			}
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
 };
