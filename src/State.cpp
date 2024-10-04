@@ -398,6 +398,13 @@ void State::SetupResources()
 	renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGETS::kMAIN].texture->GetDesc(&texDesc);
 
 	isVR = REL::Module::IsVR();
+	auto ini = RE::INISettingCollection::GetSingleton();
+	if (ini) {
+		auto setting = ini->GetSetting("bEnableAutoDynamicResolution:Display");
+		dynamicResolutionEnabled = setting ? setting->GetBool() : false;
+	} else {
+		dynamicResolutionEnabled = false;
+	}
 	screenSize = { (float)texDesc.Width, (float)texDesc.Height };
 	context = reinterpret_cast<ID3D11DeviceContext*>(renderer->GetRuntimeData().context);
 	device = reinterpret_cast<ID3D11Device*>(renderer->GetRuntimeData().forwarder);
