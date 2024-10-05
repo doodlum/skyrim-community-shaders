@@ -2,7 +2,7 @@
 
 #include "Buffer.h"
 #include "Feature.h"
-#include "State.h"
+#include "Util.h"
 
 struct VolumetricLighting : Feature
 {
@@ -90,7 +90,7 @@ public:
 
 	struct CopyResource
 	{
-		static void thunk(REX::W32::ID3D11DeviceContext* a_this, ID3D11Texture2D* a_renderTarget, ID3D11Texture2D* a_renderTargetSource)
+		static void thunk(ID3D11DeviceContext* a_this, ID3D11Resource* a_renderTarget, ID3D11Resource* a_renderTargetSource)
 		{
 			// In VR with dynamic resolution enabled, there's a bug with the depth stencil.
 			// The depth stencil passed to IsFullScreenVR is scaled down incorrectly.
@@ -102,10 +102,8 @@ public:
 			// used in the next frame.
 
 			auto* singleton = GetSingleton();
-			auto* state = State::GetSingleton();
-
-			if (singleton && state && state->dynamicResolutionEnabled && !singleton->settings.EnabledVL) {
-				func(a_this, a_renderTarget, a_renderTargetSource);
+			if (singleton && !(Util::IsDynamicResolution() && singleton->settings.EnabledVL)) {
+				a_this->CopyResource(a_renderTarget, a_renderTargetSource);
 			}
 		}
 		static inline REL::Relocation<decltype(thunk)> func;
