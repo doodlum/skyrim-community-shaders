@@ -150,7 +150,6 @@ public:
 
 	// Skyrim constants
 	bool isVR = false;
-	bool dynamicResolutionEnabled = false;
 	float2 screenSize = {};
 	ID3D11DeviceContext* context = nullptr;
 	ID3D11Device* device = nullptr;
