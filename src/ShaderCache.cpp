@@ -74,6 +74,8 @@ namespace SIE
 					defines[lastIndex++] = { feature->GetShaderDefineName().data(), nullptr };
 				}
 			}
+
+			defines[lastIndex] = { nullptr, nullptr };
 		}
 
 		static void GetBloodSplaterShaderDefines(uint32_t descriptor, std::span<D3D_SHADER_MACRO> defines)
