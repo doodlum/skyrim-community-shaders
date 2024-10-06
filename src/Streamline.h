@@ -3,6 +3,7 @@
 #include "Buffer.h"
 #include "State.h"
 
+#define NV_WINDOWS
 #include <sl.h>
 #include <sl_consts.h>
 #include <sl_dlss.h>
@@ -19,11 +20,17 @@ public:
 		return &singleton;
 	}
 
-	bool initialized = false;
-	bool streamlineActive = false;
+	inline std::string GetShortName() { return "Streamline"; }
 
-	sl::ViewportHandle viewport;
-	sl::FrameToken* currentFrame;
+	bool enabledAtBoot = false;
+	bool initialized = false;
+
+	bool featureDLSS = false;
+	bool featureDLSSG = false;
+	bool featureReflex = false;
+
+	sl::ViewportHandle viewport{ 0 };
+	sl::FrameToken* frameToken;
 
 	sl::DLSSGMode frameGenerationMode = sl::DLSSGMode::eAuto;
 
@@ -48,6 +55,11 @@ public:
 	PFun_slGetNewFrameToken* slGetNewFrameToken{};
 	PFun_slSetD3DDevice* slSetD3DDevice{};
 
+	// DLSS specific functions
+	PFun_slDLSSGetOptimalSettings* slDLSSGetOptimalSettings{};
+	PFun_slDLSSGetState* slDLSSGetState{};
+	PFun_slDLSSSetOptions* slDLSSSetOptions{};
+
 	// DLSSG specific functions
 	PFun_slDLSSGGetState* slDLSSGGetState{};
 	PFun_slDLSSGSetOptions* slDLSSGSetOptions{};
@@ -65,10 +77,9 @@ public:
 
 	void DrawSettings();
 
-	void Shutdown();
-
-	void Initialize_preDevice();
-	void Initialize_postDevice();
+	void LoadInterposer();
+	void Initialize();
+	void PostDevice();
 
 	HRESULT CreateDXGIFactory(REFIID riid, void** ppFactory);
 
@@ -83,27 +94,26 @@ public:
 		IDXGISwapChain** ppSwapChain,
 		ID3D11Device** ppDevice,
 		D3D_FEATURE_LEVEL* pFeatureLevel,
-		ID3D11DeviceContext** ppImmediateContext,
-		bool& o_streamlineProxy);
+		ID3D11DeviceContext** ppImmediateContext);
 
-	void CreateFrameGenerationResources();
-
-	void SetupFrameGeneration();
+	void SetupResources();
 
 	void CopyResourcesToSharedBuffers();
 
 	void Present();
+	void Upscale(Texture2D* a_color);
 
-	void SetConstants();
+	void UpdateConstants();
+
+	void DestroyDLSSResources();
 
 	struct Main_RenderWorld
 	{
 		static void thunk(bool a1)
 		{
-			GetSingleton()->SetConstants();
+			GetSingleton()->UpdateConstants();
 			func(a1);
 		}
-
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
@@ -119,7 +129,9 @@ public:
 
 	static void InstallHooks()
 	{
-		stl::write_thunk_call<Main_RenderWorld>(REL::RelocationID(35560, 36559).address() + REL::Relocate(0x831, 0x841, 0x791));
-		stl::write_thunk_call<MenuManagerDrawInterfaceStartHook>(REL::RelocationID(79947, 82084).address() + REL::Relocate(0x7E, 0x83, 0x97));
+		if (!REL::Module::IsVR()) {
+			stl::write_thunk_call<Main_RenderWorld>(REL::RelocationID(35560, 36559).address() + REL::Relocate(0x831, 0x841, 0x791));
+			stl::write_thunk_call<MenuManagerDrawInterfaceStartHook>(REL::RelocationID(79947, 82084).address() + REL::Relocate(0x7E, 0x83, 0x97));
+		}
 	}
 };

@@ -1734,6 +1734,10 @@ namespace SIE
 		}
 
 		auto state = State::GetSingleton();
+		if (state->isVR && strcmp(shader.fxpFilename, "OBBOcclusionTesting") == 0)
+			// use vanilla shader
+			return nullptr;
+
 		if (!((ShaderCache::IsSupportedShader(shader) || state->IsDeveloperMode() && state->IsShaderEnabled(shader)) && state->enableVShaders)) {
 			return nullptr;
 		}
@@ -1769,6 +1773,10 @@ namespace SIE
 		uint32_t descriptor)
 	{
 		auto state = State::GetSingleton();
+		if (state->isVR && strcmp(shader.fxpFilename, "OBBOcclusionTesting") == 0)
+			// use vanilla shader
+			return nullptr;
+
 		if (!((ShaderCache::IsSupportedShader(shader) || state->IsDeveloperMode() && state->IsShaderEnabled(shader)) && state->enablePShaders)) {
 			return nullptr;
 		}
@@ -2013,14 +2021,16 @@ namespace SIE
 			}
 			computeShaders[static_cast<size_t>(a_type)].clear();
 		}
+		ClearShaderMap(a_type);
 		compilationSet.Clear();
 	}
 
 	bool ShaderCache::AddCompletedShader(ShaderClass shaderClass, const RE::BSShader& shader, uint32_t descriptor, ID3DBlob* a_blob)
 	{
 		auto key = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, true);
+		auto keyWithDescriptor = SIE::SShaderCache::GetShaderString(shaderClass, shader, descriptor, false);
 		auto status = a_blob ? ShaderCompilationTask::Status::Completed : ShaderCompilationTask::Status::Failed;
-		logger::debug("Adding {} shader to map: {}", magic_enum ::enum_name(status), key);
+		logger::debug("Adding {} shader to map: {}", magic_enum ::enum_name(status), keyWithDescriptor);
 		{
 			std::unique_lock lockM{ mapMutex };
 			shaderMap.insert_or_assign(key, ShaderCacheResult{ a_blob, status, system_clock::now() });
@@ -2436,6 +2446,22 @@ namespace SIE
 	bool ShaderCache::IsHideErrors()
 	{
 		return hideError;
+	}
+
+	void ShaderCache::ClearShaderMap(RE::BSShader::Type a_type)
+	{
+		std::string_view shaderTypeStr = magic_enum::enum_name(a_type);
+
+		std::unique_lock lockM{ SIE::ShaderCache::mapMutex };
+		logger::debug("Clearing shaderMap of {}", shaderTypeStr);
+		for (auto it = shaderMap.begin(); it != shaderMap.end();) {
+			auto typeInKey = SIE::SShaderCache::GetTypeFromShaderString(it->first);
+			if (typeInKey == shaderTypeStr) {
+				it = shaderMap.erase(it);
+			} else {
+				++it;
+			}
+		}
 	}
 
 	void ShaderCache::InsertModifiedShaderMap(const std::string& a_shader, std::chrono::time_point<std::chrono::system_clock> a_time)

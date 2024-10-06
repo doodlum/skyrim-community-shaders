@@ -18,6 +18,7 @@
 #include "TruePBR.h"
 
 #include "Streamline.h"
+#include "Upscaling.h"
 
 #define SETTING_MENU_TOGGLEKEY "Toggle Key"
 #define SETTING_MENU_SKIPKEY "Skip Compilation Key"
@@ -466,9 +467,8 @@ void Menu::DrawSettings()
 			}
 		}
 
-		ImGui::Separator();
-
 		Streamline::GetSingleton()->DrawSettings();
+		Upscaling::GetSingleton()->DrawSettings();
 
 		ImGui::Separator();
 

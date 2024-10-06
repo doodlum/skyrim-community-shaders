@@ -3,9 +3,8 @@ struct StrictLightData
 {
 	StructuredLight StrictLights[15];
 	uint NumStrictLights;
-	float LightsNear;
-	float LightsFar;
 	int RoomIndex;
+	uint pad0[2];
 };
 
 StructuredBuffer<StructuredLight> lights : register(t50);
@@ -19,12 +18,11 @@ namespace LightLimitFix
 	{
 		const uint3 clusterSize = lightLimitFixSettings.ClusterSize.xyz;
 
-		if (z < strictLights[0].LightsNear || z > strictLights[0].LightsFar)
+		if (z < CameraData.y || z > CameraData.x)
 			return false;
 
-		float nearVal = max(strictLights[0].LightsNear, 1e-5);
-		float clampedZ = clamp(z, nearVal, strictLights[0].LightsFar);
-		uint clusterZ = uint(max((log2(z) - log2(nearVal)) * clusterSize.z / log2(strictLights[0].LightsFar / nearVal), 0.0));
+		float clampedZ = clamp(z, CameraData.y, CameraData.x);
+		uint clusterZ = uint(max((log2(z) - log2(CameraData.y)) * clusterSize.z / log2(CameraData.x / CameraData.y), 0.0));
 		uint3 cluster = uint3(uint2(uv * clusterSize.xy), clusterZ);
 
 		clusterIndex = cluster.x + (clusterSize.x * cluster.y) + (clusterSize.x * clusterSize.y * cluster.z);

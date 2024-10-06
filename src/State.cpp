@@ -15,6 +15,7 @@
 #include "TruePBR.h"
 
 #include "Streamline.h"
+#include "Upscaling.h"
 
 void State::Draw()
 {
@@ -74,7 +75,7 @@ void State::Draw()
 					}
 
 					if (IsDeveloperMode()) {
-						BeginPerfEvent(std::format("Draw: CS {}::{:x}", magic_enum::enum_name(currentShader->shaderType.get()), currentPixelDescriptor));
+						BeginPerfEvent(std::format("Draw: CS {}::{:x}::{}", magic_enum::enum_name(currentShader->shaderType.get()), currentPixelDescriptor, currentShader->fxpFilename));
 						SetPerfMarker(std::format("Defines: {}", SIE::ShaderCache::GetDefinesString(*currentShader, currentPixelDescriptor)));
 						EndPerfEvent();
 					}
@@ -108,7 +109,7 @@ void State::Setup()
 		if (feature->loaded)
 			feature->SetupResources();
 	Deferred::GetSingleton()->SetupResources();
-	Streamline::GetSingleton()->SetupFrameGeneration();
+	Streamline::GetSingleton()->SetupResources();
 	if (initialized)
 		return;
 	initialized = true;
@@ -221,6 +222,11 @@ void State::Load(ConfigMode a_configMode)
 	if (pbrJson.is_object())
 		truePBR->LoadSettings(pbrJson);
 
+	auto upscaling = Upscaling::GetSingleton();
+	auto& upscalingJson = settings[upscaling->GetShortName()];
+	if (upscalingJson.is_object())
+		upscaling->LoadSettings(upscalingJson);
+
 	for (auto* feature : Feature::GetFeatureList())
 		feature->Load(settings);
 
@@ -260,6 +266,10 @@ void State::Save(ConfigMode a_configMode)
 	auto& pbrJson = settings[truePBR->GetShortName()];
 	truePBR->SaveSettings(pbrJson);
 
+	auto upscaling = Upscaling::GetSingleton();
+	auto& upscalingJson = settings[upscaling->GetShortName()];
+	upscaling->SaveSettings(upscalingJson);
+
 	json originalShaders;
 	for (int classIndex = 0; classIndex < RE::BSShader::Type::Total - 1; ++classIndex) {
 		originalShaders[magic_enum::enum_name((RE::BSShader::Type)(classIndex + 1))] = enabledClasses[classIndex];
@@ -284,7 +294,7 @@ void State::PostPostLoad()
 		logger::info("Skyrim Upscaler not detected");
 	Deferred::Hooks::Install();
 	TruePBR::GetSingleton()->PostPostLoad();
-	Streamline::InstallHooks();
+	Upscaling::InstallHooks();
 }
 
 bool State::ValidateCache(CSimpleIniA& a_ini)
