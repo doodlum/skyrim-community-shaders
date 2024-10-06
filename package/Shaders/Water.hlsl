@@ -561,7 +561,7 @@ float3 GetWaterNormal(PS_INPUT input, float distanceFactor, float normalsDepthFa
 		float rippleStrengthModifier = (wetnessOcclusion * wetnessOcclusion) * distanceFadeout;
 		float3 rippleWPosition = input.WPosition + finalNormal * 16;
 #				if defined(WATER_PARALLAX)
-		rippleWPosition.xy += parallaxOffset;        
+		rippleWPosition.xy += parallaxOffset;
 #				endif
 		raindropInfo = WetnessEffects::GetRainDrops(rippleWPosition + CameraPosAdjust[a_eyeIndex], wetnessEffectsSettings.Time, finalNormal, rippleStrengthModifier);
 	}
