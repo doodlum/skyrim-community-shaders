@@ -1467,7 +1467,7 @@ namespace SIE
 			newShader->id = descriptor;
 			newShader->shaderDesc = 0;
 
-			Microsoft::WRL::ComPtr<ID3D11ShaderReflection> reflector;
+			winrt::com_ptr<ID3D11ShaderReflection> reflector;
 			const auto reflectionResult = D3DReflect(shaderData.GetBufferPointer(), shaderData.GetBufferSize(),
 				IID_PPV_ARGS(&reflector));
 			if (FAILED(reflectionResult)) {
@@ -1479,7 +1479,7 @@ namespace SIE
 #pragma warning(disable: 4244)
 				std::fill(newShader->constantTable.begin(), newShader->constantTable.end(), 0);
 #pragma warning(pop)
-				ReflectConstantBuffers(*reflector.Get(), bufferSizes, newShader->constantTable, newShader->shaderDesc,
+				ReflectConstantBuffers(*reflector.get(), bufferSizes, newShader->constantTable, newShader->shaderDesc,
 					ShaderClass::Vertex, descriptor, shader);
 				if (bufferSizes[0] != 0) {
 					newShader->constantBuffers[0].buffer =
@@ -1522,7 +1522,7 @@ namespace SIE
 			auto newShader = std::make_unique<RE::BSGraphics::PixelShader>();
 			newShader->id = descriptor;
 
-			Microsoft::WRL::ComPtr<ID3D11ShaderReflection> reflector;
+			winrt::com_ptr<ID3D11ShaderReflection> reflector;
 			const auto reflectionResult = D3DReflect(shaderData.GetBufferPointer(),
 				shaderData.GetBufferSize(), IID_PPV_ARGS(&reflector));
 			if (FAILED(reflectionResult)) {
@@ -1535,7 +1535,7 @@ namespace SIE
 				std::fill(newShader->constantTable.begin(), newShader->constantTable.end(), 0);
 #pragma warning(pop)
 				uint64_t dummy;
-				ReflectConstantBuffers(*reflector.Get(), bufferSizes, newShader->constantTable,
+				ReflectConstantBuffers(*reflector.get(), bufferSizes, newShader->constantTable,
 					dummy,
 					ShaderClass::Pixel, descriptor, shader);
 				if (bufferSizes[0] != 0) {
