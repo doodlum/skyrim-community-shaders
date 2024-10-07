@@ -1,5 +1,6 @@
 #include "LightLimitFix.h"
 
+#include "Shadercache.h"
 #include "State.h"
 #include "Util.h"
 
@@ -75,6 +76,8 @@ void LightLimitFix::DrawSettings()
 		ImGui::TreePop();
 	}
 
+	auto& shaderCache = SIE::ShaderCache::Instance();
+
 	if (ImGui::TreeNodeEx("Light Limit Visualization", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Checkbox("Enable Lights Visualisation", &settings.EnableLightsVisualisation);
 		if (auto _tt = Util::HoverTooltipWrapper()) {
@@ -86,10 +89,16 @@ void LightLimitFix::DrawSettings()
 			ImGui::Combo("Lights Visualisation Mode", (int*)&settings.LightsVisualisationMode, comboOptions, 3);
 			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::Text(
-					" - Visualise the light limit. Red when the \"strict\" light limit is reached (portal-strict lights). "
-					" - Visualise the number of strict lights. "
-					" - Visualise the number of clustered lights. ");
+					" - Visualise the light limit. Red when the \"strict\" light limit is reached (portal-strict lights).\n "
+					" - Visualise the number of strict lights.\n"
+					" - Visualise the number of clustered lights.\n");
 			}
+		}
+		currentEnableLightsVisualisation = settings.EnableLightsVisualisation;
+		if (previousEnableLightsVisualisation != currentEnableLightsVisualisation) {
+			State::GetSingleton()->SetDefines(settings.EnableLightsVisualisation ? "LLFDEBUG" : "");
+			shaderCache.Clear(RE::BSShader::Type::Lighting);
+			previousEnableLightsVisualisation = currentEnableLightsVisualisation;
 		}
 
 		ImGui::Spacing();
