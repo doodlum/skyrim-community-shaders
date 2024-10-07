@@ -298,8 +298,7 @@ void Menu::DrawSettings()
 				BuiltInMenu{ " Upscaling ", []() { Upscaling::GetSingleton()->DrawSettings(); } },
 				"-----Features-----"s
 			};
-			for (size_t i = 0; i < sortedList.size(); i++)
-				menuList.push_back(sortedList[i]);
+			std::ranges::copy(sortedList, std::back_inserter(menuList));
 
 			ImGui::TableNextColumn();
 			if (ImGui::BeginListBox("##MenusList", { -FLT_MIN, -FLT_MIN })) {
