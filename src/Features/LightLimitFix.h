@@ -110,7 +110,6 @@ public:
 	bool previousEnableLightsVisualisation = settings.EnableLightsVisualisation;
 	bool currentEnableLightsVisualisation = settings.EnableLightsVisualisation;
 
-
 	ID3D11ComputeShader* clusterBuildingCS = nullptr;
 	ID3D11ComputeShader* clusterCullingCS = nullptr;
 
