@@ -85,7 +85,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 				Deferred::Hooks::Install();
 				TruePBR::GetSingleton()->PostPostLoad();
 				Upscaling::InstallHooks();
-				Hooks::InstallD3DHooks();
 				Hooks::Install();
 				FrameAnnotations::OnPostPostLoad();
 
@@ -170,5 +169,7 @@ bool Load()
 		}
 	}
 
+	if (errors.empty())
+		Hooks::InstallD3DHooks();
 	return true;
 }
