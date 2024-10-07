@@ -318,7 +318,7 @@ void Menu::DrawSettings()
 			if (selectedMenu < menuList.size()) {
 				std::visit(DrawMenuVisitor{}, menuList[selectedMenu]);
 			} else {
-				ImGui::TextDisabled("Please select a feature on the left.");
+				ImGui::TextDisabled("Please select an item on the left.");
 			}
 
 			ImGui::EndTable();
