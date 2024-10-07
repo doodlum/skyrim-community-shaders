@@ -85,13 +85,14 @@ void LightLimitFix::DrawSettings()
 		}
 
 		{
-			static const char* comboOptions[] = { "Light Limit", "Strict Lights Count", "Clustered Lights Count" };
-			ImGui::Combo("Lights Visualisation Mode", (int*)&settings.LightsVisualisationMode, comboOptions, 3);
+			static const char* comboOptions[] = { "Light Limit", "Strict Lights Count", "Clustered Lights Count", "Shadow Mask" };
+			ImGui::Combo("Lights Visualisation Mode", (int*)&settings.LightsVisualisationMode, comboOptions, 4);
 			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::Text(
 					" - Visualise the light limit. Red when the \"strict\" light limit is reached (portal-strict lights).\n"
 					" - Visualise the number of strict lights.\n"
-					" - Visualise the number of clustered lights.\n");
+					" - Visualise the number of clustered lights.\n"
+					" - Visualize the Shadow Mask.\n");
 			}
 		}
 		currentEnableLightsVisualisation = settings.EnableLightsVisualisation;
