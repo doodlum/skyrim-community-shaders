@@ -397,12 +397,11 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 {
 	State::GetSingleton()->BeginPerfEvent("PRECIPITATION MASK");
 	State::GetSingleton()->SetPerfMarker("PRECIPITATION MASK");
-	
+
 	auto& shaderCache = SIE::ShaderCache::Instance();
 	auto singleton = GetSingleton();
 
-	if (!singleton->doOcclusion || !shaderCache.IsEnabled())
-	{
+	if (!singleton->doOcclusion || !shaderCache.IsEnabled()) {
 		Main_Precipitation_RenderOcclusion::func();
 		State::GetSingleton()->EndPerfEvent();
 	}
