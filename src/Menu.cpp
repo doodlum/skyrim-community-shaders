@@ -217,7 +217,7 @@ void Menu::DrawSettings()
 
 			static size_t selectedMenu = SIZE_T_MAX;
 
-			constexpr auto builtInMenus = std::array{ "General", "Advanced", "Streamline", "Upscaling" };
+			constexpr auto builtInMenus = std::array{ " General ", " Advanced ", " Streamline ", " Upscaling " };
 
 			auto& featureList = Feature::GetFeatureList();
 			auto sortedList{ featureList };  // need a copy so the load order is not lost
@@ -272,25 +272,22 @@ void Menu::DrawSettings()
 
 			if (ImGui::BeginChild("##FeatureConfigFrame", { 0, 0 }, true)) {
 				if (hasSelected) {
-					if (shownFeature)
+					switch (selectedMenu) {
+					case 0:
+						DrawGeneralSettings();
+						break;
+					case 1:
+						DrawAdvancedSettings();
+						break;
+					case 2:
+						Streamline::GetSingleton()->DrawSettings();
+						break;
+					case 3:
+						Upscaling::GetSingleton()->DrawSettings();
+						break;
+					default:
 						sortedList[selectedMenu - builtInMenus.size()]->DrawSettings();
-					else {
-						switch (selectedMenu) {
-						case 0:
-							DrawGeneralSettings();
-							break;
-						case 1:
-							DrawAdvancedSettings();
-							break;
-						case 2:
-							Streamline::GetSingleton()->DrawSettings();
-							break;
-						case 3:
-							Upscaling::GetSingleton()->DrawSettings();
-							break;
-						default:
-							break;
-						}
+						break;
 					}
 				} else
 					ImGui::TextDisabled("Please select a feature on the left.");
