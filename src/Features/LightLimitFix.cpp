@@ -89,7 +89,7 @@ void LightLimitFix::DrawSettings()
 			ImGui::Combo("Lights Visualisation Mode", (int*)&settings.LightsVisualisationMode, comboOptions, 3);
 			if (auto _tt = Util::HoverTooltipWrapper()) {
 				ImGui::Text(
-					" - Visualise the light limit. Red when the \"strict\" light limit is reached (portal-strict lights).\n "
+					" - Visualise the light limit. Red when the \"strict\" light limit is reached (portal-strict lights).\n"
 					" - Visualise the number of strict lights.\n"
 					" - Visualise the number of clustered lights.\n");
 			}
