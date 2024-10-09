@@ -48,7 +48,7 @@ void SetupImGuiStyle()
 	auto& colors = style.Colors;
 
 	// Theme based on https://github.com/powerof3/DialogueHistory
-  
+
 	float bgAlpha{ 0.34f };
 	float disabledAlpha{ 0.30f };
 	float hovoredAlpha{ 0.1f };
