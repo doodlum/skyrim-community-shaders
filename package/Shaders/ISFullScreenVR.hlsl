@@ -44,7 +44,7 @@ PS_OUTPUT main(PS_INPUT input)
 	float2 uv = input.TexCoord;  // Get the UV coordinates from input.
 
 	// Convert UV to normalized screen space [-1, 1].
-	float2 normalizedScreenCoord = ConvertUVToNormalizedScreenSpace(uv);
+	float2 normalizedScreenCoord = VR::ConvertUVToNormalizedScreenSpace(uv);
 
 	// Calculate the length of the normalized screen coordinates.
 	float normalizedLength = saturate(Params1.x * (length(normalizedScreenCoord) - Params1.y) * Params0.x);
