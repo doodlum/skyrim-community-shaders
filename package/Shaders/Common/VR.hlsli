@@ -129,15 +129,15 @@ namespace Stereo
 	}
 
 	/**
- * @brief Converts UV coordinates from the range [0, 1] to normalized screen space [-1, 1].
- *
- * This function takes texture coordinates and transforms them into a normalized
- * coordinate system centered at the origin. This is useful for various graphical
- * calculations, especially in shaders that require symmetry around the center.
- *
- * @param uv The input UV coordinates in the range [0, 1].
- * @return float2 Normalized screen space coordinates in the range [-1, 1].
- */
+	* @brief Converts UV coordinates from the range [0, 1] to normalized screen space [-1, 1].
+	*
+	* This function takes texture coordinates and transforms them into a normalized
+	* coordinate system centered at the origin. This is useful for various graphical
+	* calculations, especially in shaders that require symmetry around the center.
+	*
+	* @param uv The input UV coordinates in the range [0, 1].
+	* @return float2 Normalized screen space coordinates in the range [-1, 1].
+	*/
 	float2 ConvertUVToNormalizedScreenSpace(float2 uv)
 	{
 		float2 normalizedCoord;
