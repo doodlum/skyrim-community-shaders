@@ -66,8 +66,8 @@ cbuffer PerTechnique : register(b0)
 
 	float3 normalizedCoordinates = dispatchID.xyz / TextureDimensions.xyz;
 	float2 uv = normalizedCoordinates.xy;
-	uint eyeIndex = VR::GetEyeIndexFromTexCoord(uv);
-	float3 depthUv = VR::ConvertFromStereoUV(normalizedCoordinates, eyeIndex) + 0.001 * StepCoefficients[IterationIndex].xyz;
+	uint eyeIndex = Stereo::GetEyeIndexFromTexCoord(uv);
+	float3 depthUv = Stereo::ConvertFromStereoUV(normalizedCoordinates, eyeIndex) + 0.001 * StepCoefficients[IterationIndex].xyz;
 	float depth = InverseRepartitionTex.SampleLevel(InverseRepartitionSampler, depthUv.z, 0).x;
 	float4 positionCS = float4(2 * depthUv.x - 1, 1 - 2 * depthUv.y, depth, 1);
 
