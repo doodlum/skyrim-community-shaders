@@ -355,7 +355,7 @@ namespace Hooks
 	{
 		static LRESULT thunk(HWND a_hwnd, UINT a_msg, WPARAM a_wParam, LPARAM a_lParam)
 		{
-			if (a_msg == WM_KILLFOCUS) {
+			if (a_msg == WM_KILLFOCUS && Menu::GetSingleton()->initialized) {
 				Menu::GetSingleton()->OnFocusLost();
 				auto& io = ImGui::GetIO();
 				io.ClearInputKeys();
