@@ -7,6 +7,7 @@
 #include "State.h"
 #include "TruePBR.h"
 #include "Upscaling.h"
+#include "HDR.h"
 
 #include "ENB/ENBSeriesAPI.h"
 #include "Features/ExtendedMaterials.h"
@@ -85,6 +86,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 				Deferred::Hooks::Install();
 				TruePBR::GetSingleton()->PostPostLoad();
 				Upscaling::InstallHooks();
+				HDR::InstallHooks();
 				Hooks::Install();
 				FrameAnnotations::OnPostPostLoad();
 
