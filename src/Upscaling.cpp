@@ -44,7 +44,7 @@ void Upscaling::DrawSettings()
 			"AMD's open-source FSR spatial upscaling algorithm designed to enhance performance while maintaining high visual quality.\n"
 			"\n"
 			"NVIDIA DLAA:\n"
-			"Nvidia's Deep Learning Anti-Aliasing leverages AI to provide high-quality anti-aliasing without sacrificing performance. Requires Nvidia GPU.");
+			"NVIDIA's Deep Learning Anti-Aliasing leverages AI to provide high-quality anti-aliasing without sacrificing performance. Requires NVIDIA GPU.");
 	}
 
 	*currentUpscaleMode = std::min(availableModes, (uint)*currentUpscaleMode);
