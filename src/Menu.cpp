@@ -22,18 +22,6 @@
 #include "Upscaling.h"
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	ImVec2,
-	x,
-	y)
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	ImVec4,
-	x,
-	y,
-	z,
-	w)
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	Menu::ThemeSettings,
 	FontScale,
 	BackgroundColor,
@@ -222,13 +210,13 @@ void Menu::DrawSettings()
 	ImGui::SetNextWindowPos(ImGui::GetNativeViewportSizeScaled(0.5f), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSize(ImGui::GetNativeViewportSizeScaled(0.8f), ImGuiCond_FirstUseEver);
 
-	auto title = "Community Shaders";
+	auto title = std::format("Community Shaders {}", Util::GetFormattedVersion(Plugin::VERSION));
 
-	ImGui::Begin(title, &IsEnabled, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+	ImGui::Begin(title.c_str(), &IsEnabled, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 	{
 		if (!ImGui::IsWindowDocked()) {
 			ImGui::SetWindowFontScale(1.5f);
-			ImGui::TextUnformatted(title);
+			ImGui::TextUnformatted(title.c_str());
 			ImGui::SetWindowFontScale(1.f);
 
 			ImGui::Spacing();
@@ -300,10 +288,9 @@ void Menu::DrawSettings()
 		ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.0f);
 		ImGui::Spacing();
 
-		float footer_height = ImGui::GetTextLineHeightWithSpacing() + 76 - ImGui::GetStyle().WindowPadding.y;
-		float content_height = ImGui::GetContentRegionAvail().y - footer_height;
+		float footer_height = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 2 + 3.0f;  // text + separator
 
-		ImGui::BeginChild("Menus Table", ImVec2(0, content_height));
+		ImGui::BeginChild("Menus Table", ImVec2(0, -footer_height));
 		if (ImGui::BeginTable("Menus Table", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable)) {
 			ImGui::TableSetupColumn("##ListOfMenus", 0, 2);
 			ImGui::TableSetupColumn("##MenuConfig", 0, 8);
@@ -460,8 +447,7 @@ void Menu::DrawGeneralSettings()
 		}
 	}
 
-	auto& themeSettings = settings.Theme;
-	if (ImGui::CollapsingHeader("Keybindings", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
+	if (ImGui::CollapsingHeader("Keybindings", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
 		if (settingToggleKey) {
 			ImGui::Text("Press any key to set as toggle key...");
 		} else {
@@ -716,29 +702,13 @@ void Menu::DrawDisplaySettings()
 	}
 }
 
-static std::string GetFormattedVersion(const REL::Version& version)
-{
-	const auto& v = version.string(".");
-	return v.substr(0, v.find_last_of("."));
-}
-
 void Menu::DrawFooter()
 {
-	if (ImGui::BeginTable("##Footer", 4, ImGuiTableFlags_SizingStretchSame)) {
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(std::format("CS Version: {}", GetFormattedVersion(Plugin::VERSION).c_str()).c_str());
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(std::format("Game Version: {} {}", magic_enum::enum_name(REL::Module::GetRuntime()), GetFormattedVersion(REL::Module::get().version()).c_str()).c_str());
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(std::format("D3D12 Interop: {}", Streamline::GetSingleton()->featureDLSSG && !REL::Module::IsVR() ? "Active" : "Inactive").c_str());
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(std::format("GPU: {}", State::GetSingleton()->adapterDescription.c_str()).c_str());
-
-		ImGui::EndTable();
-	}
+	ImGui::BulletText(std::format("Game Version: {} {}", magic_enum::enum_name(REL::Module::GetRuntime()), Util::GetFormattedVersion(REL::Module::get().version()).c_str()).c_str());
+	ImGui::SameLine();
+	ImGui::BulletText(std::format("D3D12 Interop: {}", Streamline::GetSingleton()->featureDLSSG && !REL::Module::IsVR() ? "Active" : "Inactive").c_str());
+	ImGui::SameLine();
+	ImGui::BulletText(std::format("GPU: {}", State::GetSingleton()->adapterDescription.c_str()).c_str());
 }
 
 void Menu::DrawOverlay()
@@ -749,8 +719,12 @@ void Menu::DrawOverlay()
 	auto failed = shaderCache.GetFailedTasks();
 	auto hide = shaderCache.IsHideErrors();
 
-	if (!(shaderCache.IsCompiling() || IsEnabled || inTestMode || (failed && !hide)))
+	if (!(shaderCache.IsCompiling() || IsEnabled || inTestMode || (failed && !hide))) {
+		auto& io = ImGui::GetIO();
+		io.ClearInputKeys();
+		io.ClearEventsQueue();
 		return;
+	}
 
 	// Start the Dear ImGui frame
 	ImGui_ImplDX11_NewFrame();
