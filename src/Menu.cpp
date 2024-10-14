@@ -457,6 +457,7 @@ void Menu::DrawGeneralSettings()
 		}
 	}
 
+	auto& themeSettings = settings.Theme;
 	if (ImGui::CollapsingHeader("Keybindings", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
 		if (settingToggleKey) {
 			ImGui::Text("Press any key to set as toggle key...");
@@ -465,7 +466,7 @@ void Menu::DrawGeneralSettings()
 			ImGui::Text("Toggle Key:");
 			ImGui::SameLine();
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextColored(ImVec4(1, 1, 0, 1), "%s", KeyIdToString(settings.ToggleKey));
+			ImGui::TextColored(themeSettings.CurrentHotkeyColor, "%s", KeyIdToString(settings.ToggleKey));
 
 			ImGui::AlignTextToFramePadding();
 			ImGui::SameLine();
@@ -480,7 +481,7 @@ void Menu::DrawGeneralSettings()
 			ImGui::Text("Effect Toggle Key:");
 			ImGui::SameLine();
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextColored(ImVec4(1, 1, 0, 1), "%s", KeyIdToString(settings.EffectToggleKey));
+			ImGui::TextColored(themeSettings.CurrentHotkeyColor, "%s", KeyIdToString(settings.EffectToggleKey));
 
 			ImGui::AlignTextToFramePadding();
 			ImGui::SameLine();
@@ -495,7 +496,7 @@ void Menu::DrawGeneralSettings()
 			ImGui::Text("Skip Compilation Key:");
 			ImGui::SameLine();
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextColored(ImVec4(1, 1, 0, 1), "%s", KeyIdToString(settings.SkipCompilationKey));
+			ImGui::TextColored(themeSettings.CurrentHotkeyColor, "%s", KeyIdToString(settings.SkipCompilationKey));
 
 			ImGui::AlignTextToFramePadding();
 			ImGui::SameLine();
@@ -506,8 +507,6 @@ void Menu::DrawGeneralSettings()
 	}
 
 	if (ImGui::CollapsingHeader("Theme", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick)) {
-		auto& themeSettings = settings.Theme;
-
 		if (ImGui::SliderFloat("Font Scale", &themeSettings.FontScale, -2.f, 2.f, "%.2f")) {
 			float trueScale = exp2(themeSettings.FontScale);
 			auto& style = ImGui::GetStyle();
@@ -518,6 +517,9 @@ void Menu::DrawGeneralSettings()
 		}
 		ImGui::ColorEdit4("Background", (float*)&themeSettings.BackgroundColor);
 		ImGui::ColorEdit4("Text", (float*)&themeSettings.TextColor);
+		ImGui::ColorEdit4("Disabled Text", (float*)&themeSettings.DisableColor);
+		ImGui::ColorEdit4("Error Text", (float*)&themeSettings.ErrorColor);
+		ImGui::ColorEdit4("Current Hotkey Text", (float*)&themeSettings.CurrentHotkeyColor);
 		ImGui::ColorEdit4("Border", (float*)&themeSettings.BorderColor);
 		ImGui::SliderFloat("Border size", &themeSettings.BorderSize, 0.f, 5.f, "%.1f");
 		ImGui::SliderFloat("Frame border size", &themeSettings.FrameBorderSize, 0.f, 5.f, "%.1f");
@@ -762,6 +764,7 @@ void Menu::DrawOverlay()
 	totalShaders = shaderCache.GetTotalTasks();
 
 	auto state = State::GetSingleton();
+	auto& themeSettings = Menu::GetSingleton()->settings.Theme;
 
 	auto progressTitle = fmt::format("{}Compiling Shaders: {}",
 		shaderCache.backgroundCompilation ? "Background " : "",
@@ -795,7 +798,7 @@ void Menu::DrawOverlay()
 				return;
 			}
 
-			ImGui::TextColored(ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f }, "ERROR: %d shaders failed to compile. Check installation and CommunityShaders.log", failed, totalShaders);
+			ImGui::TextColored(themeSettings.ErrorColor, "ERROR: %d shaders failed to compile. Check installation and CommunityShaders.log", failed, totalShaders);
 			ImGui::End();
 		}
 	}
