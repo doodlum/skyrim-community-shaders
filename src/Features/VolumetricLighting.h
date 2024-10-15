@@ -3,7 +3,6 @@
 #include "Buffer.h"
 #include "Feature.h"
 #include "Util.h"
-#include "Utils/GameSetting.h"
 
 struct VolumetricLighting : Feature
 {

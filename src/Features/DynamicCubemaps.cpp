@@ -136,8 +136,8 @@ void DynamicCubemaps::DrawSettings()
 		}
 		if (REL::Module::IsVR()) {
 			if (ImGui::TreeNodeEx("Advanced VR Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-				RenderImGuiSettingsTree(iniVRCubeMapSettings, "VR");
-				RenderImGuiSettingsTree(hiddenVRCubeMapSettings, "hiddenVR");
+				Util::RenderImGuiSettingsTree(iniVRCubeMapSettings, "VR");
+				Util::RenderImGuiSettingsTree(hiddenVRCubeMapSettings, "hiddenVR");
 				ImGui::TreePop();
 			}
 		}

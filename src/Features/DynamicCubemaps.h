@@ -2,7 +2,7 @@
 
 #include "Buffer.h"
 #include "Feature.h"
-#include "Utils/GameSetting.h"
+#include "Util.h"
 
 class MenuOpenCloseEventHandler : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
 {
