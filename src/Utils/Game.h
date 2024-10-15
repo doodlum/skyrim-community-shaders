@@ -64,15 +64,4 @@ namespace Util
 		}
 		inline bool isNewFrame() { return isNewFrame(RE::BSGraphics::State::GetSingleton()->frameCount); }
 	};
-
-	/**
-	 * @brief Dumps the names of all settings from the specified setting collections and the game setting collection.
-	 * 
-	 * This function retrieves settings from two INI setting collections (`INISettingCollection` and `INIPrefSettingCollection`)
-	 * and logs their names. It also retrieves and logs settings from the game setting collection (`GameSettingCollection`).
-	 * 
-	 * The output is logged using the `logger::info` method, and it includes the collection name for better clarity on where
-	 * each setting belongs.
-	 */
-	void DumpSettingsOptions();
 }  // namespace Util
