@@ -368,7 +368,7 @@ void Menu::DrawSettings()
 					if (isDisabled) {
 						textColor = themeSettings.StatusPalette.Disable;
 					} else if (isLoaded) {
-						textColor = themeSettings.Palette.Text;
+						textColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
 					} else if (hasFailedMessage) {
 						textColor = themeSettings.StatusPalette.Error;
 					} else {
@@ -434,7 +434,7 @@ void Menu::DrawSettings()
 					} else if (hasFailedMessage) {
 						textColor = themeSettings.StatusPalette.Error;
 					} else {
-						textColor = themeSettings.Palette.Text;
+						textColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
 					}
 					ImGui::PushStyleColor(ImGuiCol_Text, textColor);
 
