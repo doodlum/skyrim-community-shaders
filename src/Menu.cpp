@@ -40,8 +40,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	WindowRounding,
 	WindowBorderSize,
 	WindowMinSize,
-	WindowTitleAlign,
-	WindowMenuButtonPosition,
 	ChildRounding,
 	ChildBorderSize,
 	PopupRounding,
@@ -654,10 +652,6 @@ void Menu::DrawGeneralSettings()
 				ImGui::SliderAngle("Table Angled Headers Angle", &style.TableAngledHeadersAngle, -50.0f, +50.0f);
 
 				ImGui::SeparatorText("Widgets");
-				ImGui::SliderFloat2("Window Title Align", (float*)&style.WindowTitleAlign, 0.0f, 1.0f, "%.2f");
-				int window_menu_button_position = style.WindowMenuButtonPosition + 1;
-				if (ImGui::Combo("Window Menu Button Position", (int*)&window_menu_button_position, "None\0Left\0Right\0"))
-					style.WindowMenuButtonPosition = (ImGuiDir)(window_menu_button_position - 1);
 				ImGui::Combo("ColorButtonPosition", (int*)&style.ColorButtonPosition, "Left\0Right\0");
 				ImGui::SliderFloat2("Button Text Align", (float*)&style.ButtonTextAlign, 0.0f, 1.0f, "%.2f");
 				if (auto _tt = Util::HoverTooltipWrapper())
