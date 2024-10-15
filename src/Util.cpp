@@ -430,6 +430,7 @@ namespace Util
 		bool* bDynamicResolution = reinterpret_cast<bool*>(address);
 		return *bDynamicResolution;
 	}
+
 }
 
 namespace nlohmann
