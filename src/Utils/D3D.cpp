@@ -1,5 +1,7 @@
-#include "Util.h"
+#include "D3D.h"
+
 #include "State.h"
+#include "Utils/Format.h"
 
 #include <d3dcompiler.h>
 
@@ -178,21 +180,4 @@ namespace Util
 
 		return nullptr;
 	}
-
-	HoverTooltipWrapper::HoverTooltipWrapper()
-	{
-		hovered = ImGui::IsItemHovered();
-		if (hovered) {
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-		}
-	}
-
-	HoverTooltipWrapper::~HoverTooltipWrapper()
-	{
-		if (hovered) {
-			ImGui::PopTextWrapPos();
-			ImGui::EndTooltip();
-		}
-	}
-}
+}  // namespace Util
