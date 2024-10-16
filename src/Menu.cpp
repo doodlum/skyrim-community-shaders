@@ -956,7 +956,7 @@ void Menu::DrawDisplaySettings()
 				drawFunc();
 			}
 		} else {
-			ImGui::PushStyleColor(ImGuiCol_Text, themeSettings.DisableColor);
+			ImGui::PushStyleColor(ImGuiCol_Text, themeSettings.StatusPalette.Disable);
 			ImGui::CollapsingHeader(featureName.c_str(), ImGuiTreeNodeFlags_NoTreePushOnOpen);
 			ImGui::PopStyleColor();
 			if (auto _tt = Util::HoverTooltipWrapper()) {
