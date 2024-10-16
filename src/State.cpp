@@ -151,7 +151,7 @@ void State::Load(ConfigMode a_configMode, bool a_allowReload)
 			return true;
 		} catch (const nlohmann::json::parse_error& e) {
 			logger::warn("Error parsing json config file ({}) : {}\n", path, e.what());
-			i.close();  // Ensure bool the file is closed even on error
+			i.close();  // Ensure the file is closed even on error
 			return false;
 		}
 	};
