@@ -68,11 +68,11 @@ void readHistory(
 	uint eyeIndex = Stereo::GetEyeIndexFromTexCoord(uv);
 	const float2 screen_pos = Stereo::ConvertFromStereoUV(uv, eyeIndex);
 
-    float2 prev_screen_pos = screen_pos;
+	float2 prev_screen_pos = screen_pos;
 #ifdef REPROJECTION
-    prev_screen_pos += FULLRES_LOAD(srcMotionVec, pixCoord, uv * frameScale, samplerLinearClamp).xy;
+	prev_screen_pos += FULLRES_LOAD(srcMotionVec, pixCoord, uv * frameScale, samplerLinearClamp).xy;
 #endif
-    float2 prev_uv = Stereo::ConvertToStereoUV(prev_screen_pos, eyeIndex);
+	float2 prev_uv = Stereo::ConvertToStereoUV(prev_screen_pos, eyeIndex);
 
 	half3 prev_ambient = 0;
 	half4 prev_gi = 0;
