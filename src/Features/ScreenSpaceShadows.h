@@ -47,6 +47,7 @@ struct ScreenSpaceShadows : Feature
 
 		BendSettings settings;
 	};
+	STATIC_ASSERT_ALIGNAS_16(RaymarchCB);
 
 	ID3D11SamplerState* pointBorderSampler = nullptr;
 
