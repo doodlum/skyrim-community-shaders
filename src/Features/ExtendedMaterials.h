@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Buffer.h"
 #include "Feature.h"
 
 struct ExtendedMaterials : Feature
@@ -29,7 +30,7 @@ struct ExtendedMaterials : Feature
 
 		float pad[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(Settings);
 	Settings settings;
 
 	virtual void DataLoaded() override;
