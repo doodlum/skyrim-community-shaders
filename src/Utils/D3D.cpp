@@ -93,7 +93,7 @@ namespace Util
 		// Build defines (aka convert vector->D3DCONSTANT array)
 		std::vector<D3D_SHADER_MACRO> macros;
 		std::string str = Util::WStringToString(FilePath);
-		
+
 		for (auto& i : Defines) {
 			if (i.first && _stricmp(i.first, "") != 0) {
 				macros.push_back({ i.first, i.second });
