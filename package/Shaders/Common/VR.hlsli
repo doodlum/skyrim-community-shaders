@@ -1,7 +1,7 @@
 #ifndef __VR_DEPENDENCY_HLSL__
 #define __VR_DEPENDENCY_HLSL__
 #ifdef VR
-#	if !defined(COMPUTESHADER) && !defined(CSHADER)
+#	if (!defined(COMPUTESHADER) && !defined(CSHADER)) || defined(FRAMEBUFFER)
 #		include "Common\Constants.hlsli"
 #		include "Common\FrameBuffer.hlsli"
 #	endif
@@ -146,7 +146,8 @@ namespace Stereo
 		return normalizedCoord;
 	}
 
-#ifdef PSHADER
+#if defined(PSHADER) || defined(FRAMEBUFFER)
+	// These functions require the framebuffer which is typically provided with the PSHADER
 	/**
 	Gets the eyeIndex for PSHADER
 	@returns eyeIndex (0 left, 1 right)
@@ -198,22 +199,34 @@ namespace Stereo
 	*/
 	float3 ConvertMonoUVToOtherEye(float3 monoUV, uint eyeIndex, bool dynamicres = false)
 	{
-		// Convert from dynamic res to true UV space
+		// Convert from dynamic res to true UV space if necessary
 		if (dynamicres)
 			monoUV.xy *= DynamicResolutionParams2.xy;
 
-		// Step 1: Convert UV to Clip Space
+		// Convert UV to Clip Space
 		float4 clipPos = float4(monoUV.xy * float2(2, -2) - float2(1, -1), monoUV.z, 1);
 
-		// Step 2: Convert Clip Space to View Space for the current eye
+		// Convert Clip Space to View Space for the current eye
 		float4 viewPosCurrentEye = mul(CameraProjInverse[eyeIndex], clipPos);
 		viewPosCurrentEye /= viewPosCurrentEye.w;
 
-		// Step 3: Convert View Space to Clip Space for the other eye
-		float4 clipPosOtherEye = mul(CameraProj[1 - eyeIndex], viewPosCurrentEye);
+		// Adjust for eye position offset
+		const float2 eyeOffsetScale = float2(-0.50, 0.50);
+		float eyeOffset = dot(eyeOffsetScale, M_IdentityMatrix[eyeIndex].xy);
+		float adjustment = eyeOffset * viewPosCurrentEye.w * 8.8;  // based on q3 adjustments, may need better conversion
+		viewPosCurrentEye.x += adjustment;
+
+		// Convert View Space to World Space
+		float4 worldPos = mul(CameraViewInverse[eyeIndex], viewPosCurrentEye);
+
+		// Convert World Space back to View Space for the other eye
+		float4 viewPosOtherEye = mul(CameraView[1 - eyeIndex], worldPos);
+
+		// Convert View Space to Clip Space for the other eye
+		float4 clipPosOtherEye = mul(CameraProj[1 - eyeIndex], viewPosOtherEye);
 		clipPosOtherEye /= clipPosOtherEye.w;
 
-		// Step 4: Convert Clip Space to UV
+		// Convert Clip Space to UV
 		float3 monoUVOtherEye = float3((clipPosOtherEye.xy * 0.5f) + 0.5f, clipPosOtherEye.z);
 
 		// Convert back to dynamic res space if necessary
