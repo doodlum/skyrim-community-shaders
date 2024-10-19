@@ -116,7 +116,8 @@ namespace Util
 
 		HRESULT Close(LPCVOID pData) override
 		{
-			delete[] pData;
+			if (pData)
+				delete[] pData;
 			return S_OK;
 		}
 	};
