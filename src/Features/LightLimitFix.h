@@ -48,7 +48,7 @@ public:
 		uint32_t shadowMaskIndex = 0;
 		float pad0[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(LightData);
 	struct ClusterAABB
 	{
 		float4 minPoint;
@@ -61,6 +61,7 @@ public:
 		uint lightCount;
 		uint pad0[2];
 	};
+	STATIC_ASSERT_ALIGNAS_16(LightGrid);
 
 	struct alignas(16) LightBuildingCB
 	{
@@ -69,13 +70,13 @@ public:
 		float LightsFar;
 		uint pad0[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(LightBuildingCB);
 	struct alignas(16) LightCullingCB
 	{
 		uint LightCount;
 		uint pad[3];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(LightCullingCB);
 	struct alignas(16) PerFrame
 	{
 		uint EnableContactShadows;
@@ -84,7 +85,7 @@ public:
 		float pad0;
 		uint ClusterSize[4];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(PerFrame);
 	PerFrame GetCommonBufferData();
 
 	struct alignas(16) StrictLightData
@@ -94,7 +95,7 @@ public:
 		int RoomIndex;
 		uint pad0[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(StrictLightData);
 	StrictLightData strictLightDataTemp;
 
 	struct CachedParticleLight

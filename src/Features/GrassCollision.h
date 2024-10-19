@@ -26,13 +26,14 @@ struct GrassCollision : Feature
 	{
 		float4 centre[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(CollisionData);
 	struct alignas(16) PerFrame
 	{
 		CollisionData collisionData[256];
 		uint numCollisions;
 		uint pad0[3];
 	};
+	STATIC_ASSERT_ALIGNAS_16(PerFrame);
 
 	std::uint32_t totalActorCount = 0;
 	std::uint32_t activeActorCount = 0;

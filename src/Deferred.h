@@ -62,7 +62,7 @@ public:
 		uint FrameCountAlwaysActive;
 		uint pad0[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(DeferredCB);
 	ConstantBuffer* deferredCB = nullptr;
 
 	ID3D11SamplerState* linearSampler = nullptr;
@@ -83,7 +83,7 @@ public:
 		DirectX::XMFLOAT4X3 ShadowMapProj[2][3];
 		DirectX::XMFLOAT4X3 CameraViewProjInverse[2];
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(PerGeometry);
 	ID3D11ComputeShader* copyShadowCS = nullptr;
 	Buffer* perShadow = nullptr;
 	ID3D11ShaderResourceView* shadowView = nullptr;

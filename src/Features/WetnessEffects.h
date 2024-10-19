@@ -64,6 +64,7 @@ public:
 		Settings settings;
 		uint pad0[2];
 	};
+	STATIC_ASSERT_ALIGNAS_16(PerFrame);
 
 	Settings settings;
 

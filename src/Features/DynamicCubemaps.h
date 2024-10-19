@@ -31,6 +31,7 @@ public:
 		float roughness;
 		float pad[3];
 	};
+	STATIC_ASSERT_ALIGNAS_16(SpecularMapFilterSettingsCB);
 
 	ID3D11ComputeShader* specularIrradianceCS = nullptr;
 	ConstantBuffer* spmapCB = nullptr;
@@ -46,7 +47,7 @@ public:
 		uint Reset;
 		float3 CameraPreviousPosAdjust;
 	};
-
+	STATIC_ASSERT_ALIGNAS_16(UpdateCubemapCB);
 	ID3D11ComputeShader* updateCubemapCS = nullptr;
 	ConstantBuffer* updateCubemapCB = nullptr;
 
