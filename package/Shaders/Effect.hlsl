@@ -483,6 +483,7 @@ cbuffer PerGeometry : register(b2)
 	float4 AlphaTestRef : packoffset(c9);
 	float4 MembraneRimColor : packoffset(c10);
 	float4 MembraneVars : packoffset(c11);
+	uint ExtendedFlags : packoffset(c12);
 #	else
 	float4 PLightPositionX[2] : packoffset(c0);
 	float4 PLightPositionY[2] : packoffset(c2);
@@ -496,8 +497,12 @@ cbuffer PerGeometry : register(b2)
 	float4 AlphaTestRef : packoffset(c12);
 	float4 MembraneRimColor : packoffset(c13);
 	float4 MembraneVars : packoffset(c14);
+	uint ExtendedFlags : packoffset(c15);
 #	endif
 };
+
+static const uint Effect_Weather = 1 << 0;
+static const uint Effect_Shadows = 1 << 1;
 
 #	if defined(LIGHT_LIMIT_FIX)
 #		include "LightLimitFix/LightLimitFix.hlsli"
@@ -522,26 +527,26 @@ float3 GetLightingColor(float3 msPosition, float3 worldPosition, float4 screenPo
 	float4 lightFadeMul = 1.0.xxxx - saturate(PLightingRadiusInverseSquared * lightDistanceSquared);
 
 	float3 color = DLightColor.xyz;
-#		if defined(EFFECT_WEATHER)
-#			if defined(EFFECT_SHADOWS)
-	if (!InInterior && !InMapMenu && (ExtraShaderDescriptor & _InWorld)) {
-		color = DirLightColorShared * GetEffectShadow(worldPosition, normalize(worldPosition), screenPosition, eyeIndex) * 0.5;
+	if ((ExtendedFlags & Effect_Weather) != 0) {
+		if ((ExtendedFlags & Effect_Shadows) != 0) {
+			if (!InInterior && !InMapMenu && (ExtraShaderDescriptor & _InWorld)) {
+				color = DirLightColorShared * GetEffectShadow(worldPosition, normalize(worldPosition), screenPosition, eyeIndex) * 0.5;
 
-		float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
-		color += directionalAmbientColor;
-	} else {
-		color = DirLightColorShared * 0.5;
+				float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
+				color += directionalAmbientColor;
+			} else {
+				color = DirLightColorShared * 0.5;
 
-		float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
-		color += directionalAmbientColor;
+				float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
+				color += directionalAmbientColor;
+			}
+		} else {
+			color = DirLightColorShared * 0.5;
+
+			float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
+			color += directionalAmbientColor;
+		}
 	}
-#			else
-	color = DirLightColorShared * 0.5;
-
-	float3 directionalAmbientColor = DirectionalAmbientShared._14_24_34;
-	color += directionalAmbientColor;
-#			endif
-#		endif
 
 	color.x += dot(PLightColorR * lightFadeMul, 1.0.xxxx);
 	color.y += dot(PLightColorG * lightFadeMul, 1.0.xxxx);
