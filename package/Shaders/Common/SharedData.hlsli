@@ -113,6 +113,7 @@ struct WetnessEffectsSettings
 
 	float ChaoticRippleScaleRcp;
 	float ChaoticRippleSpeed;
+	uint pad0[2];
 };
 
 struct SkylightingSettings
@@ -138,11 +139,11 @@ struct PBRSettings
 
 struct TransclucencySettings
 {
-	uint TransclucencyMethod;
-	float AlphaFactor;
-	float AlphaMax;
+	uint AlphaMode;
+	float AlphaReduction;
+	float AlphaSoftness;
 	uint pad0;
-}
+};
 
 cbuffer FeatureData : register(b6)
 {
@@ -151,10 +152,10 @@ cbuffer FeatureData : register(b6)
 	CubemapCreatorSettings cubemapCreatorSettings;
 	TerraOccSettings terraOccSettings;
 	LightLimitFixSettings lightLimitFixSettings;
+	TransclucencySettings transclucencySettings;
 	WetnessEffectsSettings wetnessEffectsSettings;
 	SkylightingSettings skylightingSettings;
 	PBRSettings pbrSettings;
-	TransclucencySettings transclucencySettings;
 };
 
 Texture2D<float4> TexDepthSampler : register(t20);
