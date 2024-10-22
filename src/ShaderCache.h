@@ -176,7 +176,7 @@ namespace ShaderConstants
 		{
 			return EffectPS{};
 		}
-		
+
 		const int32_t PropertyColor = 0;
 		const int32_t AlphaTestRef = 1;
 		const int32_t MembraneRimColor = 2;

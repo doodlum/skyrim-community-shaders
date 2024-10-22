@@ -1477,8 +1477,7 @@ namespace SIE
 				ReflectConstantBuffers(*reflector.get(), bufferSizes, newShader->constantTable,
 					dummy,
 					ShaderClass::Pixel, descriptor, shader);
-				if (shader.shaderType == RE::BSShader::Type::Effect)
-				{
+				if (shader.shaderType == RE::BSShader::Type::Effect) {
 					logger::info("{}: {}", descriptor, bufferSizes[2]);
 				}
 				if (bufferSizes[0] != 0) {
