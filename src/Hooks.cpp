@@ -157,8 +157,7 @@ namespace EffectExtensions
 
 	enum class EffectExtendedFlags : uint32_t
 	{
-		Weather = 1 << 0,
-		Shadows = 1 << 1,
+		Shadows = 1 << 0,
 	};
 
 	void EffectSetupGeometry(ID3D11Resource* pResource)
@@ -166,9 +165,6 @@ namespace EffectExtensions
 		if (RE::BSRenderPass* EffectRenderPass = BSEffectShader_SetupGeometry::CurrentRenderPass; EffectRenderPass && EffectRenderPass->geometry && pResource == static_cast<void*>(RE::BSGraphics::RendererShadowState::GetSingleton()->GetRuntimeData().currentPixelShader->constantBuffers[2].buffer)) {
 			if (auto* shaderProperty = static_cast<RE::BSShaderProperty*>(EffectRenderPass->geometry->GetGeometryRuntimeData().properties[1].get())) {
 				stl::enumeration<EffectExtendedFlags> flags;
-				if (shaderProperty->flags.any(RE::BSShaderProperty::EShaderPropertyFlag::kVertexLighting)) {
-					flags.set(EffectExtendedFlags::Weather);
-				}
 				if (shaderProperty->flags.any(RE::BSShaderProperty::EShaderPropertyFlag::kUniformScale)) {
 					flags.set(EffectExtendedFlags::Shadows);
 				}

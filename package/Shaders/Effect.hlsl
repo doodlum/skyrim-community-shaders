@@ -501,8 +501,7 @@ cbuffer PerGeometry : register(b2)
 #	endif
 };
 
-static const uint Effect_Weather = 1 << 0;
-static const uint Effect_Shadows = 1 << 1;
+static const uint Effect_Shadows = 1 << 0;
 
 #	if defined(LIGHT_LIMIT_FIX)
 #		include "LightLimitFix/LightLimitFix.hlsli"
@@ -529,21 +528,21 @@ float3 GetLightingColor(float3 msPosition, float3 worldPosition, float4 screenPo
 	float3 color = 0.0;
 	float angleShadow = saturate(DirLightDirectionShared.z) * saturate(DirLightDirectionShared.z);
 
-#		if defined(EFFECT_SHADOWS)
-	if (InMapMenu)
-		color = DirLightColorShared * angleShadow;
-	else if (!InInterior && (ExtraShaderDescriptor & _InWorld))
-		color = DirLightColorShared * GetEffectShadow(worldPosition, normalize(worldPosition), screenPosition, eyeIndex);
-	else
-		color = DirLightColorShared * 0.5;
-#		else
-	if (InMapMenu)
-		color = DirLightColorShared * angleShadow;
-	else if (!InInterior && (ExtraShaderDescriptor & _InWorld))
-		color = DirLightColorShared * GetWorldShadow(worldPosition, length(worldPosition), 0.0, eyeIndex) * angleShadow * 0.5;
-	else
-		color = DirLightColorShared * 0.5;
-#		endif
+	if ((ExtendedFlags & Effect_Shadows) != 0) {
+		if (InMapMenu)
+			color = DirLightColorShared * angleShadow;
+		else if (!InInterior && (ExtraShaderDescriptor & _InWorld))
+			color = DirLightColorShared * GetEffectShadow(worldPosition, normalize(worldPosition), screenPosition, eyeIndex);
+		else
+			color = DirLightColorShared * 0.5;
+	} else {
+		if (InMapMenu)
+			color = DirLightColorShared * angleShadow;
+		else if (!InInterior && (ExtraShaderDescriptor & _InWorld))
+			color = DirLightColorShared * GetWorldShadow(worldPosition, length(worldPosition), 0.0, eyeIndex) * angleShadow * 0.5;
+		else
+			color = DirLightColorShared * 0.5;
+	}
 
 	color += DirectionalAmbientShared._14_24_34;
 
