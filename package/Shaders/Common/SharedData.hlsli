@@ -135,6 +135,14 @@ struct PBRSettings
 	uint pad0[2];
 };
 
+struct TransclucencySettings
+{
+	uint AlphaMode;
+	float AlphaReduction;
+	float AlphaSoftness;
+	uint pad0;
+};
+
 cbuffer FeatureData : register(b6)
 {
 	GrassLightingSettings grassLightingSettings;
@@ -142,6 +150,7 @@ cbuffer FeatureData : register(b6)
 	CubemapCreatorSettings cubemapCreatorSettings;
 	TerraOccSettings terraOccSettings;
 	LightLimitFixSettings lightLimitFixSettings;
+	TransclucencySettings transclucencySettings;
 	WetnessEffectsSettings wetnessEffectsSettings;
 	SkylightingSettings skylightingSettings;
 	PBRSettings pbrSettings;

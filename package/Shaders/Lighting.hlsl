@@ -999,6 +999,10 @@ float GetSnowParameterY(float texProjTmp, float alpha)
 #		include "Skylighting/Skylighting.hlsli"
 #	endif
 
+#	if defined(EXTENDED_TRANSCLUCENCY)
+#		include "ExtendedTransclucency/ExtendedTransclucency.hlsli"
+#	endif
+
 #	define LinearSampler SampColorSampler
 
 #	include "Common/ShadowSampling.hlsli"
@@ -2592,6 +2596,22 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		discard;
 	}
 #		endif      // DO_ALPHA_TEST
+#		if defined(EXTENDED_TRANSCLUCENCY) && (defined(SKINNED) || !defined(MODELSPACENORMALS)) && !(defined(SKIN) || defined(HAIR) || defined(EYE) || defined(TREE_ANIM) || defined(LODOBJECTSHD) || defined(LODOBJECTS))
+	if (transclucencySettings.AlphaMode < 3) {
+		if (alpha >= 0.0156862754 && alpha < 1.0) {
+			alpha = alpha * (1.0 - transclucencySettings.AlphaReduction);
+			float limit = 2.0 - transclucencySettings.AlphaSoftness;
+			if (transclucencySettings.AlphaMode == 0) {
+				alpha = ExtendedTransclucency::GetViewDependentAlphaFabric1D(alpha, viewDirection, modelNormal.xyz);
+			} else if (transclucencySettings.AlphaMode == 1) {
+				alpha = ExtendedTransclucency::GetViewDependentAlphaFabric2D(alpha, viewDirection, tbnTr);
+			} else {
+				alpha = ExtendedTransclucency::GetViewDependentAlphaNaive(alpha, viewDirection, modelNormal.xyz);
+			}
+			alpha = saturate(ExtendedTransclucency::SoftClamp(alpha, limit));
+		}
+	}
+#		endif
 	psout.Diffuse.w = alpha;
 
 #	endif
