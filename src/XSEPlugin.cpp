@@ -186,7 +186,8 @@ bool Load()
 		L"Data/KiLoader/KiLoader.dll",
 		L"Data/SKSE/Plugins/ENBExtender.dll",
 		L"Data/SKSE/Plugins/KiLoaderSatelliteSKSE.dll",
-		L"Data/SKSE/Plugins/KiHalloc.dll"
+		L"Data/SKSE/Plugins/KiHalloc.dll",
+		L"Data/SKSE/Plugins/KiLoaderSatelliteENB.dllplugin"
 	};
 
 	for (const auto dll : incompatibleDLLs) {
