@@ -111,57 +111,10 @@ namespace ENBExtender
 
 	// KIEFX
 
-	static constexpr char kiefxMagic[] = "KIEFX\x00\x01";
-	static constexpr size_t kiefxMagicSize = sizeof(kiefxMagic) - 1;
-	static constexpr size_t kiefxKeySize = 8;
-	static uint8_t kiefxKey[kiefxKeySize] = {};
-	static bool kiefxKeyInitialized = false;
-	static std::string kiefxKeyError;
-
-	static void InitializeKIEFXKey()
-	{
-		if (kiefxKeyInitialized)
-			return;
-		kiefxKeyInitialized = true;
-
-		std::filesystem::path dllPath = "Data\\KiLoader\\Plugins\\KiENBExtender.dll";
-		if (!std::filesystem::exists(dllPath)) {
-			kiefxKeyError = "KiENBExtender.dll not found at " + dllPath.string();
-			logger::warn("[ENBExtender] {}", kiefxKeyError);
-			return;
-		}
-
-		std::ifstream file(dllPath, std::ios::binary | std::ios::ate);
-		if (!file.is_open()) {
-			kiefxKeyError = "Failed to open " + dllPath.string();
-			logger::warn("[ENBExtender] {}", kiefxKeyError);
-			return;
-		}
-		auto size = file.tellg();
-		if (size <= 0) {
-			kiefxKeyError = "Empty or unreadable: " + dllPath.string();
-			logger::warn("[ENBExtender] {}", kiefxKeyError);
-			return;
-		}
-		file.seekg(0, std::ios::beg);
-		std::vector<uint8_t> data(static_cast<size_t>(size));
-		if (!file.read(reinterpret_cast<char*>(data.data()), size)) {
-			kiefxKeyError = "Failed to read " + dllPath.string();
-			logger::warn("[ENBExtender] {}", kiefxKeyError);
-			return;
-		}
-
-		for (size_t i = 0; i + kiefxMagicSize + 1 + kiefxKeySize <= data.size(); ++i) {
-			if (memcmp(&data[i], kiefxMagic, kiefxMagicSize) == 0) {
-				memcpy(kiefxKey, &data[i + kiefxMagicSize + 1], kiefxKeySize);
-				logger::info("[ENBExtender] Extracted KIEFX key from {}", dllPath.string());
-				return;
-			}
-		}
-
-		kiefxKeyError = "Could not extract KIEFX key from " + dllPath.string();
-		logger::warn("[ENBExtender] {}", kiefxKeyError);
-	}
+	static constexpr uint8_t kiefxMagic[] = { 0x4B, 0x49, 0x45, 0x46, 0x58, 0x00, 0x01 };
+	static constexpr size_t kiefxMagicSize = sizeof(kiefxMagic);
+	static constexpr uint8_t kiefxKey[] = { 0xD8, 0x29, 0x09, 0x12, 0x64, 0x96, 0x6E, 0x2C };
+	static constexpr size_t kiefxKeySize = sizeof(kiefxKey);
 
 	bool IsKIEFX(const std::string& content)
 	{
@@ -173,9 +126,6 @@ namespace ENBExtender
 	{
 		if (!IsKIEFX(content))
 			return content;
-		InitializeKIEFXKey();
-		if (!kiefxKeyError.empty())
-			return "#error KIEFX decoding failed: " + kiefxKeyError + "\n";
 		std::string decoded;
 		decoded.reserve(content.size() - kiefxMagicSize);
 		for (size_t i = kiefxMagicSize; i < content.size(); ++i)
