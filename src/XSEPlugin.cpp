@@ -184,7 +184,8 @@ bool Load()
 		L"Data/SKSE/Plugins/NVIDIA_Reflex.dll",
 		L"Data/SKSE/Plugins/MARA.dll",
 		L"Data/KiLoader/KiLoader.dll",
-		L"Data/SKSE/Plugins/ENBExtender.dll"
+		L"Data/SKSE/Plugins/ENBExtender.dll",
+		L"Data/SKSE/Plugins/KiLoaderSatelliteSKSE.dll"
 	};
 
 	for (const auto dll : incompatibleDLLs) {
