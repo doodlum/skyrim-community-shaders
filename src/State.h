@@ -63,8 +63,8 @@ public:
 	int drawCalls[RE::BSShader::Type::Total + 1];
 
 	// Frame time tracking per shader type (in milliseconds)
-	float frameTimePerType[RE::BSShader::Type::Total + 1];      ///< Per-type frame time in milliseconds.
-	float smoothFrameTimePerType[RE::BSShader::Type::Total + 1]; ///< EMA-smoothed per-type frame time in milliseconds.
+	float frameTimePerType[RE::BSShader::Type::Total + 1];        ///< Per-type frame time in milliseconds.
+	float smoothFrameTimePerType[RE::BSShader::Type::Total + 1];  ///< EMA-smoothed per-type frame time in milliseconds.
 
 	// Timing state for per-type frame time tracking using QueryPerformanceCounter
 	LARGE_INTEGER frameTimingFrequency;

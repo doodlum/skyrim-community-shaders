@@ -10,13 +10,12 @@
 #include "Features/CloudShadows.h"
 #include "Features/Effects11.h"
 #include "Features/ExponentialHeightFog.h"
-#include "Features/SkySync.h"
 #include "Features/HDRDisplay.h"
 #include "Features/InteriorSun.h"
 #include "Features/PerformanceOverlay.h"
 #include "Features/Skin.h"
-#include "Features/Skylighting.h"
 #include "Features/SkySync.h"
+#include "Features/Skylighting.h"
 #include "Features/TerrainBlending.h"
 #include "Features/TerrainHelper.h"
 #include "Features/Upscaling.h"
@@ -1212,5 +1211,3 @@ bool State::HasDirectionalShadows() const
 {
 	return !Util::IsInterior() || globals::features::interiorSun.IsActiveInteriorSun();
 }
-
-
