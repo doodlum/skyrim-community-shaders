@@ -24,74 +24,86 @@ public:
 
 	bool HasShaderDefine(RE::BSShader::Type shaderType) override;
 
-	struct BendSettings
+	struct Settings
 	{
-		float SurfaceThickness = 0.02f;
-		float BilinearThreshold = 0.02f;
+		bool Enabled = true;
+		bool BlurDepthPyramid = false;
+		float SurfaceThickness = 2.0f;
 		float ShadowContrast = 1.0f;
-		uint Enable = 1;
-		uint SampleCount = 1;
-		uint pad0[3];
+		float RayLength = 100.0f;
+		int SampleCount = 16;
 	};
+	Settings settings;
 
-	BendSettings bendSettings;
+	static constexpr float kReferenceRayLength = 100.0f;
+	static constexpr int kMinBaseSamples = 8;
+	static constexpr int kMaxBaseSamples = 128;
+	static constexpr uint kShaderCompilationDebounceFrames = 2;
 
-	struct alignas(16) RaymarchCB
+	struct alignas(16) SSSCB
 	{
-		// Runtime data returned from BuildDispatchList():
-		float LightCoordinate[4];  // Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
-		int WaveOffset[2];         // Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
+		float2 FrameDim;
+		float2 RcpTexDim;
 
-		// Renderer Specific Values:
-		float FarDepthValue;   // Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
-		float NearDepthValue;  // Set to the Depth Buffer Value for the near clip plane, as determined by renderer projection matrix setup (typically 1).
-
-		// Sampling data:
-		float InvDepthTextureSize[2];  // Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
-									   // If 'PointBorderSampler' is an Unnormalized sampler, then this value can be hard-coded to 1.
-									   // The 'USE_HALF_PIXEL_OFFSET' macro might need to be defined if sampling at exact pixel coordinates isn't precise (e.g., if odd patterns appear in the shadow).
-
+		float2 TexDim;
 		float2 DynamicRes;
 
-		BendSettings settings;
+		float SurfaceThickness;
+		float MaxThicknessDistance;  // world units; quadratic thickness reaches SurfaceThickness at this distance from the receiver
+		float SegmentStart;          // world units along the ray where this dispatch's segment begins
+		uint CurrentMip;
+
+		float3 LightWorldDir;
+		float SegmentLength;  // world units length of this dispatch's segment
+
+		float ShadowContrast;
+		float3 pad;
 	};
-	STATIC_ASSERT_ALIGNAS_16(RaymarchCB);
+	STATIC_ASSERT_ALIGNAS_16(SSSCB);
 
-	ID3D11SamplerState* pointBorderSampler = nullptr;
+	eastl::unique_ptr<ConstantBuffer> sssCB;
 
-	ConstantBuffer* raymarchCB = nullptr;
-	ID3D11ComputeShader* raymarchCS = nullptr;
+	eastl::unique_ptr<Texture2D> texDepthMipPrefiltered[4];  // R32G32_FLOAT (linearZ, linearZ²); raw output of PrefilterDepthsCS — used for accurate per-pixel position reconstruction.
+	eastl::unique_ptr<Texture2D> texDepthMip[4];             // R32G32_FLOAT; optional blurred copy of prefiltered, used for VSM sampling along the ray.
+	eastl::unique_ptr<Texture2D> texShadowMip[4];            // R8_UNORM, raymarched visibility (Chebyshev applied inside ShadowsCS)
+	eastl::unique_ptr<Texture2D> texShadowWork[4];           // R8_UNORM, blur/upscale working set (mip 0-3)
+	eastl::unique_ptr<Texture2D> screenSpaceShadowsTexture;
 
-	Texture2D* screenSpaceShadowsTexture = nullptr;
+	winrt::com_ptr<ID3D11SamplerState> pointClampSampler;
 
-	/** @brief Creates the raymarch constant buffer, point border sampler, and shadow output texture. */
+	winrt::com_ptr<ID3D11ComputeShader> prefilterDepthsCS;
+	bool prefilterUsesTerrainBlending = false;
+	winrt::com_ptr<ID3D11ComputeShader> blurDepthCS;
+	// One ShadowsCS variant per mip — each compiled with its own MIP_SAMPLE_COUNT
+	// define so the loop bound is a constant the compiler can unroll.  Mip 3 has
+	// the highest sample count; each step toward mip 0 halves the count.
+	winrt::com_ptr<ID3D11ComputeShader> shadowsCS[4];
+	int compiledBaseSampleCount = -1;
+	int attemptedBaseSampleCount = -1;
+	uint shaderCompilationDelayFrames = 0;
+	/** @brief Compiles the per-mip shadow ray-march variants for the requested base sample count. */
+	void CompileShadowsCS(int baseSampleCount);
+	winrt::com_ptr<ID3D11ComputeShader> upscaleCS;
+	winrt::com_ptr<ID3D11ComputeShader> blurCS;
+
+	/** @brief Creates the shadow-pipeline buffers, samplers, and intermediate textures. */
 	virtual void SetupResources() override;
-
-	/** @brief Draws the ImGui settings UI for screen-space shadow configuration. */
+	/** @brief Draws the Screen Space Shadows settings and developer buffer viewer. */
 	virtual void DrawSettings() override;
-
-	/** @brief Releases the compiled raymarch compute shader for recompilation. */
+	/** @brief Releases and recompiles the feature's compute shaders. */
 	virtual void ClearShaderCache() override;
-	/** @brief Releases the raymarch compute shader so it is recompiled on next use. */
-	void InvalidateRaymarchShaders();
-	/** @brief Calculates the resolution-scaled and quantized sample count for the raymarch shader. */
-	uint GetScaledSampleCount();
-	uint lastCompiledSampleCount = 0;
-	/**
-	 * @brief Returns the compiled raymarch compute shader, recompiling if the sample count changed.
-	 * @return The compiled ID3D11ComputeShader, or nullptr on failure.
-	 */
-	ID3D11ComputeShader* GetComputeRaymarch();
+	/** @brief Compiles the fixed compute-shader stages used by the shadow pipeline. */
+	void CompileComputeShaders();
+	/** @brief Compiles the depth prefilter for the currently active scene-depth format. */
+	void CompilePrefilterDepthsCS();
 
-	/** @brief Clears the shadow texture and dispatches shadow ray marching if conditions are met. */
+	/** @brief Clears the shadow targets, renders contact shadows, and binds the final mask. */
 	virtual void Prepass() override;
 
 	virtual void LoadSettings(json& o_json) override;
 	virtual void SaveSettings(json& o_json) override;
-
-	/** @brief Dispatches the Bend SSS compute shader to generate screen-space contact shadows. */
-	void DrawShadows();
-
 	virtual void RestoreDefaultSettings() override;
 
+	/** @brief Dispatches the depth pyramid, ray-march, and reconstruction passes. */
+	void DrawShadows();
 };
